@@ -1,0 +1,11 @@
+{
+  "name": "tune-tracer",
+  "version": "0.0.0",
+  "description": "The main repo setup of Tune Tracer",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "L17 Tune Tracer",
+  "license": "ISC"
+}
