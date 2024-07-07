@@ -1,0 +1,31 @@
+name: Empty PR Check
+
+# This action checks for an empty commit
+
+on:
+    pull_request:
+        branches: ["*"]
+    merge_group:
+        branches: [main]
+jobs:
+    check-empty-pr:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout the code
+              uses: actions/checkout@v3
+              with:
+                fetch_depth: 2
+            - name: Get changed files
+              id: changed_files
+              uses: tj-actions/changed-files@v1
+            - name: Check if PR is empty
+              run: |
+                CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }})
+                if [ -z "$CHANGED_FILES" ]; then
+                    echo "No files changed in this PR."
+                    exit 1
+                else
+                    echo "Files changed in this PR:"
+                    echo "$CHANGED_FILES"
+                fi
