@@ -11,7 +11,10 @@
     "debug": "node --inspect-brk -r ts-node/register src/main.ts"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2",
+    "ts-node": "^10.9.2"
+  },
+  "dependencies": {
+    "firebase": "^10.13.0",
     "typescript": "^5.5.4"
   }
 }
