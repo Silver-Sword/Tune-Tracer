@@ -37,4 +37,10 @@ export default class FirebaseWrapper
 
         return true;
     }
+
+    // will throw an error on a failed sign in
+    async signInUser(email: string, password: string) : Promise<void>
+    {
+        await firebase.auth().signInWithEmailAndPassword(email, password);
+    }
 }
