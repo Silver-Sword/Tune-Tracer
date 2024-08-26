@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "firebase": "^10.13.0",
+    "typescript": "^5.5.4"
+  }
+}

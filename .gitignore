@@ -1,0 +1,5 @@
+node_modules/*
+firebaseConfig.js
+.firebase/*
+package-lock.json
+.github/*
