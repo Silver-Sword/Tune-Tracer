@@ -127,15 +127,18 @@ export class Measure {
     private isRest = (duration: string): boolean => {
         return duration.endsWith('r');
     }
-    addNote = (keys: string[], duration: string, noteId: string): void => {
-        if (this.isRest(duration)) return;
-        if (!this.voice1) return;
+    addNote = (keys: string[], duration: string, noteId: string): boolean => {
+        if (this.isRest(duration)) return false;
+        if (!this.voice1) return false;
+
+        let found: boolean = false;
         const VF = Vex.Flow;
         const notes: InstanceType<typeof Vex.Flow.StaveNote>[] = [];
 
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
             if (this.matchesNote(staveNote, duration, noteId)) {
+                found = true;
                 console.log("Matched StaveNote: " + staveNote);
                 if (staveNote.getNoteType() !== 'r') {
                     const newKeys = staveNote.getKeys();
@@ -158,6 +161,7 @@ export class Measure {
         });
 
         this.voice1 = new VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
+        return found;
         // When adding a note you never want to override another note
         // However, if the StaveNote you are overriding is at REST, then override
     }
