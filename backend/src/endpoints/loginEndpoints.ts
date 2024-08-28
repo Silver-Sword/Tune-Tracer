@@ -5,9 +5,11 @@ import { FIREBASE_CONFIG } from '../firebaseSecrets'
 
 export async function signUp (email: string, password: string, displayName: string, firebase: FirebaseWrapper)
 {
-    await firebase.signUpNewUser(email, password, displayName);
+
+    const response = await firebase.signUpNewUser(email, password, displayName);
+
     // TODO : check password requirements
-    if (!firebase.signUpNewUser(email, password, displayName))
+    if (!response)
     {
         return false;
     }
@@ -16,4 +18,21 @@ export async function signUp (email: string, password: string, displayName: stri
         console.log("Success! Please check your email");
         // TODO : send email to user to verify account
     }
+
+    return true;
+}
+
+export async function login (email: string, password: string, firebase: FirebaseWrapper)
+{
+    try
+    {
+        const response = await firebase.signInUser(email, password);
+    }
+    catch (error)
+    {
+        console.log("Could not sign in. Please check your username or password");
+        return false;
+    }
+
+    return true;
 }
