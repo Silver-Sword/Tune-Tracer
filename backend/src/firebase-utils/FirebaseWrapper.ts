@@ -3,6 +3,7 @@ import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 
 import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME } from '../firebaseSecrets'
+import { DocumentMetadata, FirebaseDocumentData } from '../document-utils/documentTypes';
 
 /*
     Wrapper class for doing firebase stuff
@@ -11,14 +12,14 @@ import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME } from '../firebaseSecrets'
 */
 export default class FirebaseWrapper
 {
-    async initApp() : Promise<void>
+    public initApp(): void
     {
         if (firebase.apps.length === 0) {
-            await firebase.initializeApp(FIREBASE_CONFIG);
+            firebase.initializeApp(FIREBASE_CONFIG);
         }
     }
 
-    async signUpNewUser(email:string, password:string, displayName: string) : Promise<boolean>
+    async signUpNewUser(email: string, password: string, displayName: string): Promise<boolean>
     {
         try {
             // user sign up
@@ -55,22 +56,20 @@ export default class FirebaseWrapper
                       .get()).exists;
     }
 
-    // takes in the initial document information as a JSON object
-    // returns the document id of the created document
-    async createDocument(documentJSON: JSON): Promise<string>
+    // creates a blank composition document and returns the id of the created document
+    async createDocument(): Promise<string>
     {
-        const documentString = JSON.stringify(documentJSON);
-        const firestoreDocument = await firebase.firestore().collection(DOCUMENT_DATABASE_NAME).add({
-            documentString: documentString
-        });  
+        const firestoreDocument = await firebase
+            .firestore()
+            .collection(DOCUMENT_DATABASE_NAME)
+            .add({});  
         return firestoreDocument.id;
     }
 
     // takes in the new document
     // returns true iff the document exists and the update was successful
-    async updateDocument(documentId: string, documentJSON: JSON): Promise<boolean>
+    async updateDocument(documentId: string, firebaseDocument: FirebaseDocumentData): Promise<boolean>
     {
-        const documentString = JSON.stringify(documentJSON);
         if(!await this.doesDocumentExist(documentId))
         {
             return false;
@@ -78,18 +77,21 @@ export default class FirebaseWrapper
         await firebase.firestore()
                       .collection(DOCUMENT_DATABASE_NAME)
                       .doc(documentId)
-                      .update({"documentString" : documentString});
+                      .update({
+                        "documentString" : firebaseDocument.documentString,
+                        "metadata": firebaseDocument.metadata,
+                      });
         return true;
     }
 
     // takes in the document unique id and returns the associated document as a JSON object
     // if the document or data doesn't exist, the function returns null
-    async getDocument(documentId: string): Promise<JSON | null>
+    async getDocument(documentId: string): Promise<FirebaseDocumentData | null>
     {
         const document = (await firebase.firestore()
-        .collection(DOCUMENT_DATABASE_NAME)
-        .doc(documentId)
-        .get());
+            .collection(DOCUMENT_DATABASE_NAME)
+            .doc(documentId)
+            .get());
         
         if(!document.exists)
         {
@@ -97,12 +99,43 @@ export default class FirebaseWrapper
         } 
 
         const data = document.data();
-        if(data === undefined || !('documentString' in data))
+        if(data === undefined || !('documentString' in data) || !("metadata" in data))
         {
             return null;
         }
         
-        return data['documentString'];
+        return {
+            documentString: data['documentString'],
+            metadata: data['metadata']
+        } as FirebaseDocumentData;
+    }
+
+    async getDocumentField(documentId: string, field: string): Promise<string | null> {
+        const document = (await firebase.firestore()
+            .collection(DOCUMENT_DATABASE_NAME)
+            .doc(documentId)
+            .get());
+        
+        if(!document.exists)
+        {
+            return null;
+        } 
+
+        const data = document.data();
+        if(data === undefined || !(field in data))
+        {
+            return null;
+        }
+        
+        return data[field];
+    }
+
+    async getDocumentMetadata(documentId: string): Promise<DocumentMetadata | null> {
+        const metadata : string | null = await this.getDocumentField(documentId, "metadata");
+        if(metadata === null) {
+            return null;
+        }
+        return JSON.parse(metadata) as DocumentMetadata;
     }
     
     // deletes the document associated with the documentId
@@ -110,5 +143,5 @@ export default class FirebaseWrapper
     async deleteDocument(documentId: string): Promise<void>
     {
         await firebase.firestore().collection(DOCUMENT_DATABASE_NAME).doc(documentId).delete();
-    }   
+    }
 }
