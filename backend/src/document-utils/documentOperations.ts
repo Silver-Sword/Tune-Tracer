@@ -17,6 +17,7 @@ export async function createDocument(creatorId: string): Promise<Document>
         share_style: SHARE_STYLE.private_document,
         time_created: currentTime,
         last_edit_time: currentTime,
+        last_edit_user: creatorId,
     };
     const document : Document = {
         document_title: "",
@@ -26,12 +27,14 @@ export async function createDocument(creatorId: string): Promise<Document>
     };
 
     await firebase.updateDocument(documentId, documentToData(document));
+    await firebase.insertUserDocument(creatorId, documentId, true);
     return document;
 }
 
 // takes in the updated documet and returns a promise containing true iff the document was
 // successfully updated
 // assumes the writing user has already been authenticated
+// ONLY UPDATE THE DOCUMENT CONTENT USING THIS FUNCTION (metadata should be updated in a different function)
 export async function updateDocument(updatedDocument: Document): Promise<boolean>
 {
     const firebase: FirebaseWrapper = new FirebaseWrapper();
@@ -61,10 +64,31 @@ export async function getDocument(documentId: string): Promise<Document>
 
 // deletes the document associated with the given document id
 // assumes the user owns the document
-export async function deleteDocument(documentId: string): Promise<void>
+export async function deleteDocument(document: Document): Promise<void>
 {
     const firebase: FirebaseWrapper = new FirebaseWrapper();
     firebase.initApp();
 
+    const documentId = document.metadata.document_id;
+    const userId = document.metadata.owner_email;
+
     await firebase.deleteDocument(documentId);
+    
+    // delete the document from the user owned documents
+    await firebase.deleteUserDocument(userId, documentId, true);
+
+    // delete the document from the user shared documents
+    for(const sharedUser of (document.metadata.share_list ?? []))
+    {
+        await firebase.deleteUserDocument(sharedUser, documentId, false);
+    }
+}
+
+// determines if a document exist in the Firestore database by attempting to retrieve it
+// returns a promise containing true iff the document exists in a valid storage format
+export async function doesDocumentExist(documentId: string): Promise<boolean>
+{
+    const firebase: FirebaseWrapper = new FirebaseWrapper();
+    firebase.initApp();
+    return (await firebase.doesDocumentExist(documentId));
 }
