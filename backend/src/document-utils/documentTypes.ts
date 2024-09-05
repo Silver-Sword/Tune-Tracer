@@ -23,12 +23,13 @@ export type Comment =
 // purpose for storing metadata about a composition document
 export type DocumentMetadata =
 {
-    document_id: string,
-    owner_email: string,
-    share_style: SHARE_STYLE,
-    share_list?: string[],
-    time_created: number,
-    last_edit_time: number,
+    document_id: string,        // unique id associated with the document; used for firestore
+    owner_email: string,        // the user email of the user who created the document; unchanging field
+    share_style: SHARE_STYLE,   // the type of publicity for the document
+    share_list?: string[],      // OPTIONAL; the user list that the document is shared with
+    time_created: number,       // the time (in milliseconds) when the document was created
+    last_edit_time: number,     // the time (in milliseconds) when the document was last updated
+    last_edit_user: string,     // the user that last updated the document
 };
 
 // purpose: manipulate composition documents in the code
@@ -37,7 +38,7 @@ export type Document =
     document_title: string,
     contents: JSON,
     comments: Comment[],
-    metadata: DocumentMetadata,
+    metadata: DocumentMetadata, // the document metadata; this should be treated as a CONST by the frontend
 };
 
 // purpose: for storing a document in firestore

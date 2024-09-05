@@ -10,4 +10,5 @@ export const FIREBASE_CONFIG = {
 };
 
 export const DOCUMENT_DATABASE_NAME = "Composition_Documents";
+export const USER_DATABASE_NAME = "Users_Collection";
   

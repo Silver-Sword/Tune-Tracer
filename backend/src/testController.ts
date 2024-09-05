@@ -6,6 +6,11 @@ import { createDocument, updateDocument, deleteDocument, getDocument } from './d
 const TEST_EMAIL = "chrisgittingsucf@gmail.com";
 const TEST_PASSWORD = "ThisIsAStrongPassword*50";
 
+// to test: 
+// check sign up correctly add user in user collection
+// check document creation correctly adds document to user owned documents
+// check get user owned documents correctly grabbed
+
 const TEST_DOCUMENT: Document = {
     contents: JSON.parse(JSON.stringify({
         json_list: ["help", "me", "plz"],
@@ -27,6 +32,7 @@ const TEST_DOCUMENT: Document = {
         share_style: 1,
         time_created: 0,
         last_edit_time: 12,
+        last_edit_user: "example@example.com",
     },
     document_title: "Document Title",
 };
@@ -82,7 +88,7 @@ async function testDocumentDeletion(firebase: FirebaseWrapper)
 {
     const doc = await createDocument(TEST_DOCUMENT.metadata.owner_email);
     console.log(`Document Id: ${doc.metadata.document_id}`);
-    await deleteDocument(doc.metadata.document_id);
+    await deleteDocument(doc);
 }
 
 async function testDocumentRead(firebase: FirebaseWrapper)
