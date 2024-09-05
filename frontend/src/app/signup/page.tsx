@@ -8,6 +8,7 @@ export default function Page() {
     const icon = <IconAt style={{ width: rem(16), height: rem(16) }} />;
     const [error, setError] = React.useState('');
 
+    // Add data fetching for the login and sign up 
     return (
         <Container>
             <Center>
@@ -26,6 +27,12 @@ export default function Page() {
                     radius='md'
                     label='Email'
                     placeholder='email'
+                />
+                <TextInput
+                    withAsterisk
+                    radius='md'
+                    label='Display Name'
+                    placeholder='Name'
                 />
                 <PasswordInput
                     radius='md'
