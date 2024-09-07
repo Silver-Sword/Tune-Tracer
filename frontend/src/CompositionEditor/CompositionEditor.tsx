@@ -77,8 +77,8 @@ const TestObjectsEditor: React.FC = () => {
             if (notationRef.current) {
                 score.current = new Score(
                     notationRef.current,
-                    /*defaultx*/ 10,
-                    /*defaulty*/ 40,
+                    /*defaultx*/ 20,
+                    /*defaulty*/ 0,
                     /*Measure Width*/ 325
                 );
             }

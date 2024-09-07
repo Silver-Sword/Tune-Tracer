@@ -101,29 +101,12 @@ export class Score {
             // Does the formatting for us!
             console.log("WE GOT HERE");
 
-            if (top_measure.getVoice2() !== null) {
-                // Tells formatter they need to be rendered on single stave
-                formatter.joinVoices([top_measure.getVoice1(), top_measure.getVoice2()!])
-                formatter.format([top_measure.getVoice1(), top_measure.getVoice2()!]);
-                top_measure.getVoice1()?.draw(this.context, top_measure.getStave());
-                top_measure.getVoice2()?.draw(this.context, top_measure.getStave());
-            }
-            else {
-                formatter.formatToStave([top_measure.getVoice1()], top_measure.getStave());
-                top_measure.getVoice1()?.draw(this.context, top_measure.getStave());
-            }
+            formatter.formatToStave([top_measure.getVoice1()], top_measure.getStave());
+            top_measure.getVoice1()?.draw(this.context, top_measure.getStave());
 
-            if (bottom_measure.getVoice2() !== null) {
-                // Tells formatter they need to be rendered on single stave
-                formatter.joinVoices([bottom_measure.getVoice1(), bottom_measure.getVoice2()!])
-                formatter.format([bottom_measure.getVoice1(), bottom_measure.getVoice2()!]);
-                bottom_measure.getVoice1()?.draw(this.context, bottom_measure.getStave());
-                bottom_measure.getVoice2()?.draw(this.context, bottom_measure.getStave());
-            }
-            else {
-                formatter.formatToStave([bottom_measure.getVoice1()], bottom_measure.getStave());
-                bottom_measure.getVoice1()?.draw(this.context, bottom_measure.getStave());
-            }
+            formatter.formatToStave([bottom_measure.getVoice1()], bottom_measure.getStave());
+            bottom_measure.getVoice1()?.draw(this.context, bottom_measure.getStave());
+
         }
 
         formatter.postFormat();
