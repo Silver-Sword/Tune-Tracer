@@ -3,6 +3,8 @@ import { Measure } from './Measure';
 
 type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
 
+const DEFAULT_MEASURE_SPACING = 100;
+const DEFAULT_NOTE_PADDING_FROM_TOP = 10;
 
 export class Score {
     private VF = Vex.Flow;
@@ -24,7 +26,7 @@ export class Score {
         renderer.resize(800, 400);
         this.context = renderer.getContext();
         const firstTopMeasure = new Measure(this.context, x, y, measureWidth, timeSignature, "treble", true);
-        const firstBottomMeasure = new Measure(this.context, x, y + 100, measureWidth, timeSignature, "bass", true);
+        const firstBottomMeasure = new Measure(this.context, x, y + DEFAULT_MEASURE_SPACING, measureWidth, timeSignature, "bass", true);
 
         this.top_measures.push(firstTopMeasure);
         this.bottom_measures.push(firstBottomMeasure);
@@ -72,40 +74,58 @@ export class Score {
         let formatter = new Formatter();
         formatter.preFormat();
         for (let i = 0; i < this.top_measures.length; i++) {
-            let top_measure = this.top_measures[i];
-            let bottom_measure = this.bottom_measures[i];
-            let top_stave = top_measure.getStave();
-            let bottom_stave = bottom_measure.getStave();
+            let topMeasure = this.top_measures[i];
+            let bottomMeasure = this.bottom_measures[i];
+            let topStave = topMeasure.getStave();
+            let bottomStave = bottomMeasure.getStave();
 
-            top_stave.setContext(this.context).draw();
-            bottom_stave.setContext(this.context).draw();
+            console.log("WE GOT HERE");
+
+            const topVoice1 = topMeasure.getVoice1(); 
+
+            topVoice1.setStave(topStave);
+            
+            formatter.formatToStave([topVoice1], topStave);
+
+            formatter.formatToStave([bottomMeasure.getVoice1()], bottomStave);
+
+            // Need to format to stave first to get bounding box
+            const topBoundingBoxY = topVoice1.getBoundingBox()?.getY();
+
+            console.log("TopBounding Box Y: " + topBoundingBoxY);
+            console.log("TopStave Box Y: " + topStave?.getY());
+
+            if(topBoundingBoxY != null && (topBoundingBoxY - DEFAULT_NOTE_PADDING_FROM_TOP) < 0)
+            {
+                topStave.setY((topStave.getY() + (topBoundingBoxY * -1)) + DEFAULT_NOTE_PADDING_FROM_TOP);
+                bottomStave.setY(topStave.getY()+ DEFAULT_MEASURE_SPACING);
+            }
+
+            topStave.setContext(this.context).draw();
+            bottomStave.setContext(this.context).draw();
 
             if (i == 0) {
                 // Create the brace and connect the staves
-                const brace = new this.VF.StaveConnector(top_stave, bottom_stave);
+                const brace = new this.VF.StaveConnector(topStave, bottomStave);
                 brace.setType(this.VF.StaveConnector.type.BRACE);
                 brace.setContext(this.context).draw();
             }
 
 
             // Create the left line to connect the staves
-            const lineLeft = new this.VF.StaveConnector(top_stave, bottom_stave);
+            const lineLeft = new this.VF.StaveConnector(topStave, bottomStave);
             lineLeft.setType(this.VF.StaveConnector.type.SINGLE_LEFT);
             lineLeft.setContext(this.context).draw();
 
             // Create the right line to connect the staves
-            const lineRight = new this.VF.StaveConnector(top_stave, bottom_stave);
+            const lineRight = new this.VF.StaveConnector(topStave, bottomStave);
             lineRight.setType(this.VF.StaveConnector.type.SINGLE_RIGHT);
             lineRight.setContext(this.context).draw();
 
-            // Does the formatting for us!
-            console.log("WE GOT HERE");
+            topMeasure.getVoice1().draw(this.context, topStave);
+            bottomMeasure.getVoice1()?.draw(this.context, bottomMeasure.getStave());
 
-            formatter.formatToStave([top_measure.getVoice1()], top_measure.getStave());
-            top_measure.getVoice1()?.draw(this.context, top_measure.getStave());
-
-            formatter.formatToStave([bottom_measure.getVoice1()], bottom_measure.getStave());
-            bottom_measure.getVoice1()?.draw(this.context, bottom_measure.getStave());
+            
 
         }
 
