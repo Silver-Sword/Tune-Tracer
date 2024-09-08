@@ -3,7 +3,7 @@ import { Measure } from './Measure';
 
 type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
 
-const DEFAULT_MEASURE_SPACING = 100;
+const DEFAULT_MEASURE_SPACING = 10;
 const DEFAULT_NOTE_PADDING_FROM_TOP = 10;
 
 export class Score {
@@ -26,7 +26,8 @@ export class Score {
         renderer.resize(800, 400);
         this.context = renderer.getContext();
         const firstTopMeasure = new Measure(this.context, x, y, measureWidth, timeSignature, "treble", true);
-        const firstBottomMeasure = new Measure(this.context, x, y + DEFAULT_MEASURE_SPACING, measureWidth, timeSignature, "bass", true);
+        // X and Y don't matter here because bottom measure always adjusts based on top measure
+        const firstBottomMeasure = new Measure(this.context, x, y, measureWidth, timeSignature, "bass", true);
 
         this.top_measures.push(firstTopMeasure);
         this.bottom_measures.push(firstBottomMeasure);
@@ -79,7 +80,7 @@ export class Score {
             let topStave = topMeasure.getStave();
             let bottomStave = bottomMeasure.getStave();
 
-            console.log("WE GOT HERE");
+            console.log("-------------------");
 
             const topVoice1 = topMeasure.getVoice1(); 
 
@@ -89,17 +90,29 @@ export class Score {
 
             formatter.formatToStave([bottomMeasure.getVoice1()], bottomStave);
 
+            const topBoundingBox = topVoice1.getBoundingBox();
+            if(topBoundingBox == null)
+            {
+                console.error("topBoundingBox is NULL");
+                return;
+            }
             // Need to format to stave first to get bounding box
-            const topBoundingBoxY = topVoice1.getBoundingBox()?.getY();
+            const topBoundingBoxY:number = topBoundingBox.getY();
+            let topBoundingBoxBottomY = topBoundingBoxY + topBoundingBox.getH();
 
             console.log("TopBounding Box Y: " + topBoundingBoxY);
             console.log("TopStave Box Y: " + topStave?.getY());
 
             if(topBoundingBoxY != null && (topBoundingBoxY - DEFAULT_NOTE_PADDING_FROM_TOP) < 0)
             {
-                topStave.setY((topStave.getY() + (topBoundingBoxY * -1)) + DEFAULT_NOTE_PADDING_FROM_TOP);
-                bottomStave.setY(topStave.getY()+ DEFAULT_MEASURE_SPACING);
+                // Multiply by -1 because its above ceiling
+                let deltaDown = (topBoundingBoxY * -1) + DEFAULT_NOTE_PADDING_FROM_TOP
+                topStave.setY(topStave.getY() + deltaDown);
+                // Make sure we update our bounding box value
+                topBoundingBoxBottomY += deltaDown;
             }
+            
+            bottomStave.setY(topBoundingBoxBottomY + DEFAULT_MEASURE_SPACING);
 
             topStave.setContext(this.context).draw();
             bottomStave.setContext(this.context).draw();
