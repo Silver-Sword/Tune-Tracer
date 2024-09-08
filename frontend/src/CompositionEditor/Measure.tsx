@@ -184,16 +184,19 @@ export class Measure {
         // However, if the StaveNote you are overriding is at REST, then override
     }
 
-    modifyDuration = (duration: string, noteId: string): void => {
-        if (!this.voice1) return;
+    modifyDuration = (duration: string, noteId: string): boolean => {
+        if (!this.voice1) return false;
         const VF = Vex.Flow;
         const notes: StaveNote[] = [];
         let ticksSeen: number = 0;
         let newRestTicks = VF.durationToTicks(duration);
 
+        let found: boolean = false;
+
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
             if (staveNote.getAttributes().id === noteId) {
+                found = true;
                 const currentNoteTicks = staveNote.getTicks().value();
                 // if we want each note duration to be less, then we'll need to pad with rests
                 if (newRestTicks < currentNoteTicks) {
@@ -238,6 +241,8 @@ export class Measure {
         });
         this.voice1 = new VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
         // Ensure to check that the total ticks match
+
+        return found;
     }
 
 

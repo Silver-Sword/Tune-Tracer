@@ -51,7 +51,9 @@ export class Score {
         duration: string,
         noteId: string
     ): void => {
-        this.top_measures[measureIndex].modifyDuration(duration, noteId);
+        if (!this.top_measures[measureIndex].modifyDuration(duration, noteId)) {
+            this.bottom_measures[measureIndex].modifyDuration(duration, noteId)
+        }
         this.renderMeasures();
     }
 
@@ -119,10 +121,10 @@ export class Score {
 
             let oldY = bottomStave.getY();
             bottomStave.setY(topBoundingBoxBottomY + DEFAULT_MEASURE_SPACING);
-            bottomBoundingBoxTopY += bottomStave.getY()- oldY;
+            bottomBoundingBoxTopY += bottomStave.getY() - oldY;
             console.log("bottomBoundingBoxTopY: " + bottomBoundingBoxTopY);
             if (bottomBoundingBoxTopY < topBoundingBoxBottomY) {
-                let deltaDown = (topBoundingBoxBottomY - bottomBoundingBoxTopY)  + DEFAULT_NOTE_PADDING_FROM_TOP
+                let deltaDown = (topBoundingBoxBottomY - bottomBoundingBoxTopY) + DEFAULT_NOTE_PADDING_FROM_TOP
                 bottomStave.setY(bottomStave.getY() + deltaDown);
                 // Make sure we update our bounding box value
                 bottomBoundingBoxBottomY += deltaDown;
