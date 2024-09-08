@@ -82,37 +82,50 @@ export class Score {
 
             console.log("-------------------");
 
-            const topVoice1 = topMeasure.getVoice1(); 
+            const topVoice1 = topMeasure.getVoice1();
+            const bottomVoice1 = bottomMeasure.getVoice1();
 
             topVoice1.setStave(topStave);
-            
-            formatter.formatToStave([topVoice1], topStave);
+            bottomVoice1.setStave(bottomStave);
 
-            formatter.formatToStave([bottomMeasure.getVoice1()], bottomStave);
+            formatter.formatToStave([topVoice1], topStave);
+            formatter.formatToStave([bottomVoice1], bottomStave);
 
             const topBoundingBox = topVoice1.getBoundingBox();
-            if(topBoundingBox == null)
-            {
+            const bottomBoundingBox = bottomVoice1.getBoundingBox();
+
+            if (topBoundingBox == null || bottomBoundingBox == null) {
                 console.error("topBoundingBox is NULL");
                 return;
             }
             // Need to format to stave first to get bounding box
-            const topBoundingBoxY:number = topBoundingBox.getY();
+            const topBoundingBoxY: number = topBoundingBox.getY();
+            let bottomBoundingBoxTopY: number = bottomBoundingBox.getY();
+
             let topBoundingBoxBottomY = topBoundingBoxY + topBoundingBox.getH();
+            let bottomBoundingBoxBottomY = bottomBoundingBoxTopY + bottomBoundingBox.getH();
 
             console.log("TopBounding Box Y: " + topBoundingBoxY);
             console.log("TopStave Box Y: " + topStave?.getY());
 
-            if(topBoundingBoxY != null && (topBoundingBoxY - DEFAULT_NOTE_PADDING_FROM_TOP) < 0)
-            {
+            if (topBoundingBoxY - DEFAULT_NOTE_PADDING_FROM_TOP < 0) {
                 // Multiply by -1 because its above ceiling
                 let deltaDown = (topBoundingBoxY * -1) + DEFAULT_NOTE_PADDING_FROM_TOP
                 topStave.setY(topStave.getY() + deltaDown);
                 // Make sure we update our bounding box value
                 topBoundingBoxBottomY += deltaDown;
             }
-            
+
+            let oldY = bottomStave.getY();
             bottomStave.setY(topBoundingBoxBottomY + DEFAULT_MEASURE_SPACING);
+            bottomBoundingBoxTopY += bottomStave.getY()- oldY;
+            console.log("bottomBoundingBoxTopY: " + bottomBoundingBoxTopY);
+            if (bottomBoundingBoxTopY < topBoundingBoxBottomY) {
+                let deltaDown = (topBoundingBoxBottomY - bottomBoundingBoxTopY)  + DEFAULT_NOTE_PADDING_FROM_TOP
+                bottomStave.setY(bottomStave.getY() + deltaDown);
+                // Make sure we update our bounding box value
+                bottomBoundingBoxBottomY += deltaDown;
+            }
 
             topStave.setContext(this.context).draw();
             bottomStave.setContext(this.context).draw();
@@ -138,7 +151,7 @@ export class Score {
             topMeasure.getVoice1().draw(this.context, topStave);
             bottomMeasure.getVoice1()?.draw(this.context, bottomMeasure.getStave());
 
-            
+
 
         }
 
