@@ -60,7 +60,8 @@ export class Measure {
         else {
             console.error("CLEF IS INVALID");
         }
-        this.setClef(clef);
+        // We don't want to render the clef if its none
+        if (renderTimeSignature) this.setClef(clef);
         this.clef = clef;
 
 
@@ -107,6 +108,10 @@ export class Measure {
 
     getCurrentBeats = (): number => {
         return this.num_beats;
+    }
+
+    getClef = (): string => {
+        return this.clef;
     }
 
     processTimeSignature = (timeSignature: string, renderTimeSig: boolean): void => {

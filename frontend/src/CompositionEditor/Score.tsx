@@ -61,9 +61,10 @@ export class Score {
         const x = prevMeasure.getX();
         const y = prevMeasure.getY();
         const timeSignature = prevMeasure.getTimeSignature();
+        const clef = prevMeasure.getClef();
 
-        const newTopMeasure = new Measure(this.context, x + this.default_measure_width, y, this.default_measure_width, timeSignature, "none", false);
-        const newBottomMeasure = new Measure(this.context, x + this.default_measure_width, y + 100, this.default_measure_width, timeSignature, "none", false);
+        const newTopMeasure = new Measure(this.context, x + this.default_measure_width, y, this.default_measure_width, timeSignature, clef, false);
+        const newBottomMeasure = new Measure(this.context, x + this.default_measure_width, y + 100, this.default_measure_width, timeSignature, clef, false);
         this.top_measures.push(newTopMeasure);
         this.bottom_measures.push(newBottomMeasure);
         this.renderMeasures();
@@ -149,7 +150,7 @@ export class Score {
             lineRight.setContext(this.context).draw();
 
             topMeasure.getVoice1().draw(this.context, topStave);
-            bottomMeasure.getVoice1()?.draw(this.context, bottomMeasure.getStave());
+            bottomMeasure.getVoice1().draw(this.context, bottomStave);
 
 
 
