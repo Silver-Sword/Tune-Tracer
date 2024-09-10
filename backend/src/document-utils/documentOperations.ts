@@ -1,5 +1,5 @@
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { Document, DocumentMetadata, SHARE_STYLE } from './documentTypes'; 
+import { Document, DocumentMetadata, SHARE_STYLE } from '@lib/documentTypes'; 
 
 // takes in the user id who triggered the document creation and returns a
 // promise containing a default (blank) document as a Document

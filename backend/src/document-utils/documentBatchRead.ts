@@ -1,6 +1,6 @@
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { getDocument } from "./documentOperations";
-import { Document } from './documentTypes';
+import { Document } from '@lib/documentTypes';
 
 // returns all documents created by the user associated with the userId
 export async function getDocumentsOwnedByUser(userId: string): Promise<Document[]>

@@ -7,13 +7,16 @@
     "skipLibCheck": true,                        // Skips type checking of declaration files (.d.ts) for faster compilation.
     "forceConsistentCasingInFileNames": true,    // Ensures consistent casing in file names.
     "outDir": "./dist",                          // Specifies the output directory for compiled JavaScript files.
-    "rootDir": "./src",                          // Specifies the root directory of TypeScript files.
     "moduleResolution": "node",                  // Specifies module resolution strategy: "node" for Node.js-style resolution.
     "resolveJsonModule": true,                   // Allows importing JSON files as modules.
     "sourceMap": true,                           // Generates corresponding .map files for debugging.
     "noImplicitAny": true,                       // Raises errors on expressions and declarations with an implied `any` type.
-    "strictNullChecks": true                     // Ensures that `null` and `undefined` are only assignable to `void` or their own types.
+    "strictNullChecks": true,                    // Ensures that `null` and `undefined` are only assignable to `void` or their own types.
+    "baseUrl": "./src",
+    "paths": {
+      "@lib/*": ["../../lib/*"]
+    }
   },
-  "include": ["src/**/*.ts"],                     // Specifies which files to include in the project.
+  "include": ["src/**/*.ts", "../../lib/*"],        // Specifies which files to include in the project.
   "exclude": ["node_modules", "dist"]            // Specifies which files or directories to exclude from the project.
 }

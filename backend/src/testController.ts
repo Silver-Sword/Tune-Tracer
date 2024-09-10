@@ -1,5 +1,5 @@
 import FirebaseWrapper from "./firebase-utils/FirebaseWrapper";
-import { Document,  Comment } from './document-utils/documentTypes';
+import { Document,  Comment } from '@lib/documentTypes';
 import { createDocument, updateDocument, deleteDocument, getDocument } from './document-utils/documentOperations';
 import { getDocumentsOwnedByUser, getDocumentsSharedWithUser } from "./document-utils/documentBatchRead";
 
