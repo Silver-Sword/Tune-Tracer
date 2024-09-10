@@ -17,6 +17,8 @@ export type DocumentMetadata =
     time_created: number,       // the time (in milliseconds) when the document was created
     last_edit_time: number,     // the time (in milliseconds) when the document was last updated
     last_edit_user: string,     // the user that last updated the document
+    preview_emoji?: string,     // the emoji that represents this document | visible on the storage page
+    preview_color?: string,     // the color that the user chose for this document | visible on the storage page
 };
 
 // purpose: for defining how a document has been shared
