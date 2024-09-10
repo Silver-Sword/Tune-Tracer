@@ -40,10 +40,3 @@ export type Document =
     comments: Comment[],
     metadata: DocumentMetadata, // the document metadata; this should be treated as a CONST by the frontend
 };
-
-// purpose: for storing a document in firestore
-export type FirebaseDocumentData =
-{
-    documentString: string,
-    metadata: string
-};
