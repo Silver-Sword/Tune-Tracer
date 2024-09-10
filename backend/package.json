@@ -3,19 +3,23 @@
   "version": "0.0.1",
   "description": "backend components of tune tracer",
   "main": "main.ts",
+  "_moduleAliases": {
+  "@lib": "../lib"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "start": "node dist/main.js",
-    "dev": "tsc && pnpm start",
-    "debug": "node --inspect-brk -r ts-node/register src/main.ts"
+    "start": "node -r module-alias/register dist/main.js",
+    "dev": "ts-node -r module-alias/register src/main.ts",
+    "debug": "node --inspect-brk -r module-alias/register -r ts-node/register src/main.ts"
   },
   "devDependencies": {
-    "@types/node": "^22.5.4",
     "ts-node": "^10.9.2"
   },
   "dependencies": {
+    "@types/node": "^22.5.4",
     "firebase": "^10.13.0",
+    "module-alias": "^2.2.3",
     "typescript": "^5.5.4"
   }
 }
