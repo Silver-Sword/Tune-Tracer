@@ -62,6 +62,14 @@ export default class FirebaseWrapper
                       .get()).exists;
     }
 
+    public async doesUserExist(userId: string): Promise<boolean>
+    {
+        return (await firebase.firestore()
+                      .collection(USER_DATABASE_NAME)
+                      .doc(userId)
+                      .get()).exists;
+    }
+
     // creates a blank composition document and returns the id of the created document
     public async createDocument(): Promise<string>
     {
@@ -87,6 +95,22 @@ export default class FirebaseWrapper
         return true;
     }
 
+    // updates a metadata field for a document
+    // throws an error if the document does not exist
+    public async updateDocumentMetadataField(documentId: string, updateObject: Record<string, unknown>)
+        : Promise<void>
+    {
+        if(!await this.doesDocumentExist(documentId))
+        {
+            throw Error(`Document with id ${documentId} does not exist`);
+        }
+
+        await firebase.firestore()
+                      .collection(DOCUMENT_DATABASE_NAME)
+                      .doc(documentId)
+                      .update(updateObject);
+    }
+
     // takes in the document unique id and returns the associated document as a JSON object
     // if the document or data doesn't exist, the function returns null
     public async getDocument(documentId: string): Promise<Document | null>
@@ -109,7 +133,7 @@ export default class FirebaseWrapper
         return data as Document;
     }
 
-    public async getDocumentField(documentId: string, field: string): Promise<string | null> {
+    public async getDocumentField<T>(documentId: string, field: string): Promise<T | null> {
         const document = (await firebase.firestore()
             .collection(DOCUMENT_DATABASE_NAME)
             .doc(documentId)
@@ -130,11 +154,7 @@ export default class FirebaseWrapper
     }
 
     public async getDocumentMetadata(documentId: string): Promise<DocumentMetadata | null> {
-        const metadata : string | null = await this.getDocumentField(documentId, "metadata");
-        if(metadata === null) {
-            return null;
-        }
-        return JSON.parse(metadata) as DocumentMetadata;
+       return await this.getDocumentField<DocumentMetadata>(documentId, "metadata");
     }
     
     // deletes the document associated with the documentId
@@ -170,8 +190,14 @@ export default class FirebaseWrapper
 
     // add a document to a list of documents that the user either owns or has access to
     // isOwned is true iff the userId is associated with the user that created the document
+    // assumption: the user must not own the document if isOwned is set to false
+    // will throw an Error if the user does not exist
     public async insertUserDocument(userId: string, documentId: string, isOwned: boolean): Promise<void>
     {
+        if(!this.doesUserExist(userId))
+        {
+            throw Error(`Trying to share document ${documentId} with user ${userId}, but user does not exist`);
+        }
         const data = firebase.firestore.FieldValue.arrayUnion(documentId);
         const updatedObject = isOwned ? {'ownedDocuments': data} : {'sharedDocuments': data};
         await firebase.firestore()

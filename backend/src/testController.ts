@@ -1,8 +1,12 @@
 import FirebaseWrapper from "./firebase-utils/FirebaseWrapper";
-import { Document,  Comment } from '@lib/documentTypes';
+import { Document,  Comment, SHARE_STYLE } from '@lib/documentTypes';
 import { createDocument, updateDocument, deleteDocument, getDocument } from './document-utils/documentOperations';
 import { getDocumentsOwnedByUser, getDocumentsSharedWithUser } from "./document-utils/documentBatchRead";
-
+import { updateDocumentShareStyle, 
+         updateDocumentEmoji, 
+         updateDocumentColor, 
+         shareDocumentWithUser, 
+         unshareDocumentWithUser } from './document-utils/updateDocumentMetadata';
 const TEST_EMAIL = "chrisgittingsucf@gmail.com";
 const TEST_PASSWORD = "ThisIsAStrongPassword*50";
 
@@ -42,11 +46,12 @@ export async function runTest()
     const firebase: FirebaseWrapper = new FirebaseWrapper();
     firebase.initApp();
     // await testSignUp(firebase);
-    await testDocumentAdd(firebase);
+    // await testDocumentAdd(firebase);
     // await testDocumentDeletion(firebase);
     // await testDocumentBatchOperations(firebase);
-    await testDocumentRead(firebase);
-    await testDocumentUpdate(firebase);
+    // await testDocumentRead(firebase);
+    // await testDocumentUpdate(firebase);
+    await testDocumentMetadataUpdate(firebase);
     // testDocumentConversion(firebase);
     process.exit(0);
 }
@@ -84,6 +89,30 @@ async function testDocumentUpdate(firebase: FirebaseWrapper)
     updatedDocumentTest.document_title = "New Document Title";
     const success = await updateDocument(updatedDocumentTest);
     console.log(`Document Update was successful: ${success ? "true" : "false"}`);
+}
+
+async function testDocumentMetadataUpdate(firebase: FirebaseWrapper)
+{
+    // initialize the document to test the update
+    const doc = await createDocument(TEST_DOCUMENT.metadata.owner_email);
+    console.log(`Document Id: ${doc.metadata.document_id}`);
+    TEST_DOCUMENT.metadata.document_id = doc.metadata.document_id;
+    const id = TEST_DOCUMENT.metadata.document_id;
+    await updateDocument(TEST_DOCUMENT);
+
+    // update the metadata
+    const promises = [
+        updateDocumentShareStyle(id, SHARE_STYLE.public_document),
+        updateDocumentColor(id, "blue"),
+        updateDocumentEmoji(id, "&#x1f602"),
+        shareDocumentWithUser(id, "jeff@sample.com"),
+        shareDocumentWithUser(id, TEST_EMAIL)
+    ];
+    await Promise.resolve(promises);
+    await unshareDocumentWithUser(id, TEST_EMAIL);
+
+    const result = await getDocument(id);
+    console.log(`Resulting Document: ${result.metadata.document_id}`);
 }
 
 async function testDocumentDeletion(firebase: FirebaseWrapper)
