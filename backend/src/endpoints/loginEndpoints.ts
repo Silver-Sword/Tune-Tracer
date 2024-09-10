@@ -1,9 +1,9 @@
 import firebase from 'firebase/compat/app'
-import { getAuth, sendEmailVerification} from 'firebase/auth';
+import { getAuth} from 'firebase/auth';
 // import 'firebase/compat/auth';
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 
-export async function signUp (email: string, password: string, displayName: string, firebase: FirebaseWrapper)
+export async function signUp (email: string, password: string, displayName: string, firebaseWrapper: FirebaseWrapper)
 {
     const passwordReqs = await checkPassword(password);
 
@@ -13,7 +13,7 @@ export async function signUp (email: string, password: string, displayName: stri
         return false;
     }
 
-    const response = await firebase.signUpNewUser(email, password, displayName);
+    const response = await firebaseWrapper.signUpNewUser(email, password, displayName);
 
     if (!response)
     {
@@ -21,13 +21,13 @@ export async function signUp (email: string, password: string, displayName: stri
     }
     else
     {
-        const auth = getAuth();
         try 
         {
-            sendEmailVerification(auth.currentUser).then(() => 
-        {
-            console.log("Success! Please check your email");
-        });
+            const user = firebase.auth().currentUser
+            if (user)
+            {
+                user.sendEmailVerification()
+            }
         } 
         catch (error)
         {
@@ -35,6 +35,8 @@ export async function signUp (email: string, password: string, displayName: stri
             return false;
         }
     }
+    
+    console.log("Success! Please check your email");
 
     return true;
 }
@@ -54,11 +56,11 @@ async function checkPassword(password: string): Promise<boolean>
     }
 }
 
-export async function login (email: string, password: string, firebase: FirebaseWrapper)
+export async function login (email: string, password: string, firebaseWrapper: FirebaseWrapper)
 {
     try
     {
-        const response = await firebase.signInUser(email, password);
+        const response = await firebaseWrapper.signInUser(email, password);
         const auth = getAuth();
         const user = auth.currentUser;
 
