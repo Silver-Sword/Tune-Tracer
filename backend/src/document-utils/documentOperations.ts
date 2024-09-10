@@ -1,4 +1,3 @@
-import { dataToDocument, documentToData } from "../firebase-utils/documentConversionUtils";
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { Document, DocumentMetadata, SHARE_STYLE } from './documentTypes'; 
 
@@ -26,7 +25,7 @@ export async function createDocument(creatorId: string): Promise<Document>
         metadata: metadata
     };
 
-    await firebase.updateDocument(documentId, documentToData(document));
+    await firebase.updateDocument(documentId, document);
     await firebase.insertUserDocument(creatorId, documentId, true);
     return document;
 }
@@ -41,7 +40,7 @@ export async function updateDocument(updatedDocument: Document): Promise<boolean
     firebase.initApp();
 
     const documentId = updatedDocument.metadata.document_id;
-    return firebase.updateDocument(documentId, documentToData(updatedDocument));
+    return firebase.updateDocument(documentId, updatedDocument);
 }
 
 // returns a promise containing the Document associated with the documentId
@@ -58,8 +57,7 @@ export async function getDocument(documentId: string): Promise<Document>
         throw Error(`Error retrieving firebase document ${documentId}. Make sure the document associated with the id and the internet connection is good.`)
     }
 
-    const document = dataToDocument(firebaseDocument);
-    return document;
+    return firebaseDocument;
 }
 
 // deletes the document associated with the given document id

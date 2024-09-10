@@ -77,8 +77,8 @@ const TestObjectsEditor: React.FC = () => {
             if (notationRef.current) {
                 score.current = new Score(
                     notationRef.current,
-                    /*defaultx*/ 10,
-                    /*defaulty*/ 40,
+                    /*defaultx*/ 20,
+                    /*defaulty*/ 0,
                     /*Measure Width*/ 325
                 );
             }
@@ -90,6 +90,7 @@ const TestObjectsEditor: React.FC = () => {
 
     return (
         <div>
+            <h1> Tune Tracer Composition Tool Demo</h1>
             <div ref={notationRef}></div>
             <div>
                 <label htmlFor="keys">Insert keys (comma-separated):</label>

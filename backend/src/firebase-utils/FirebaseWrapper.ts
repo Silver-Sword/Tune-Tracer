@@ -3,8 +3,7 @@ import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 
 import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
-import { DocumentMetadata, FirebaseDocumentData } from '../document-utils/documentTypes';
-
+import { DocumentMetadata, Document } from '../document-utils/documentTypes';
 /*
     Wrapper class for doing firebase stuff
     Remember to call .initApp() before doing anything
@@ -75,7 +74,7 @@ export default class FirebaseWrapper
 
     // takes in the new document
     // returns true iff the document exists and the update was successful
-    public async updateDocument(documentId: string, firebaseDocument: FirebaseDocumentData): Promise<boolean>
+    public async updateDocument(documentId: string, document: Document): Promise<boolean>
     {
         if(!await this.doesDocumentExist(documentId))
         {
@@ -84,16 +83,13 @@ export default class FirebaseWrapper
         await firebase.firestore()
                       .collection(DOCUMENT_DATABASE_NAME)
                       .doc(documentId)
-                      .update({
-                        "documentString" : firebaseDocument.documentString,
-                        "metadata": firebaseDocument.metadata,
-                      });
+                      .update(document);
         return true;
     }
 
     // takes in the document unique id and returns the associated document as a JSON object
     // if the document or data doesn't exist, the function returns null
-    public async getDocument(documentId: string): Promise<FirebaseDocumentData | null>
+    public async getDocument(documentId: string): Promise<Document | null>
     {
         const document = (await firebase.firestore()
             .collection(DOCUMENT_DATABASE_NAME)
@@ -106,15 +102,11 @@ export default class FirebaseWrapper
         } 
 
         const data = document.data();
-        if(data === undefined || !('documentString' in data) || !("metadata" in data))
+        if(data === null || data === undefined)
         {
             return null;
         }
-        
-        return {
-            documentString: data['documentString'],
-            metadata: data['metadata']
-        } as FirebaseDocumentData;
+        return data as Document;
     }
 
     public async getDocumentField(documentId: string, field: string): Promise<string | null> {
