@@ -3,7 +3,7 @@ import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 
 import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
-import { DocumentMetadata, Document } from '../document-utils/documentTypes';
+import { DocumentMetadata, Document } from '@lib/documentTypes';
 /*
     Wrapper class for doing firebase stuff
     Remember to call .initApp() before doing anything

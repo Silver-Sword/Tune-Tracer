@@ -1,5 +1,5 @@
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { DocumentMetadata, SHARE_STYLE } from "../document-utils/documentTypes";
+import { DocumentMetadata, SHARE_STYLE } from "@lib/documentTypes";
 
 // returns true iff a user has read access
 // takes in the email of a user and the id of the document to check
