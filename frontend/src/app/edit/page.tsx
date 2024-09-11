@@ -1,8 +1,10 @@
+'use client'
+
 import React, { useEffect, useRef, useState } from 'react';
 import Vex, { Formatter } from 'vexflow';
 import { Score } from './Score';
 
-const TestObjectsEditor: React.FC = () => {
+export default function Editor() {
     const notationRef = useRef<HTMLDivElement>(null);
     const score = useRef<Score | null>(null);
 
@@ -134,5 +136,3 @@ const TestObjectsEditor: React.FC = () => {
         </div>
     );
 };
-
-export default TestObjectsEditor;

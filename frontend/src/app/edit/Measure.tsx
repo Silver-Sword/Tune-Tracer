@@ -168,7 +168,7 @@ export class Measure {
                 }
                 // If the staveNote is a rest, then we replace it 
                 else {
-                    notes.push(new VF.StaveNote({ clef: this.clef, keys, duration}));
+                    notes.push(new VF.StaveNote({ clef: this.clef, keys, duration }));
                 }
             } else {
                 // We just add the note that existed here previously (not changing anything on this beat)
