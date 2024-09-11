@@ -3,8 +3,10 @@ import { getAuth} from 'firebase/auth';
 // import 'firebase/compat/auth';
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 
-export async function signUp (email: string, password: string, displayName: string, firebaseWrapper: FirebaseWrapper)
+export async function signUp (email: string, password: string, displayName: string)
 {
+    const firebaseWrapper = new FirebaseWrapper();
+    firebaseWrapper.initApp();
     const passwordReqs = await checkPassword(password);
 
     if (!passwordReqs)
@@ -56,8 +58,11 @@ async function checkPassword(password: string): Promise<boolean>
     }
 }
 
-export async function login (email: string, password: string, firebaseWrapper: FirebaseWrapper)
+export async function login (email: string, password: string)
 {
+    const firebaseWrapper = new FirebaseWrapper();
+    firebaseWrapper.initApp();
+
     try
     {
         const response = await firebaseWrapper.signInUser(email, password);
