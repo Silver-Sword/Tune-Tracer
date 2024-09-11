@@ -11,10 +11,6 @@ package-lock.json
 .github
 
 # private
-<<<<<<< HEAD
-firebaseSecrets.ts
-=======
-backend/firebaseSecrets.ts
->>>>>>> 8e0e4d763eab79dc8ef001fbad6a7cb2bfcfebdd
+backend/src/firebaseSecrets.ts
 
 *.js
