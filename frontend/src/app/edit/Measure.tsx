@@ -1,11 +1,12 @@
-import {Vex,Stave, StaveNote, Voice} from 'vexflow';
+import { Vex, Stave, StaveNote, Voice } from 'vexflow';
 
 
 type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
 
 const NOTE_PADDING = 50;
 const MEASURE_PADDING = 90;
-const REST_LOC =  "b/4";
+const TREBLE_REST_LOC = "b/4";
+const BASS_REST_LOC = "d/3";
 const HAT_REST_LOC = "d/5";
 
 export class Measure {
@@ -23,6 +24,8 @@ export class Measure {
     private x: number = 0;
     private y: number = 0;
     private timeSignature: string = "";
+    private clef: string = "";
+    private rest_location: string = "";
 
     constructor(
         context: RenderContext,
@@ -47,16 +50,27 @@ export class Measure {
             this.processTimeSignature(timeSignature, renderTimeSignature);
         }
         console.log("Numbeats: " + this.num_beats);
-
-        if (clef !== "none") {
-            this.setClef(clef);
+        if (clef === "none" || clef === "treble") {
+            clef = "treble";
+            this.rest_location = TREBLE_REST_LOC;
         }
+        else if (clef === "bass") {
+            this.rest_location = BASS_REST_LOC;
+        }
+        else {
+            console.error("CLEF IS INVALID");
+        }
+        // We don't want to render the clef if its none
+        if (renderTimeSignature) this.setClef(clef);
+        this.clef = clef;
+
+
 
         this.notes = [
-            new this.VF.StaveNote({ keys: [REST_LOC], duration: "qr" }),
-            new this.VF.StaveNote({ keys: [REST_LOC], duration: "qr" }),
-            new this.VF.StaveNote({ keys: [REST_LOC], duration: "qr" }),
-            new this.VF.StaveNote({ keys: [REST_LOC], duration: "qr" })
+            new this.VF.StaveNote({ clef: this.clef, keys: [this.rest_location], duration: "qr" }),
+            new this.VF.StaveNote({ clef: this.clef, keys: [this.rest_location], duration: "qr" }),
+            new this.VF.StaveNote({ clef: this.clef, keys: [this.rest_location], duration: "qr" }),
+            new this.VF.StaveNote({ clef: this.clef, keys: [this.rest_location], duration: "qr" })
         ];
 
         this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(this.notes);
@@ -96,10 +110,13 @@ export class Measure {
         return this.num_beats;
     }
 
+    getClef = (): string => {
+        return this.clef;
+    }
+
     processTimeSignature = (timeSignature: string, renderTimeSig: boolean): void => {
         if (this.stave) {
-            if(renderTimeSig)
-            {
+            if (renderTimeSig) {
                 this.stave.setTimeSignature(timeSignature);
             }
             const [numBeats, beatValue] = timeSignature.split("/").map(Number);
@@ -127,15 +144,19 @@ export class Measure {
     private isRest = (duration: string): boolean => {
         return duration.endsWith('r');
     }
-    addNote = (keys: string[], duration: string, noteId: string): void => {
-        if (this.isRest(duration)) return;
-        if (!this.voice1) return;
+
+    addNote = (keys: string[], duration: string, noteId: string): boolean => {
+        if (this.isRest(duration)) return false;
+        if (!this.voice1) return false;
+
+        let found: boolean = false;
         const VF = Vex.Flow;
         const notes: InstanceType<typeof Vex.Flow.StaveNote>[] = [];
 
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
             if (this.matchesNote(staveNote, duration, noteId)) {
+                found = true;
                 console.log("Matched StaveNote: " + staveNote);
                 if (staveNote.getNoteType() !== 'r') {
                     const newKeys = staveNote.getKeys();
@@ -143,11 +164,11 @@ export class Measure {
                         // We don't want repeat keys
                         if (!newKeys.includes(key)) newKeys.push(key);
                     });
-                    notes.push(new VF.StaveNote({ keys: newKeys, duration }));
+                    notes.push(new VF.StaveNote({ clef: this.clef, keys: newKeys, duration }));
                 }
                 // If the staveNote is a rest, then we replace it 
                 else {
-                    notes.push(new VF.StaveNote({ keys, duration }));
+                    notes.push(new VF.StaveNote({ clef: this.clef, keys, duration }));
                 }
             } else {
                 // We just add the note that existed here previously (not changing anything on this beat)
@@ -158,43 +179,43 @@ export class Measure {
         });
 
         this.voice1 = new VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
+        return found;
         // When adding a note you never want to override another note
         // However, if the StaveNote you are overriding is at REST, then override
     }
 
-    modifyDuration = (duration: string, noteId: string): void => {
-        if (!this.voice1) return;
+    modifyDuration = (duration: string, noteId: string): boolean => {
+        if (!this.voice1) return false;
         const VF = Vex.Flow;
         const notes: StaveNote[] = [];
         let ticksSeen: number = 0;
         let newRestTicks = VF.durationToTicks(duration);
 
+        let found: boolean = false;
+
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
             if (staveNote.getAttributes().id === noteId) {
+                found = true;
                 const currentNoteTicks = staveNote.getTicks().value();
                 // if we want each note duration to be less, then we'll need to pad with rests
                 if (newRestTicks < currentNoteTicks) {
                     // Calculates how many rests we can fit based on the old rest
                     const numberOfNewRests = currentNoteTicks / newRestTicks;
                     // If there was a note here, we'll preserve its keys while changing its duration
-                    if(staveNote.isRest())
-                    {
-                        notes.push(new VF.StaveNote({ keys: staveNote.getKeys(), duration: duration +"r"}));
+                    if (staveNote.isRest()) {
+                        notes.push(new VF.StaveNote({ clef: this.clef, keys: staveNote.getKeys(), duration: duration + "r" }));
                     }
-                    else 
-                    {
-                        notes.push(new VF.StaveNote({ keys: staveNote.getKeys(), duration}));
+                    else {
+                        notes.push(new VF.StaveNote({ clef: this.clef, keys: staveNote.getKeys(), duration }));
                     }
                     // start at 1 since we already added one
-                    for(let i = 1; i < numberOfNewRests; i++)
-                    {
-                        notes.push(new VF.StaveNote({ keys: [REST_LOC], duration: duration + "r"}))
+                    for (let i = 1; i < numberOfNewRests; i++) {
+                        notes.push(new VF.StaveNote({ clef: this.clef, keys: [this.rest_location], duration: duration + "r" }))
                     }
                 }
                 // Its greater than current duration... this is a bit complicated
-                else
-                {
+                else {
                     // Bigger durations should "eat" subsequent notes and rests in the measure
                     // This applies to notes both in the current measure, and after
                     // The goal is to satisfy the desired duration placement over preserving existing notes
@@ -204,7 +225,7 @@ export class Measure {
                     // Any overflow should follow the same logic with another measure and a new duration. 
                     // If we changed a note, the other measure should add that note with a slur
                     // If we changed a rest, the other measure should add the necessary rests to fill desired duration
-                    
+
                     // With dots, this logic still 
 
 
@@ -220,7 +241,9 @@ export class Measure {
         });
         this.voice1 = new VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
         // Ensure to check that the total ticks match
+
+        return found;
     }
 
-    
+
 }

@@ -79,8 +79,8 @@ export default function Editor() {
             if (notationRef.current) {
                 score.current = new Score(
                     notationRef.current,
-                    /*defaultx*/ 10,
-                    /*defaulty*/ 40,
+                    /*defaultx*/ 20,
+                    /*defaulty*/ 0,
                     /*Measure Width*/ 325
                 );
             }
@@ -92,6 +92,7 @@ export default function Editor() {
 
     return (
         <div>
+            <h1> Tune Tracer Composition Tool Demo</h1>
             <div ref={notationRef}></div>
             <div>
                 <label htmlFor="keys">Insert keys (comma-separated):</label>
