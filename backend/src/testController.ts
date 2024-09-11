@@ -2,8 +2,9 @@ import FirebaseWrapper from "./firebase-utils/FirebaseWrapper";
 import { Document,  Comment } from './document-utils/documentTypes';
 import { createDocument, updateDocument, deleteDocument, getDocument } from './document-utils/documentOperations';
 import { getDocumentsOwnedByUser, getDocumentsSharedWithUser } from "./document-utils/documentBatchRead";
+import { login, signUp } from "./endpoints/loginEndpoints"
 
-const TEST_EMAIL = "chrisgittingsucf@gmail.com";
+const TEST_EMAIL = "sophiad03@hotmail.com";
 const TEST_PASSWORD = "ThisIsAStrongPassword*50";
 
 // to test: 
@@ -41,12 +42,14 @@ export async function runTest()
 {
     const firebase: FirebaseWrapper = new FirebaseWrapper();
     firebase.initApp();
+    // await signUp(TEST_EMAIL, TEST_PASSWORD, "Sopa", firebase);
+    // await login(TEST_EMAIL, TEST_PASSWORD, firebase);
     // await testSignUp(firebase);
-    await testDocumentAdd(firebase);
-    // await testDocumentDeletion(firebase);
-    // await testDocumentBatchOperations(firebase);
-    await testDocumentRead(firebase);
-    await testDocumentUpdate(firebase);
+    // await testDocumentAdd(firebase);
+    // // await testDocumentDeletion(firebase);
+    // // await testDocumentBatchOperations(firebase);
+    // await testDocumentRead(firebase);
+    // await testDocumentUpdate(firebase);
     // testDocumentConversion(firebase);
     process.exit(0);
 }
