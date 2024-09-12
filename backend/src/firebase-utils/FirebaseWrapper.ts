@@ -12,7 +12,6 @@ import { getDefaultUser, UserEntity } from '@lib/UserEntity';
     Remember to call .initApp() before doing anything
     Note, all functions are async, so any returns are promises
 */
-
 export default class FirebaseWrapper
 {
     public initApp(): void
@@ -99,7 +98,7 @@ export default class FirebaseWrapper
         const firestoreDocument = await firebase
             .firestore()
             .collection(DOCUMENT_DATABASE_NAME)
-            .add({});  
+            .add({});
         return firestoreDocument.id;
     }
 
