@@ -3,7 +3,10 @@ import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 
 import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
+
 import { DocumentMetadata, Document } from '@lib/documentTypes';
+import { getDefaultUser, UserEntity } from '@lib/UserEntity';
+
 /*
     Wrapper class for doing firebase stuff
     Remember to call .initApp() before doing anything
@@ -19,12 +22,16 @@ export default class FirebaseWrapper
         }
     }
 
+    // creates an account for a user with the given email and password
+    // will throw an Error if the account creation failed 
+    // (see https://firebase.google.com/docs/auth/admin/errors for more details)
     public async signUpNewUser(email: string, password: string, displayName: string): Promise<boolean>
     {
+        let user;
         try {
             // user sign up
             await firebase.auth().createUserWithEmailAndPassword(email, password);
-            const user = firebase.auth().currentUser;
+            user = firebase.auth().currentUser;
             if(!user)
             {
                 throw Error('Something went wrong with user signup. User is null');
@@ -35,14 +42,30 @@ export default class FirebaseWrapper
                 displayName : displayName
             });
 
+            const userEntity: UserEntity = getDefaultUser();
+            userEntity.user_email = email;
+            userEntity.display_name = displayName;
+
             await firebase.firestore()
                           .collection(USER_DATABASE_NAME)
                           .doc(email)
-                          .set({'ownedDocuments': [] as string[]});
+                          .set(userEntity);
 
         } catch(error) {
-            console.log("Error creating user: ", (error as Error).message);
-            return false;
+            // if the account creation failed, make sure to remove all updates made to Firestore
+            await firebase.firestore()
+                          .collection(USER_DATABASE_NAME)
+                          .doc(email)
+                          .delete();
+            await user?.delete()
+                       .catch( (deletionError) => {
+                            console.log(
+                                `Another error occurred when attempted to delete the user data after the user account 
+                                 failed to be created.\nDetails: ${deletionError.message}`
+                        )});
+            
+            // rethrow the error so that the error is passed along
+            throw error;
         }
 
         return true;
@@ -178,7 +201,7 @@ export default class FirebaseWrapper
             return [];
         } 
 
-        const fieldName = isOwned ? 'ownedDocuments' : 'sharedDocuments';
+        const fieldName = isOwned ? 'owned_documents' : 'shared_documents';
         const data = collection.data();
         if(data === undefined || !(fieldName in data))
         {
@@ -199,7 +222,7 @@ export default class FirebaseWrapper
             throw Error(`Trying to share document ${documentId} with user ${userId}, but user does not exist`);
         }
         const data = firebase.firestore.FieldValue.arrayUnion(documentId);
-        const updatedObject = isOwned ? {'ownedDocuments': data} : {'sharedDocuments': data};
+        const updatedObject = isOwned ? {'owned_documents': data} : {'shared_documents': data};
         await firebase.firestore()
                     .collection(USER_DATABASE_NAME)
                     .doc(userId)
@@ -211,7 +234,7 @@ export default class FirebaseWrapper
     public async deleteUserDocument(userId: string, documentId: string, isOwned: boolean): Promise<void>
     {
         const data = firebase.firestore.FieldValue.arrayRemove(documentId);
-        const updatedObject = isOwned ? {'ownedDocuments': data} : {'sharedDocuments': data};
+        const updatedObject = isOwned ? {'owned_documents': data} : {'shared_documents': data};
         await firebase.firestore()
                     .collection(USER_DATABASE_NAME)
                     .doc(userId)
