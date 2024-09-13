@@ -3,8 +3,9 @@ import { Measure } from './Measure';
 
 type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
 
-const DEFAULT_MEASURE_SPACING = 10;
+const DEFAULT_MEASURE_SPACING = 100;
 const DEFAULT_NOTE_PADDING_FROM_TOP = 10;
+const DEFAULT_PADDING_IN_BETWEEN_MEASURES= 50;
 
 export class Score {
     private VF = Vex.Flow;
@@ -23,11 +24,11 @@ export class Score {
         this.default_measure_width = measureWidth;
 
         const renderer = new this.VF.Renderer(notationRef, this.VF.Renderer.Backends.SVG);
-        renderer.resize(800, 400);
+        renderer.resize(1000, 600);
         this.context = renderer.getContext();
         const firstTopMeasure = new Measure(this.context, x, y, measureWidth, timeSignature, "treble", true);
         // X and Y don't matter here because bottom measure always adjusts based on top measure
-        const firstBottomMeasure = new Measure(this.context, x, y, measureWidth, timeSignature, "bass", true);
+        const firstBottomMeasure = new Measure(this.context, x, y + DEFAULT_MEASURE_SPACING, measureWidth, timeSignature, "bass", true);
 
         this.top_measures.push(firstTopMeasure);
         this.bottom_measures.push(firstBottomMeasure);
@@ -58,15 +59,21 @@ export class Score {
     }
 
     addMeasure = (): void => {
-        const prevMeasure: Measure = this.top_measures[this.top_measures.length - 1];
         // Always add at the end for now, later we can split this into its own function
-        const x = prevMeasure.getX();
-        const y = prevMeasure.getY();
-        const timeSignature = prevMeasure.getTimeSignature();
-        const clef = prevMeasure.getClef();
+        const topPrevMeasure: Measure = this.top_measures[this.top_measures.length - 1];
+        const topX = topPrevMeasure.getX();
+        const topY = topPrevMeasure.getStave().getY();
+        const topTimeSignature = topPrevMeasure.getTimeSignature();
+        const topClef = topPrevMeasure.getClef();
 
-        const newTopMeasure = new Measure(this.context, x + this.default_measure_width, y, this.default_measure_width, timeSignature, clef, false);
-        const newBottomMeasure = new Measure(this.context, x + this.default_measure_width, y + 100, this.default_measure_width, timeSignature, clef, false);
+        const bottomPrevMeasure: Measure = this.bottom_measures[this.bottom_measures.length - 1];
+        const bottomX = bottomPrevMeasure.getX();
+        const bottomY = bottomPrevMeasure.getStave().getY();
+        const bottomTimeSignature = bottomPrevMeasure.getTimeSignature();
+        const bottomClef = bottomPrevMeasure.getClef();
+
+        const newTopMeasure = new Measure(this.context, topX + this.default_measure_width, topY, this.default_measure_width, topTimeSignature, topClef, false);
+        const newBottomMeasure = new Measure(this.context, bottomX + this.default_measure_width, bottomY, this.default_measure_width, bottomTimeSignature, bottomClef, false);
         this.top_measures.push(newTopMeasure);
         this.bottom_measures.push(newBottomMeasure);
         this.renderMeasures();
@@ -77,13 +84,20 @@ export class Score {
 
         let formatter = new Formatter();
         formatter.preFormat();
+        // We want to know the largest bounding box in this line of measures
+        // We'll use its coordinates to space all measures in the line
+        let largestTopMeasureBoundingBoxY: number = 0;
+        let largestBottomMeasureBoundingBoxY: number = 0;
+        let largestTopMeasureBoundingBoxH: number = 0;
+        let largestBottomMeasureBoundingBoxH: number = 0;
+
         for (let i = 0; i < this.top_measures.length; i++) {
             let topMeasure = this.top_measures[i];
             let bottomMeasure = this.bottom_measures[i];
             let topStave = topMeasure.getStave();
             let bottomStave = bottomMeasure.getStave();
 
-            console.log("-------------------");
+            console.log("------PREPROCESSING------");
 
             const topVoice1 = topMeasure.getVoice1();
             const bottomVoice1 = bottomMeasure.getVoice1();
@@ -101,34 +115,69 @@ export class Score {
                 console.error("topBoundingBox is NULL");
                 return;
             }
-            // Need to format to stave first to get bounding box
-            const topBoundingBoxY: number = topBoundingBox.getY();
-            let bottomBoundingBoxTopY: number = bottomBoundingBox.getY();
 
-            let topBoundingBoxBottomY = topBoundingBoxY + topBoundingBox.getH();
-            let bottomBoundingBoxBottomY = bottomBoundingBoxTopY + bottomBoundingBox.getH();
+            const topBoundingBoxTopY: number = topBoundingBox.getY();
+            const topBoundingBoxH = topBoundingBox.getH();
 
-            console.log("TopBounding Box Y: " + topBoundingBoxY);
-            console.log("TopStave Box Y: " + topStave?.getY());
+            const bottomBoundingBoxTopY: number = bottomBoundingBox.getY();
+            const bottomBoundingBoxH = bottomBoundingBox.getH();
 
-            if (topBoundingBoxY - DEFAULT_NOTE_PADDING_FROM_TOP < 0) {
-                // Multiply by -1 because its above ceiling
-                let deltaDown = (topBoundingBoxY * -1) + DEFAULT_NOTE_PADDING_FROM_TOP
-                topStave.setY(topStave.getY() + deltaDown);
-                // Make sure we update our bounding box value
-                topBoundingBoxBottomY += deltaDown;
+            if (i == 0) {
+                largestTopMeasureBoundingBoxY = topBoundingBoxTopY;
+                largestTopMeasureBoundingBoxH =  topBoundingBox.getH();
+                largestBottomMeasureBoundingBoxY = bottomBoundingBoxTopY;
+                largestBottomMeasureBoundingBoxH = bottomBoundingBox.getH();
             }
-
-            let oldY = bottomStave.getY();
-            bottomStave.setY(topBoundingBoxBottomY + DEFAULT_MEASURE_SPACING);
-            bottomBoundingBoxTopY += bottomStave.getY() - oldY;
-            console.log("bottomBoundingBoxTopY: " + bottomBoundingBoxTopY);
-            if (bottomBoundingBoxTopY < topBoundingBoxBottomY) {
-                let deltaDown = (topBoundingBoxBottomY - bottomBoundingBoxTopY) + DEFAULT_NOTE_PADDING_FROM_TOP
-                bottomStave.setY(bottomStave.getY() + deltaDown);
-                // Make sure we update our bounding box value
-                bottomBoundingBoxBottomY += deltaDown;
+            if (topBoundingBoxH > largestTopMeasureBoundingBoxH) {
+                largestTopMeasureBoundingBoxY = topBoundingBoxTopY;
+                largestTopMeasureBoundingBoxH =  topBoundingBox.getH();
             }
+            if (bottomBoundingBoxH > largestBottomMeasureBoundingBoxH) {
+                largestBottomMeasureBoundingBoxY = bottomBoundingBoxTopY;
+                largestBottomMeasureBoundingBoxH = bottomBoundingBox.getH();
+            }
+            console.log("largestTopMeasureBoundingBoxH: "+ largestTopMeasureBoundingBoxH);
+        }
+        // Figure out the Y values for the Top measure and bottom measure
+        // For now, we'll just figure out deltas for the measures
+
+        let topMeasureDeltaDown = 0;
+        // ceiling is 0 for now
+        let ceiling = 0;
+        if (largestTopMeasureBoundingBoxY < ceiling) {
+            // Difference between ceiling and top part of bounding box
+            topMeasureDeltaDown = ceiling - largestTopMeasureBoundingBoxY;
+            // Update our bounding box Y value as this delta changes it
+            largestTopMeasureBoundingBoxY += topMeasureDeltaDown;
+        }
+
+        let largestTopMeasureBoundingBoxBottomY: number = largestTopMeasureBoundingBoxY + largestTopMeasureBoundingBoxH;
+        
+
+        let bottomMeasureDeltaDown: number = 0;
+
+        // This means there is overlap between the bottom bounding box and the top bounding box
+        if (largestBottomMeasureBoundingBoxY < largestTopMeasureBoundingBoxBottomY) {
+            // Delta should be the difference 
+            console.log("THIS RAN");
+            bottomMeasureDeltaDown = DEFAULT_PADDING_IN_BETWEEN_MEASURES + (largestTopMeasureBoundingBoxBottomY-largestBottomMeasureBoundingBoxY);
+            console.log("BottomYofTopBoundingBox: " + largestTopMeasureBoundingBoxBottomY);
+            console.log("largestBottomMeasureBoundingBoxY: "+ largestBottomMeasureBoundingBoxY);
+            console.log("bottomMeasureYCoord: "+ bottomMeasureDeltaDown);
+
+        }
+
+
+        for (let i = 0; i < this.top_measures.length; i++) {
+            console.log("------RENDERING------");
+            let topMeasure = this.top_measures[i];
+            let bottomMeasure = this.bottom_measures[i];
+            let topStave = topMeasure.getStave();
+            let bottomStave = bottomMeasure.getStave();
+
+            topStave.setY(topStave.getY() + topMeasureDeltaDown);
+
+            bottomStave.setY(bottomStave.getY() + bottomMeasureDeltaDown);
 
             topStave.setContext(this.context).draw();
             bottomStave.setContext(this.context).draw();
