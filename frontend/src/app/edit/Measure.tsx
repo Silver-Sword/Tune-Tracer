@@ -44,12 +44,10 @@ export class Measure {
         this.y = y;
         this.timeSignature = timeSignature;
 
-        console.log("Context in Measure: " + context);
-
         if (timeSignature !== "none") {
             this.processTimeSignature(timeSignature, renderTimeSignature);
         }
-        console.log("Numbeats: " + this.num_beats);
+
         if (clef === "none" || clef === "treble") {
             clef = "treble";
             this.rest_location = TREBLE_REST_LOC;
@@ -74,10 +72,6 @@ export class Measure {
         ];
 
         this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(this.notes);
-
-        this.notes.forEach(note => {
-            console.log(note.getTicks());
-        });
     }
     getX = (): number => {
         return this.x;

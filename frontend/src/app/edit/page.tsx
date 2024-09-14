@@ -78,10 +78,7 @@ export default function Editor() {
             // notes fit better with a smaller staff. 
             if (notationRef.current) {
                 score.current = new Score(
-                    notationRef.current,
-                    /*defaultx*/ 20,
-                    /*defaulty*/ 0,
-                    /*Measure Width*/ 325
+                    notationRef.current
                 );
             }
         };
