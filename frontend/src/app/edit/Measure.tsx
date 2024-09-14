@@ -73,12 +73,6 @@ export class Measure {
 
         this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(this.notes);
     }
-    getX = (): number => {
-        return this.x;
-    }
-    getY = (): number => {
-        return this.y;
-    }
 
     getTimeSignature = (): string => {
         return this.timeSignature;

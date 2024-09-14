@@ -1,5 +1,6 @@
 import { Vex, Formatter, Voice } from 'vexflow';
 import { Measure } from './Measure';
+import { render } from '@testing-library/react';
 
 type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
 
@@ -7,7 +8,7 @@ const DEFAULT_MEASURE_VERTICAL_SPACING = 100;
 const DEFAULT_NOTE_PADDING_FROM_TOP = 10;
 const DEFAULT_PADDING_IN_BETWEEN_MEASURES = 50;
 const DEFAULT_RENDERER_WIDTH = 1000;
-const DEFAULT_RENDERER_HEIGHT = 600;
+const DEFAULT_RENDERER_HEIGHT = 2000;
 
 const DEFAULT_FIRST_MEASURES_X = 20;
 const DEFAULT_FIRST_MEASURES_Y = 0;
@@ -66,14 +67,14 @@ export class Score {
     addMeasure = (): void => {
         // First get all the information from the previous measure as a baseline
         let topPrevMeasure: Measure = this.top_measures[this.top_measures.length - 1];
-        let topX = topPrevMeasure.getX() + DEFAULT_MEASURE_WIDTH;
+        let topX = topPrevMeasure.getStave().getX() + DEFAULT_MEASURE_WIDTH;
         let topY = topPrevMeasure.getStave().getY();
         let topTimeSignature = topPrevMeasure.getTimeSignature();
         let topClef = topPrevMeasure.getClef();
         let renderTopTimeSig = false;
 
         let bottomPrevMeasure: Measure = this.bottom_measures[this.bottom_measures.length - 1];
-        let bottomX = bottomPrevMeasure.getX() + DEFAULT_MEASURE_WIDTH;
+        let bottomX = bottomPrevMeasure.getStave().getX() + DEFAULT_MEASURE_WIDTH;
         let bottomY = bottomPrevMeasure.getStave().getY();
         let bottomTimeSignature = bottomPrevMeasure.getTimeSignature();
         let bottomClef = bottomPrevMeasure.getClef();
@@ -98,7 +99,7 @@ export class Score {
         }
 
         this.total_width += DEFAULT_MEASURE_WIDTH;
-        console.log("Total Width: " +this.total_width)
+        console.log("Total Width: " + this.total_width)
 
         const newTopMeasure = new Measure(this.context, topX, topY, DEFAULT_MEASURE_WIDTH, topTimeSignature, topClef, renderTopTimeSig);
         const newBottomMeasure = new Measure(this.context, bottomX, bottomY, DEFAULT_MEASURE_WIDTH, bottomTimeSignature, bottomClef, renderBottomTimeSig);
@@ -107,14 +108,7 @@ export class Score {
         this.renderMeasures();
     }
 
-
-    // Figure out how many measures in a line, then put all this logic into a function to be called
-    // for each line, pass in an array of top and bottom measures, as well as a ceiling value
-    renderMeasures = (): void => {
-        this.context.clear();
-
-        let formatter = new Formatter();
-        formatter.preFormat();
+    renderMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], formatter: Formatter, ceiling: number): number => {
         // We want to know the largest bounding box in this line of measures
         // We'll use its coordinates to space all measures in the line
         let largestTopMeasureBoundingBoxY: number = 0;
@@ -122,9 +116,9 @@ export class Score {
         let largestTopMeasureBoundingBoxH: number = 0;
         let largestBottomMeasureBoundingBoxH: number = 0;
 
-        for (let i = 0; i < this.top_measures.length; i++) {
-            let topMeasure = this.top_measures[i];
-            let bottomMeasure = this.bottom_measures[i];
+        for (let i = 0; i < topMeasures.length; i++) {
+            let topMeasure = topMeasures[i];
+            let bottomMeasure = bottomMeasures[i];
             let topStave = topMeasure.getStave();
             let bottomStave = bottomMeasure.getStave();
 
@@ -142,7 +136,7 @@ export class Score {
 
             if (topBoundingBox == null || bottomBoundingBox == null) {
                 console.error("topBoundingBox is NULL");
-                return;
+                return -1;
             }
 
             const topBoundingBoxTopY: number = topBoundingBox.getY();
@@ -165,14 +159,13 @@ export class Score {
                 largestBottomMeasureBoundingBoxY = bottomBoundingBoxTopY;
                 largestBottomMeasureBoundingBoxH = bottomBoundingBox.getH();
             }
-            
+
         }
         // Figure out the Y values for the Top measure and bottom measure
         // For now, we'll just figure out deltas for the measures
 
         let topMeasureDeltaDown = 0;
-        // ceiling is 0 for now
-        let ceiling = 0;
+
         if (largestTopMeasureBoundingBoxY < ceiling) {
             // Difference between ceiling and top part of bounding box
             topMeasureDeltaDown = ceiling - largestTopMeasureBoundingBoxY;
@@ -189,13 +182,15 @@ export class Score {
         if (largestBottomMeasureBoundingBoxY < largestTopMeasureBoundingBoxBottomY) {
             // Delta should be the difference 
             bottomMeasureDeltaDown = DEFAULT_PADDING_IN_BETWEEN_MEASURES + (largestTopMeasureBoundingBoxBottomY - largestBottomMeasureBoundingBoxY);
-
+            // Update our bounding box Y value as this delta changes it
+            largestBottomMeasureBoundingBoxY += bottomMeasureDeltaDown;
         }
 
+        let largestBottomMeasureBoundingBoxBottomY: number = largestBottomMeasureBoundingBoxY + largestBottomMeasureBoundingBoxH;
 
-        for (let i = 0; i < this.top_measures.length; i++) {
-            let topMeasure = this.top_measures[i];
-            let bottomMeasure = this.bottom_measures[i];
+        for (let i = 0; i < topMeasures.length; i++) {
+            let topMeasure = topMeasures[i];
+            let bottomMeasure = bottomMeasures[i];
             let topStave = topMeasure.getStave();
             let bottomStave = bottomMeasure.getStave();
 
@@ -227,9 +222,40 @@ export class Score {
             topMeasure.getVoice1().draw(this.context, topStave);
             bottomMeasure.getVoice1().draw(this.context, bottomStave);
 
-
-
+            
         }
+        return largestBottomMeasureBoundingBoxBottomY;
+    }
+    // Figure out how many measures in a line, then put all this logic into a function to be called
+    // for each line, pass in an array of top and bottom measures, as well as a ceiling value
+    renderMeasures = (): void => {
+        this.context.clear();
+
+        let formatter = new Formatter();
+        formatter.preFormat();
+        let firstLineIndex = 0;
+        let ceiling = 0;
+        for (let i = 1; i < this.top_measures.length; i++) {
+            let currentTopMeasure = this.top_measures[i];
+            let prevTopMeasure = this.top_measures[i - 1];
+
+            // this means there was a line shift
+            if (prevTopMeasure.getStave().getY() != currentTopMeasure.getStave().getY()) {
+                console.log("Found a line break");
+                ceiling= this.renderMeasureLine(
+                    this.top_measures.slice(firstLineIndex, i),
+                    this.bottom_measures.slice(firstLineIndex, i), 
+                    formatter, ceiling);
+                firstLineIndex = i;
+                // padding for next measure lines
+                ceiling+= DEFAULT_PADDING_IN_BETWEEN_MEASURES;
+            }
+        }
+
+        this.renderMeasureLine(
+            this.top_measures.slice(firstLineIndex, this.top_measures.length), 
+            this.bottom_measures.slice(firstLineIndex, this.bottom_measures.length), 
+            formatter, ceiling);
 
         formatter.postFormat();
     }

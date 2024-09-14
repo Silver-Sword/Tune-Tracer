@@ -73,9 +73,6 @@ export default function Editor() {
         };
 
         const renderNotation = () => {
-            // It seems that the measure width is separate from how
-            // the formatter width works with voices. Subtracting 25 at when formatting helps the
-            // notes fit better with a smaller staff. 
             if (notationRef.current) {
                 score.current = new Score(
                     notationRef.current
@@ -90,7 +87,6 @@ export default function Editor() {
     return (
         <div>
             <h1> Tune Tracer Composition Tool Demo</h1>
-            <div ref={notationRef}></div>
             <div>
                 <label htmlFor="keys">Insert keys (comma-separated):</label>
                 <input
@@ -130,6 +126,7 @@ export default function Editor() {
             <button onClick={addNote}>Add note!</button>
             <button onClick={modifyDuration}>Change duration of specified element</button>
             <button onClick={addMeasureToEnd}>Add a measure to the end</button>
+            <div ref={notationRef}></div>
         </div>
     );
 };
