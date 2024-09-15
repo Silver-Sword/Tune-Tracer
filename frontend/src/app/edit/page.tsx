@@ -12,7 +12,12 @@ export default function Editor() {
     const [keys, setKeys] = useState('');
     const [duration, setDuration] = useState('');
     const [measureIndex, setMeasureIndex] = useState<number>(0);
-    const [noteId, setNoteId] = useState('');
+    const [noteId, setNoteId] = useState('auto');
+    const [firstNoteId, setFirstNoteId] = useState('auto');
+    const [firstMeasureIndex, setFirstMeasureIndex] = useState<number>(0);
+    const [secondNoteId, setSecondNoteId] = useState('auto');
+    const [secondMeasureIndex, setSecondMeasureIndex] = useState<number>(0);
+
     // Handlers for input changes
     const handleKeysChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setKeys(event.target.value);
@@ -28,14 +33,43 @@ export default function Editor() {
         if (/^[0-9]+$/.test(value)) {
             setMeasureIndex(parseInt(value, 10));
         }
-        else
-        {
+        else {
             setMeasureIndex(0);
         }
     };
 
     const handleNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setNoteId(event.target.value);
+    };
+
+    const handleFirstNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setFirstNoteId(event.target.value);
+    };
+
+    const handleSecondNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSecondNoteId(event.target.value);
+    };
+
+    const handleFirstMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        // Ensure that measureIndex is an integer or empty
+        if (/^[0-9]+$/.test(value)) {
+            setFirstMeasureIndex(parseInt(value, 10));
+        }
+        else {
+            setFirstMeasureIndex(0);
+        }
+    };
+
+    const handleSecondMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        // Ensure that measureIndex is an integer or empty
+        if (/^[0-9]+$/.test(value)) {
+            setSecondMeasureIndex(parseInt(value, 10));
+        }
+        else {
+            setSecondMeasureIndex(0);
+        }
     };
 
     const addNote = () => {
@@ -55,7 +89,7 @@ export default function Editor() {
         }
     };
 
-    const modifyDuration= () => {
+    const modifyDuration = () => {
         if (score.current) {
             score.current.modifyDurationInMeasure(
                 /*measure index*/ measureIndex,
@@ -64,6 +98,17 @@ export default function Editor() {
             );
         }
     };
+
+    const addTieBetweenNotes = () => {
+        if (score.current) {
+            score.current.addCurveBetweenNotes(
+                firstNoteId,
+                firstMeasureIndex,
+                secondNoteId,
+                secondMeasureIndex
+            )
+        }
+    }
 
     useEffect(() => {
         const clearSVG = () => {
@@ -126,6 +171,40 @@ export default function Editor() {
             <button onClick={addNote}>Add note!</button>
             <button onClick={modifyDuration}>Change duration of specified element</button>
             <button onClick={addMeasureToEnd}>Add a measure to the end</button>
+            <h2>Adding a Tie</h2>
+            <div>
+                <label htmlFor="noteId">Insert first note id:</label>
+                <input
+                    type="text"
+                    id="firstNoteId"
+                    value={firstNoteId}
+                    onChange={handleFirstNoteIdChange}
+                />
+                  <label htmlFor="measureIndex">Insert first measure index:</label>
+                <input
+                    type="text"
+                    id="firstMeasureIndex"
+                    value={firstMeasureIndex.toString()}
+                    onChange={handleFirstMeasureIndexChange}
+                />
+            </div>
+            <div>
+            <label htmlFor="noteId">Insert second note id:</label>
+                <input
+                    type="text"
+                    id="secondNoteId"
+                    value={secondNoteId}
+                    onChange={handleSecondNoteIdChange}
+                />
+                 <label htmlFor="measureIndex">Insert second measure index:</label>
+                <input
+                    type="text"
+                    id="secondMeasureIndex"
+                    value={secondMeasureIndex.toString()}
+                    onChange={handleSecondMeasureIndexChange}
+                />
+            </div>
+            <button onClick={addTieBetweenNotes}>Add Tie between notes</button>
             <div ref={notationRef}></div>
         </div>
     );

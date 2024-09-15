@@ -1,4 +1,4 @@
-import { Vex, Formatter, Voice } from 'vexflow';
+import { Vex, Formatter, StaveNote, StaveTie } from 'vexflow';
 import { Measure } from './Measure';
 import { render } from '@testing-library/react';
 
@@ -16,10 +16,35 @@ const DEFAULT_FIRST_MEASURES_Y = 0;
 const DEFAULT_MEASURE_WIDTH = 325;
 const DEFAULT_SPACING_BETWEEN_LINES_OF_MEASURES = 200;
 
+class TieObject {
+    private firstNote: StaveNote | null;
+    private secondNote: StaveNote | null;
+    private same_measure: boolean;
+
+    constructor(firstNote: StaveNote | null,
+        secondNote: StaveNote | null,
+        same_measure: boolean
+    ) {
+        this.firstNote = firstNote;
+        this.secondNote = secondNote;
+        this.same_measure = same_measure;
+    }
+    getFirstNote() {
+        return this.firstNote;
+    }
+    getSecondNote() {
+        return this.secondNote;
+    }
+    inSameMeasure() {
+        return this.same_measure;
+    }
+}
+
 export class Score {
     private VF = Vex.Flow;
     private top_measures: Measure[] = [];
     private bottom_measures: Measure[] = [];  // both are equal in length
+    private ties: TieObject[] = [];
     private context: RenderContext;
     private total_width: number = 0;
 
@@ -50,6 +75,35 @@ export class Score {
         if (!this.top_measures[measureIndex].addNote(keys, duration, noteId)) {
             this.bottom_measures[measureIndex].addNote(keys, duration, noteId)
         }
+        this.renderMeasures();
+    }
+
+    searchForNote = (noteId: string, measureIndex: number): StaveNote | null => {
+        let note: StaveNote | null = this.top_measures[measureIndex].getStaveNote(noteId, /*filter rests*/true);
+        console.log("At search for Note, note is: " + note);
+        if (note === null) {
+            note = this.bottom_measures[measureIndex].getStaveNote(noteId, /*filter rests*/true);
+        }
+        return note;
+    }
+
+    addCurveBetweenNotes = (
+        firstNoteId: string,
+        firstNoteMeasureIndex: number,
+        secondNoteId: string,
+        secondNoteMeasureIndex: number
+    ): void => {
+        // Need to make sure the notes have the same pitch before allowing a tie
+        // Note however that this doesn't apply to slurs, so this function should be generalized
+        let firstNote: StaveNote | null = this.searchForNote(firstNoteId, firstNoteMeasureIndex);
+
+        if (firstNote == null) return;
+        console.log("Found first!");
+        let secondNote: StaveNote | null = this.searchForNote(secondNoteId, secondNoteMeasureIndex);
+        if (secondNote == null) return;
+        console.log("Found second!");
+        this.ties.push(new TieObject(firstNote, secondNote, firstNoteMeasureIndex === secondNoteMeasureIndex));
+
         this.renderMeasures();
     }
 
@@ -222,7 +276,7 @@ export class Score {
             topMeasure.getVoice1().draw(this.context, topStave);
             bottomMeasure.getVoice1().draw(this.context, bottomStave);
 
-            
+
         }
         return largestBottomMeasureBoundingBoxBottomY;
     }
@@ -242,20 +296,39 @@ export class Score {
             // this means there was a line shift
             if (prevTopMeasure.getStave().getY() != currentTopMeasure.getStave().getY()) {
                 console.log("Found a line break");
-                ceiling= this.renderMeasureLine(
+                ceiling = this.renderMeasureLine(
                     this.top_measures.slice(firstLineIndex, i),
-                    this.bottom_measures.slice(firstLineIndex, i), 
+                    this.bottom_measures.slice(firstLineIndex, i),
                     formatter, ceiling);
                 firstLineIndex = i;
                 // padding for next measure lines
-                ceiling+= DEFAULT_PADDING_IN_BETWEEN_MEASURES;
+                ceiling += DEFAULT_PADDING_IN_BETWEEN_MEASURES;
             }
         }
 
         this.renderMeasureLine(
-            this.top_measures.slice(firstLineIndex, this.top_measures.length), 
-            this.bottom_measures.slice(firstLineIndex, this.bottom_measures.length), 
+            this.top_measures.slice(firstLineIndex, this.top_measures.length),
+            this.bottom_measures.slice(firstLineIndex, this.bottom_measures.length),
             formatter, ceiling);
+
+        // From this point forward we render all elements that need voices to be drawn to be able to get placed
+
+        // Render Ties/Curves
+        this.ties.forEach(tieObject => {
+            console.log("Got here!");
+            if (tieObject.inSameMeasure()) {
+                // Create a tie between the twonotes
+                const tie = new StaveTie({
+                    first_note: tieObject.getFirstNote(),
+                    last_note: tieObject.getSecondNote(),
+                });
+
+                // Draw the tie
+                tie.setContext(this.context).draw();
+                console.log("Drawneee!");
+            }
+
+        });
 
         formatter.postFormat();
     }

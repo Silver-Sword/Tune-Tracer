@@ -1,4 +1,4 @@
-import { Vex, Stave, StaveNote, Voice } from 'vexflow';
+import { Vex, Stave, StaveNote, Voice, Tickable } from 'vexflow';
 
 
 type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
@@ -168,6 +168,33 @@ export class Measure {
 
         this.voice1 = new VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
         return found;
+        // When adding a note you never want to override another note
+        // However, if the StaveNote you are overriding is at REST, then override
+    }
+
+    getStaveNote = (noteId: string, filterRests: boolean): StaveNote | null => {
+        console.log("------------");
+        console.log("input note id: " + noteId);
+        let voice1Array: Tickable[] = this.voice1.getTickables();
+        for (let i = 0; i < voice1Array.length; i++) {
+
+            let staveNote = voice1Array[i] as StaveNote;
+
+            console.log("NOteID: " + staveNote.getAttributes().id + " isRest: " + staveNote.isRest());
+            if (filterRests) {
+                if (staveNote.isRest() === undefined && staveNote.getAttributes().id === noteId) {
+                    console.log("FOUNDDDDDD: " + noteId + "staveNote: " + staveNote);
+
+                    return staveNote;
+                }
+            }
+            else {
+                if (staveNote.getAttributes().id === noteId) return staveNote;
+            }
+
+        }
+
+        return null;
         // When adding a note you never want to override another note
         // However, if the StaveNote you are overriding is at REST, then override
     }
