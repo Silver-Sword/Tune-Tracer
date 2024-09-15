@@ -1,13 +1,13 @@
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
+import FirebaseWrapper from "../utils/firebase-utils/FirebaseWrapper";
 import { Document,  Comment, SHARE_STYLE } from '@lib/documentTypes';
-import { createDocument, updateDocument, deleteDocument, getDocument } from '../document-utils/documentOperations';
-import { getDocumentsOwnedByUser, getDocumentsSharedWithUser } from "../document-utils/documentBatchRead";
-import { subscribeToDocumentUpdates } from "../document-utils/realtimeDocumentUpdates";
+import { createDocument, updateDocument, deleteDocument, getDocument } from '../utils/document-utils/documentOperations';
+import { getDocumentsOwnedByUser, getDocumentsSharedWithUser } from "../utils/document-utils/documentBatchRead";
+import { subscribeToDocumentUpdates } from "../utils/document-utils/realtimeDocumentUpdates";
 import { updateDocumentShareStyle, 
          updateDocumentEmoji, 
          updateDocumentColor, 
          shareDocumentWithUser, 
-         unshareDocumentWithUser } from '../document-utils/updateDocumentMetadata';
+         unshareDocumentWithUser } from '../utils/document-utils/updateDocumentMetadata';
 
 import { isEqual } from 'lodash';
 

@@ -2,7 +2,7 @@ import firebase from 'firebase/compat/app'
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 
-import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
+import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../../firebaseSecrets'
 
 import { DocumentMetadata, Document } from '@lib/documentTypes';
 import { getDefaultUser, UserEntity } from '@lib/UserEntity';

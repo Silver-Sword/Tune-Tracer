@@ -1,7 +1,7 @@
 import firebase from 'firebase/compat/app'
 import { getAuth} from 'firebase/auth';
 // import 'firebase/compat/auth';
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
+import FirebaseWrapper from "../utils/firebase-utils/FirebaseWrapper";
 
 export async function signUp (email: string, password: string, displayName: string, firebaseWrapper: FirebaseWrapper)
 {
