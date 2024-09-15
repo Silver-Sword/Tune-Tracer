@@ -2,6 +2,7 @@ import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { Document,  Comment, SHARE_STYLE } from '@lib/documentTypes';
 import { createDocument, updateDocument, deleteDocument, getDocument } from '../document-utils/documentOperations';
 import { getDocumentsOwnedByUser, getDocumentsSharedWithUser } from "../document-utils/documentBatchRead";
+import { subscribeToDocumentUpdates } from "../document-utils/realtimeDocumentUpdates";
 import { updateDocumentShareStyle, 
          updateDocumentEmoji, 
          updateDocumentColor, 
@@ -61,6 +62,26 @@ export async function runTest()
     // await testDocumentMetadataUpdate(firebase);
     // testDocumentConversion(firebase);
     process.exit(0);
+}
+
+export async function testDocumentChanges()
+{
+    // create the document
+    const SOURCE_DOCUMENT = JSON.parse(JSON.stringify(TEST_DOCUMENT)) as Document;
+    const document = await createDocument(TEST_DOCUMENT.metadata.owner_email);
+    const id = document.metadata.document_id;
+    SOURCE_DOCUMENT.metadata.document_id = id;
+    console.log(`Document Id: ${id}`);
+    await updateDocument(SOURCE_DOCUMENT);
+
+    let currentDocument = SOURCE_DOCUMENT;
+
+    // subscribe to updates
+    subscribeToDocumentUpdates(id, (updatedDocument: Document) => {
+        console.log(`Detected changes in document ${id}`);
+        console.log(`Updated Document: ${JSON.stringify(updatedDocument)}`);
+        currentDocument = updatedDocument;
+    });
 }
 
 async function testSignUp(firebase: FirebaseWrapper)

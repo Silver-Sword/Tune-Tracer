@@ -239,4 +239,12 @@ export default class FirebaseWrapper
                     .doc(userId)
                     .update(updatedObject);
     }
+
+    public async subscribeToDocument(documentId: string, onSnapshotFn: (snapshot: firebase.firestore.DocumentSnapshot) => void) 
+    {
+        firebase.firestore()
+                .collection(DOCUMENT_DATABASE_NAME)
+                .doc(documentId)
+                .onSnapshot( onSnapshotFn);
+    }
 }
