@@ -15,7 +15,8 @@ const filterLabels = [
 
 export default function storage() {
     const [active, setActive] = useState('All');
-    
+    const [value, setValue] = useState('');
+
     // const tabs = filterLabels.map((item)) =>
 
 
@@ -31,7 +32,7 @@ export default function storage() {
                     flexDirection: 'column',
                 }}
             >
-                <Group justify='space-between'>
+                <Group justify='space-between' px="lg">
                     <Text>Tune Tracer</Text>
 
                     <TextInput
@@ -39,6 +40,9 @@ export default function storage() {
                     size="sm"
                     radius="xl"
                     placeholder="Search compositions"
+
+                    value={value}
+                    onChange={(event) => setValue(event. currentTarget.value)}
                    />
 
                     <Button component='a' href='/login'>Profile</Button>
