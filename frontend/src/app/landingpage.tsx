@@ -19,7 +19,7 @@ export default function LandingPage() {
                 <Group justify='space-between'>
                     <Text>Tune Tracer</Text>
                     <Group>
-                        <Button component='a' href='/login'>Login</Button>
+                        <Button component='a' href='/collabDemo'>Login</Button>
                         <Button component='a' href='/signup'>Sign Up</Button>
                     </Group>
                 </Group>
