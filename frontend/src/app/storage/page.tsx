@@ -1,23 +1,40 @@
 'use client'
 
 import React, { useState } from 'react';
-import { AppShell, Container, Text, Button, Grid, Image, Title, Center, Group, Space, TextInput, Skeleton, Code } from '@mantine/core';
-// import classes from './NavbarSimple.module.css';
+import { AppShell, Container, Text, Button, Grid, Image, Title, Center, Group, Space, TextInput, Skeleton, Code, rem } from '@mantine/core';
+import { IconSearch} from '@tabler/icons-react';
+import FiltersNavbar from './FiltersNavbar';
+// import classes from 'NavbarSimple.module.css' assert {type: 'css'};
 
 const filterLabels = [
-    'All',
-    'Shared with you',
-    'Favorites',
-    'Recents',
-    'A-Z',
+    { link: '', label: 'All'},
+    { link: '', label:'Shared with you'},
+    { link: '', label:'Favorites'},
+    { link: '', label:'Recents'},
+    { link: '', label:'A-Z'},
 ];
-
 
 export default function storage() {
     const [active, setActive] = useState('All');
     const [value, setValue] = useState('');
+    const icon = <IconSearch style={{ width: rem(16), height: rem(16)}} />;
+    // const tabs = filterLabels.map((item) => (
+    //     <a
+    //         className={classes.link}
+    //         data-active={item.label === active || undefined }
+    //         href = {item.link}
+    //         key = {item.label}
+    //         onClick={(event) => {
+    //             event.preventDefault();
+    //             setActive(item.label);
+    //         }}
+    //     >
+    //         <span>{item.label}</span>
+    //     </a>
+    // ));
 
-    // const tabs = filterLabels.map((item)) =>
+
+
 
 
     return (
@@ -34,15 +51,17 @@ export default function storage() {
             >
                 <Group justify='space-between' px="lg">
                     <Text>Tune Tracer</Text>
-
+ 
                     <TextInput
                     variant="filled"
                     size="sm"
                     radius="xl"
                     placeholder="Search compositions"
+                    leftSectionPointerEvents="none"
+                    leftSection={icon}
 
                     value={value}
-                    onChange={(event) => setValue(event. currentTarget.value)}
+                    onChange={(event) => setValue(event.currentTarget.value)}
                    />
 
                     <Button component='a' href='/login'>Profile</Button>
@@ -50,21 +69,12 @@ export default function storage() {
                 </Group>
             </AppShell.Header>
 
-            <AppShell.Navbar p="xl">
-                Filters WIP
-                {
-                // Array(5)
-                // .fill(0)
-                filterLabels.map((_, index) => (
-                    <Skeleton key={index} h={28} mt="xl" animate={false} />
-                ))}
-            </AppShell.Navbar>
-
+            <FiltersNavbar />
 
             {/* Placeholder  */}
             <AppShell.Main>
-                {/* Hero Section */}
-                <Container
+                 {/* Hero Section */}
+                 <Container
                     fluid
                     style={{
                         height: '70vh',
@@ -83,16 +93,8 @@ export default function storage() {
 
                 {/* Blurb */}
                 <Container size='xl'>
-                    <Grid justify='space-between'>
-                        <Grid.Col span={4}>
-                            <Text>Welcome to Tune Tracer, where music composition meets innovation and collaboration. Our platform transforms your musical ideas into beautiful sheet music, effortlessly saved to the cloud. Whether you're a seasoned composer or a budding musician, our intuitive tools empower you to create, edit, and share your compositions with ease. Dive into a world where creativity knows no bounds – collaborate in real time, explore new possibilities, and let your musical dreams take flight. Join us today and start making music that resonates.</Text>
-                        </Grid.Col>
-                        <Grid.Col span={7}>
-                            
-                        </Grid.Col>
-                    </Grid>
                 </Container>
-            </AppShell.Main>
-        </AppShell>
+             </AppShell.Main>
+         </AppShell>
     );
 }
