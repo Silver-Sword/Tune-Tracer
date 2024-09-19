@@ -1,21 +1,21 @@
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { getDocument } from "./documentOperations";
-import { Document } from '@lib/documentTypes';
+import { getDocumentPreview } from "./documentOperations";
+import { DocumentPreview } from '@lib/documentTypes';
 
 // returns all documents created by the user associated with the userId
-export async function getDocumentsOwnedByUser(userEmail: string): Promise<Document[]>
+export async function getDocumentPreviewsOwnedByUser(userEmail: string): Promise<DocumentPreview[]>
 {
-    return getDocumentsByUser(userEmail, true);
+    return getDocumentPreviewsByUser(userEmail, true);
 }
 
 // returns all documents shared with the user associated with the userEmail
 // this function does not distinguish between view-only shares, comment-able shares, or edit shares
-export async function getDocumentsSharedWithUser(userEmail: string): Promise<Document[]>
+export async function getDocumentPreviewsSharedWithUser(userEmail: string): Promise<DocumentPreview[]>
 {
-    return getDocumentsByUser(userEmail, false);
+    return getDocumentPreviewsByUser(userEmail, false);
 }
 
-async function getDocumentsByUser(userEmail: string, isOwned: boolean): Promise<Document[]>
+async function getDocumentPreviewsByUser(userEmail: string, isOwned: boolean): Promise<DocumentPreview[]>
 {
     const firebase = new FirebaseWrapper();
     firebase.initApp();
@@ -24,7 +24,7 @@ async function getDocumentsByUser(userEmail: string, isOwned: boolean): Promise<
     for(const id of documentIdList)
     {
         try {
-            const document = await getDocument(id, userEmail);
+            const document = await getDocumentPreview(id, userEmail);
             if(document === null || document === undefined) {
                 continue;
             }

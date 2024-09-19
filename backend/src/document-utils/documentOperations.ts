@@ -1,5 +1,5 @@
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { Document, DocumentMetadata, SHARE_STYLE } from '@lib/documentTypes'; 
+import { Document, DocumentMetadata, DocumentPreview, SHARE_STYLE } from '@lib/documentTypes'; 
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';
 
 // NOTE: UPDATE MODIFIES the document that is passed to it
@@ -93,6 +93,16 @@ export async function getDocument(documentId: string, readerEmail: string): Prom
         throw Error(`User with email ${readerEmail} does not have read access to document with id ${documentId}`);
     }
     return firebaseDocument;
+}
+
+// gets a Document and extracts and returns its DocumentPreview
+export async function getDocumentPreview(documentId: string, readerEmail: string): Promise<DocumentPreview>
+{
+    const document = await getDocument(documentId, readerEmail);
+    return {
+        ...document.metadata, 
+        ...{document_title: document.document_title}
+    };
 }
 
 // deletes the document associated with the given document id
