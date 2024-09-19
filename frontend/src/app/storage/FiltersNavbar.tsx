@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
-import { AppShell, Button, Group, Stack } from '@mantine/core';
+import React, { useState } from "react";
+import { AppShell, Button, Stack } from "@mantine/core";
 
-// Your filter labels
 const filterLabels = [
-  { link: '', label: 'All' },
-  { link: '', label: 'Shared with you' },
-  { link: '', label: 'Favorites' },
-  { link: '', label: 'Recents' },
-  { link: '', label: 'A-Z' },
+  { link: "", label: "All" },
+  { link: "", label: "Shared with you" },
+  { link: "", label: "Favorites" },
+  { link: "", label: "Recents" },
+  { link: "", label: "A-Z" },
 ];
 
 // Define a type for the filter labels
@@ -17,7 +16,7 @@ type FilterLabel = {
 };
 
 const FiltersNavbar: React.FC = () => {
-  const [activeFilter, setActiveFilter] = useState<string>('All'); // State to track the active filter
+  const [activeFilter, setActiveFilter] = useState<string>("All"); // State to track the active filter
 
   // Function to handle filter changes
   const handleFilterClick = (label: string) => {
@@ -26,16 +25,12 @@ const FiltersNavbar: React.FC = () => {
   };
 
   return (
-    <AppShell.Navbar
-      p="xl"
-    >
-      <Stack
-        gap="xs">
-        
+    <AppShell.Navbar p="xl">
+      <Stack gap="xs">
         {filterLabels.map((filter: FilterLabel) => (
           <Button
             key={filter.label}
-            variant={activeFilter === filter.label ? 'filled' : 'outline'}
+            variant={activeFilter === filter.label ? "filled" : "outline"}
             fullWidth
             onClick={() => handleFilterClick(filter.label)}
           >
