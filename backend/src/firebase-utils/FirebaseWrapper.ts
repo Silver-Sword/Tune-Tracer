@@ -104,6 +104,7 @@ export default class FirebaseWrapper
 
     // takes in the new document
     // returns true iff the document exists and the update was successful
+    // UNUSED
     public async updateDocument(documentId: string, document: Document): Promise<boolean>
     {
         if(!await this.doesDocumentExist(documentId))
@@ -117,10 +118,10 @@ export default class FirebaseWrapper
         return true;
     }
 
-    // updates a metadata field for a document
+    // updates somes field in a document
     // throws an error if the document does not exist
-    public async updateDocumentMetadataField(documentId: string, updateObject: Record<string, unknown>)
-        : Promise<void>
+    public async updatePartialDocument(documentId: string, updateObject: Record<string, unknown>)
+        : Promise<boolean>
     {
         if(!await this.doesDocumentExist(documentId))
         {
@@ -131,6 +132,7 @@ export default class FirebaseWrapper
                       .collection(DOCUMENT_DATABASE_NAME)
                       .doc(documentId)
                       .update(updateObject);
+        return true;
     }
 
     // takes in the document unique id and returns the associated document as a JSON object
