@@ -1,13 +1,15 @@
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { Document,  SHARE_STYLE } from '@lib/documentTypes';
 import { createDocument, updateDocument, deleteDocument, getDocument } from '../document-utils/documentOperations';
-import { getDocumentsOwnedByUser, getDocumentsSharedWithUser } from "../document-utils/documentBatchRead";
+import { getDocumentPreviewsOwnedByUser, getDocumentPreviewsSharedWithUser } from "../document-utils/documentBatchRead";
 import { subscribeToDocumentUpdates } from "../document-utils/realtimeDocumentUpdates";
-import { updateDocumentShareStyle, 
-         updateDocumentEmoji, 
-         updateDocumentColor, 
-         shareDocumentWithUser, 
-         unshareDocumentWithUser } from '../document-utils/updateDocumentMetadata';
+import { 
+    updateDocumentShareStyle,       
+    updateDocumentEmoji, 
+    updateDocumentColor, 
+    shareDocumentWithUser, 
+    unshareDocumentWithUser 
+} from '../document-utils/updateDocumentMetadata';
 
 import { isEqual } from 'lodash';
 
@@ -179,8 +181,8 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
 
     // grab the stored information
     const databaseDocument = await getDocument(id, PRIMARY_TEST_EMAIL);
-    const secondaryUserShares = await getDocumentsSharedWithUser(SECONDARY_TEST_EMAIL);
-    const tertiaryUserShares = await getDocumentsSharedWithUser(TERTIARY_TEST_EMAIL);
+    const secondaryUserShares = await getDocumentPreviewsSharedWithUser(SECONDARY_TEST_EMAIL);
+    const tertiaryUserShares = await getDocumentPreviewsSharedWithUser(TERTIARY_TEST_EMAIL);
 
     // verification checks
     SOURCE_DOCUMENT.metadata.last_edit_time = databaseDocument.metadata.last_edit_time;
@@ -188,10 +190,10 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
     assert(isEqual(SOURCE_DOCUMENT, databaseDocument));
     // the shared document is in the shared list
     assert(secondaryUserShares.filter((sharedDoc) => 
-        sharedDoc.metadata.document_id === id)
+        sharedDoc.document_id === id)
         .length > 0);
     // the shared document is not in the shared list
     assert(tertiaryUserShares.filter((sharedDoc) => 
-        sharedDoc.metadata.document_id === id)
+        sharedDoc.document_id === id)
         .length === 0);
 }
