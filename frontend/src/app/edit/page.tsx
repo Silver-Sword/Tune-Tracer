@@ -101,7 +101,7 @@ export default function Editor() {
 
     const addTieBetweenNotes = () => {
         if (score.current) {
-            score.current.addCurveBetweenNotes(
+            score.current.addTieBetweenNotes(
                 firstNoteId,
                 firstMeasureIndex,
                 secondNoteId,
