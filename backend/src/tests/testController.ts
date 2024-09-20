@@ -134,7 +134,7 @@ TODO
 // there's probably a better way to do this
 function assert(condition: any, msg?: string): asserts condition {
     if (!condition) {
-        console.error(msg);
+        if(msg) console.error(msg);
         process.exit(1);
     }
 }
@@ -164,7 +164,7 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
 
     // update the metadata to alternative values
     await Promise.all([
-        updateDocumentShareStyle(id, SHARE_STYLE.public_document, PRIMARY_TEST_EMAIL),
+        updateDocumentShareStyle(id, SHARE_STYLE.edit_list, PRIMARY_TEST_EMAIL),
         updateDocumentColor(id, "blue", PRIMARY_TEST_EMAIL),
         updateDocumentEmoji(id, "&#x1f602", PRIMARY_TEST_EMAIL),
         shareDocumentWithUser(id, SECONDARY_TEST_EMAIL, PRIMARY_TEST_EMAIL),
@@ -174,7 +174,7 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
     await updateDocumentEmoji(id, ":celebration:", SECONDARY_TEST_EMAIL);
 
     // update source of truth
-    SOURCE_DOCUMENT.metadata.share_style = SHARE_STYLE.public_document;
+    SOURCE_DOCUMENT.metadata.share_style = SHARE_STYLE.edit_list;
     SOURCE_DOCUMENT.metadata.preview_color = "blue";
     SOURCE_DOCUMENT.metadata.preview_emoji = ":celebration:";
     SOURCE_DOCUMENT.metadata.share_list = [SECONDARY_TEST_EMAIL];
@@ -187,13 +187,17 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
     // verification checks
     SOURCE_DOCUMENT.metadata.last_edit_time = databaseDocument.metadata.last_edit_time;
     SOURCE_DOCUMENT.metadata.last_edit_user = SECONDARY_TEST_EMAIL;
-    assert(isEqual(SOURCE_DOCUMENT, databaseDocument));
+    assert(isEqual(SOURCE_DOCUMENT, databaseDocument), `Source document and firestore document are not equal`);
     // the shared document is in the shared list
-    assert(secondaryUserShares.filter((sharedDoc) => 
-        sharedDoc.document_id === id)
-        .length > 0);
+    assert(secondaryUserShares
+                .filter((sharedDoc) => sharedDoc.document_id === id)
+                .length > 0,
+            `Secondary user shared list not updated with the new document id`
+    );
     // the shared document is not in the shared list
-    assert(tertiaryUserShares.filter((sharedDoc) => 
-        sharedDoc.document_id === id)
-        .length === 0);
+    assert(tertiaryUserShares
+                .filter((sharedDoc) => sharedDoc.document_id === id)
+                .length === 0,
+            `Tertiary user has new document id in its shared list, but shouldn't`        
+    );
 }
