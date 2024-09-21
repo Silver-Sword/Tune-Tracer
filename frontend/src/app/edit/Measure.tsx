@@ -136,7 +136,6 @@ export class Measure {
     addNote = (keys: string[], duration: string, noteId: string): boolean => {
         if (this.isRest(duration)) return false;
         if (!this.voice1) return false;
-
         let found: boolean = false;
         const VF = Vex.Flow;
         const notes: InstanceType<typeof Vex.Flow.StaveNote>[] = [];
@@ -189,6 +188,7 @@ getStaveNote = (noteId: string, filterRests: boolean): StaveNote | null => {
 }
 
 modifyDuration = (duration: string, noteId: string): boolean => {
+    // Should remove ties
     if (!this.voice1) return false;
     const VF = Vex.Flow;
     const notes: StaveNote[] = [];
