@@ -2,7 +2,7 @@ import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { Document,  SHARE_STYLE } from '@lib/documentTypes';
 import { createDocument, updateDocument, deleteDocument, getDocument } from '../document-utils/documentOperations';
 import { getDocumentPreviewsOwnedByUser, getDocumentPreviewsSharedWithUser } from "../document-utils/documentBatchRead";
-import { subscribeToDocumentUpdates } from "../document-utils/realtimeDocumentUpdates";
+import { registerUserToDocument, subscribeToDocumentUpdates } from "../document-utils/realtimeDocumentUpdates";
 import { 
     updateDocumentShareStyle,       
     updateDocumentEmoji, 
@@ -53,14 +53,21 @@ export async function runTest()
 {
     const firebase: FirebaseWrapper = new FirebaseWrapper();
     firebase.initApp();
-    await testDocumentMetadataUpdates(firebase);
 
+    // await runAllUnitTests(firebase);
+    registerUserToDocument("2R6buaMylmCuus32I0vp", {user_email: PRIMARY_TEST_EMAIL, user_id: "testing_id_1", display_name: "USER 1"});
+    
     // await testSignUp(firebase);
     // await testDocumentDeletion(firebase);
     // await testDocumentUpdate(firebase);
-
+    
     console.log(`Tests completed successfully`);
-    process.exit(0);
+    // process.exit(0);
+}
+
+async function runAllUnitTests(firebase: FirebaseWrapper)
+{
+    await testDocumentMetadataUpdates(firebase);
 }
 
 export async function testDocumentChanges()

@@ -1,3 +1,4 @@
+import { UserEntity } from "@lib/UserEntity";
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { Document } from "@lib/documentTypes";
 
@@ -20,4 +21,20 @@ export async function subscribeToDocumentUpdates(
       onUpdateFn(snapshot.data() as Document);
     }
   });
+}
+
+export async function registerUserToDocument(
+    documentId: string, 
+    user: {user_email: string, user_id: string, display_name: string}
+){
+    const firebase = new FirebaseWrapper();
+    firebase.initApp();
+
+    // check if document exists (TO DO: remove the need for this check)
+    if(!firebase.doesDocumentExist(documentId))
+    {
+        throw Error(`Trying to register user ${user.user_email} to nonexistant document ${documentId}`);
+    }
+
+    await firebase.registerUserToDocument(documentId, user);
 }
