@@ -251,7 +251,7 @@ export class Score {
         if (notePair == null) {
             // It may be in bottom
             top = false;
-            notePair = this.searchForNotePairs(firstNoteId, firstNoteMeasureIndex, /*bottom*/true);
+            notePair = this.searchForNotePairs(firstNoteId, firstNoteMeasureIndex, /*top*/false);
         }
         // If notePair is null, then it couldn't find first note
         if (notePair == null) return;
