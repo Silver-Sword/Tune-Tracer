@@ -10,7 +10,8 @@ export default function Editor() {
     // State for each input field
     const [keys, setKeys] = useState('');
     const [duration, setDuration] = useState('');
-    const [measureIndex, setMeasureIndex] = useState<number>(0);
+    const [addNoteMeasureIndex, setAddNoteMeasureIndex] = useState<number>(0);
+    const [durationMeasureIndex, setDurationNoteMeasureIndex] = useState<number>(0);
     const [addNoteId, setAddNoteId] = useState('auto');
     const [durationNoteId, setDurationNoteId] = useState('auto');
     const [firstNoteId, setFirstNoteId] = useState('auto');
@@ -26,14 +27,25 @@ export default function Editor() {
         setDuration(event.target.value);
     };
 
-    const handleMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAddNoteMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
         // Ensure that measureIndex is an integer or empty
         if (/^[0-9]+$/.test(value)) {
-            setMeasureIndex(parseInt(value, 10));
+            setAddNoteMeasureIndex(parseInt(value, 10));
         }
         else {
-            setMeasureIndex(0);
+            setAddNoteMeasureIndex(0);
+        }
+    };
+
+    const handleDurationMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        // Ensure that measureIndex is an integer or empty
+        if (/^[0-9]+$/.test(value)) {
+            setDurationNoteMeasureIndex(parseInt(value, 10));
+        }
+        else {
+            setDurationNoteMeasureIndex(0);
         }
     };
 
@@ -49,7 +61,7 @@ export default function Editor() {
     const handleFirstNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFirstNoteId(event.target.value);
     };
-    
+
     const handleFirstMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
         // Ensure that measureIndex is an integer or empty
@@ -64,7 +76,7 @@ export default function Editor() {
     const addNote = () => {
         if (score.current) {
             score.current.addNoteInMeasure(
-                /*measure index*/ measureIndex,
+                /*measure index*/ addNoteMeasureIndex,
                 /*keys*/keys.split(','),
                 /*noteId*/ addNoteId
             );
@@ -80,7 +92,7 @@ export default function Editor() {
     const modifyDuration = () => {
         if (score.current) {
             score.current.modifyDurationInMeasure(
-                /*measure index*/ measureIndex,
+                /*measure index*/ durationMeasureIndex,
                 /*duration*/ duration,
                 /*noteId*/ durationNoteId
             );
@@ -137,6 +149,15 @@ export default function Editor() {
                     onChange={handleAddNoteIdChange}
                 />
             </div>
+            <div>
+                <label htmlFor="measureIndex">Insert measure index:</label>
+                <input
+                    type="text"
+                    id="measureIndex"
+                    value={addNoteMeasureIndex.toString()}
+                    onChange={handleAddNoteMeasureIndexChange}
+                />
+            </div>
             <button onClick={addNote}>Add note!</button>
             <h2>Changing Duration</h2>
             <div>
@@ -153,8 +174,8 @@ export default function Editor() {
                 <input
                     type="text"
                     id="measureIndex"
-                    value={measureIndex.toString()}
-                    onChange={handleMeasureIndexChange}
+                    value={durationMeasureIndex.toString()}
+                    onChange={handleDurationMeasureIndexChange}
                 />
             </div>
             <div>
@@ -177,7 +198,7 @@ export default function Editor() {
                     value={firstNoteId}
                     onChange={handleFirstNoteIdChange}
                 />
-                  <label htmlFor="measureIndex">Insert first measure index:</label>
+                <label htmlFor="measureIndex">Insert first measure index:</label>
                 <input
                     type="text"
                     id="firstMeasureIndex"
