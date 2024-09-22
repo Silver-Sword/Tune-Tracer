@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react';
-import Vex, { Formatter } from 'vexflow';
 import { Score } from './Score';
 
 export default function Editor() {
@@ -12,11 +11,11 @@ export default function Editor() {
     const [keys, setKeys] = useState('');
     const [duration, setDuration] = useState('');
     const [measureIndex, setMeasureIndex] = useState<number>(0);
-    const [noteId, setNoteId] = useState('auto');
+    const [addNoteId, setAddNoteId] = useState('auto');
+    const [durationNoteId, setDurationNoteId] = useState('auto');
     const [firstNoteId, setFirstNoteId] = useState('auto');
     const [firstMeasureIndex, setFirstMeasureIndex] = useState<number>(0);
-    const [secondNoteId, setSecondNoteId] = useState('auto');
-    const [secondMeasureIndex, setSecondMeasureIndex] = useState<number>(0);
+
 
     // Handlers for input changes
     const handleKeysChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,18 +37,19 @@ export default function Editor() {
         }
     };
 
-    const handleNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setNoteId(event.target.value);
+    const handleAddNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setAddNoteId(event.target.value);
     };
+
+    const handleDurationNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setDurationNoteId(event.target.value);
+    };
+
 
     const handleFirstNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFirstNoteId(event.target.value);
     };
-
-    const handleSecondNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSecondNoteId(event.target.value);
-    };
-
+    
     const handleFirstMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
         // Ensure that measureIndex is an integer or empty
@@ -61,24 +61,12 @@ export default function Editor() {
         }
     };
 
-    const handleSecondMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const value = event.target.value;
-        // Ensure that measureIndex is an integer or empty
-        if (/^[0-9]+$/.test(value)) {
-            setSecondMeasureIndex(parseInt(value, 10));
-        }
-        else {
-            setSecondMeasureIndex(0);
-        }
-    };
-
     const addNote = () => {
         if (score.current) {
             score.current.addNoteInMeasure(
                 /*measure index*/ measureIndex,
                 /*keys*/keys.split(','),
-                /*duration*/ duration,
-                /*noteId*/ noteId
+                /*noteId*/ addNoteId
             );
         }
     };
@@ -94,7 +82,7 @@ export default function Editor() {
             score.current.modifyDurationInMeasure(
                 /*measure index*/ measureIndex,
                 /*duration*/ duration,
-                /*noteId*/ noteId
+                /*noteId*/ durationNoteId
             );
         }
     };
@@ -130,6 +118,7 @@ export default function Editor() {
     return (
         <div>
             <h1> Tune Tracer Composition Tool Demo</h1>
+            <h2>Adding a Note</h2>
             <div>
                 <label htmlFor="keys">Insert keys (comma-separated):</label>
                 <input
@@ -139,6 +128,17 @@ export default function Editor() {
                     onChange={handleKeysChange}
                 />
             </div>
+            <div>
+                <label htmlFor="addNoteId">Insert note id:</label>
+                <input
+                    type="text"
+                    id="addNoteId"
+                    value={addNoteId}
+                    onChange={handleAddNoteIdChange}
+                />
+            </div>
+            <button onClick={addNote}>Add note!</button>
+            <h2>Changing Duration</h2>
             <div>
                 <label htmlFor="duration">Insert duration:</label>
                 <input
@@ -158,15 +158,14 @@ export default function Editor() {
                 />
             </div>
             <div>
-                <label htmlFor="noteId">Insert note id:</label>
+                <label htmlFor="durationNoteId">Insert note id:</label>
                 <input
                     type="text"
-                    id="noteId"
-                    value={noteId}
-                    onChange={handleNoteIdChange}
+                    id="durationNoteId"
+                    value={durationNoteId}
+                    onChange={handleDurationNoteIdChange}
                 />
             </div>
-            <button onClick={addNote}>Add note!</button>
             <button onClick={modifyDuration}>Change duration of specified element</button>
             <button onClick={addMeasureToEnd}>Add a measure to the end</button>
             <h2>Adding a Tie</h2>

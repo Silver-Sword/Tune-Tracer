@@ -92,7 +92,6 @@ export class Score {
     addNoteInMeasure = (
         measureIndex: number,
         keys: string[],
-        duration: string,
         noteId: string
     ): void => {
         // Return new ID of note instead of boolean
@@ -102,10 +101,12 @@ export class Score {
         // Change tie logic to take only one note
         // At render time, clean obselete ties
         let newNote: StaveNote | null = null;
-        newNote = this.top_measures[measureIndex].addNote(keys, duration, noteId);
+        newNote = this.top_measures[measureIndex].addNote(keys, noteId);
         if (newNote == null) {
-            newNote = this.bottom_measures[measureIndex].addNote(keys, duration, noteId)
+            console.log("didn't find note in top");
+            newNote = this.bottom_measures[measureIndex].addNote(keys, noteId)
         }
+        console.log("newNote: " + newNote);
         if (newNote !== null) {
             console.log("New ID: " + newNote.getAttribute('id'));
             this.updateTies(noteId, newNote);

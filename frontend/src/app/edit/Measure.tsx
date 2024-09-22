@@ -125,38 +125,29 @@ export class Measure {
         }
     }
 
-    private matchesNote = (staveNote: StaveNote, duration: string, noteId: string): boolean => {
-        return staveNote.getAttributes().id === noteId && duration === staveNote.getDuration();
-    }
-
-    private isRest = (duration: string): boolean => {
-        return duration.endsWith('r');
-    }
-
-    addNote = (keys: string[], duration: string, noteId: string): StaveNote | null => {
-        if (this.isRest(duration)) return null;
+    addNote = (keys: string[], noteId: string): StaveNote | null => {
         if (!this.voice1) return null;
         let found: boolean = false;
         const VF = Vex.Flow;
-        const notes: InstanceType<typeof Vex.Flow.StaveNote>[] = [];
+        console.log("adding note noteID: " + noteId);
+        const notes: StaveNote[] = [];
         let newNote: StaveNote | null = null;
+
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
-            if (this.matchesNote(staveNote, duration, noteId)) {
+            if (staveNote.getAttributes().id === noteId) {
                 found = true;
-                console.log("Matched StaveNote: " + staveNote);
-
                 if (staveNote.getNoteType() !== 'r') {
                     const newKeys = staveNote.getKeys();
                     keys.forEach(key => {
                         // We don't want repeat keys
                         if (!newKeys.includes(key)) newKeys.push(key);
                     });
-                    newNote = new VF.StaveNote({ clef: this.clef, keys: newKeys, duration });
+                    newNote = new VF.StaveNote({ clef: this.clef, keys: newKeys, duration: staveNote.getDuration()});
                 }
                 // If the staveNote is a rest, then we replace it 
                 else {
-                    newNote = new VF.StaveNote({ clef: this.clef, keys, duration });
+                    newNote = new VF.StaveNote({ clef: this.clef, keys, duration: staveNote.getDuration()});
 
                 }
                 notes.push(newNote);
@@ -167,6 +158,7 @@ export class Measure {
             const svgNote = document.getElementById(this.createId(staveNote.getAttributes().id));
             if (svgNote) svgNote.remove();
         });
+        console.log("Notes: " + notes);
 
         this.voice1 = new VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
         return newNote;
