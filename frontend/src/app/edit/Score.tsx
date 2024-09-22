@@ -278,8 +278,15 @@ export class Score {
         duration: string,
         noteId: string
     ): void => {
-        if (!this.top_measures[measureIndex].modifyDuration(duration, noteId)) {
-            this.bottom_measures[measureIndex].modifyDuration(duration, noteId)
+        let found: boolean = this.top_measures[measureIndex].modifyDuration(duration, noteId);
+        if (!found) {
+            found = this.bottom_measures[measureIndex].modifyDuration(duration, noteId)
+        }
+        if (found) {
+            console.log(this.ties);
+            // Remove ties associated with noteId
+            // If the modified duration is the second note, then we don't remove it cause its ok to keep the tie
+            this.ties = this.ties.filter(obj => obj.getFirstNote().getAttribute('id') !== noteId);
         }
         this.renderMeasures();
     }
@@ -510,10 +517,8 @@ export class Score {
             formatter, ceiling);
 
         // From this point forward we render all elements that need voices to be drawn to be able to get placed
-
         // Render Ties/Slurs
         this.ties.forEach(tieObject => {
-            console.log("GOT HERE!");
             // Render Curve just renders all the Tie Objects
             // If the indices don't exist, it renders a slur with default Tie generation logic
             this.renderCurve(tieObject.getFirstNote(), tieObject.getSecondNote(), tieObject.getFirstIndices(), tieObject.getSecondIndices())
