@@ -129,25 +129,6 @@ export class Score {
         });
     }
 
-    private searchForNote = (noteId: string, measureIndex: number, top: boolean): StaveNote | null => {
-        if (top) {
-            return this.top_measures[measureIndex].getStaveNote(noteId, /*filter rests*/true);
-        }
-        else {
-            return this.bottom_measures[measureIndex].getStaveNote(noteId, /*filter rests*/true);
-        }
-    }
-    // Used to support slurs, but they are complicated, so am pushing back support for if we have time.
-    addTieBetweenNotes = (
-        firstNoteId: string,
-        firstNoteMeasureIndex: number,
-        secondNoteId: string,
-        secondNoteMeasureIndex: number
-    ): void => {
-        this.addCurveBetweenNotes(firstNoteId, firstNoteMeasureIndex, secondNoteId, secondNoteMeasureIndex, true);
-    }
-
-
     // This method sorts keys by vertical height. Vexflow does this internally but doesn't expose
     // its sorted keys for SOME reason so we have to manually sort here to properly map ties.
     private sortKeys = (note: StaveNote): string[] => {
@@ -238,38 +219,55 @@ export class Score {
         return !(matchedFirstNoteKeyIndices.length == 0);
     }
 
-    private addCurveBetweenNotes = (
+    private searchForNotePairs = (noteId: string, measureIndex: number, top: boolean): { firstNote: StaveNote, secondNote: StaveNote | null } | null => {
+        if (top) {
+            return this.top_measures[measureIndex].getStaveNotePair(noteId);
+        }
+        else {
+            return this.bottom_measures[measureIndex].getStaveNotePair(noteId);
+        }
+    }
+
+    private getFirstNoteInMeasure = (measureIndex: number, top: boolean): StaveNote | null => {
+        // Measure counts are same for top and bottom
+        if(measureIndex >= this.top_measures.length) return null;
+        if (top) {
+            return this.top_measures[measureIndex].getFirstStaveNoteInMeasure();
+        }
+        else {
+            return this.bottom_measures[measureIndex].getFirstStaveNoteInMeasure();
+        }
+    }
+
+    addTieBetweenNotes = (
         firstNoteId: string,
         firstNoteMeasureIndex: number,
-        secondNoteId: string,
-        secondNoteMeasureIndex: number,
-        isTie: boolean
     ): void => {
         // Assume its in top at first
         let top: boolean = true;
-        let firstNote: StaveNote | null = this.searchForNote(firstNoteId, firstNoteMeasureIndex, /*top*/true);
-        if (firstNote == null) {
+        let notePair: { firstNote: StaveNote, secondNote: StaveNote | null } | null 
+            = this.searchForNotePairs(firstNoteId, firstNoteMeasureIndex, /*top*/true);
+        if (notePair == null) {
             // It may be in bottom
             top = false;
-            this.searchForNote(firstNoteId, firstNoteMeasureIndex, /*bottom*/true);
+            notePair = this.searchForNotePairs(firstNoteId, firstNoteMeasureIndex, /*bottom*/true);
         }
-
-        if (firstNote == null) return;
+        // If notePair is null, then it couldn't find first note
+        if (notePair == null) return;
         console.log("Found first!");
-        // Second needs to be in either top or bottom. We can't cross them with a tie
-        let secondNote: StaveNote | null = this.searchForNote(secondNoteId, secondNoteMeasureIndex, top);
-        if (secondNote == null) return;
+
+        // Found first, but second was not in the measure
+        if(notePair.secondNote == null)
+        {
+            notePair.secondNote = this.getFirstNoteInMeasure(firstNoteMeasureIndex + 1, top);
+        }
+        // If secondNote is null, then we tried to make a tie on the last note in Score, which for
+        // now should just be invalid
+        // Later, we can add a note, alongside a new measure
+        if (notePair.secondNote == null) return;
         console.log("Found second!");
 
-        if (isTie) {
-            // Break out early if we were not able to create any tie objects
-            // This means we tried to create an invalid tie.
-            if (!this.createTieObjects(firstNote, secondNote)) return;
-        }
-        else {
-            this.ties.push(new TieObject(firstNote, secondNote));
-        }
-
+        if (!this.createTieObjects(notePair.firstNote, notePair.secondNote)) return;
         this.renderMeasures();
     }
 

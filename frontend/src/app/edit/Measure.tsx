@@ -145,7 +145,7 @@ export class Measure {
             if (this.matchesNote(staveNote, duration, noteId)) {
                 found = true;
                 console.log("Matched StaveNote: " + staveNote);
-                
+
                 if (staveNote.getNoteType() !== 'r') {
                     const newKeys = staveNote.getKeys();
                     keys.forEach(key => {
@@ -156,8 +156,8 @@ export class Measure {
                 }
                 // If the staveNote is a rest, then we replace it 
                 else {
-                    newNote = new VF.StaveNote({ clef: this.clef, keys, duration });    
-                     
+                    newNote = new VF.StaveNote({ clef: this.clef, keys, duration });
+
                 }
                 notes.push(newNote);
             } else {
@@ -174,20 +174,38 @@ export class Measure {
         // However, if the StaveNote you are overriding is at REST, then override
     }
 
-    getStaveNote = (noteId: string, filterRests: boolean): StaveNote | null => {
+    // This returns a pair of notes, the noteId Stavenote, and the note directly after if it exists.
+    // This is used explicity for Ties
+    getStaveNotePair = (noteId: string): { firstNote: StaveNote, secondNote: StaveNote | null } | null => {
         let voice1Array: Tickable[] = this.voice1.getTickables();
+        let firstNote: StaveNote | null = null;
+        let secondNote: StaveNote | null = null;
         for (let i = 0; i < voice1Array.length; i++) {
             let staveNote = voice1Array[i] as StaveNote;
-            if (filterRests) {
-                if (staveNote.isRest() === undefined && staveNote.getAttributes().id === noteId) {
-                    return staveNote;
+            // If .isRest() is undefined, then the note is NOT a rest,
+            let isRest: boolean = staveNote.isRest() !== undefined;
+            if (firstNote !== null) {
+                // If the note directly after the first is a rest, then second should be null
+                // as ties cannot skip notes
+                if(!isRest) secondNote = staveNote;
+                return { firstNote, secondNote };
+            }
+            // We want to filter rests
+            if (!isRest) {
+                if (staveNote.getAttributes().id === noteId) {
+                    firstNote = staveNote
                 }
             }
-            else {
-                if (staveNote.getAttributes().id === noteId) return staveNote;
-            }
         }
+        if(firstNote !== null) return {firstNote, secondNote};
+        // If we get here, we didn't even find the first note
         return null;
+    }
+
+    // Used for Ties
+    getFirstStaveNoteInMeasure = (): StaveNote =>
+    {
+        return this.voice1.getTickables()[0] as StaveNote;
     }
 
     modifyDuration = (duration: string, noteId: string): boolean => {

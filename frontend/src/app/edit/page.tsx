@@ -103,9 +103,7 @@ export default function Editor() {
         if (score.current) {
             score.current.addTieBetweenNotes(
                 firstNoteId,
-                firstMeasureIndex,
-                secondNoteId,
-                secondMeasureIndex
+                firstMeasureIndex
             )
         }
     }
@@ -186,22 +184,6 @@ export default function Editor() {
                     id="firstMeasureIndex"
                     value={firstMeasureIndex.toString()}
                     onChange={handleFirstMeasureIndexChange}
-                />
-            </div>
-            <div>
-            <label htmlFor="noteId">Insert second note id:</label>
-                <input
-                    type="text"
-                    id="secondNoteId"
-                    value={secondNoteId}
-                    onChange={handleSecondNoteIdChange}
-                />
-                 <label htmlFor="measureIndex">Insert second measure index:</label>
-                <input
-                    type="text"
-                    id="secondMeasureIndex"
-                    value={secondMeasureIndex.toString()}
-                    onChange={handleSecondMeasureIndexChange}
                 />
             </div>
             <button onClick={addTieBetweenNotes}>Add Tie between notes</button>
