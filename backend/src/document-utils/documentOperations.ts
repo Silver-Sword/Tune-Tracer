@@ -2,7 +2,7 @@ import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { Document, DocumentMetadata, DocumentPreview, SHARE_STYLE } from '@lib/documentTypes'; 
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';
 
-// NOTE: UPDATE MODIFIES the document that is passed to it
+// NOTE: UPDATE functions MODIFY the document that is passed to it
 
 // takes in the user id who triggered the document creation and returns a
 // promise containing a default (blank) document as a Document
