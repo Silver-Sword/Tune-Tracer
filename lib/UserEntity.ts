@@ -1,6 +1,5 @@
 /*
-    the UserEntity is the type that describes a user account.
-    It represents
+    the UserEntity is the type that describes a user account
 */
 export type UserEntity =
 {

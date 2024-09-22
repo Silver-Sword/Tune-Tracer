@@ -2,7 +2,7 @@ import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { getDocumentPreview } from "./documentOperations";
 import { DocumentPreview } from '@lib/documentTypes';
 
-// returns all documents created by the user associated with the userId
+// returns all documents created by the user associated with the userEmail
 export async function getDocumentPreviewsOwnedByUser(userEmail: string): Promise<DocumentPreview[]>
 {
     return getDocumentPreviewsByUser(userEmail, true);
@@ -15,6 +15,8 @@ export async function getDocumentPreviewsSharedWithUser(userEmail: string): Prom
     return getDocumentPreviewsByUser(userEmail, false);
 }
 
+// returns a list of DocumentPreviews that the user associated with the userEmail 
+// owns (if isOwned is true) or is shared with the user (if isOwned is false)
 async function getDocumentPreviewsByUser(userEmail: string, isOwned: boolean): Promise<DocumentPreview[]>
 {
     const firebase = new FirebaseWrapper();
@@ -37,6 +39,8 @@ async function getDocumentPreviewsByUser(userEmail: string, isOwned: boolean): P
     return documentList;
 }
 
+// returns the list of document ids that is in the user's owned list (if isOwned is true) 
+// or shared with list (if isOwned is false)
 async function getDocumentIdsByUser(userEmail: string, isOwned: boolean): Promise<string[]>
 {
     const firebase = new FirebaseWrapper();

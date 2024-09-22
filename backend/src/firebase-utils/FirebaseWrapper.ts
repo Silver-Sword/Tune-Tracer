@@ -2,15 +2,14 @@ import firebase from 'firebase/compat/app'
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 
-import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
-
 import { DocumentMetadata, Document } from '@lib/documentTypes';
 import { getDefaultUser, UserEntity } from '@lib/UserEntity';
+import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
 
 /*
     Wrapper class for doing firebase stuff
     Remember to call .initApp() before doing anything
-    Note, all functions are async, so any returns are promises
+    Note, all functions are async (except initApp), so any returns are promises
 */
 export default class FirebaseWrapper
 {
@@ -242,8 +241,12 @@ export default class FirebaseWrapper
                     .update(updatedObject);
     }
 
-    public async subscribeToDocument(documentId: string, onSnapshotFn: (snapshot: firebase.firestore.DocumentSnapshot) => void) 
-    {
+    // NOT FOR EXTERNAL USE (use the subscription fn in documentOperations.ts instead)
+    // wrapper for the document subscription
+    public async subscribeToDocument(
+        documentId: string, 
+        onSnapshotFn: (snapshot: firebase.firestore.DocumentSnapshot) => void
+    ){
         firebase.firestore()
                 .collection(DOCUMENT_DATABASE_NAME)
                 .doc(documentId)

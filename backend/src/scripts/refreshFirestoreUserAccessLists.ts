@@ -5,7 +5,7 @@ import 'firebase/compat/firestore';
 import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
 import { DocumentMetadata, SHARE_STYLE } from '@lib/documentTypes';
 
-// Purpose: recompute the shared and owned lists for each user; automation to refresh the database
+// Purpose: recomputes the shared and owned documents lists for each user in Firestore
 // Note: this script can cause issues if the database is being actively updated
 export async function refreshFirestoreUserAccessLists()
 {
