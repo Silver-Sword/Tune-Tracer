@@ -37,5 +37,5 @@ export function getDefaultUser(): UserEntity
         owned_documents: [],
         shared_documents: [],
         account_creation_time: Date.now()
-    }
+    } as UserEntity;
 }

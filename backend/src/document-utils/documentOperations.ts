@@ -4,6 +4,7 @@ import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permiss
 
 // NOTE: UPDATE functions MODIFY the document that is passed to it
 
+// TO DO: set the time_created and last_edit_time to the Firebase Server Time
 // takes in the user id who triggered the document creation and returns a
 // promise containing a default (blank) document as a Document
 export async function createDocument(writerEmail: string): Promise<Document>
@@ -33,7 +34,7 @@ export async function createDocument(writerEmail: string): Promise<Document>
     return document;
 }
 
-// DO NOT CALL THIS FUNCTION
+// DANGEROUS: DO NOT CALL THIS FUNCTION unless you know what you're doing
 // processes a document update request
 export async function processDocumentUpdate(
     documentObject: Record<string, unknown>, 
