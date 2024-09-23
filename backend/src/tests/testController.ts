@@ -2,7 +2,8 @@ import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { Document,  SHARE_STYLE } from '@lib/documentTypes';
 import { createDocument, updateDocument, deleteDocument, getDocument } from '../document-utils/documentOperations';
 import { getDocumentPreviewsOwnedByUser, getDocumentPreviewsSharedWithUser } from "../document-utils/documentBatchRead";
-import { registerUserToDocument, subscribeToDocumentUpdates } from "../document-utils/realtimeDocumentUpdates";
+import { subscribeToDocumentUpdates } from "../document-utils/realtimeDocumentUpdates";
+import { recordOnlineUserUpdatedDocument, registerUserToDocument, updateUserCursor } from "../document-utils/realtimeOnlineUsers";
 import { 
     updateDocumentShareStyle,       
     updateDocumentEmoji, 
@@ -55,7 +56,7 @@ export async function runTest()
     firebase.initApp();
 
     // await runAllUnitTests(firebase);
-    registerUserToDocument("2R6buaMylmCuus32I0vp", {user_email: PRIMARY_TEST_EMAIL, user_id: "testing_id_1", display_name: "USER 1"});
+    await testUserRegistrationToDocument(firebase);
     
     // await testSignUp(firebase);
     // await testDocumentDeletion(firebase);
@@ -124,6 +125,24 @@ async function testDocumentDeletion(firebase: FirebaseWrapper)
     const doc = await createDocument(TEST_DOCUMENT.metadata.owner_email);
     console.log(`Document Id: ${doc.metadata.document_id}`);
     await deleteDocument(doc, TEST_DOCUMENT.metadata.owner_email);
+}
+
+async function testUserRegistrationToDocument(firebase: FirebaseWrapper) {
+    const doc = await createDocument(TEST_DOCUMENT.metadata.owner_email);
+    const documentId = doc.metadata.document_id;
+    console.log(`Document Id: ${documentId}`);
+
+    const userId = "idk";
+    const userEntity = {
+        user_email: PRIMARY_TEST_EMAIL,
+        user_id: userId,
+        display_name: "ADMIN_TEST"
+    };
+    
+    await registerUserToDocument(documentId, userEntity);
+    await recordOnlineUserUpdatedDocument(documentId, {user_id: userId});
+    await updateUserCursor(documentId, {user_id: userId, cursor: "right here"});
+    console.log(`User cursor has moved; check Realtime DB`);
 }
 
 /*

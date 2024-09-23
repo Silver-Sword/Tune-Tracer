@@ -7,6 +7,9 @@ import { DocumentMetadata, Document } from '@lib/documentTypes';
 import { getDefaultUser, OnlineEntity, UserEntity } from '@lib/UserEntity';
 import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
 
+type PartialWithRequired<T, K extends keyof T> = Partial<T> & Required<Pick<T, K>>;
+type PartialWithRequiredAndWithout<T, K extends keyof T, U extends keyof T> = Partial<T> & Required<Omit<Pick<T, K>, U>>;
+
 /*
     Wrapper class for doing firebase stuff
     Remember to call .initApp() before doing anything
@@ -254,17 +257,33 @@ export default class FirebaseWrapper
                 .doc(documentId)
                 .onSnapshot( onSnapshotFn);
     }
-
+    
     public async registerUserToDocument(
         documentId: string, 
-        user: {user_email: string, user_id: string, display_name: string}
-    ) {
+        user: {
+            user_email: string, 
+            user_id: string, 
+            display_name: string
+    }) {
         const userReference = firebase.database().ref(`/presence/${documentId}/users/${user.user_id}`);
         await userReference.set({
+            user_id: user.user_id,
             user_email: user.user_email,
             display_name: user.display_name,
-            last_edit_time: firebase.database.ServerValue.TIMESTAMP
+            last_active_time: firebase.database.ServerValue.TIMESTAMP
         });
         userReference.onDisconnect().remove();
+    }
+
+    // TO DO: check if user is already registered to the document
+    public async updateUserInDocument(
+        documentId: string, 
+        user: PartialWithRequiredAndWithout<OnlineEntity, 'user_id', 'last_active_time'>
+    ) {
+        const userReference = firebase.database().ref(`/presence/${documentId}/users/${user.user_id}`);
+        await userReference.update({
+            ...user,
+            last_active_time: firebase.database.ServerValue.TIMESTAMP
+        });
     }
 }
