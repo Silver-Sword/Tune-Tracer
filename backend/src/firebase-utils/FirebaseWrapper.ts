@@ -4,7 +4,7 @@ import "firebase/compat/database";
 import 'firebase/compat/firestore';
 
 import { DocumentMetadata, Document } from '@lib/documentTypes';
-import { getDefaultUser, OnlineEntity, UserEntity } from '@lib/UserEntity';
+import { getDefaultUser, OnlineEntity, UserEntity, UpdateType } from '@lib/userTypes';
 import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
 
 type PartialWithRequired<T, K extends keyof T> = Partial<T> & Required<Pick<T, K>>;
@@ -258,6 +258,7 @@ export default class FirebaseWrapper
                 .onSnapshot( onSnapshotFn);
     }
     
+    // registers a user to the "online" collection of a document's user
     public async registerUserToDocument(
         documentId: string, 
         user: {
@@ -275,6 +276,7 @@ export default class FirebaseWrapper
         userReference.onDisconnect().remove();
     }
 
+    // sets the user's last_active_time to "now" and can be used to edit info about an online user
     // TO DO: check if user is already registered to the document
     public async updateUserInDocument(
         documentId: string, 
@@ -284,6 +286,29 @@ export default class FirebaseWrapper
         await userReference.update({
             ...user,
             last_active_time: firebase.database.ServerValue.TIMESTAMP
+        });
+    }
+
+    // triggers the callback function when an OnlineEntity is updated (changed, added, deleted)
+    public async subscribeToOnlineUsers(
+        documentId: string, 
+        onlineUserUpdateFn: (updateType: UpdateType, user: OnlineEntity) => void
+    ) {
+        const presenceReference = firebase.database().ref(`/presence/${documentId}/users`);
+
+        presenceReference.on('child_added', (snapshot) => {
+            const user = snapshot.val();
+            onlineUserUpdateFn(UpdateType.ADD, user);
+        });
+
+        presenceReference.on('child_removed', (snapshot) => {
+            const user = snapshot.val();
+            onlineUserUpdateFn(UpdateType.DELETE, user);
+        });
+
+        presenceReference.on('child_changed', (snapshot) => {
+            const user = snapshot.val();
+            onlineUserUpdateFn(UpdateType.CHANGE, user);
         });
     }
 }

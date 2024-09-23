@@ -1,34 +1,25 @@
-import { OnlineEntity, UserEntity } from "@lib/UserEntity";
+import { OnlineEntity, UpdateType, UserEntity } from "@lib/userTypes";
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 
 type PartialWithRequired<T, K extends keyof T> = Partial<T> & Required<Pick<T, K>>;
 type PartialWithRequiredAndWithout<T, K extends keyof T, U extends keyof T> = Partial<T> & Required<Omit<Pick<T, K>, U>>;
 
 /**
- * Purpose: tell Firebase that a user is on a document (for realtime tracking of the user).
- * Firebase will automatically unregister the user after disconnection.
- * @param documentId the unique id of the document
+ * Registers a user to a document and subscribes to user pool updates.
+ * @param documentId the unique id of the document that the user is on
  * @param user the user to register to the document. Must contain the listed fields.
+ * @param updateOnlineUserPoolFn the function that is called whenever an online user is updated in the database
  */
-export async function registerUserToDocument(
-    documentId: string, 
-    user: PartialWithRequired<UserEntity, 'user_email' | 'user_id' | 'display_name'>
-){
+export async function subscribeUserToUserDocumentPool(
+    documentId: string,
+    user: PartialWithRequired<UserEntity, 'user_email' | 'user_id' | 'display_name'>,
+    updateOnlineUserPoolFn: (updateType: UpdateType, onlineEntity: OnlineEntity) => void
+) {
     const firebase = new FirebaseWrapper();
     firebase.initApp();
-
-    // check if document exists (TO DO: remove the need for this check)
-    if(!firebase.doesDocumentExist(documentId)) {
-        throw Error(
-            `Trying to register user ${user.user_email} to nonexistant document ${documentId}`
-        );
-    }
-
-    await firebase.registerUserToDocument( documentId, {
-        user_email: user.user_email, 
-        user_id: user.user_id, 
-        display_name: user.display_name
-    });
+    
+    await registerUserToDocument(documentId, user);
+    await firebase.subscribeToOnlineUsers(documentId, updateOnlineUserPoolFn);
 }
 
 /**
@@ -67,4 +58,31 @@ export async function updateUserCursor(
     onlineUser: Required<Pick<OnlineEntity, 'user_id' | 'cursor'>>
 ) {
     await recordOnlineUserUpdatedDocument(documentId, onlineUser);
+}
+
+/**
+ * Purpose: tell Firebase that a user is on a document (for realtime tracking of the user).
+ * Firebase will automatically unregister the user after disconnection.
+ * @param documentId the unique id of the document
+ * @param user the user to register to the document. Must contain the listed fields.
+ */
+async function registerUserToDocument(
+    documentId: string, 
+    user: PartialWithRequired<UserEntity, 'user_email' | 'user_id' | 'display_name'>
+){
+    const firebase = new FirebaseWrapper();
+    firebase.initApp();
+
+    // check if document exists (TO DO: remove the need for this check)
+    if(!firebase.doesDocumentExist(documentId)) {
+        throw Error(
+            `Trying to register user ${user.user_email} to nonexistant document ${documentId}`
+        );
+    }
+
+    await firebase.registerUserToDocument( documentId, {
+        user_email: user.user_email, 
+        user_id: user.user_id, 
+        display_name: user.display_name
+    });
 }

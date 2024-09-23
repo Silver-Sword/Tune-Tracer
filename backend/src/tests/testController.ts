@@ -3,7 +3,7 @@ import { Document,  SHARE_STYLE } from '@lib/documentTypes';
 import { createDocument, updateDocument, deleteDocument, getDocument } from '../document-utils/documentOperations';
 import { getDocumentPreviewsOwnedByUser, getDocumentPreviewsSharedWithUser } from "../document-utils/documentBatchRead";
 import { subscribeToDocumentUpdates } from "../document-utils/realtimeDocumentUpdates";
-import { recordOnlineUserUpdatedDocument, registerUserToDocument, updateUserCursor } from "../document-utils/realtimeOnlineUsers";
+import { recordOnlineUserUpdatedDocument, subscribeUserToUserDocumentPool, updateUserCursor } from "../document-utils/realtimeOnlineUsers";
 import { 
     updateDocumentShareStyle,       
     updateDocumentEmoji, 
@@ -13,6 +13,7 @@ import {
 } from '../document-utils/updateDocumentMetadata';
 
 import { isEqual } from 'lodash';
+import { OnlineEntity, UpdateType } from "@lib/userTypes";
 
 const PRIMARY_TEST_EMAIL = "test-user-1@tune-tracer.com";
 const TEST_PASSWORD = "This*Is*A*Strong*Password100!";
@@ -139,10 +140,12 @@ async function testUserRegistrationToDocument(firebase: FirebaseWrapper) {
         display_name: "ADMIN_TEST"
     };
     
-    await registerUserToDocument(documentId, userEntity);
+    await subscribeUserToUserDocumentPool(documentId, userEntity, (updateType: UpdateType, onlineEntity: OnlineEntity) =>
+    {
+        console.log(`Update ${updateType} with entity=${JSON.stringify(onlineEntity)}`);
+    });
     await recordOnlineUserUpdatedDocument(documentId, {user_id: userId});
     await updateUserCursor(documentId, {user_id: userId, cursor: "right here"});
-    console.log(`User cursor has moved; check Realtime DB`);
 }
 
 /*
