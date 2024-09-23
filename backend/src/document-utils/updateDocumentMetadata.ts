@@ -1,42 +1,104 @@
-import { Document, DocumentMetadata, SHARE_STYLE } from "@lib/documentTypes";
+// This file contains functions that will update the various metadata fields of a Document
+import { SHARE_STYLE } from "@lib/documentTypes";
+import { processDocumentUpdate } from "./documentOperations";
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 
-import firebase from 'firebase/compat/app'
-import 'firebase/compat/firestore';
+import firebase from "firebase/compat/app";
+import "firebase/compat/firestore";
 
-// TO DO: verify that key passed in to updateDocumentMetadata is valid
-
-const getFirebase = () : FirebaseWrapper => {
-    const firebase = new FirebaseWrapper();
-    firebase.initApp();
-    return firebase;
-};
-
-// generic version of all following functions; updates a metadata field for a document
-async function updateDocumentMetadata(documentId: string, key: string, newValue: unknown) {
-    const firebase = getFirebase();
-    const firebaseKey = `metadata.${key}`;
-    return firebase.updateDocumentMetadataField(documentId, {[firebaseKey]: newValue});
+export async function updateDocumentShareStyle(
+  documentId: string,
+  newShareStyle: SHARE_STYLE,
+  writerEmail: string
+) {
+  await updateDocumentMetadata(
+    documentId,
+    "share_style",
+    newShareStyle,
+    writerEmail
+  );
 }
 
-export async function updateDocumentShareStyle(documentId: string, newShareStyle: SHARE_STYLE) {
-    return updateDocumentMetadata(documentId, 'share_style', newShareStyle);
+export async function updateDocumentEmoji(
+  documentId: string,
+  newEmoji: string,
+  writerEmail: string
+) {
+  await updateDocumentMetadata(
+    documentId,
+    "preview_emoji",
+    newEmoji,
+    writerEmail
+  );
 }
 
-export async function updateDocumentEmoji(documentId: string, newEmoji: string) {
-    return updateDocumentMetadata(documentId, 'preview_emoji', newEmoji);
-}
-
-export async function updateDocumentColor(documentId: string, newColor: string) {
-    return updateDocumentMetadata(documentId, 'preview_color', newColor);
+export async function updateDocumentColor(
+  documentId: string,
+  newColor: string,
+  writerEmail: string
+) {
+  await updateDocumentMetadata(
+    documentId,
+    "preview_color",
+    newColor,
+    writerEmail
+  );
 }
 
 // assumption: only call this function if the user is not already in the share list
 // assumption: only share with existing users
-export async function shareDocumentWithUser(documentId: string, newUser: string) {
-    return updateDocumentMetadata(documentId, 'share_list', firebase.firestore.FieldValue.arrayUnion(newUser));
+export async function shareDocumentWithUser(
+  documentId: string,
+  newUser: string,
+  writerEmail: string
+) {
+  if (
+    await updateDocumentMetadata(
+      documentId,
+      "share_list",
+      firebase.firestore.FieldValue.arrayUnion(newUser),
+      writerEmail
+    )
+  ) {
+    await getFirebase().insertUserDocument(newUser, documentId, false);
+  }
 }
 
-export async function unshareDocumentWithUser(documentId: string, newUser: string) {
-    return updateDocumentMetadata(documentId, 'share_list', firebase.firestore.FieldValue.arrayRemove(newUser));
+export async function unshareDocumentWithUser(
+  documentId: string,
+  oldUser: string,
+  writerEmail: string
+) {
+  if (
+    await updateDocumentMetadata(
+      documentId,
+      "share_list",
+      firebase.firestore.FieldValue.arrayRemove(oldUser),
+      writerEmail
+    )
+  ) {
+    await getFirebase().deleteUserDocument(oldUser, documentId, false);
+  }
 }
+
+// TO DO: verify that key passed in to updateDocumentMetadata is valid
+// generic version of all the other functions in this file; updates a metadata field for a document
+async function updateDocumentMetadata(
+  documentId: string,
+  key: string,
+  newValue: unknown,
+  writerEmail: string
+): Promise<boolean> {
+  const firebaseKey = `metadata.${key}`;
+  return processDocumentUpdate(
+    { [firebaseKey]: newValue },
+    documentId,
+    writerEmail
+  );
+}
+
+const getFirebase = (): FirebaseWrapper => {
+  const firebase = new FirebaseWrapper();
+  firebase.initApp();
+  return firebase;
+};

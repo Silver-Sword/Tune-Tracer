@@ -43,3 +43,5 @@ export type Comment =
     last_edit_time: number,
 };
 
+// purpose: the preview information of a document for use on a user's storage page
+export type DocumentPreview = DocumentMetadata & {document_title: string};

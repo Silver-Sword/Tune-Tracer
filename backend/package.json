@@ -4,7 +4,7 @@
   "description": "backend components of tune tracer",
   "main": "main.ts",
   "_moduleAliases": {
-  "@lib": "../lib"
+    "@lib": "../lib"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -17,8 +17,10 @@
     "ts-node": "^10.9.2"
   },
   "dependencies": {
+    "@types/lodash": "^4.17.7",
     "@types/node": "^22.5.4",
     "firebase": "^10.13.0",
+    "lodash": "^4.17.21",
     "module-alias": "^2.2.3",
     "typescript": "^5.5.4"
   }
