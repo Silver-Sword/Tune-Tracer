@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Vex, { Formatter } from 'vexflow';
 import { Score } from './Score';
+import * as d3 from 'd3';
 
 export default function Editor() {
     const notationRef = useRef<HTMLDivElement>(null);
@@ -13,6 +14,8 @@ export default function Editor() {
     const [duration, setDuration] = useState('');
     const [measureIndex, setMeasureIndex] = useState<number>(0);
     const [noteId, setNoteId] = useState('');
+
+    const [selectedNoteId, setSelectedNoteId] = useState(-1);
     // Handlers for input changes
     const handleKeysChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setKeys(event.target.value);
@@ -89,6 +92,48 @@ export default function Editor() {
         clearSVG();
         renderNotation();
     }, []);
+
+    useEffect(() => {
+        // Attach the note selection handler to the notationRef container
+        d3.select(notationRef.current)
+            .on('click', function(event) {
+                // Grab a reference to what we click on
+                let targetElement = event.target;
+
+                // Keep going up the DOM to look for an element that has the VF note class
+                while (targetElement && !targetElement.classList.contains('vf-stavenote')) {
+                    targetElement = targetElement.parentElement;
+                }
+
+                // Check to see if we've found an element in the DOM with the class we're looking for
+                if (targetElement && targetElement.classList.contains('vf-stavenote')) {
+                    const selectId = d3.select(targetElement).attr('selectId');
+                    handleNoteClick(parseInt(selectId));
+                }
+            });
+        
+        // Clean up the event listener when notationRef unmounts
+        return () => {
+            d3.select(notationRef.current).on('click', null);
+        }
+    }, [notationRef.current])
+
+    useEffect(() => {
+        // First remove the selectd note class from previously selected note
+        d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+        // Now add it to the currently selected note
+        if (selectedNoteId !== -1)
+        {
+            d3.select(`[selectId="${selectedNoteId}"]`).classed('selected-note', true);
+        }
+    }, [selectedNoteId]);
+
+    // Handle clicking on notes
+    const handleNoteClick = (index: number) => {
+        setSelectedNoteId(index);
+        console.log(`Selected index is: ${index}`);
+    }
 
     return (
         <div>

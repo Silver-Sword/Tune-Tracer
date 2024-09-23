@@ -1,5 +1,6 @@
 import { Vex, Formatter, Voice } from 'vexflow';
 import { Measure } from './Measure';
+import * as d3 from 'd3';
 
 type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
 
@@ -12,6 +13,7 @@ export class Score {
     private bottom_measures: Measure[] = [];  // both are equal in length
     private default_measure_width: number = 0;
     private context: RenderContext;
+    private notationRef: HTMLDivElement;
 
     constructor(
         notationRef: HTMLDivElement,
@@ -21,6 +23,7 @@ export class Score {
         timeSignature: string = "4/4"
     ) {
         this.default_measure_width = measureWidth;
+        this.notationRef = notationRef;
 
         const renderer = new this.VF.Renderer(notationRef, this.VF.Renderer.Backends.SVG);
         renderer.resize(800, 400);
@@ -159,5 +162,12 @@ export class Score {
         }
 
         formatter.postFormat();
+
+        // Give each note a selection attribute
+        d3.select(this.notationRef)
+            .selectAll('.vf-stavenote')
+            .each(function (d, i) {
+                d3.select(this).attr('selectId', i);
+            });
     }
 }
