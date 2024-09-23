@@ -16,11 +16,73 @@ import {
   Skeleton,
   Code,
   rem,
+  Stack,
 } from "@mantine/core";
-import FiltersNavbar from "./FiltersNavbar";
-import SearchBar from "./SearchBar";
+import { IconSearch } from "@tabler/icons-react";
 
-export default function storage() {
+// Define filter labels for the navbar
+const filterLabels = [
+  { link: "", label: "All" },
+  { link: "", label: "Shared with you" },
+  { link: "", label: "Favorites" },
+  { link: "", label: "Recents" },
+  { link: "", label: "A-Z" },
+];
+
+// FiltersNavbar component
+const FiltersNavbar: React.FC = () => {
+  const [activeFilter, setActiveFilter] = useState<string>("All");
+
+  const handleFilterClick = (label: string) => {
+    setActiveFilter(label);
+    console.log(`Filter selected: ${label}`);
+    // Add more filtering logic here
+  };
+
+  return (
+    <AppShell.Navbar p="xl">
+      <Stack gap="xs">
+        {filterLabels.map((filter) => (
+          <Button
+            key={filter.label}
+            variant={activeFilter === filter.label ? "filled" : "outline"}
+            fullWidth
+            onClick={() => handleFilterClick(filter.label)}
+          >
+            {filter.label}
+          </Button>
+        ))}
+      </Stack>
+    </AppShell.Navbar>
+  );
+};
+
+// SearchBar component
+const SearchBar: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const handleSearch = (event) => {
+    const value = event.currentTarget.value;
+    setSearchTerm(value);
+    console.log(`Searching for: ${value}`);
+    // Add more search logic here
+  };
+
+  return (
+    <TextInput
+      variant="filled"
+      size="sm"
+      radius="xl"
+      placeholder="Search compositions"
+      leftSectionPointerEvents="none"
+      leftSection={<IconSearch style={{ width: rem(16), height: rem(16) }} />}
+      onChange={handleSearch}
+    />
+  );
+};
+
+// Main storage component
+export default function Storage() {
   return (
     <AppShell padding="md" header={{ height: 60 }}>
       <AppShell.Header
@@ -31,7 +93,6 @@ export default function storage() {
         }}
       >
         <Group justify="space-between" px="lg">
-          {/* Replace with official logo */}
           <Text>Tune Tracer</Text>
           <SearchBar />
           <Button component="a" href="/login">
@@ -42,9 +103,7 @@ export default function storage() {
 
       <FiltersNavbar />
 
-      {/* Placeholder  */}
       <AppShell.Main>
-        {/* Hero Section */}
         <Container
           fluid
           style={{
@@ -57,10 +116,16 @@ export default function storage() {
             background:
               "linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)",
           }}
-        ></Container>
-        <Space h="xl"></Space>
+        >
+             <Text size="xl" mb="xl">
+                Compositions
+            </Text>
 
-        {/* Blurb */}
+
+
+        </Container>
+        <Space h="xl"></Space>
+        
         <Container size="xl"></Container>
       </AppShell.Main>
     </AppShell>
