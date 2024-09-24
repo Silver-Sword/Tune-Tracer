@@ -7,8 +7,7 @@ type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
 const DEFAULT_MEASURE_VERTICAL_SPACING = 100;
 const DEFAULT_NOTE_PADDING_FROM_TOP = 10;
 const DEFAULT_PADDING_IN_BETWEEN_MEASURES = 50;
-const DEFAULT_RENDERER_WIDTH = 1000;
-const DEFAULT_RENDERER_HEIGHT = 2000;
+
 
 const DEFAULT_FIRST_MEASURES_X = 20;
 const DEFAULT_FIRST_MEASURES_Y = 0;
@@ -16,7 +15,7 @@ const DEFAULT_FIRST_MEASURES_Y = 0;
 const DEFAULT_MEASURE_WIDTH = 325;
 const DEFAULT_SPACING_BETWEEN_LINES_OF_MEASURES = 200;
 
-class TieObject {
+export class TieObject {
     private firstNote: StaveNote | undefined;
     private secondNote: StaveNote | undefined;
     private matched_first_indices: number[] | undefined;
@@ -70,15 +69,21 @@ export class Score {
     private ties: TieObject[] = [];
     private context: RenderContext;
     private total_width: number = 0;
+    private renderer_height = 0;
+    private renderer_width = 0;
 
     constructor(
         notationRef: HTMLDivElement,
+        rendererHeight: number,
+        rendererWidth: number,
         timeSignature: string = "4/4"
     ) {
         this.total_width += DEFAULT_MEASURE_WIDTH + DEFAULT_FIRST_MEASURES_X;
+        this.renderer_height = rendererHeight;
+        this.renderer_width = rendererWidth;
 
         const renderer = new this.VF.Renderer(notationRef, this.VF.Renderer.Backends.SVG);
-        renderer.resize(DEFAULT_RENDERER_WIDTH, DEFAULT_RENDERER_HEIGHT);
+        renderer.resize(this.renderer_width, this.renderer_height);
         this.context = renderer.getContext();
         const firstTopMeasure = new Measure(this.context, DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y, DEFAULT_MEASURE_WIDTH, timeSignature, "treble", true);
         // X and Y don't matter here because bottom measure always adjusts based on top measure
@@ -294,7 +299,7 @@ export class Score {
         let renderBottomTimeSig = false;
 
         // If this next measure will go out of bounds...
-        if (this.total_width + DEFAULT_MEASURE_WIDTH > DEFAULT_RENDERER_WIDTH) {
+        if (this.total_width + DEFAULT_MEASURE_WIDTH > this.renderer_width) {
             // Then put the next measures on the next 'measure line' 
 
             topX = DEFAULT_FIRST_MEASURES_X;

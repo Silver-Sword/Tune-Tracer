@@ -2,6 +2,10 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Score } from './Score';
+import { Button } from '@mantine/core';
+
+const DEFAULT_RENDERER_WIDTH = 1000;
+const DEFAULT_RENDERER_HEIGHT = 2000;
 
 export default function Editor() {
     const notationRef = useRef<HTMLDivElement>(null);
@@ -118,7 +122,9 @@ export default function Editor() {
         const renderNotation = () => {
             if (notationRef.current) {
                 score.current = new Score(
-                    notationRef.current
+                    notationRef.current,
+                    DEFAULT_RENDERER_HEIGHT,
+                    DEFAULT_RENDERER_WIDTH
                 );
             }
         };
@@ -130,6 +136,7 @@ export default function Editor() {
     return (
         <div>
             <h1> Tune Tracer Composition Tool Demo</h1>
+            <Button component='a' href='/composition_tool'>Go to Official Composition Tool</Button>
             <h2>Adding a Note</h2>
             <div>
                 <label htmlFor="keys">Insert keys (comma-separated):</label>
