@@ -1,15 +1,20 @@
 import firebase from 'firebase/compat/app'
 import 'firebase/compat/auth';
+import "firebase/compat/database";
 import 'firebase/compat/firestore';
 
-import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
 import { DocumentMetadata, Document } from '@lib/documentTypes';
+import { getDefaultUser, OnlineEntity, UserEntity, UpdateType } from '@lib/userTypes';
+import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
+
+type PartialWithRequired<T, K extends keyof T> = Partial<T> & Required<Pick<T, K>>;
+type PartialWithRequiredAndWithout<T, K extends keyof T, U extends keyof T> = Partial<T> & Required<Omit<Pick<T, K>, U>>;
+
 /*
     Wrapper class for doing firebase stuff
     Remember to call .initApp() before doing anything
-    Note, all functions are async, so any returns are promises
+    Note, all functions are async (except initApp), so any returns are promises
 */
-
 export default class FirebaseWrapper
 {
     public initApp(): void
@@ -19,12 +24,16 @@ export default class FirebaseWrapper
         }
     }
 
+    // creates an account for a user with the given email and password
+    // will throw an Error if the account creation failed 
+    // (see https://firebase.google.com/docs/auth/admin/errors for more details)
     public async signUpNewUser(email: string, password: string, displayName: string): Promise<boolean>
     {
+        let user;
         try {
             // user sign up
             await firebase.auth().createUserWithEmailAndPassword(email, password);
-            const user = firebase.auth().currentUser;
+            user = firebase.auth().currentUser;
             if(!user)
             {
                 throw Error('Something went wrong with user signup. User is null');
@@ -35,14 +44,31 @@ export default class FirebaseWrapper
                 displayName : displayName
             });
 
+            const userEntity: UserEntity = getDefaultUser();
+            userEntity.user_email = email;
+            userEntity.display_name = displayName;
+            userEntity.user_id = user.uid;
+
             await firebase.firestore()
                           .collection(USER_DATABASE_NAME)
                           .doc(email)
-                          .set({'ownedDocuments': [] as string[]});
+                          .set(userEntity);
 
         } catch(error) {
-            console.log("Error creating user: ", (error as Error).message);
-            return false;
+            // if the account creation failed, make sure to remove all updates made to Firestore
+            await firebase.firestore()
+                          .collection(USER_DATABASE_NAME)
+                          .doc(email)
+                          .delete();
+            await user?.delete()
+                       .catch( (deletionError) => {
+                            console.log(
+                                `Another error occurred when attempted to delete the user data after the user account 
+                                 failed to be created.\nDetails: ${deletionError.message}`
+                        )});
+            
+            // rethrow the error so that the error is passed along
+            throw error;
         }
 
         return true;
@@ -76,12 +102,13 @@ export default class FirebaseWrapper
         const firestoreDocument = await firebase
             .firestore()
             .collection(DOCUMENT_DATABASE_NAME)
-            .add({});  
+            .add({});
         return firestoreDocument.id;
     }
 
     // takes in the new document
     // returns true iff the document exists and the update was successful
+    // UNUSED
     public async updateDocument(documentId: string, document: Document): Promise<boolean>
     {
         if(!await this.doesDocumentExist(documentId))
@@ -95,10 +122,10 @@ export default class FirebaseWrapper
         return true;
     }
 
-    // updates a metadata field for a document
+    // updates somes field in a document
     // throws an error if the document does not exist
-    public async updateDocumentMetadataField(documentId: string, updateObject: Record<string, unknown>)
-        : Promise<void>
+    public async updatePartialDocument(documentId: string, updateObject: Record<string, unknown>)
+        : Promise<boolean>
     {
         if(!await this.doesDocumentExist(documentId))
         {
@@ -109,6 +136,7 @@ export default class FirebaseWrapper
                       .collection(DOCUMENT_DATABASE_NAME)
                       .doc(documentId)
                       .update(updateObject);
+        return true;
     }
 
     // takes in the document unique id and returns the associated document as a JSON object
@@ -178,7 +206,7 @@ export default class FirebaseWrapper
             return [];
         } 
 
-        const fieldName = isOwned ? 'ownedDocuments' : 'sharedDocuments';
+        const fieldName = isOwned ? 'owned_documents' : 'shared_documents';
         const data = collection.data();
         if(data === undefined || !(fieldName in data))
         {
@@ -199,7 +227,7 @@ export default class FirebaseWrapper
             throw Error(`Trying to share document ${documentId} with user ${userId}, but user does not exist`);
         }
         const data = firebase.firestore.FieldValue.arrayUnion(documentId);
-        const updatedObject = isOwned ? {'ownedDocuments': data} : {'sharedDocuments': data};
+        const updatedObject = isOwned ? {'owned_documents': data} : {'shared_documents': data};
         await firebase.firestore()
                     .collection(USER_DATABASE_NAME)
                     .doc(userId)
@@ -211,10 +239,76 @@ export default class FirebaseWrapper
     public async deleteUserDocument(userId: string, documentId: string, isOwned: boolean): Promise<void>
     {
         const data = firebase.firestore.FieldValue.arrayRemove(documentId);
-        const updatedObject = isOwned ? {'ownedDocuments': data} : {'sharedDocuments': data};
+        const updatedObject = isOwned ? {'owned_documents': data} : {'shared_documents': data};
         await firebase.firestore()
                     .collection(USER_DATABASE_NAME)
                     .doc(userId)
                     .update(updatedObject);
+    }
+
+    // NOT FOR EXTERNAL USE (use the subscription fn in documentOperations.ts instead)
+    // wrapper for the document subscription
+    public async subscribeToDocument(
+        documentId: string, 
+        onSnapshotFn: (snapshot: firebase.firestore.DocumentSnapshot) => void
+    ){
+        firebase.firestore()
+                .collection(DOCUMENT_DATABASE_NAME)
+                .doc(documentId)
+                .onSnapshot( onSnapshotFn);
+    }
+    
+    // registers a user to the "online" collection of a document's user
+    public async registerUserToDocument(
+        documentId: string, 
+        user: {
+            user_email: string, 
+            user_id: string, 
+            display_name: string
+    }) {
+        const userReference = firebase.database().ref(`/presence/${documentId}/users/${user.user_id}`);
+        await userReference.set({
+            user_id: user.user_id,
+            user_email: user.user_email,
+            display_name: user.display_name,
+            last_active_time: firebase.database.ServerValue.TIMESTAMP
+        });
+        userReference.onDisconnect().remove();
+    }
+
+    // sets the user's last_active_time to "now" and can be used to edit info about an online user
+    // TO DO: check if user is already registered to the document
+    public async updateUserInDocument(
+        documentId: string, 
+        user: PartialWithRequiredAndWithout<OnlineEntity, 'user_id', 'last_active_time'>
+    ) {
+        const userReference = firebase.database().ref(`/presence/${documentId}/users/${user.user_id}`);
+        await userReference.update({
+            ...user,
+            last_active_time: firebase.database.ServerValue.TIMESTAMP
+        });
+    }
+
+    // triggers the callback function when an OnlineEntity is updated (changed, added, deleted)
+    public async subscribeToOnlineUsers(
+        documentId: string, 
+        onlineUserUpdateFn: (updateType: UpdateType, user: OnlineEntity) => void
+    ) {
+        const presenceReference = firebase.database().ref(`/presence/${documentId}/users`);
+
+        presenceReference.on('child_added', (snapshot) => {
+            const user = snapshot.val();
+            onlineUserUpdateFn(UpdateType.ADD, user);
+        });
+
+        presenceReference.on('child_removed', (snapshot) => {
+            const user = snapshot.val();
+            onlineUserUpdateFn(UpdateType.DELETE, user);
+        });
+
+        presenceReference.on('child_changed', (snapshot) => {
+            const user = snapshot.val();
+            onlineUserUpdateFn(UpdateType.CHANGE, user);
+        });
     }
 }
