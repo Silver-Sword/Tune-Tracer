@@ -2,7 +2,7 @@ import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { Document,  SHARE_STYLE } from '@lib/documentTypes';
 import { createDocument, updateDocument, deleteDocument, getDocument } from '../document-utils/documentOperations';
 import { getDocumentPreviewsOwnedByUser, getDocumentPreviewsSharedWithUser } from "../document-utils/documentBatchRead";
-import { subscribeToDocumentUpdates } from "../document-utils/realtimeDocumentUpdates";
+import { subscribeToDocument } from "../document-utils/realtimeDocumentUpdates";
 import { recordOnlineUserUpdatedDocument, subscribeUserToUserDocumentPool, updateUserCursor } from "../document-utils/realtimeOnlineUsers";
 import { 
     updateDocumentShareStyle,       
@@ -14,6 +14,7 @@ import {
 
 import { isEqual } from 'lodash';
 import { OnlineEntity, UpdateType } from "@lib/userTypes";
+import { getUserIdFromEmail } from "../user-utils/getUserData";
 
 const PRIMARY_TEST_EMAIL = "test-user-1@tune-tracer.com";
 const TEST_PASSWORD = "This*Is*A*Strong*Password100!";
@@ -57,8 +58,9 @@ export async function runTest()
     firebase.initApp();
 
     // await runAllUnitTests(firebase);
-    await testUserRegistrationToDocument(firebase);
-    
+
+    await testDocumentChanges();
+    // await testUserRegistrationToDocument(firebase);
     // await testSignUp(firebase);
     // await testDocumentDeletion(firebase);
     // await testDocumentUpdate(firebase);
@@ -80,16 +82,37 @@ export async function testDocumentChanges()
     const id = document.metadata.document_id;
     SOURCE_DOCUMENT.metadata.document_id = id;
     console.log(`Document Id: ${id}`);
-    await updateDocument(SOURCE_DOCUMENT, PRIMARY_TEST_EMAIL);
-
+    
     let currentDocument = SOURCE_DOCUMENT;
+    const user_id = await getUserIdFromEmail(PRIMARY_TEST_EMAIL);
+    const user = {
+        user_email: PRIMARY_TEST_EMAIL,
+        user_id: user_id,
+        display_name: "ADMIN_CHECK"
+    };
 
     // subscribe to updates
-    subscribeToDocumentUpdates(id, (updatedDocument: Document) => {
-        console.log(`Detected changes in document ${id}`);
-        console.log(`Updated Document: ${JSON.stringify(updatedDocument)}`);
-        currentDocument = updatedDocument;
-    });
+    await subscribeToDocument(
+        id, 
+        user, 
+        (updatedDocument: Document) => {
+            console.log(`Detected changes in document ${id}`);
+            console.log(`Updated Document: ${JSON.stringify(updatedDocument)}`);
+            currentDocument = updatedDocument;
+        }, 
+        (updateType: UpdateType, onlineEntity: OnlineEntity) => {
+            console.log(`Update type ${updateType} with entity: ${JSON.stringify(onlineEntity)}`);
+        }
+    );
+
+    // setting document to test document
+    console.log(`Setting initial document...`);
+    await updateDocument(SOURCE_DOCUMENT, PRIMARY_TEST_EMAIL);
+    console.log(`Updating Document Color...`);
+    await updateDocumentColor(id, "blue", user.user_email);
+    console.log(`Updating cursor...`)
+    await updateUserCursor(id, {user_id: user.user_id, cursor: "over there"});
+    console.log(`Completed test`);
 }
 
 async function testSignUp(firebase: FirebaseWrapper)
