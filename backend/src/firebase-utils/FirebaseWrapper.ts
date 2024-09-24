@@ -88,11 +88,11 @@ export default class FirebaseWrapper
                       .get()).exists;
     }
 
-    public async doesUserExist(userId: string): Promise<boolean>
+    public async doesUserExist(userEmail: string): Promise<boolean>
     {
         return (await firebase.firestore()
                       .collection(USER_DATABASE_NAME)
-                      .doc(userId)
+                      .doc(userEmail)
                       .get()).exists;
     }
 
@@ -192,13 +192,26 @@ export default class FirebaseWrapper
         await firebase.firestore().collection(DOCUMENT_DATABASE_NAME).doc(documentId).delete();
     }
 
+    public async getUser(userEmail: string): Promise<UserEntity> {
+        const collection = (await firebase.firestore()
+            .collection(USER_DATABASE_NAME)
+            .doc(userEmail)
+            .get());
+        
+        if(!collection.exists)
+        {
+            throw Error(`Could not find ${userEmail} in database`);
+        } 
+
+        return collection.data() as UserEntity;
+    }
     // gets the list of document ids of documents owned (if isOwned is true) or shared (is isOwned is false)
     // by a particular user
-    public async getUserDocuments(userId: string, isOwned: boolean): Promise<string[]>
+    public async getUserDocuments(userEmail: string, isOwned: boolean): Promise<string[]>
     {
         const collection = (await firebase.firestore()
             .collection(USER_DATABASE_NAME)
-            .doc(userId)
+            .doc(userEmail)
             .get());
         
         if(!collection.exists)
@@ -217,32 +230,32 @@ export default class FirebaseWrapper
     }
 
     // add a document to a list of documents that the user either owns or has access to
-    // isOwned is true iff the userId is associated with the user that created the document
+    // isOwned is true iff the userEmail is associated with the user that created the document
     // assumption: the user must not own the document if isOwned is set to false
     // will throw an Error if the user does not exist
-    public async insertUserDocument(userId: string, documentId: string, isOwned: boolean): Promise<void>
+    public async insertUserDocument(userEmail: string, documentId: string, isOwned: boolean): Promise<void>
     {
-        if(!this.doesUserExist(userId))
+        if(!this.doesUserExist(userEmail))
         {
-            throw Error(`Trying to share document ${documentId} with user ${userId}, but user does not exist`);
+            throw Error(`Trying to share document ${documentId} with user ${userEmail}, but user does not exist`);
         }
         const data = firebase.firestore.FieldValue.arrayUnion(documentId);
         const updatedObject = isOwned ? {'owned_documents': data} : {'shared_documents': data};
         await firebase.firestore()
                     .collection(USER_DATABASE_NAME)
-                    .doc(userId)
+                    .doc(userEmail)
                     .update(updatedObject);
     }
 
     // delete a document from a list of documents that the user either owns or has access to
-    // isOwned is true iff the userId is associated with the user that created the document
-    public async deleteUserDocument(userId: string, documentId: string, isOwned: boolean): Promise<void>
+    // isOwned is true iff the userEmail is associated with the user that created the document
+    public async deleteUserDocument(userEmail: string, documentId: string, isOwned: boolean): Promise<void>
     {
         const data = firebase.firestore.FieldValue.arrayRemove(documentId);
         const updatedObject = isOwned ? {'owned_documents': data} : {'shared_documents': data};
         await firebase.firestore()
                     .collection(USER_DATABASE_NAME)
-                    .doc(userId)
+                    .doc(userEmail)
                     .update(updatedObject);
     }
 
@@ -283,10 +296,11 @@ export default class FirebaseWrapper
         user: PartialWithRequiredAndWithout<OnlineEntity, 'user_id', 'last_active_time'>
     ) {
         const userReference = firebase.database().ref(`/presence/${documentId}/users/${user.user_id}`);
-        await userReference.update({
+        const updates = {
             ...user,
             last_active_time: firebase.database.ServerValue.TIMESTAMP
-        });
+        };
+        await userReference.update(updates);
     }
 
     // triggers the callback function when an OnlineEntity is updated (changed, added, deleted)

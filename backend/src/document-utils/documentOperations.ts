@@ -1,6 +1,8 @@
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { Document, DocumentMetadata, DocumentPreview, SHARE_STYLE } from '@lib/documentTypes'; 
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';
+import { getUserIdFromEmail } from "../user-utils/getUserData";
+import { recordOnlineUserUpdatedDocument } from "./realtimeOnlineUsers";
 
 // NOTE: UPDATE functions MODIFY the document that is passed to it
 
@@ -33,7 +35,7 @@ export async function createDocument(writerEmail: string): Promise<Document>
     return document;
 }
 
-// DO NOT CALL THIS FUNCTION
+// DANGEROUS: DO NOT CALL THIS FUNCTION if you don't know what you're doing
 // processes a document update request
 export async function processDocumentUpdate(
     documentObject: Record<string, unknown>, 
@@ -51,6 +53,8 @@ export async function processDocumentUpdate(
         throw Error(`User ${writerEmail} is trying to update document ${documentId}, but doesn't have the permissions to do so`);
     }
 
+    const userId = await getUserIdFromEmail(writerEmail);
+
     // update the fields that are edited during a write
     if('metadata' in documentObject)
     {
@@ -63,6 +67,7 @@ export async function processDocumentUpdate(
     }
 
     // update partial document
+    await recordOnlineUserUpdatedDocument(documentId, {user_id: userId});
     return firebase.updatePartialDocument(documentId, documentObject);
 }
 
@@ -74,6 +79,7 @@ export async function updateDocument(updatedDocument: Document, writerEmail: str
     return processDocumentUpdate(updatedDocument, updatedDocument.metadata.document_id, writerEmail);
 }
 
+// DO NOT DIRECTLY CALL THIS FUNCTION IN THE APIs
 // returns a promise containing the Document associated with the documentId
 // throws an error if document retrieval failed or if the user lacks appropriate permissions
 // readerEmail is the email of the user attempting to get the document
