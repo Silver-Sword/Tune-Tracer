@@ -11,7 +11,7 @@ export type Document =
 export type DocumentMetadata =
 {
     document_id: string,        // unique id associated with the document; used for firestore
-    owner_email: string,        // the user email of the user who created the document; unchanging field
+    owner_id: string,           // the user id of the user who created the document; unchanging field
     share_style: SHARE_STYLE,   // the type of publicity for the document
     share_list?: string[],      // OPTIONAL; the user list that the document is shared with
     time_created: number,       // the time (in milliseconds) when the document was created
@@ -36,7 +36,7 @@ export type Comment =
 {
     comment_id: string,
     content: string,
-    author_email: string,
+    author_id: string,
     is_reply: boolean,
     reply_id?: string,
     time_created: number,

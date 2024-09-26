@@ -17,9 +17,10 @@ import { OnlineEntity, UpdateType } from "@lib/userTypes";
 import { getUserIdFromEmail } from "../user-utils/getUserData";
 
 const PRIMARY_TEST_EMAIL = "test-user-1@tune-tracer.com";
+const PRIMARY_TEST_ID = "OgGilSJwqCW3qMuHWlChEYka9js1";
 const TEST_PASSWORD = "This*Is*A*Strong*Password100!";
-const SECONDARY_TEST_EMAIL = "test-user-2@tune-tracer.com";
-const TERTIARY_TEST_EMAIL = "test-user-3@tune-tracer.com";
+const SECONDARY_TEST_ID = "d0zM0dYlUdTR1qf7QFOLQWPQ5qA2";
+const TERTIARY_TEST_ID = "1HyvutGfMdaQmaU2ASTIBP8h4HT2";
 
 // to test: 
 // check sign up correctly add user in user collection
@@ -35,7 +36,7 @@ const TEST_DOCUMENT: Document = {
         {
             comment_id: "1234",
             content: "help me I'm a comment",
-            author_email: PRIMARY_TEST_EMAIL,
+            author_id: PRIMARY_TEST_ID,
             is_reply: false,
             time_created: 1234556,
             last_edit_time: 1234556,
@@ -43,11 +44,11 @@ const TEST_DOCUMENT: Document = {
     ],
     metadata: {
         document_id: "test_document_id",
-        owner_email: PRIMARY_TEST_EMAIL,
+        owner_id: PRIMARY_TEST_ID,
         share_style: 1,
         time_created: 0,
         last_edit_time: 12,
-        last_edit_user: PRIMARY_TEST_EMAIL,
+        last_edit_user: PRIMARY_TEST_ID,
     },
     document_title: "Document Title",
 };
@@ -57,9 +58,9 @@ export async function runTest()
     const firebase: FirebaseWrapper = new FirebaseWrapper();
     firebase.initApp();
 
-    // await runAllUnitTests(firebase);
+    await runAllUnitTests(firebase);
 
-    await testDocumentChanges();
+    // await testDocumentChanges();
     // await testUserRegistrationToDocument(firebase);
     // await testSignUp(firebase);
     // await testDocumentDeletion(firebase);
@@ -78,13 +79,13 @@ export async function testDocumentChanges()
 {
     // create the document
     const SOURCE_DOCUMENT = JSON.parse(JSON.stringify(TEST_DOCUMENT)) as Document;
-    const document = await createDocument(TEST_DOCUMENT.metadata.owner_email);
+    const document = await createDocument(TEST_DOCUMENT.metadata.owner_id);
     const id = document.metadata.document_id;
     SOURCE_DOCUMENT.metadata.document_id = id;
     console.log(`Document Id: ${id}`);
     
     let currentDocument = SOURCE_DOCUMENT;
-    const user_id = await getUserIdFromEmail(PRIMARY_TEST_EMAIL);
+    const user_id = await getUserIdFromEmail(PRIMARY_TEST_ID);
     const user = {
         user_email: PRIMARY_TEST_EMAIL,
         user_id: user_id,
@@ -107,7 +108,7 @@ export async function testDocumentChanges()
 
     // setting document to test document
     console.log(`Setting initial document...`);
-    await updateDocument(SOURCE_DOCUMENT, PRIMARY_TEST_EMAIL);
+    await updateDocument(SOURCE_DOCUMENT, PRIMARY_TEST_ID);
     console.log(`Updating Document Color...`);
     await updateDocumentColor(id, "blue", user.user_email);
     console.log(`Updating cursor...`)
@@ -132,27 +133,27 @@ async function testLogIn(firebase: FirebaseWrapper)
 
 async function testDocumentUpdate(firebase: FirebaseWrapper)
 {
-    const doc = await createDocument(TEST_DOCUMENT.metadata.owner_email);
+    const doc = await createDocument(TEST_DOCUMENT.metadata.owner_id);
     console.log(`Document Id: ${doc.metadata.document_id}`);
     TEST_DOCUMENT.metadata.document_id = doc.metadata.document_id;
-    await updateDocument(TEST_DOCUMENT, PRIMARY_TEST_EMAIL);
+    await updateDocument(TEST_DOCUMENT, PRIMARY_TEST_ID);
 
     const updatedDocumentTest = JSON.parse(JSON.stringify(TEST_DOCUMENT)) as Document;
 
     updatedDocumentTest.document_title = "New Document Title";
-    const success = await updateDocument(updatedDocumentTest, PRIMARY_TEST_EMAIL);
+    const success = await updateDocument(updatedDocumentTest, PRIMARY_TEST_ID);
     console.log(`Document Update was successful: ${success ? "true" : "false"}`);
 }
 
 async function testDocumentDeletion(firebase: FirebaseWrapper)
 {
-    const doc = await createDocument(TEST_DOCUMENT.metadata.owner_email);
+    const doc = await createDocument(TEST_DOCUMENT.metadata.owner_id);
     console.log(`Document Id: ${doc.metadata.document_id}`);
-    await deleteDocument(doc, TEST_DOCUMENT.metadata.owner_email);
+    await deleteDocument(doc, TEST_DOCUMENT.metadata.owner_id);
 }
 
 async function testUserRegistrationToDocument(firebase: FirebaseWrapper) {
-    const doc = await createDocument(TEST_DOCUMENT.metadata.owner_email);
+    const doc = await createDocument(TEST_DOCUMENT.metadata.owner_id);
     const documentId = doc.metadata.document_id;
     console.log(`Document Id: ${documentId}`);
 
@@ -208,37 +209,37 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
 {
     // create the initial document
     const SOURCE_DOCUMENT = JSON.parse(JSON.stringify(TEST_DOCUMENT)) as Document;
-    const document = await createDocument(TEST_DOCUMENT.metadata.owner_email);
+    const document = await createDocument(TEST_DOCUMENT.metadata.owner_id);
     const id = document.metadata.document_id;
     SOURCE_DOCUMENT.metadata.document_id = id;
     console.log(`Document Id: ${id}`);
-    await updateDocument(SOURCE_DOCUMENT, PRIMARY_TEST_EMAIL);
+    await updateDocument(SOURCE_DOCUMENT, PRIMARY_TEST_ID);
 
     // update the metadata to alternative values
     await Promise.all([
-        updateDocumentShareStyle(id, SHARE_STYLE.edit_list, PRIMARY_TEST_EMAIL),
-        updateDocumentColor(id, "blue", PRIMARY_TEST_EMAIL),
-        updateDocumentEmoji(id, "&#x1f602", PRIMARY_TEST_EMAIL),
-        shareDocumentWithUser(id, SECONDARY_TEST_EMAIL, PRIMARY_TEST_EMAIL),
-        shareDocumentWithUser(id, TERTIARY_TEST_EMAIL, PRIMARY_TEST_EMAIL),
+        updateDocumentShareStyle(id, SHARE_STYLE.edit_list, PRIMARY_TEST_ID),
+        updateDocumentColor(id, "blue", PRIMARY_TEST_ID),
+        updateDocumentEmoji(id, "&#x1f602", PRIMARY_TEST_ID),
+        shareDocumentWithUser(id, SECONDARY_TEST_ID, PRIMARY_TEST_ID),
+        shareDocumentWithUser(id, TERTIARY_TEST_ID, PRIMARY_TEST_ID),
     ]);
-    await unshareDocumentWithUser(id, TERTIARY_TEST_EMAIL, PRIMARY_TEST_EMAIL);
-    await updateDocumentEmoji(id, ":celebration:", SECONDARY_TEST_EMAIL);
+    await unshareDocumentWithUser(id, TERTIARY_TEST_ID, PRIMARY_TEST_ID);
+    await updateDocumentEmoji(id, ":celebration:", SECONDARY_TEST_ID);
 
     // update source of truth
     SOURCE_DOCUMENT.metadata.share_style = SHARE_STYLE.edit_list;
     SOURCE_DOCUMENT.metadata.preview_color = "blue";
     SOURCE_DOCUMENT.metadata.preview_emoji = ":celebration:";
-    SOURCE_DOCUMENT.metadata.share_list = [SECONDARY_TEST_EMAIL];
+    SOURCE_DOCUMENT.metadata.share_list = [SECONDARY_TEST_ID];
 
     // grab the stored information
-    const databaseDocument = await getDocument(id, PRIMARY_TEST_EMAIL);
-    const secondaryUserShares = await getDocumentPreviewsSharedWithUser(SECONDARY_TEST_EMAIL);
-    const tertiaryUserShares = await getDocumentPreviewsSharedWithUser(TERTIARY_TEST_EMAIL);
+    const databaseDocument = await getDocument(id, PRIMARY_TEST_ID);
+    const secondaryUserShares = await getDocumentPreviewsSharedWithUser(SECONDARY_TEST_ID);
+    const tertiaryUserShares = await getDocumentPreviewsSharedWithUser(TERTIARY_TEST_ID);
 
     // verification checks
     SOURCE_DOCUMENT.metadata.last_edit_time = databaseDocument.metadata.last_edit_time;
-    SOURCE_DOCUMENT.metadata.last_edit_user = SECONDARY_TEST_EMAIL;
+    SOURCE_DOCUMENT.metadata.last_edit_user = SECONDARY_TEST_ID;
     assert(isEqual(SOURCE_DOCUMENT, databaseDocument), `Source document and firestore document are not equal`);
     // the shared document is in the shared list
     assert(secondaryUserShares
