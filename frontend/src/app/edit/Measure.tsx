@@ -68,9 +68,9 @@ export class Measure {
             new this.VF.StaveNote({ clef: this.clef, keys: [this.rest_location], duration: "qr" }),
             new this.VF.StaveNote({ clef: this.clef, keys: [this.rest_location], duration: "qr" }),
             new this.VF.StaveNote({ clef: this.clef, keys: [this.rest_location], duration: "qr" }),
-            new this.VF.StaveNote({ clef: this.clef, keys: [this.rest_location], duration: "qr" })
+            new this.VF.StaveNote({ clef: this.clef, keys: [this.rest_location], duration: "qr" }),
         ];
-
+        
         this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(this.notes);
     }
 
@@ -137,18 +137,32 @@ export class Measure {
             let staveNote = tickable as StaveNote;
             if (staveNote.getAttributes().id === noteId) {
                 found = true;
+                let duration = staveNote.getDuration();
+                if (staveNote.isDotted()) duration += "d";
+
                 if (staveNote.getNoteType() !== 'r') {
                     const newKeys = staveNote.getKeys();
                     keys.forEach(key => {
                         // We don't want repeat keys
                         if (!newKeys.includes(key)) newKeys.push(key);
                     });
-                    newNote = new VF.StaveNote({ clef: this.clef, keys: newKeys, duration: staveNote.getDuration()});
+                    newNote = new VF.StaveNote({ clef: this.clef, keys: newKeys, duration });
                 }
                 // If the staveNote is a rest, then we replace it 
                 else {
-                    newNote = new VF.StaveNote({ clef: this.clef, keys, duration: staveNote.getDuration()});
+                    newNote = new VF.StaveNote({ clef: this.clef, keys, duration });
+                }
+                if (staveNote.isDotted()) {
+                    // Create a Dot
+                    const dot = new Vex.Flow.Dot();
+                    newNote.addModifier(dot); // Attach the dot to the note
 
+                    // Create ModifierContext and add the dot
+                    const modifierContext = new Vex.Flow.ModifierContext();
+                    modifierContext.addModifier(dot);
+
+                    // Associate the ModifierContext with the note
+                    newNote.setModifierContext(modifierContext);
                 }
                 notes.push(newNote);
             } else {
@@ -179,7 +193,7 @@ export class Measure {
             if (firstNote !== null) {
                 // If the note directly after the first is a rest, then second should be null
                 // as ties cannot skip notes
-                if(!isRest) secondNote = staveNote;
+                if (!isRest) secondNote = staveNote;
                 return { firstNote, secondNote };
             }
             // We want to filter rests
@@ -189,14 +203,13 @@ export class Measure {
                 }
             }
         }
-        if(firstNote !== null) return {firstNote, secondNote};
+        if (firstNote !== null) return { firstNote, secondNote };
         // If we get here, we didn't even find the first note
         return null;
     }
 
     // Used for Ties
-    getFirstStaveNoteInMeasure = (): StaveNote =>
-    {
+    getFirstStaveNoteInMeasure = (): StaveNote => {
         return this.voice1.getTickables()[0] as StaveNote;
     }
 
