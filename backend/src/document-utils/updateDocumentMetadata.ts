@@ -9,39 +9,39 @@ import "firebase/compat/firestore";
 export async function updateDocumentShareStyle(
   documentId: string,
   newShareStyle: SHARE_STYLE,
-  writerEmail: string
+  writerId: string
 ) {
   await updateDocumentMetadata(
     documentId,
     "share_style",
     newShareStyle,
-    writerEmail
+    writerId
   );
 }
 
 export async function updateDocumentEmoji(
   documentId: string,
   newEmoji: string,
-  writerEmail: string
+  writerId: string
 ) {
   await updateDocumentMetadata(
     documentId,
     "preview_emoji",
     newEmoji,
-    writerEmail
+    writerId
   );
 }
 
 export async function updateDocumentColor(
   documentId: string,
   newColor: string,
-  writerEmail: string
+  writerId: string
 ) {
   await updateDocumentMetadata(
     documentId,
     "preview_color",
     newColor,
-    writerEmail
+    writerId
   );
 }
 
@@ -50,14 +50,14 @@ export async function updateDocumentColor(
 export async function shareDocumentWithUser(
   documentId: string,
   newUser: string,
-  writerEmail: string
+  writerId: string
 ) {
   if (
     await updateDocumentMetadata(
       documentId,
       "share_list",
       firebase.firestore.FieldValue.arrayUnion(newUser),
-      writerEmail
+      writerId
     )
   ) {
     await getFirebase().insertUserDocument(newUser, documentId, false);
@@ -67,14 +67,14 @@ export async function shareDocumentWithUser(
 export async function unshareDocumentWithUser(
   documentId: string,
   oldUser: string,
-  writerEmail: string
+  writerId: string
 ) {
   if (
     await updateDocumentMetadata(
       documentId,
       "share_list",
       firebase.firestore.FieldValue.arrayRemove(oldUser),
-      writerEmail
+      writerId
     )
   ) {
     await getFirebase().deleteUserDocument(oldUser, documentId, false);
@@ -87,13 +87,13 @@ async function updateDocumentMetadata(
   documentId: string,
   key: string,
   newValue: unknown,
-  writerEmail: string
+  writerId: string
 ): Promise<boolean> {
   const firebaseKey = `metadata.${key}`;
   return processDocumentUpdate(
     { [firebaseKey]: newValue },
     documentId,
-    writerEmail
+    writerId
   );
 }
 

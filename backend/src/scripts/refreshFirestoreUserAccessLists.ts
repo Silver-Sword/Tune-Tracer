@@ -16,14 +16,14 @@ export async function refreshFirestoreUserAccessLists()
     const shared = new Map<string, string[]>();
     const owned = new Map<string, string[]>();
 
-    const updateMap = (email: string, map: Map<string, string[]>, documentId: string) =>
+    const updateMap = (userId: string, map: Map<string, string[]>, documentId: string) =>
     {
-        if(!map.has(email))
+        if(!map.has(userId))
         {
-            map.set(email, []);
+            map.set(userId, []);
         }
 
-        map.get(email)?.push(documentId);
+        map.get(userId)?.push(documentId);
     };
 
     // get all documents
@@ -42,7 +42,7 @@ export async function refreshFirestoreUserAccessLists()
             return;
         }
         const metadata = data['metadata'] as DocumentMetadata;
-        if(!('document_id' in metadata && 'owner_email' in metadata))
+        if(!('document_id' in metadata && 'owner_id' in metadata))
         {
             console.warn(`Skipping document ${snapshot.id} because missing required metadata fields`);
             return;
@@ -52,7 +52,7 @@ export async function refreshFirestoreUserAccessLists()
             console.log(`Updating document ${snapshot.id} id because recorded metadata id is ${metadata.document_id}`);
             batch.update(snapshot.ref, {'metadata.document_id': snapshot.id});
         }
-        const owner = metadata.owner_email;
+        const owner = metadata.owner_id;
         let shares: string[] = [];
         if(
             metadata.share_style === SHARE_STYLE.comment_list || 
@@ -63,7 +63,7 @@ export async function refreshFirestoreUserAccessLists()
         }
 
         updateMap(owner, owned, snapshot.id);
-        shares.forEach((email: string) => updateMap(email, shared, snapshot.id));
+        shares.forEach((userId: string) => updateMap(userId, shared, snapshot.id));
     }));
 
     const compareLists = (a: string[], b: string[]): boolean =>

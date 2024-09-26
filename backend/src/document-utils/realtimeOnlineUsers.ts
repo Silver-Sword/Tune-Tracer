@@ -50,8 +50,7 @@ export async function recordOnlineUserUpdatedDocument(
 /**
  * Records a new cursor placement for a user on a document.
  * @param documentId the unique id of the document that the user is on
- * @param onlineUser a user object containing '
- *      the user id (not email) associated with the email and the current cursor information for the user.
+ * @param onlineUser a user object containing the user id and the current cursor information for the user.
  */
 export async function updateUserCursor(
     documentId: string, 

@@ -49,10 +49,7 @@ export default class FirebaseWrapper
             userEntity.display_name = displayName;
             userEntity.user_id = user.uid;
 
-            await firebase.firestore()
-                          .collection(USER_DATABASE_NAME)
-                          .doc(email)
-                          .set(userEntity);
+            await this.setUser(userEntity);
 
         } catch(error) {
             // if the account creation failed, make sure to remove all updates made to Firestore
@@ -192,18 +189,26 @@ export default class FirebaseWrapper
         await firebase.firestore().collection(DOCUMENT_DATABASE_NAME).doc(documentId).delete();
     }
 
-    public async getUser(userEmail: string): Promise<UserEntity> {
+    public async getUser(userId: string): Promise<UserEntity> {
         const collection = (await firebase.firestore()
             .collection(USER_DATABASE_NAME)
-            .doc(userEmail)
+            .doc(userId)
             .get());
         
         if(!collection.exists)
         {
-            throw Error(`Could not find ${userEmail} in database`);
+            throw Error(`Could not find user ${userId} in database`);
         } 
 
         return collection.data() as UserEntity;
+    }
+
+    public async setUser(userEntity: UserEntity)
+    {
+        await firebase.firestore()
+                .collection(USER_DATABASE_NAME)
+                .doc(userEntity.user_id)
+                .set(userEntity);
     }
     // gets the list of document ids of documents owned (if isOwned is true) or shared (is isOwned is false)
     // by a particular user

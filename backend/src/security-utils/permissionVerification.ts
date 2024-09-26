@@ -11,7 +11,7 @@ export function userHasReadAccess(userId: string, document: Document): boolean {
   if (metadata === null) {
     return false;
   } else if (
-    metadata.owner_email === userId ||
+    metadata.owner_id === userId ||
     metadata.share_style === SHARE_STYLE.public_document
   ) {
     return true;
@@ -36,7 +36,7 @@ function userHasCommentAccess(userId: string, document: Document): boolean {
   if (metadata === null) {
     return false;
   } else if (
-    metadata.owner_email === userId ||
+    metadata.owner_id === userId ||
     metadata.share_style === SHARE_STYLE.public_document
   ) {
     return true;
@@ -63,7 +63,7 @@ export function userHasWriteAccess(
   if (metadata === null) {
     return false;
   } else if (
-    metadata.owner_email === userId ||
+    metadata.owner_id === userId ||
     metadata.share_style === SHARE_STYLE.public_document
   ) {
     return true;
