@@ -1,20 +1,26 @@
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { Document,  ShareStyle } from '@lib/documentTypes';
+import { OnlineEntity, UpdateType } from "@lib/userTypes";
+
+import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { createDocument, updateDocument, deleteDocument, getDocument } from '../document-utils/documentOperations';
 import { getDocumentPreviewsOwnedByUser, getDocumentPreviewsSharedWithUser } from "../document-utils/documentBatchRead";
 import { subscribeToDocument } from "../document-utils/realtimeDocumentUpdates";
-import { recordOnlineUserUpdatedDocument, subscribeUserToUserDocumentPool, updateUserCursor } from "../document-utils/realtimeOnlineUsers";
 import { 
+    recordOnlineUserUpdatedDocument, 
+    subscribeUserToUserDocumentPool, 
+    updateUserCursor 
+} from "../document-utils/realtimeOnlineUsers";
+import { 
+    shareDocumentWithUser, 
     updateDocumentShareStyle,       
     updateDocumentEmoji, 
     updateDocumentColor, 
-    shareDocumentWithUser, 
     unshareDocumentWithUser 
 } from '../document-utils/updateDocumentMetadata';
-
-import { isEqual } from 'lodash';
-import { OnlineEntity, UpdateType } from "@lib/userTypes";
 import { getUserIdFromEmail } from "../user-utils/getUserData";
+import { createShareCode, deleteShareCode, getDocumentIdFromShareCode } from "../document-utils/sharing/sharingUtils";
+
+import { create, isEqual } from 'lodash';
 
 const PRIMARY_TEST_EMAIL = "test-user-1@tune-tracer.com";
 const PRIMARY_TEST_ID = "OgGilSJwqCW3qMuHWlChEYka9js1";
@@ -59,7 +65,9 @@ export async function runTest()
     const firebase: FirebaseWrapper = new FirebaseWrapper();
     firebase.initApp();
 
-    await runAllUnitTests(firebase);
+    // await runAllUnitTests(firebase);
+
+    await testShareCodeFunctions(firebase);
 
     // await testDocumentChanges();
     // await testUserRegistrationToDocument(firebase);
@@ -74,6 +82,7 @@ export async function runTest()
 async function runAllUnitTests(firebase: FirebaseWrapper)
 {
     await testDocumentMetadataUpdates(firebase);
+    await testShareCodeFunctions(firebase);
 }
 
 export async function testDocumentChanges()
@@ -254,4 +263,21 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
                 .length === 0,
             `Tertiary user has new document id in its shared list, but shouldn't`        
     );
+}
+
+async function testShareCodeFunctions(firebase: FirebaseWrapper)
+{
+    console.log(`Testing Share Code Functions...`);
+    const document = await createDocument(PRIMARY_TEST_ID);
+    const documentId = document.metadata.document_id;
+
+    const shareCode1 = await createShareCode(documentId);
+    await deleteShareCode(documentId, shareCode1);
+
+    const shareCode2 = await createShareCode(documentId);
+
+    // share code maps correctly to document
+    assert((await getDocumentIdFromShareCode(shareCode2)) === documentId);
+    // share code was correctly deleted
+    assert((await getDocumentIdFromShareCode(shareCode1)) === null);
 }

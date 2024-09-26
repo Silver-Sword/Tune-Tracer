@@ -5,7 +5,13 @@ import 'firebase/compat/firestore';
 
 import { DocumentMetadata, Document } from '@lib/documentTypes';
 import { getDefaultUser, OnlineEntity, UserEntity, UpdateType } from '@lib/userTypes';
-import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
+import { 
+    DOCUMENT_DATABASE_NAME, 
+    FIREBASE_CONFIG, 
+    SHARE_CODE_DATABASE,
+    USER_DATABASE_NAME
+} from '../firebaseSecrets'
+import { ShareCodeEntity } from 'src/document-utils/sharing/ShareCodeEntity';
 
 type PartialWithRequired<T, K extends keyof T> = Partial<T> & Required<Pick<T, K>>;
 type PartialWithRequiredAndWithout<T, K extends keyof T, U extends keyof T> = Partial<T> & Required<Omit<Pick<T, K>, U>>;
@@ -23,8 +29,15 @@ export default class FirebaseWrapper
             firebase.initializeApp(FIREBASE_CONFIG);
         }
     }
+
+    public async setDataInFirestore(collection: string, documentId: string, data: Record<string, unknown>)
+    {
+        await firebase.firestore()
+                .collection(collection)
+                .doc(documentId)
+                .set(data);
+    }
     
-    /* Generic CRUD functions for Firestore */
     public async getDataFromFirestore<T>(collection: string, documentId: string): Promise<T | null>
     {
         const document = (await firebase.firestore()
@@ -206,10 +219,7 @@ export default class FirebaseWrapper
 
     public async setUser(userEntity: UserEntity)
     {
-        await firebase.firestore()
-                .collection(USER_DATABASE_NAME)
-                .doc(userEntity.user_id)
-                .set(userEntity);
+        await this.setDataInFirestore(USER_DATABASE_NAME, userEntity.user_id, userEntity);
     }
     // gets the list of document ids of documents owned (if isOwned is true) or shared (is isOwned is false)
     // by a particular user
@@ -319,5 +329,20 @@ export default class FirebaseWrapper
             const user = snapshot.val();
             onlineUserUpdateFn(UpdateType.CHANGE, user);
         });
+    }
+
+    public async getShareCodeEntity(shareCode: string): Promise<ShareCodeEntity | null>
+    {
+        return this.getDataFromFirestore(SHARE_CODE_DATABASE, shareCode);
+    }
+
+    public async setShareCodeEntity(shareCodeEntity: ShareCodeEntity)
+    {
+        return this.setDataInFirestore(SHARE_CODE_DATABASE, shareCodeEntity.code, shareCodeEntity);
+    }
+
+    public async deleteShareCodeEntity(shareCode: string)
+    {
+        return this.deleteDataFromFirestore(SHARE_CODE_DATABASE, shareCode);
     }
 }
