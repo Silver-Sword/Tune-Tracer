@@ -11,4 +11,4 @@ export const FIREBASE_CONFIG = {
 
 export const DOCUMENT_DATABASE_NAME = "Composition_Documents";
 export const USER_DATABASE_NAME = "Users_Collection";
-export const ONLINE_TRACKING_DATABASE_NAME = "Online_Tracking_Collection";
+export const SHARE_CODE_DATABASE = "Share_Code_Collection";
