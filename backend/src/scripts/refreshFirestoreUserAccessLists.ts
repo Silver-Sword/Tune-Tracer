@@ -3,7 +3,7 @@ import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 
 import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
-import { DocumentMetadata, SHARE_STYLE } from '@lib/documentTypes';
+import { DocumentMetadata, ShareStyle } from '@lib/documentTypes';
 
 // Purpose: recomputes the shared and owned documents lists for each user in Firestore
 // Note: this script can cause issues if the database is being actively updated
@@ -53,14 +53,7 @@ export async function refreshFirestoreUserAccessLists()
             batch.update(snapshot.ref, {'metadata.document_id': snapshot.id});
         }
         const owner = metadata.owner_id;
-        let shares: string[] = [];
-        if(
-            metadata.share_style === SHARE_STYLE.comment_list || 
-            metadata.share_style === SHARE_STYLE.edit_list || 
-            metadata.share_style === SHARE_STYLE.view_list
-        ){
-            shares = metadata.share_list ?? ([] as string[]);
-        }
+        let shares: string[] = Object.keys(metadata.share_list);
 
         updateMap(owner, owned, snapshot.id);
         shares.forEach((userId: string) => updateMap(userId, shared, snapshot.id));
@@ -97,7 +90,6 @@ export async function refreshFirestoreUserAccessLists()
         {
             batch.update(snapshot.ref, {'shared_documents': shared.get(snapshot.id) ?? ([] as string[])});
             console.log(`User ${snapshot.id} shared_documents is being updated to ${(shared.get(snapshot.id) ?? []).join(', ')}`);
-
         }
     }));
 

@@ -1,5 +1,5 @@
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { Document,  SHARE_STYLE } from '@lib/documentTypes';
+import { Document,  ShareStyle } from '@lib/documentTypes';
 import { createDocument, updateDocument, deleteDocument, getDocument } from '../document-utils/documentOperations';
 import { getDocumentPreviewsOwnedByUser, getDocumentPreviewsSharedWithUser } from "../document-utils/documentBatchRead";
 import { subscribeToDocument } from "../document-utils/realtimeDocumentUpdates";
@@ -45,7 +45,8 @@ const TEST_DOCUMENT: Document = {
     metadata: {
         document_id: "test_document_id",
         owner_id: PRIMARY_TEST_ID,
-        share_style: 1,
+        share_link_style: ShareStyle.NONE,
+        share_list: {},
         time_created: 0,
         last_edit_time: 12,
         last_edit_user: PRIMARY_TEST_ID,
@@ -217,20 +218,20 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
 
     // update the metadata to alternative values
     await Promise.all([
-        updateDocumentShareStyle(id, SHARE_STYLE.edit_list, PRIMARY_TEST_ID),
+        updateDocumentShareStyle(id, ShareStyle.WRITE, PRIMARY_TEST_ID),
         updateDocumentColor(id, "blue", PRIMARY_TEST_ID),
         updateDocumentEmoji(id, "&#x1f602", PRIMARY_TEST_ID),
-        shareDocumentWithUser(id, SECONDARY_TEST_ID, PRIMARY_TEST_ID),
-        shareDocumentWithUser(id, TERTIARY_TEST_ID, PRIMARY_TEST_ID),
+        shareDocumentWithUser(id, SECONDARY_TEST_ID, ShareStyle.WRITE, PRIMARY_TEST_ID),
+        shareDocumentWithUser(id, TERTIARY_TEST_ID, ShareStyle.COMMENT, PRIMARY_TEST_ID),
     ]);
     await unshareDocumentWithUser(id, TERTIARY_TEST_ID, PRIMARY_TEST_ID);
     await updateDocumentEmoji(id, ":celebration:", SECONDARY_TEST_ID);
 
     // update source of truth
-    SOURCE_DOCUMENT.metadata.share_style = SHARE_STYLE.edit_list;
+    SOURCE_DOCUMENT.metadata.share_link_style = ShareStyle.WRITE;
     SOURCE_DOCUMENT.metadata.preview_color = "blue";
     SOURCE_DOCUMENT.metadata.preview_emoji = ":celebration:";
-    SOURCE_DOCUMENT.metadata.share_list = [SECONDARY_TEST_ID];
+    SOURCE_DOCUMENT.metadata.share_list[SECONDARY_TEST_ID] = ShareStyle.WRITE;
 
     // grab the stored information
     const databaseDocument = await getDocument(id, PRIMARY_TEST_ID);

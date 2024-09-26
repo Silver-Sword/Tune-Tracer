@@ -1,5 +1,5 @@
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { Document, DocumentMetadata, DocumentPreview, SHARE_STYLE } from '@lib/documentTypes'; 
+import { Document, DocumentMetadata, DocumentPreview, ShareStyle } from '@lib/documentTypes'; 
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';
 import { getUserIdFromEmail } from "../user-utils/getUserData";
 import { recordOnlineUserUpdatedDocument } from "./realtimeOnlineUsers";
@@ -18,10 +18,11 @@ export async function createDocument(writerId: string): Promise<Document>
     const metadata: DocumentMetadata = {
         document_id: documentId,
         owner_id: writerId,
-        share_style: SHARE_STYLE.private_document,
+        share_link_style: ShareStyle.NONE,
         time_created: currentTime,
         last_edit_time: currentTime,
         last_edit_user: writerId,
+        share_list: {},
     };
     const document : Document = {
         document_title: "",
@@ -131,10 +132,10 @@ export async function deleteDocument(document: Document, writerId: string): Prom
     await firebase.deleteUserDocument(userId, documentId, true);
 
     // delete the document from the user shared documents
-    for(const sharedUser of (document.metadata.share_list ?? []))
+    for(const sharedUser of Object.keys(document.metadata.share_list))
     {
         await firebase.deleteUserDocument(sharedUser, documentId, false);
-    }
+    }   
 }
 
 // determines if a document exist in the Firestore database by attempting to retrieve it
