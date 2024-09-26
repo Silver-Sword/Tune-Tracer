@@ -23,6 +23,59 @@ export default class FirebaseWrapper
             firebase.initializeApp(FIREBASE_CONFIG);
         }
     }
+    
+    /* Generic CRUD functions for Firestore */
+    public async getDataFromFirestore<T>(collection: string, documentId: string): Promise<T | null>
+    {
+        const document = (await firebase.firestore()
+            .collection(collection)
+            .doc(documentId)
+            .get());
+        
+        if(!document.exists)
+        {
+            return null;
+        } 
+
+        const data = document.data();
+        if(data === null || data === undefined)
+        {
+            return null;
+        }
+        return data as T;
+    }
+
+    public async deleteDataFromFirestore(collection: string, documentId: string) {
+        await firebase.firestore()
+                .collection(collection)
+                .doc(documentId)
+                .delete();
+    }
+
+    public async doesDocumentExistInFirestore(collection: string, documentId: string)
+    {
+        return (await firebase.firestore()
+                      .collection(collection)
+                      .doc(documentId)
+                      .get()).exists;
+    }
+
+    public async updateDataInFirestore(
+        collection: string, 
+        documentId: string, 
+        updateObject: Record<string, unknown>
+    ): Promise<boolean> {
+        if(!await this.doesDocumentExistInFirestore(collection, documentId)) {
+            throw Error(`Document in collection ${collection} with id ${documentId} does not exist`);
+        }
+    
+        await firebase
+                .firestore()
+                .collection(collection)
+                .doc(documentId)
+                .update(updateObject);
+        return true;
+    }
 
     // creates an account for a user with the given email and password
     // will throw an Error if the account creation failed 
@@ -53,16 +106,15 @@ export default class FirebaseWrapper
 
         } catch(error) {
             // if the account creation failed, make sure to remove all updates made to Firestore
-            await firebase.firestore()
-                          .collection(USER_DATABASE_NAME)
-                          .doc(email)
-                          .delete();
-            await user?.delete()
-                       .catch( (deletionError) => {
-                            console.log(
-                                `Another error occurred when attempted to delete the user data after the user account 
-                                 failed to be created.\nDetails: ${deletionError.message}`
-                        )});
+            if(user) {
+                await this.deleteDataFromFirestore(USER_DATABASE_NAME, user.uid);
+                await user?.delete()
+                            .catch( (deletionError) => {
+                                console.log(
+                                    `Another error occurred when attempted to delete the user data after the user account 
+                                        failed to be created.\nDetails: ${deletionError.message}`
+                            )});
+            }
             
             // rethrow the error so that the error is passed along
             throw error;
@@ -79,18 +131,12 @@ export default class FirebaseWrapper
 
     public async doesDocumentExist(documentId: string): Promise<boolean>
     {
-        return (await firebase.firestore()
-                      .collection(DOCUMENT_DATABASE_NAME)
-                      .doc(documentId)
-                      .get()).exists;
+        return this.doesDocumentExistInFirestore(DOCUMENT_DATABASE_NAME, documentId);
     }
 
-    public async doesUserExist(userEmail: string): Promise<boolean>
+    public async doesUserExist(userId: string): Promise<boolean>
     {
-        return (await firebase.firestore()
-                      .collection(USER_DATABASE_NAME)
-                      .doc(userEmail)
-                      .get()).exists;
+        return this.doesDocumentExistInFirestore(USER_DATABASE_NAME, userId);
     }
 
     // creates a blank composition document and returns the id of the created document
@@ -108,15 +154,7 @@ export default class FirebaseWrapper
     // UNUSED
     public async updateDocument(documentId: string, document: Document): Promise<boolean>
     {
-        if(!await this.doesDocumentExist(documentId))
-        {
-            return false;
-        }
-        await firebase.firestore()
-                      .collection(DOCUMENT_DATABASE_NAME)
-                      .doc(documentId)
-                      .update(document);
-        return true;
+        return this.updateDataInFirestore(DOCUMENT_DATABASE_NAME, documentId, document);
     }
 
     // updates somes field in a document
@@ -124,15 +162,11 @@ export default class FirebaseWrapper
     public async updatePartialDocument(documentId: string, updateObject: Record<string, unknown>)
         : Promise<boolean>
     {
-        if(!await this.doesDocumentExist(documentId))
+        const isSuccessful = await this.updateDataInFirestore(DOCUMENT_DATABASE_NAME, documentId, updateObject);
+        if(!isSuccessful)
         {
-            throw Error(`Document with id ${documentId} does not exist`);
+            throw Error(`Document with id ${documentId} does not exist or update failed`);
         }
-
-        await firebase.firestore()
-                      .collection(DOCUMENT_DATABASE_NAME)
-                      .doc(documentId)
-                      .update(updateObject);
         return true;
     }
 
@@ -140,42 +174,12 @@ export default class FirebaseWrapper
     // if the document or data doesn't exist, the function returns null
     public async getDocument(documentId: string): Promise<Document | null>
     {
-        const document = (await firebase.firestore()
-            .collection(DOCUMENT_DATABASE_NAME)
-            .doc(documentId)
-            .get());
-        
-        if(!document.exists)
-        {
-            return null;
-        } 
-
-        const data = document.data();
-        if(data === null || data === undefined)
-        {
-            return null;
-        }
-        return data as Document;
+        return this.getDataFromFirestore<Document>(DOCUMENT_DATABASE_NAME, documentId);
     }
 
     public async getDocumentField<T>(documentId: string, field: string): Promise<T | null> {
-        const document = (await firebase.firestore()
-            .collection(DOCUMENT_DATABASE_NAME)
-            .doc(documentId)
-            .get());
-        
-        if(!document.exists)
-        {
-            return null;
-        } 
-
-        const data = document.data();
-        if(data === undefined || !(field in data))
-        {
-            return null;
-        }
-        
-        return data[field];
+        const data = await this.getDocument(documentId);
+        return data ? (data as any)[field] as T : null;
     }
 
     public async getDocumentMetadata(documentId: string): Promise<DocumentMetadata | null> {
@@ -190,17 +194,14 @@ export default class FirebaseWrapper
     }
 
     public async getUser(userId: string): Promise<UserEntity> {
-        const collection = (await firebase.firestore()
-            .collection(USER_DATABASE_NAME)
-            .doc(userId)
-            .get());
+        const data = await this.getDataFromFirestore<UserEntity>(USER_DATABASE_NAME, userId);
         
-        if(!collection.exists)
+        if(!data)
         {
             throw Error(`Could not find user ${userId} in database`);
         } 
 
-        return collection.data() as UserEntity;
+        return data;
     }
 
     public async setUser(userEntity: UserEntity)
@@ -212,21 +213,16 @@ export default class FirebaseWrapper
     }
     // gets the list of document ids of documents owned (if isOwned is true) or shared (is isOwned is false)
     // by a particular user
-    public async getUserDocuments(userEmail: string, isOwned: boolean): Promise<string[]>
+    public async getUserDocuments(userId: string, isOwned: boolean): Promise<string[]>
     {
-        const collection = (await firebase.firestore()
-            .collection(USER_DATABASE_NAME)
-            .doc(userEmail)
-            .get());
-        
-        if(!collection.exists)
+        const data = await this.getDataFromFirestore<UserEntity>(USER_DATABASE_NAME, userId);
+        if(!data)
         {
             return [];
         } 
 
         const fieldName = isOwned ? 'owned_documents' : 'shared_documents';
-        const data = collection.data();
-        if(data === undefined || !(fieldName in data))
+        if(!(fieldName in data))
         {
             return [];
         }
@@ -238,30 +234,24 @@ export default class FirebaseWrapper
     // isOwned is true iff the userEmail is associated with the user that created the document
     // assumption: the user must not own the document if isOwned is set to false
     // will throw an Error if the user does not exist
-    public async insertUserDocument(userEmail: string, documentId: string, isOwned: boolean): Promise<void>
+    public async insertUserDocument(userId: string, documentId: string, isOwned: boolean): Promise<void>
     {
-        if(!this.doesUserExist(userEmail))
+        if(!this.doesUserExist(userId))
         {
-            throw Error(`Trying to share document ${documentId} with user ${userEmail}, but user does not exist`);
+            throw Error(`Trying to share document ${documentId} with user ${userId}, but user does not exist`);
         }
         const data = firebase.firestore.FieldValue.arrayUnion(documentId);
         const updatedObject = isOwned ? {'owned_documents': data} : {'shared_documents': data};
-        await firebase.firestore()
-                    .collection(USER_DATABASE_NAME)
-                    .doc(userEmail)
-                    .update(updatedObject);
+        await this.updateDataInFirestore(USER_DATABASE_NAME, userId, updatedObject);
     }
 
     // delete a document from a list of documents that the user either owns or has access to
     // isOwned is true iff the userEmail is associated with the user that created the document
-    public async deleteUserDocument(userEmail: string, documentId: string, isOwned: boolean): Promise<void>
+    public async deleteUserDocument(userId: string, documentId: string, isOwned: boolean): Promise<void>
     {
         const data = firebase.firestore.FieldValue.arrayRemove(documentId);
         const updatedObject = isOwned ? {'owned_documents': data} : {'shared_documents': data};
-        await firebase.firestore()
-                    .collection(USER_DATABASE_NAME)
-                    .doc(userEmail)
-                    .update(updatedObject);
+        await this.updateDataInFirestore(USER_DATABASE_NAME, userId, updatedObject);
     }
 
     // NOT FOR EXTERNAL USE (use the subscription fn in documentOperations.ts instead)
@@ -273,7 +263,7 @@ export default class FirebaseWrapper
         firebase.firestore()
                 .collection(DOCUMENT_DATABASE_NAME)
                 .doc(documentId)
-                .onSnapshot( onSnapshotFn);
+                .onSnapshot(onSnapshotFn);
     }
     
     // registers a user to the "online" collection of a document's user
