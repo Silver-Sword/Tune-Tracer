@@ -1,3 +1,8 @@
+/**
+ * TO DO:
+ *  retest script
+ *  automate deletion of removed documents from access list
+ */
 import firebase from 'firebase/compat/app'
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';

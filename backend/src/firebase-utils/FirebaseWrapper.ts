@@ -5,7 +5,7 @@ import 'firebase/compat/firestore';
 
 import { DocumentMetadata, Document } from '@lib/documentTypes';
 import { OnlineEntity, UpdateType } from '@lib/realtimeUserTypes';
-import { getDefaultUser, UserEntity } from '@lib/userTypes';
+import { AccessType, getDefaultUser, UserEntity } from '@lib/userTypes';
 
 import { 
     DOCUMENT_DATABASE_NAME, 
@@ -225,44 +225,51 @@ export default class FirebaseWrapper
     }
     // gets the list of document ids of documents owned (if isOwned is true) or shared (is isOwned is false)
     // by a particular user
-    public async getUserDocuments(userId: string, isOwned: boolean): Promise<string[]>
+    public async getUserDocuments(userId: string, accessTypes: AccessType[]): Promise<string[]>
     {
         const data = await this.getDataFromFirestore<UserEntity>(USER_DATABASE_NAME, userId);
         if(!data)
         {
             return [];
-        } 
-
-        const fieldName = isOwned ? 'owned_documents' : 'shared_documents';
-        if(!(fieldName in data))
-        {
-            return [];
         }
-        
-        return data[fieldName] as string[];
+
+        let documentIds: string[] = [];
+
+        for(const accessType of accessTypes)
+        {
+            const fieldName = `${accessType}_documents`;
+            if(fieldName in data)
+            {
+                documentIds.push(...((data as any)[fieldName] as string[]));
+            }
+        }
+
+        return documentIds;
     }
 
     // add a document to a list of documents that the user either owns or has access to
     // isOwned is true iff the userEmail is associated with the user that created the document
     // assumption: the user must not own the document if isOwned is set to false
     // will throw an Error if the user does not exist
-    public async insertUserDocument(userId: string, documentId: string, isOwned: boolean): Promise<void>
+    public async insertUserDocument(userId: string, documentId: string, accessType: AccessType): Promise<void>
     {
         if(!this.doesUserExist(userId))
         {
             throw Error(`Trying to share document ${documentId} with user ${userId}, but user does not exist`);
         }
+        const fieldName = `${accessType}_documents`;
         const data = firebase.firestore.FieldValue.arrayUnion(documentId);
-        const updatedObject = isOwned ? {'owned_documents': data} : {'shared_documents': data};
+        const updatedObject = {[fieldName]: data};
         await this.updateDataInFirestore(USER_DATABASE_NAME, userId, updatedObject);
     }
 
     // delete a document from a list of documents that the user either owns or has access to
     // isOwned is true iff the userEmail is associated with the user that created the document
-    public async deleteUserDocument(userId: string, documentId: string, isOwned: boolean): Promise<void>
+    public async deleteUserDocument(userId: string, documentId: string, accessType: AccessType): Promise<void>
     {
+        const fieldName = `${accessType}_documents`;
         const data = firebase.firestore.FieldValue.arrayRemove(documentId);
-        const updatedObject = isOwned ? {'owned_documents': data} : {'shared_documents': data};
+        const updatedObject = {[fieldName]: data};
         await this.updateDataInFirestore(USER_DATABASE_NAME, userId, updatedObject);
     }
 

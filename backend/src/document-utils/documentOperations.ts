@@ -32,7 +32,7 @@ export async function createDocument(writerId: string): Promise<Document>
     };
 
     await firebase.updateDocument(documentId, document);
-    await firebase.insertUserDocument(writerId, documentId, true);
+    await firebase.insertUserDocument(writerId, documentId, "owned");
     return document;
 }
 
@@ -96,6 +96,11 @@ export async function getDocument(documentId: string, readerId: string): Promise
     if(!userHasReadAccess(readerId, firebaseDocument))
     {
         throw Error(`User with id ${readerId} does not have read access to document with id ${documentId}`);
+    } else if(
+        readerId !== firebaseDocument.metadata.owner_id && 
+        !Object.keys(firebaseDocument.metadata.share_list).includes(readerId)
+    ) {
+        await firebase.insertUserDocument(readerId, firebaseDocument.metadata.document_id, "accessed");
     }
     return firebaseDocument;
 }
@@ -129,13 +134,13 @@ export async function deleteDocument(document: Document, writerId: string): Prom
     await firebase.deleteDocument(documentId);
     
     // delete the document from the user owned documents
-    await firebase.deleteUserDocument(userId, documentId, true);
+    await firebase.deleteUserDocument(userId, documentId, "owned");
 
     // delete the document from the user shared documents
     for(const sharedUser of Object.keys(document.metadata.share_list))
     {
-        await firebase.deleteUserDocument(sharedUser, documentId, false);
-    }   
+        await firebase.deleteUserDocument(sharedUser, documentId, "shared");
+    }
 }
 
 // determines if a document exist in the Firestore database by attempting to retrieve it
