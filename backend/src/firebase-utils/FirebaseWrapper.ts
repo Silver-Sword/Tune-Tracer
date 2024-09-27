@@ -4,7 +4,9 @@ import "firebase/compat/database";
 import 'firebase/compat/firestore';
 
 import { DocumentMetadata, Document } from '@lib/documentTypes';
-import { getDefaultUser, OnlineEntity, UserEntity, UpdateType } from '@lib/userTypes';
+import { OnlineEntity, UpdateType } from '@lib/realtimeUserTypes';
+import { getDefaultUser, UserEntity } from '@lib/userTypes';
+
 import { 
     DOCUMENT_DATABASE_NAME, 
     FIREBASE_CONFIG, 

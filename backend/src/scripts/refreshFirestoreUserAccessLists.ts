@@ -2,8 +2,9 @@ import firebase from 'firebase/compat/app'
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 
+import { DocumentMetadata } from '@lib/documentTypes';
+
 import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
-import { DocumentMetadata, ShareStyle } from '@lib/documentTypes';
 
 // Purpose: recomputes the shared and owned documents lists for each user in Firestore
 // Note: this script can cause issues if the database is being actively updated

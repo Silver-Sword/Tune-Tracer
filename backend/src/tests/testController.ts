@@ -1,5 +1,5 @@
 import { Document,  ShareStyle } from '@lib/documentTypes';
-import { OnlineEntity, UpdateType } from "@lib/userTypes";
+import { OnlineEntity, UpdateType } from '@lib/realtimeUserTypes';
 
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { createDocument, updateDocument, deleteDocument, getDocument } from '../document-utils/documentOperations';
@@ -17,7 +17,6 @@ import {
     updateDocumentColor, 
     unshareDocumentWithUser 
 } from '../document-utils/updateDocumentMetadata';
-import { getUserIdFromEmail } from "../user-utils/getUserData";
 import { createShareCode, deleteShareCode, getDocumentIdFromShareCode } from "../document-utils/sharing/sharingUtils";
 
 import { create, isEqual } from 'lodash';
@@ -95,10 +94,9 @@ export async function testDocumentChanges()
     console.log(`Document Id: ${id}`);
     
     let currentDocument = SOURCE_DOCUMENT;
-    const user_id = await getUserIdFromEmail(PRIMARY_TEST_ID);
     const user = {
         user_email: PRIMARY_TEST_EMAIL,
-        user_id: user_id,
+        user_id: PRIMARY_TEST_ID,
         display_name: "ADMIN_CHECK"
     };
 
@@ -280,4 +278,7 @@ async function testShareCodeFunctions(firebase: FirebaseWrapper)
     assert((await getDocumentIdFromShareCode(shareCode2)) === documentId);
     // share code was correctly deleted
     assert((await getDocumentIdFromShareCode(shareCode1)) === null);
+    // check structure of code
+    assert(shareCode2.length === 6);
+    assert(Number(shareCode2) >= 0 && Number(shareCode2) < 1_000_000);
 }
