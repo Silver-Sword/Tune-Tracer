@@ -1,6 +1,7 @@
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { getDocumentPreview } from "./documentOperations";
 import { DocumentPreview } from '@lib/documentTypes';
+
+import { getDocumentPreview } from "./documentOperations";
+import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 
 // returns all documents created by the user associated with the userId
 export async function getDocumentPreviewsOwnedByUser(userId: string): Promise<DocumentPreview[]>

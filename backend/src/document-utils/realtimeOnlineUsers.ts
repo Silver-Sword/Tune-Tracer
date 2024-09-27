@@ -1,4 +1,6 @@
-import { OnlineEntity, UpdateType, UserEntity } from "@lib/userTypes";
+import { OnlineEntity, UpdateType } from "@lib/realtimeUserTypes";
+import { UserEntity } from "@lib/userTypes";
+
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 
 type PartialWithRequired<T, K extends keyof T> = Partial<T> & Required<Pick<T, K>>;

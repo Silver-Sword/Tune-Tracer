@@ -1,7 +1,7 @@
+import { Document, DocumentMetadata, DocumentPreview, ShareStyle } from '@lib/documentTypes';
+
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { Document, DocumentMetadata, DocumentPreview, ShareStyle } from '@lib/documentTypes'; 
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';
-import { getUserIdFromEmail } from "../user-utils/getUserData";
 import { recordOnlineUserUpdatedDocument } from "./realtimeOnlineUsers";
 
 // NOTE: UPDATE functions MODIFY the document that is passed to it
