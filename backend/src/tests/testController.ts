@@ -19,7 +19,7 @@ import {
 } from '../document-utils/updateDocumentMetadata';
 import { createShareCode, deleteShareCode, getDocumentIdFromShareCode } from "../document-utils/sharing/sharingUtils";
 
-import { create, isEqual } from 'lodash';
+import { isEqual } from 'lodash';
 
 const PRIMARY_TEST_EMAIL = "test-user-1@tune-tracer.com";
 const PRIMARY_TEST_ID = "OgGilSJwqCW3qMuHWlChEYka9js1";
@@ -64,9 +64,7 @@ export async function runTest()
     const firebase: FirebaseWrapper = new FirebaseWrapper();
     firebase.initApp();
 
-    // await runAllUnitTests(firebase);
-
-    await testShareCodeFunctions(firebase);
+    await runAllUnitTests(firebase);
 
     // await testDocumentChanges();
     // await testUserRegistrationToDocument(firebase);
@@ -243,7 +241,7 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
     // grab the stored information
     const databaseDocument = await getDocument(id, PRIMARY_TEST_ID);
     const secondaryUserShares = await getDocumentPreviewsSharedWithUser(SECONDARY_TEST_ID);
-    const tertiaryUserShares = await getDocumentPreviewsSharedWithUser(TERTIARY_TEST_ID);
+    let tertiaryUserShares = await getDocumentPreviewsSharedWithUser(TERTIARY_TEST_ID);
 
     // verification checks
     SOURCE_DOCUMENT.metadata.last_edit_time = databaseDocument.metadata.last_edit_time;
@@ -261,6 +259,23 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
                 .length === 0,
             `Tertiary user has new document id in its shared list, but shouldn't`        
     );
+
+    // test access list
+    await getDocument(document.metadata.document_id, TERTIARY_TEST_ID);
+    tertiaryUserShares = await getDocumentPreviewsSharedWithUser(TERTIARY_TEST_ID);
+    assert(tertiaryUserShares
+        .filter((sharedDoc) => sharedDoc.document_id === id)
+        .length > 0,
+    `Tertiary user shared list not updated with the document`
+    );
+    await updateDocumentShareStyle(document.metadata.document_id, ShareStyle.NONE, PRIMARY_TEST_ID);
+    tertiaryUserShares = await getDocumentPreviewsSharedWithUser(TERTIARY_TEST_ID);
+    assert(tertiaryUserShares
+        .filter((sharedDoc) => sharedDoc.document_id === id)
+        .length === 0,
+    `Tertiary user shared list not updated with the document`
+    );
+
 }
 
 async function testShareCodeFunctions(firebase: FirebaseWrapper)

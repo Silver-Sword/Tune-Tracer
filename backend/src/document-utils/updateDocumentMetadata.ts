@@ -61,7 +61,7 @@ export async function shareDocumentWithUser(
       writerId
     )
   ) {
-    await getFirebase().insertUserDocument(userId, documentId, false);
+    await getFirebase().insertUserDocument(userId, documentId, "shared");
   }
 }
 
@@ -78,7 +78,7 @@ export async function unshareDocumentWithUser(
       writerId
     )
   ) {
-    await getFirebase().deleteUserDocument(userId, documentId, false);
+    await getFirebase().deleteUserDocument(userId, documentId, "shared");
   }
 }
 

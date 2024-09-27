@@ -1,9 +1,12 @@
+// TO DO: auth checks after first access
+
 import { Document } from "@lib/documentTypes";
 import { OnlineEntity, UpdateType } from "@lib/realtimeUserTypes";
 import { UserEntity } from "@lib/userTypes";
 
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { subscribeUserToUserDocumentPool } from "./realtimeOnlineUsers";
+import { userHasReadAccess } from "../security-utils/permissionVerification";
 
 /**
  * Subscribes the user to a document. Adds the user to the user pool and calls the onDocumentUpdateFn and onUserPoolUpdateFn
@@ -23,18 +26,52 @@ export async function subscribeToDocument(
   onDocumentUpdateFn: (updatedDocument: Document) => void,
   onUserPoolUpdateFn: (updateType: UpdateType, updatedUser: OnlineEntity) => void,
 ) {
+  let firstAccess = true;
   const firebase = new FirebaseWrapper();
   firebase.initApp();
 
   await subscribeUserToUserDocumentPool(documentId, user, onUserPoolUpdateFn);
-
+  
   firebase.subscribeToDocument(documentId, (snapshot) => {
     if (
       snapshot.exists &&
       snapshot.data() !== null &&
       snapshot.data() !== undefined
     ) {
-      onDocumentUpdateFn(snapshot.data() as Document);
+      const document = snapshot.data() as Document;
+      if(firstAccess)
+      {
+        if(!processFirstAccessAndAuth(user, document, firebase))
+        {
+          throw Error(`User with id ${user.user_id} does not have read access to document with id ${document.metadata.document_id}`);
+        }
+        firstAccess = false;
+      }
+      
+      onDocumentUpdateFn(document as Document);
     }
   });
+}
+
+// NOTE: ACCESS LIST INSERTION IS NOT AWAITED ON
+function processFirstAccessAndAuth(
+  user: Record<string, unknown> & Required<Pick<UserEntity, 'user_id' | 'user_email' | 'display_name'>>,
+  document: Document,
+  firebase: FirebaseWrapper
+): boolean
+{
+  if(!userHasReadAccess(user.user_id, document))
+  {
+      return false;
+  }
+
+  // update access list if necessary
+  if(
+    user.user_id !== document.metadata.owner_id && 
+    !Object.keys(document.metadata.share_list).includes(user.user_id)
+  ) {
+    firebase.insertUserDocument(user.user_id, document.metadata.document_id, "accessed");
+  }
+
+  return true;
 }
