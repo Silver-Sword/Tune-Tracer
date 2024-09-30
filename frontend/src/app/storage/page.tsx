@@ -6,6 +6,7 @@ import {
   Container,
   Text,
   Button,
+  Card,
   Grid,
   Image,
   Title,
@@ -17,6 +18,7 @@ import {
   Code,
   rem,
   Stack,
+  SimpleGrid,
 } from "@mantine/core";
 import { IconSearch } from "@tabler/icons-react";
 
@@ -81,10 +83,56 @@ const SearchBar: React.FC = () => {
   );
 };
 
+// InviteCard component
+const InviteCard: React.FC = () => {
+    const [inviteCode, setInviteCode] = useState("");
+  
+    const handleCreateDocument = () => {
+      console.log("Create document clicked");
+    };
+  
+    const handleInviteCodeChange = (event) => {
+      setInviteCode(event.target.value);
+    };
+  
+    const handleJoinWithCode = () => {
+      console.log("Join with invite code:", inviteCode);
+    };
+  
+    return (
+      <Card shadow="sm" padding="lg" radius="md" withBorder style={{ maxWidth: 400, margin: '0 auto' }}>
+        <Stack>
+          <Button fullWidth onClick={handleCreateDocument}>
+            Create Document
+          </Button>
+  
+          <TextInput
+            placeholder="Enter invite code"
+            value={inviteCode}
+            onChange={handleInviteCodeChange}
+          />
+  
+          <Button fullWidth onClick={handleJoinWithCode}>
+            Join with Code
+          </Button>
+        </Stack>
+      </Card>
+    );
+  };
+
+
 // Main storage component
 export default function Storage() {
   return (
-    <AppShell padding="md" header={{ height: 60 }}>
+    <AppShell 
+        header={{ height: 60 }}
+        navbar={{
+            width: 250,
+            breakpoint: 'sm',
+        }}    
+        padding="md" 
+    >
+      <AppShell.Main>
       <AppShell.Header
         style={{
           justifyContent: "center",
@@ -103,7 +151,7 @@ export default function Storage() {
 
       <FiltersNavbar />
 
-      <AppShell.Main>
+      
         <Container
           fluid
           style={{
@@ -117,9 +165,39 @@ export default function Storage() {
               "linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)",
           }}
         >
-             <Text size="xl" mb="xl">
+            <Text size="xl" mb="xl">
                 Compositions
             </Text>
+
+            {/* Grid showing compositions
+                Needs logic to show documents as cards + create always at beginning */}
+            {/* Current cards are place holders to see behaviors */}
+            <SimpleGrid cols={5}>
+                
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+                <InviteCard/>
+
+
+            </SimpleGrid>
 
 
 
