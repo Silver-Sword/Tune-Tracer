@@ -16,24 +16,17 @@ export class Measure {
     private VF = Vex.Flow;
     private stave: Stave;
     private RES: number = this.VF.RESOLUTION;
-    private context: RenderContext;
     private num_beats: number = 0;
     private beat_value: number = 0;
     private total_ticks: number = 0;
-    private width: number = 0;
-    private height: number = 0;
-    private notes: StaveNote[] = [];
     private voice1: Voice;
     private voice2: Voice | null = null;
-    private x: number = 0;
-    private y: number = 0;
     private timeSignature: string = "";
     private clef: string = "";
     private rest_location: string = "";
     private whole_rest_location: string = "";
 
     constructor(
-        context: RenderContext,
         x: number,
         y: number,
         width: number,
@@ -42,11 +35,6 @@ export class Measure {
         renderTimeSignature = false
     ) {
         this.stave = new this.VF.Stave(x, y, width);
-        this.width = width;
-        this.height = this.stave.getHeight();
-        this.context = context;
-        this.x = x;
-        this.y = y;
         this.timeSignature = timeSignature;
 
         if (timeSignature !== "none") {
@@ -71,20 +59,19 @@ export class Measure {
 
 
 
-        this.notes = [
-            new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
+        let notes = [
+            new this.VF.StaveNote({ clef: this.clef, keys: ["c/4","e/4"], duration: "8" }),
+            new this.VF.StaveNote({ clef: this.clef, keys: ["d/4"], duration: "8" }),
             new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
             new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qdr")], duration: "qddr" }),
             new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "16r" }),
         ];
 
+        notes[2].addModifier(new Vex.Flow.Dot());
+        notes[2].addModifier(new Vex.Flow.Dot());
 
-        this.notes[2].addModifier(new Vex.Flow.Dot());
-        this.notes[2].addModifier(new Vex.Flow.Dot());
-        console.log("Ticks dotted note: " + this.notes[2].getTicks().value());
-        console.log("Ticks normal note: " + this.notes[0].getTicks().value());
 
-        this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(this.notes);
+        this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
     }
 
     getDurationForTicks = (ticks: number): string => {
@@ -122,10 +109,6 @@ export class Measure {
 
     getStave = (): Stave => {
         return this.stave;
-    }
-
-    getNotes = (): StaveNote[] => {
-        return this.notes;
     }
 
     getCurrentBeats = (): number => {
@@ -193,7 +176,6 @@ export class Measure {
             if (staveNote.getAttributes().id === noteId) {
                 found = true;
                 let countDots = staveNote.getModifiersByType('Dot').length;
-                console.log("countDot: " + countDots);
                 let duration = staveNote.getDuration();
 
                 if (countDots > 0) duration += "d";
@@ -221,7 +203,6 @@ export class Measure {
             if (svgNote) svgNote.remove();
         });
         console.log("Notes: " + notes);
-
         this.voice1 = new VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
         return newNote;
         // When adding a note you never want to override another note

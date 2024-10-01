@@ -128,9 +128,10 @@ export default function Editor() {
                 );
             }
         };
-
-        clearSVG();
-        renderNotation();
+        if (score.current === null) {
+            clearSVG();
+            renderNotation();
+        }
     }, []);
 
     return (

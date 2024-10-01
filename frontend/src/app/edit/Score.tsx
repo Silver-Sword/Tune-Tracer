@@ -1,4 +1,4 @@
-import { Vex, Formatter, StaveNote, StaveTie } from 'vexflow';
+import { Vex, Formatter, StaveNote, StaveTie, Beam } from 'vexflow';
 import { Measure } from './Measure';
 import { render } from '@testing-library/react';
 
@@ -85,10 +85,9 @@ export class Score {
         const renderer = new this.VF.Renderer(notationRef, this.VF.Renderer.Backends.SVG);
         renderer.resize(this.renderer_width, this.renderer_height);
         this.context = renderer.getContext();
-        const firstTopMeasure = new Measure(this.context, DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y, DEFAULT_MEASURE_WIDTH, timeSignature, "treble", true);
+        const firstTopMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y, DEFAULT_MEASURE_WIDTH, timeSignature, "treble", true);
         // X and Y don't matter here because bottom measure always adjusts based on top measure
-        const firstBottomMeasure = new Measure(this.context, DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y + DEFAULT_MEASURE_VERTICAL_SPACING, DEFAULT_MEASURE_WIDTH, timeSignature, "bass", true);
-
+        const firstBottomMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y + DEFAULT_MEASURE_VERTICAL_SPACING, DEFAULT_MEASURE_WIDTH, timeSignature, "bass", true);
         this.top_measures.push(firstTopMeasure);
         this.bottom_measures.push(firstBottomMeasure);
         this.renderMeasures();
@@ -318,14 +317,64 @@ export class Score {
 
         this.total_width += DEFAULT_MEASURE_WIDTH;
 
-        const newTopMeasure = new Measure(this.context, topX, topY, DEFAULT_MEASURE_WIDTH, topTimeSignature, topClef, renderTopTimeSig);
-        const newBottomMeasure = new Measure(this.context, bottomX, bottomY, DEFAULT_MEASURE_WIDTH, bottomTimeSignature, bottomClef, renderBottomTimeSig);
+        const newTopMeasure = new Measure(topX, topY, DEFAULT_MEASURE_WIDTH, topTimeSignature, topClef, renderTopTimeSig);
+        const newBottomMeasure = new Measure(bottomX, bottomY, DEFAULT_MEASURE_WIDTH, bottomTimeSignature, bottomClef, renderBottomTimeSig);
         this.top_measures.push(newTopMeasure);
         this.bottom_measures.push(newBottomMeasure);
         this.renderMeasures();
     }
 
-    private renderMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], formatter: Formatter, ceiling: number): number => {
+    private generateBeams = (measure: Measure) => {
+        const beams = Beam.generateBeams(measure.getVoice1().getTickables() as StaveNote[]);
+        beams.forEach((b) => {
+            b.setContext(this.context).draw();
+        });
+    }
+
+    private renderMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], topMeasureDeltaDown: number, bottomMeasureDeltaDown: number) => {
+        for (let i = 0; i < topMeasures.length; i++) {
+            let topMeasure = topMeasures[i];
+            let bottomMeasure = bottomMeasures[i];
+            let topStave = topMeasure.getStave();
+            let bottomStave = bottomMeasure.getStave();
+
+            topStave.setY(topStave.getY() + topMeasureDeltaDown);
+
+            bottomStave.setY(bottomStave.getY() + bottomMeasureDeltaDown);
+
+            topStave.setContext(this.context).draw();
+            bottomStave.setContext(this.context).draw();
+
+            if (i == 0) {
+                // Create the brace and connect the staves
+                const brace = new this.VF.StaveConnector(topStave, bottomStave);
+                brace.setType(this.VF.StaveConnector.type.BRACE);
+                brace.setContext(this.context).draw();
+            }
+
+
+            // Create the left line to connect the staves
+            const lineLeft = new this.VF.StaveConnector(topStave, bottomStave);
+            lineLeft.setType(this.VF.StaveConnector.type.SINGLE_LEFT);
+            lineLeft.setContext(this.context).draw();
+
+            // Create the right line to connect the staves
+            const lineRight = new this.VF.StaveConnector(topStave, bottomStave);
+            lineRight.setType(this.VF.StaveConnector.type.SINGLE_RIGHT);
+            lineRight.setContext(this.context).draw();
+            console.log("beams boutta generate");
+            // Vexflow can auto generate beams for us so we can render them here
+            this.generateBeams(topMeasure);
+            this.generateBeams(bottomMeasure);
+            
+            // With Beams in place we can draw voices
+            topMeasure.getVoice1().draw(this.context, topStave);
+            bottomMeasure.getVoice1().draw(this.context, bottomStave);
+
+        }
+    }
+
+    private calculateMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], formatter: Formatter, ceiling: number): number => {
         // We want to know the largest bounding box in this line of measures
         // We'll use its coordinates to space all measures in the line
         let largestTopMeasureBoundingBoxY: number = 0;
@@ -404,43 +453,8 @@ export class Score {
         }
 
         let largestBottomMeasureBoundingBoxBottomY: number = largestBottomMeasureBoundingBoxY + largestBottomMeasureBoundingBoxH;
-
-        for (let i = 0; i < topMeasures.length; i++) {
-            let topMeasure = topMeasures[i];
-            let bottomMeasure = bottomMeasures[i];
-            let topStave = topMeasure.getStave();
-            let bottomStave = bottomMeasure.getStave();
-
-            topStave.setY(topStave.getY() + topMeasureDeltaDown);
-
-            bottomStave.setY(bottomStave.getY() + bottomMeasureDeltaDown);
-
-            topStave.setContext(this.context).draw();
-            bottomStave.setContext(this.context).draw();
-
-            if (i == 0) {
-                // Create the brace and connect the staves
-                const brace = new this.VF.StaveConnector(topStave, bottomStave);
-                brace.setType(this.VF.StaveConnector.type.BRACE);
-                brace.setContext(this.context).draw();
-            }
-
-
-            // Create the left line to connect the staves
-            const lineLeft = new this.VF.StaveConnector(topStave, bottomStave);
-            lineLeft.setType(this.VF.StaveConnector.type.SINGLE_LEFT);
-            lineLeft.setContext(this.context).draw();
-
-            // Create the right line to connect the staves
-            const lineRight = new this.VF.StaveConnector(topStave, bottomStave);
-            lineRight.setType(this.VF.StaveConnector.type.SINGLE_RIGHT);
-            lineRight.setContext(this.context).draw();
-
-            topMeasure.getVoice1().draw(this.context, topStave);
-            bottomMeasure.getVoice1().draw(this.context, bottomStave);
-
-
-        }
+        
+        this.renderMeasureLine(topMeasures, bottomMeasures, topMeasureDeltaDown, bottomMeasureDeltaDown);
         return largestBottomMeasureBoundingBoxBottomY;
     }
 
@@ -456,10 +470,10 @@ export class Score {
         for (let i = 1; i < this.top_measures.length; i++) {
             let currentTopMeasure = this.top_measures[i];
             let prevTopMeasure = this.top_measures[i - 1];
-
+            
             // this means there was a line shift
             if (prevTopMeasure.getStave().getY() != currentTopMeasure.getStave().getY()) {
-                ceiling = this.renderMeasureLine(
+                ceiling = this.calculateMeasureLine(
                     this.top_measures.slice(firstLineIndex, i),
                     this.bottom_measures.slice(firstLineIndex, i),
                     formatter, ceiling);
@@ -469,11 +483,11 @@ export class Score {
             }
         }
 
-        this.renderMeasureLine(
+        this.calculateMeasureLine(
             this.top_measures.slice(firstLineIndex, this.top_measures.length),
             this.bottom_measures.slice(firstLineIndex, this.bottom_measures.length),
             formatter, ceiling);
-
+        console.log("got here");
         // From this point forward we render all elements that need voices to be drawn to be able to get placed
         // Render Ties/Slurs
         this.ties.forEach(tieObject => {
