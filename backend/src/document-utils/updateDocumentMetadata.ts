@@ -1,83 +1,84 @@
 // This file contains functions that will update the various metadata fields of a Document
-import { SHARE_STYLE } from "@lib/documentTypes";
-import { processDocumentUpdate } from "./documentOperations";
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-
 import firebase from "firebase/compat/app";
 import "firebase/compat/firestore";
 
+import { ShareStyle } from "@lib/documentTypes";
+
+import { processDocumentUpdate } from "./documentOperations";
+import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
+
 export async function updateDocumentShareStyle(
   documentId: string,
-  newShareStyle: SHARE_STYLE,
-  writerEmail: string
+  newShareStyle: ShareStyle,
+  writerId: string
 ) {
   await updateDocumentMetadata(
     documentId,
-    "share_style",
+    "share_link_style",
     newShareStyle,
-    writerEmail
+    writerId
   );
 }
 
 export async function updateDocumentEmoji(
   documentId: string,
   newEmoji: string,
-  writerEmail: string
+  writerId: string
 ) {
   await updateDocumentMetadata(
     documentId,
     "preview_emoji",
     newEmoji,
-    writerEmail
+    writerId
   );
 }
 
 export async function updateDocumentColor(
   documentId: string,
   newColor: string,
-  writerEmail: string
+  writerId: string
 ) {
   await updateDocumentMetadata(
     documentId,
     "preview_color",
     newColor,
-    writerEmail
+    writerId
   );
 }
 
-// assumption: only call this function if the user is not already in the share list
 // assumption: only share with existing users
 export async function shareDocumentWithUser(
   documentId: string,
-  newUser: string,
-  writerEmail: string
+  userId: string,
+  shareStyle: ShareStyle,
+  writerId: string
 ) {
   if (
     await updateDocumentMetadata(
       documentId,
-      "share_list",
-      firebase.firestore.FieldValue.arrayUnion(newUser),
-      writerEmail
+      `share_list.${userId}`,
+      shareStyle.valueOf(),
+      writerId
     )
   ) {
-    await getFirebase().insertUserDocument(newUser, documentId, false);
+    await getFirebase().insertUserDocument(userId, documentId, "shared");
   }
 }
 
 export async function unshareDocumentWithUser(
   documentId: string,
-  oldUser: string,
-  writerEmail: string
+  userId: string,
+  writerId: string
 ) {
   if (
     await updateDocumentMetadata(
       documentId,
-      "share_list",
-      firebase.firestore.FieldValue.arrayRemove(oldUser),
-      writerEmail
+      `share_list.${userId}`,
+      firebase.firestore.FieldValue.delete(),
+      writerId
     )
   ) {
-    await getFirebase().deleteUserDocument(oldUser, documentId, false);
+    await getFirebase().deleteUserDocument(userId, documentId, "shared");
   }
 }
 
@@ -87,13 +88,13 @@ async function updateDocumentMetadata(
   documentId: string,
   key: string,
   newValue: unknown,
-  writerEmail: string
+  writerId: string
 ): Promise<boolean> {
   const firebaseKey = `metadata.${key}`;
   return processDocumentUpdate(
     { [firebaseKey]: newValue },
     documentId,
-    writerEmail
+    writerId
   );
 }
 
