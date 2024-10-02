@@ -33,7 +33,9 @@ export default function CompositionTool() {
 
     return (
         <div>
+            {/* Button to replace a rest with a quarter note the button would call a function that boston made*/}
             <div ref={notationRef}></div>
+            
         </div>
     );
 };
