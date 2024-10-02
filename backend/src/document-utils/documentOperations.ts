@@ -22,6 +22,7 @@ export async function createDocument(writerId: string): Promise<Document>
         time_created: currentTime,
         last_edit_time: currentTime,
         last_edit_user: writerId,
+        is_favorited: false,
         share_list: {},
     };
     const document : Document = {
