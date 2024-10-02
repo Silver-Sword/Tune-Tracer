@@ -16,7 +16,7 @@ export default function LandingPage() {
                     flexDirection: 'column',
                 }}
             >
-                <Group justify='space-between'>
+                <Group justify='space-between' px='lg'>
                     <Text>Tune Tracer</Text>
                     <Group>
                         <Button component='a' href='/login'>Login</Button>
