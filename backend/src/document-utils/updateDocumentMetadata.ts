@@ -82,6 +82,19 @@ export async function unshareDocumentWithUser(
   }
 }
 
+export async function updateDocumentFavoritedStatus(
+  documentId: string,
+  isFavorited: boolean,
+  writerId: string
+) {
+  await updateDocumentMetadata(
+    documentId,
+    "is_favorited",
+    isFavorited,
+    writerId
+  );
+}
+
 // TO DO: verify that key passed in to updateDocumentMetadata is valid
 // generic version of all the other functions in this file; updates a metadata field for a document
 async function updateDocumentMetadata(

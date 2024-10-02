@@ -15,7 +15,8 @@ import {
     updateDocumentShareStyle,       
     updateDocumentEmoji, 
     updateDocumentColor, 
-    unshareDocumentWithUser 
+    unshareDocumentWithUser, 
+    updateDocumentFavoritedStatus
 } from '../document-utils/updateDocumentMetadata';
 import { createShareCode, deleteShareCode, getDocumentIdFromShareCode } from "../document-utils/sharing/sharingUtils";
 
@@ -55,6 +56,7 @@ const TEST_DOCUMENT: Document = {
         time_created: 0,
         last_edit_time: 12,
         last_edit_user: PRIMARY_TEST_ID,
+        is_favorited: false,
     },
     document_title: "Document Title",
 };
@@ -228,6 +230,7 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
         updateDocumentEmoji(id, "&#x1f602", PRIMARY_TEST_ID),
         shareDocumentWithUser(id, SECONDARY_TEST_ID, ShareStyle.WRITE, PRIMARY_TEST_ID),
         shareDocumentWithUser(id, TERTIARY_TEST_ID, ShareStyle.COMMENT, PRIMARY_TEST_ID),
+        updateDocumentFavoritedStatus(id, true, PRIMARY_TEST_ID),
     ]);
     await unshareDocumentWithUser(id, TERTIARY_TEST_ID, PRIMARY_TEST_ID);
     await updateDocumentEmoji(id, ":celebration:", SECONDARY_TEST_ID);
@@ -237,6 +240,7 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
     SOURCE_DOCUMENT.metadata.preview_color = "blue";
     SOURCE_DOCUMENT.metadata.preview_emoji = ":celebration:";
     SOURCE_DOCUMENT.metadata.share_list[SECONDARY_TEST_ID] = ShareStyle.WRITE;
+    SOURCE_DOCUMENT.metadata.is_favorited = true;
 
     // grab the stored information
     const databaseDocument = await getDocument(id, PRIMARY_TEST_ID);
