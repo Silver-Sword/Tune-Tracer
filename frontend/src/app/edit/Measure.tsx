@@ -1,4 +1,4 @@
-import { Vex, Stave, StaveNote, Voice } from 'vexflow';
+import { Vex, Stave, StaveNote, Voice, Tickable } from 'vexflow';
 
 
 type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
@@ -44,12 +44,10 @@ export class Measure {
         this.y = y;
         this.timeSignature = timeSignature;
 
-        console.log("Context in Measure: " + context);
-
         if (timeSignature !== "none") {
             this.processTimeSignature(timeSignature, renderTimeSignature);
         }
-        console.log("Numbeats: " + this.num_beats);
+
         if (clef === "none" || clef === "treble") {
             clef = "treble";
             this.rest_location = TREBLE_REST_LOC;
@@ -74,16 +72,6 @@ export class Measure {
         ];
 
         this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(this.notes);
-
-        this.notes.forEach(note => {
-            console.log(note.getTicks());
-        });
-    }
-    getX = (): number => {
-        return this.x;
-    }
-    getY = (): number => {
-        return this.y;
     }
 
     getTimeSignature = (): string => {
@@ -137,39 +125,32 @@ export class Measure {
         }
     }
 
-    private matchesNote = (staveNote: StaveNote, duration: string, noteId: string): boolean => {
-        return staveNote.getAttributes().id === noteId && duration === staveNote.getDuration();
-    }
-
-    private isRest = (duration: string): boolean => {
-        return duration.endsWith('r');
-    }
-
-    addNote = (keys: string[], duration: string, noteId: string): boolean => {
-        if (this.isRest(duration)) return false;
-        if (!this.voice1) return false;
-
+    addNote = (keys: string[], noteId: string): StaveNote | null => {
+        if (!this.voice1) return null;
         let found: boolean = false;
         const VF = Vex.Flow;
-        const notes: InstanceType<typeof Vex.Flow.StaveNote>[] = [];
+        console.log("adding note noteID: " + noteId);
+        const notes: StaveNote[] = [];
+        let newNote: StaveNote | null = null;
 
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
-            if (this.matchesNote(staveNote, duration, noteId)) {
+            if (staveNote.getAttributes().id === noteId) {
                 found = true;
-                console.log("Matched StaveNote: " + staveNote);
                 if (staveNote.getNoteType() !== 'r') {
                     const newKeys = staveNote.getKeys();
                     keys.forEach(key => {
                         // We don't want repeat keys
                         if (!newKeys.includes(key)) newKeys.push(key);
                     });
-                    notes.push(new VF.StaveNote({ clef: this.clef, keys: newKeys, duration }));
+                    newNote = new VF.StaveNote({ clef: this.clef, keys: newKeys, duration: staveNote.getDuration()});
                 }
                 // If the staveNote is a rest, then we replace it 
                 else {
-                    notes.push(new VF.StaveNote({ clef: this.clef, keys, duration}));
+                    newNote = new VF.StaveNote({ clef: this.clef, keys, duration: staveNote.getDuration()});
+
                 }
+                notes.push(newNote);
             } else {
                 // We just add the note that existed here previously (not changing anything on this beat)
                 notes.push(staveNote as StaveNote);
@@ -177,14 +158,50 @@ export class Measure {
             const svgNote = document.getElementById(this.createId(staveNote.getAttributes().id));
             if (svgNote) svgNote.remove();
         });
+        console.log("Notes: " + notes);
 
         this.voice1 = new VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
-        return found;
+        return newNote;
         // When adding a note you never want to override another note
         // However, if the StaveNote you are overriding is at REST, then override
     }
 
+    // This returns a pair of notes, the noteId Stavenote, and the note directly after if it exists.
+    // This is used explicity for Ties
+    getStaveNotePair = (noteId: string): { firstNote: StaveNote, secondNote: StaveNote | null } | null => {
+        let voice1Array: Tickable[] = this.voice1.getTickables();
+        let firstNote: StaveNote | null = null;
+        let secondNote: StaveNote | null = null;
+        for (let i = 0; i < voice1Array.length; i++) {
+            let staveNote = voice1Array[i] as StaveNote;
+            // If .isRest() is undefined, then the note is NOT a rest,
+            let isRest: boolean = staveNote.isRest() !== undefined;
+            if (firstNote !== null) {
+                // If the note directly after the first is a rest, then second should be null
+                // as ties cannot skip notes
+                if(!isRest) secondNote = staveNote;
+                return { firstNote, secondNote };
+            }
+            // We want to filter rests
+            if (!isRest) {
+                if (staveNote.getAttributes().id === noteId) {
+                    firstNote = staveNote
+                }
+            }
+        }
+        if(firstNote !== null) return {firstNote, secondNote};
+        // If we get here, we didn't even find the first note
+        return null;
+    }
+
+    // Used for Ties
+    getFirstStaveNoteInMeasure = (): StaveNote =>
+    {
+        return this.voice1.getTickables()[0] as StaveNote;
+    }
+
     modifyDuration = (duration: string, noteId: string): boolean => {
+        // Should remove ties
         if (!this.voice1) return false;
         const VF = Vex.Flow;
         const notes: StaveNote[] = [];

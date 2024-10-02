@@ -1,12 +1,13 @@
 import { deleteDocument } from '../document-utils/documentOperations';
-import { Document } from '../document-utils/documentTypes';
+import { Document } from '@lib/documentTypes';
+import firebase from 'firebase/compat/app';
 
 export async function deleteWorkspace(document: Document)
 {
-    // check if user is authorized
     try
     {
-        await deleteDocument(document);
+        const user = await firebase.auth().currentUser;
+        await deleteDocument(document, user?.uid as string);
     }
     catch (error)
     {

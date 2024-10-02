@@ -1,46 +1,62 @@
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { getDocumentsOwnedByUser, getDocumentsSharedWithUser } from '../document-utils/documentBatchRead';
-import { Document } from '../document-utils/documentTypes';
+import { getDocumentPreviewsOwnedByUser, getDocumentPreviewsSharedWithUser } from '../document-utils/documentBatchRead';
+import { getDocument } from '../document-utils/documentOperations';
+import { Document,DocumentPreview } from '@lib/documentTypes';
+import { UpdateType,OnlineEntity } from '@lib/realtimeUserTypes';
 import firebase from 'firebase/compat/app';
+import { subscribeToDocument } from "src/document-utils/realtimeDocumentUpdates";
 
-export async function readWorkspace (documentId: string) : Promise<Document | null>
+export async function readDocument (documentId: string) : Promise<Document | null>
 {
-    const firebaseWrapper = new FirebaseWrapper();
-    firebaseWrapper.initApp();
+    const user = await firebase.auth().currentUser;
+    const userID = user?.uid;
+    let document = await getDocument(documentId, userID as string);
 
-    // const user = firebase.auth().currentUser;
-    // userHasReadAccess import here (or equivalent)
-    const document = await firebaseWrapper.getDocument(documentId);
+    const user2 = {
+        user_email: user?.email as string,
+        user_id: user?.uid as string,
+        display_name: user?.displayName as string
+    };
     
+    subscribeToDocument(documentId, user2, 
+        (updatedDocument: Document) => {
+        console.log(`Detected changes in document ${documentId}`);
+        console.log(`Updated Document: ${JSON.stringify(updatedDocument)}`);
+        document = updatedDocument;
+    }, 
+    (updateType: UpdateType, onlineEntity: OnlineEntity) => {
+        console.log(`Update type ${updateType} with entity: ${JSON.stringify(onlineEntity)}`);
+    });
     return document;
 }
 
-export async function getAllDocuments (userId: string) : Promise<Document[]>
+export async function getAllDocuments () : Promise<DocumentPreview[]>
 {
-    const firebaseWrapper = new FirebaseWrapper();
-    firebaseWrapper.initApp();
-
-    try 
+    try
     {
-        const userDocuments = await getUserDocuments( userId, firebaseWrapper);
-        const sharedDocuments = await getSharedDocuments( userId, firebaseWrapper);
-        const documents = [...userDocuments, ...sharedDocuments];
-        return documents;
+        const ownedPreviews = await getUserDocuments();
+        const sharedPreviews = await getSharedDocuments();
+        const docPreviews = [...ownedPreviews, ...sharedPreviews];
+        return docPreviews;
     }
     catch (error)
     {
-        console.log("Could not read documents");
+        throw Error("Get all documents preview error");
     }
-
-    return [];
 }
 
-export async function getUserDocuments (userId: string, firebase: FirebaseWrapper) : Promise<Document[]>
+export async function getUserDocuments () : Promise<DocumentPreview[]>
 {
-    return getDocumentsOwnedByUser(userId);
+    const user = await firebase.auth().currentUser;
+    const userID = user?.uid;
+    const ownedPreviews = await getDocumentPreviewsOwnedByUser(userID as string);
+    return ownedPreviews;
 }
 
-export async function getSharedDocuments (userId: string, firebase: FirebaseWrapper) : Promise<Document[]>
+export async function getSharedDocuments () : Promise<DocumentPreview[]>
 {
-    return getDocumentsSharedWithUser(userId);
+    const user = await firebase.auth().currentUser;
+    const userID = user?.uid;
+    const ownedPreviews = await getDocumentPreviewsSharedWithUser(userID as string);
+    return ownedPreviews;
 }
