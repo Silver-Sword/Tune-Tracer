@@ -1,8 +1,11 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react';
-import Vex, { Formatter } from 'vexflow';
 import { Score } from './Score';
+import { Button } from '@mantine/core';
+
+const DEFAULT_RENDERER_WIDTH = 1000;
+const DEFAULT_RENDERER_HEIGHT = 2000;
 
 export default function Editor() {
     const notationRef = useRef<HTMLDivElement>(null);
@@ -11,8 +14,14 @@ export default function Editor() {
     // State for each input field
     const [keys, setKeys] = useState('');
     const [duration, setDuration] = useState('');
-    const [measureIndex, setMeasureIndex] = useState<number>(0);
-    const [noteId, setNoteId] = useState('');
+    const [addNoteMeasureIndex, setAddNoteMeasureIndex] = useState<number>(0);
+    const [durationMeasureIndex, setDurationNoteMeasureIndex] = useState<number>(0);
+    const [addNoteId, setAddNoteId] = useState('auto');
+    const [durationNoteId, setDurationNoteId] = useState('auto');
+    const [firstNoteId, setFirstNoteId] = useState('auto');
+    const [firstMeasureIndex, setFirstMeasureIndex] = useState<number>(0);
+
+
     // Handlers for input changes
     const handleKeysChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setKeys(event.target.value);
@@ -22,29 +31,58 @@ export default function Editor() {
         setDuration(event.target.value);
     };
 
-    const handleMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAddNoteMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
         // Ensure that measureIndex is an integer or empty
         if (/^[0-9]+$/.test(value)) {
-            setMeasureIndex(parseInt(value, 10));
+            setAddNoteMeasureIndex(parseInt(value, 10));
         }
-        else
-        {
-            setMeasureIndex(0);
+        else {
+            setAddNoteMeasureIndex(0);
         }
     };
 
-    const handleNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setNoteId(event.target.value);
+    const handleDurationMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        // Ensure that measureIndex is an integer or empty
+        if (/^[0-9]+$/.test(value)) {
+            setDurationNoteMeasureIndex(parseInt(value, 10));
+        }
+        else {
+            setDurationNoteMeasureIndex(0);
+        }
+    };
+
+    const handleAddNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setAddNoteId(event.target.value);
+    };
+
+    const handleDurationNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setDurationNoteId(event.target.value);
+    };
+
+
+    const handleFirstNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setFirstNoteId(event.target.value);
+    };
+
+    const handleFirstMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        // Ensure that measureIndex is an integer or empty
+        if (/^[0-9]+$/.test(value)) {
+            setFirstMeasureIndex(parseInt(value, 10));
+        }
+        else {
+            setFirstMeasureIndex(0);
+        }
     };
 
     const addNote = () => {
         if (score.current) {
             score.current.addNoteInMeasure(
-                /*measure index*/ measureIndex,
+                /*measure index*/ addNoteMeasureIndex,
                 /*keys*/keys.split(','),
-                /*duration*/ duration,
-                /*noteId*/ noteId
+                /*noteId*/ addNoteId
             );
         }
     };
@@ -55,15 +93,24 @@ export default function Editor() {
         }
     };
 
-    const modifyDuration= () => {
+    const modifyDuration = () => {
         if (score.current) {
             score.current.modifyDurationInMeasure(
-                /*measure index*/ measureIndex,
+                /*measure index*/ durationMeasureIndex,
                 /*duration*/ duration,
-                /*noteId*/ noteId
+                /*noteId*/ durationNoteId
             );
         }
     };
+
+    const addTieBetweenNotes = () => {
+        if (score.current) {
+            score.current.addTieBetweenNotes(
+                firstNoteId,
+                firstMeasureIndex
+            )
+        }
+    }
 
     useEffect(() => {
         const clearSVG = () => {
@@ -73,15 +120,11 @@ export default function Editor() {
         };
 
         const renderNotation = () => {
-            // It seems that the measure width is separate from how
-            // the formatter width works with voices. Subtracting 25 at when formatting helps the
-            // notes fit better with a smaller staff. 
             if (notationRef.current) {
                 score.current = new Score(
                     notationRef.current,
-                    /*defaultx*/ 20,
-                    /*defaulty*/ 0,
-                    /*Measure Width*/ 325
+                    DEFAULT_RENDERER_HEIGHT,
+                    DEFAULT_RENDERER_WIDTH
                 );
             }
         };
@@ -93,7 +136,8 @@ export default function Editor() {
     return (
         <div>
             <h1> Tune Tracer Composition Tool Demo</h1>
-            <div ref={notationRef}></div>
+            <Button component='a' href='/composition_tool'>Go to Official Composition Tool</Button>
+            <h2>Adding a Note</h2>
             <div>
                 <label htmlFor="keys">Insert keys (comma-separated):</label>
                 <input
@@ -103,6 +147,26 @@ export default function Editor() {
                     onChange={handleKeysChange}
                 />
             </div>
+            <div>
+                <label htmlFor="addNoteId">Insert note id:</label>
+                <input
+                    type="text"
+                    id="addNoteId"
+                    value={addNoteId}
+                    onChange={handleAddNoteIdChange}
+                />
+            </div>
+            <div>
+                <label htmlFor="measureIndex">Insert measure index:</label>
+                <input
+                    type="text"
+                    id="measureIndex"
+                    value={addNoteMeasureIndex.toString()}
+                    onChange={handleAddNoteMeasureIndexChange}
+                />
+            </div>
+            <button onClick={addNote}>Add note!</button>
+            <h2>Changing Duration</h2>
             <div>
                 <label htmlFor="duration">Insert duration:</label>
                 <input
@@ -117,22 +181,40 @@ export default function Editor() {
                 <input
                     type="text"
                     id="measureIndex"
-                    value={measureIndex.toString()}
-                    onChange={handleMeasureIndexChange}
+                    value={durationMeasureIndex.toString()}
+                    onChange={handleDurationMeasureIndexChange}
                 />
             </div>
             <div>
-                <label htmlFor="noteId">Insert note id:</label>
+                <label htmlFor="durationNoteId">Insert note id:</label>
                 <input
                     type="text"
-                    id="noteId"
-                    value={noteId}
-                    onChange={handleNoteIdChange}
+                    id="durationNoteId"
+                    value={durationNoteId}
+                    onChange={handleDurationNoteIdChange}
                 />
             </div>
-            <button onClick={addNote}>Add note!</button>
             <button onClick={modifyDuration}>Change duration of specified element</button>
             <button onClick={addMeasureToEnd}>Add a measure to the end</button>
+            <h2>Adding a Tie</h2>
+            <div>
+                <label htmlFor="noteId">Insert first note id:</label>
+                <input
+                    type="text"
+                    id="firstNoteId"
+                    value={firstNoteId}
+                    onChange={handleFirstNoteIdChange}
+                />
+                <label htmlFor="measureIndex">Insert first measure index:</label>
+                <input
+                    type="text"
+                    id="firstMeasureIndex"
+                    value={firstMeasureIndex.toString()}
+                    onChange={handleFirstMeasureIndexChange}
+                />
+            </div>
+            <button onClick={addTieBetweenNotes}>Add Tie between notes</button>
+            <div ref={notationRef}></div>
         </div>
     );
 };
