@@ -1,4 +1,4 @@
-import { Measure } from '../../frontend/src/app/edit/Measure';
+import { Measure } from './Measure';
 
 type ScoreData = {
     top_measures: Measure[];
