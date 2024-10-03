@@ -13,3 +13,7 @@ const functions = getFunctions();
 const addMessage = httpsCallable(functions, 'wantedAPI');
 
 # I have not tested this out yet 
+
+Current urls: 
+https://us-central1-l17-tune-tracer.cloudfunctions.net/logInUser
+https://us-central1-l17-tune-tracer.cloudfunctions.net/signUpUser

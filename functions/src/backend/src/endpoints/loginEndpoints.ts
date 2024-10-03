@@ -3,7 +3,7 @@ import { getAuth} from 'firebase/auth';
 // import 'firebase/compat/auth';
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 
-const signUpAPI = async (email: string, password: string, displayName: string) =>
+export async function signUp (email: string, password: string, displayName: string)
 {
     const firebaseWrapper = new FirebaseWrapper();
     firebaseWrapper.initApp();
@@ -65,7 +65,7 @@ export async function login (email: string, password: string)
 
     try
     {
-        await firebaseWrapper.signInUser(email, password);
+        const response = await firebaseWrapper.signInUser(email, password);
         const auth = getAuth();
         const user = auth.currentUser;
 
@@ -94,5 +94,3 @@ export async function signOut ()
 
     auth.signOut();
 }
-
-module.exports = { signUpAPI, login }; 

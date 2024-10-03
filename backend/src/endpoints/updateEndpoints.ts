@@ -1,8 +1,10 @@
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { Document } from '../document-utils/documentTypes';
+import firebase from "firebase/compat/app";
+import { Document } from '@lib/documentTypes';
 import { updateDocument } from '../document-utils/documentOperations';
 
 export async function updateWorkspace(updatedDocument: Document): Promise<boolean>
 {
-    return await updateDocument(updatedDocument);
+    const user = await firebase.auth().currentUser;
+        
+    return await updateDocument(updatedDocument, user?.uid as string);
 }
