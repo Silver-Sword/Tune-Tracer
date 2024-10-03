@@ -60,15 +60,11 @@ export class Measure {
 
 
         let notes = [
-            new this.VF.StaveNote({ clef: this.clef, keys: ["c/4","e/4"], duration: "8" }),
-            new this.VF.StaveNote({ clef: this.clef, keys: ["d/4"], duration: "8" }),
             new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
-            new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qdr")], duration: "qddr" }),
-            new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "16r" }),
+            new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
+            new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
+            new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
         ];
-
-        notes[2].addModifier(new Vex.Flow.Dot());
-        notes[2].addModifier(new Vex.Flow.Dot());
 
 
         this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
@@ -324,6 +320,7 @@ export class Measure {
 
     modifyDuration = (duration: string, noteId: string): boolean => {
         if (!this.voice1) return false;
+        if(duration.includes("r")) return false;
         const VF = Vex.Flow;
         const notes: StaveNote[] = [];
         let ticksSeen: number = 0;
