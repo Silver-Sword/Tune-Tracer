@@ -14,3 +14,4 @@ package-lock.json
 backend/src/firebaseSecrets.ts
 
 *.js
+*.js.map
