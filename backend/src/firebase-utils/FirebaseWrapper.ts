@@ -274,6 +274,14 @@ export default class FirebaseWrapper
         await this.updateDataInFirestore(USER_DATABASE_NAME, userId, updatedObject);
     }
 
+    public async updateUserLevelProperty(userId: string, documentId: string, property: string, value: unknown)
+    {
+        const updateObject = {
+            [`preview_properties.${documentId}.${property}`]: value
+        };
+        await this.updateDataInFirestore(USER_DATABASE_NAME, userId, updateObject);
+    }
+
     // NOT FOR EXTERNAL USE (use the subscription fn in documentOperations.ts instead)
     // wrapper for the document subscription
     public async subscribeToDocument(
