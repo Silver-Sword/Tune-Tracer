@@ -4,7 +4,7 @@ import { Document } from '@lib/src/Document';
 import { OnlineEntity, UpdateType } from '@lib/src/realtimeUserTypes';
 
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { createDocument, updateDocument, deleteDocument, getDocument } from '../document-utils/documentOperations';
+import { createDocument, updateDocument, deleteDocument, getDocument, processDocumentUpdate } from '../document-utils/documentOperations';
 import { 
     getDocumentPreviewsOwnedByUser, 
     getDocumentPreviewsSharedWithUser, 
@@ -248,10 +248,12 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
         shareDocumentWithUser(id, TERTIARY_TEST_ID, ShareStyle.COMMENT, PRIMARY_TEST_ID),
     ]);
     await unshareDocumentWithUser(id, TERTIARY_TEST_ID, PRIMARY_TEST_ID);
+    await processDocumentUpdate({document_title: 'Updated Title'}, id, SECONDARY_TEST_ID);
 
     // update source of truth
     SOURCE_DOCUMENT.metadata.share_link_style = ShareStyle.WRITE;
     SOURCE_DOCUMENT.metadata.share_list[SECONDARY_TEST_ID] = ShareStyle.WRITE;
+    SOURCE_DOCUMENT.document_title = 'Updated Title';
 
     // grab the stored information
     const databaseDocument = await getDocument(id, PRIMARY_TEST_ID);
@@ -260,6 +262,7 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
 
     // verification checks
     SOURCE_DOCUMENT.metadata.last_edit_time = databaseDocument.metadata.last_edit_time;
+    SOURCE_DOCUMENT.metadata.last_edit_user = SECONDARY_TEST_ID;
     // SOURCE_DOCUMENT.metadata.last_edit_user = SECONDARY_TEST_ID;
     assert(isEqual(SOURCE_DOCUMENT, databaseDocument), `Source document and firestore document are not equal`);
     // the shared document is in the shared list
