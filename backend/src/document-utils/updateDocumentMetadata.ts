@@ -2,7 +2,7 @@
 import firebase from "firebase/compat/app";
 import "firebase/compat/firestore";
 
-import { ShareStyle } from "@lib/documentTypes";
+import { ShareStyle } from "@lib/src/documentProperties";
 
 import { processDocumentUpdate } from "./documentOperations";
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
@@ -16,32 +16,6 @@ export async function updateDocumentShareStyle(
     documentId,
     "share_link_style",
     newShareStyle,
-    writerId
-  );
-}
-
-export async function updateDocumentEmoji(
-  documentId: string,
-  newEmoji: string,
-  writerId: string
-) {
-  await updateDocumentMetadata(
-    documentId,
-    "preview_emoji",
-    newEmoji,
-    writerId
-  );
-}
-
-export async function updateDocumentColor(
-  documentId: string,
-  newColor: string,
-  writerId: string
-) {
-  await updateDocumentMetadata(
-    documentId,
-    "preview_color",
-    newColor,
     writerId
   );
 }
@@ -80,6 +54,20 @@ export async function unshareDocumentWithUser(
   ) {
     await getFirebase().deleteUserDocument(userId, documentId, "shared");
   }
+}
+
+// ASSUMPTION: ONLY LET AUTHOR TRASH THEIR DOCUMENT
+export async function updateDocumentTrashedStatus(
+  documentId: string,
+  isTrashed: boolean,
+  writerId: string
+) {
+  await updateDocumentMetadata(
+    documentId,
+    "is_trashed",
+    isTrashed,
+    writerId
+  );
 }
 
 // TO DO: verify that key passed in to updateDocumentMetadata is valid

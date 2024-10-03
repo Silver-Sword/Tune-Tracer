@@ -7,7 +7,7 @@ import firebase from 'firebase/compat/app'
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 
-import { DocumentMetadata } from '@lib/documentTypes';
+import { DocumentMetadata } from '@lib/src/documentProperties';
 
 import { FIREBASE_CONFIG, DOCUMENT_DATABASE_NAME, USER_DATABASE_NAME } from '../firebaseSecrets'
 

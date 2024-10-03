@@ -3,9 +3,10 @@ import 'firebase/compat/auth';
 import "firebase/compat/database";
 import 'firebase/compat/firestore';
 
-import { DocumentMetadata, Document } from '@lib/documentTypes';
-import { OnlineEntity, UpdateType } from '@lib/realtimeUserTypes';
-import { AccessType, getDefaultUser, UserEntity } from '@lib/userTypes';
+import { DocumentMetadata } from '@lib/src/documentProperties';
+import { Document } from '@lib/src/Document';
+import { OnlineEntity, UpdateType } from '@lib/src/realtimeUserTypes';
+import { AccessType, getDefaultUser, UserEntity } from '@lib/src/UserEntity';
 
 import { 
     DOCUMENT_DATABASE_NAME, 
@@ -271,6 +272,14 @@ export default class FirebaseWrapper
         const data = firebase.firestore.FieldValue.arrayRemove(documentId);
         const updatedObject = {[fieldName]: data};
         await this.updateDataInFirestore(USER_DATABASE_NAME, userId, updatedObject);
+    }
+
+    public async updateUserLevelProperty(userId: string, documentId: string, property: string, value: unknown)
+    {
+        const updateObject = {
+            [`preview_properties.${documentId}.${property}`]: value
+        };
+        await this.updateDataInFirestore(USER_DATABASE_NAME, userId, updateObject);
     }
 
     // NOT FOR EXTERNAL USE (use the subscription fn in documentOperations.ts instead)

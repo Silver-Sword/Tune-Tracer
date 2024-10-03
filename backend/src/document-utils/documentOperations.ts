@@ -1,8 +1,10 @@
-import { Document, DocumentMetadata, DocumentPreview, ShareStyle } from '@lib/documentTypes';
+import { DocumentMetadata, DocumentPreview, ShareStyle } from '@lib/src/documentProperties';
+import { Document } from '@lib/src/Document';
 
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';
 import { recordOnlineUserUpdatedDocument } from "./realtimeOnlineUsers";
+import { getDefaultCompositionData } from '@lib/src/CompToolData';
 
 // NOTE: UPDATE functions MODIFY the document that is passed to it
 
@@ -22,11 +24,12 @@ export async function createDocument(writerId: string): Promise<Document>
         time_created: currentTime,
         last_edit_time: currentTime,
         last_edit_user: writerId,
+        is_trashed: false,
         share_list: {},
     };
     const document : Document = {
         document_title: "",
-        contents: JSON.parse(JSON.stringify("{}")),
+        composition: getDefaultCompositionData(),
         comments: [],
         metadata: metadata
     };
@@ -103,16 +106,6 @@ export async function getDocument(documentId: string, readerId: string): Promise
         await firebase.insertUserDocument(readerId, firebaseDocument.metadata.document_id, "accessed");
     }
     return firebaseDocument;
-}
-
-// gets a Document and extracts and returns its DocumentPreview
-export async function getDocumentPreview(documentId: string, readerId: string): Promise<DocumentPreview>
-{
-    const document = await getDocument(documentId, readerId);
-    return {
-        ...document.metadata, 
-        ...{document_title: document.document_title}
-    };
 }
 
 // deletes the document associated with the given document id
