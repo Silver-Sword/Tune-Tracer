@@ -17,7 +17,7 @@ const {onValueCreated} = require("firebase-functions/v2/database");
 const functions = require('firebase-functions');
 const {logger} = require("firebase-functions");
 const { signUpAPI, login } = require('./backend/src/endpoints/loginEndpoints');
-const { getAllDocuments } = require('./backend/src/endpoints/loginEndpoints');
+const { getAllDocuments } = require('./backend/src/endpoints/readEndpoints');
 // const (signUpAPI) = require("./backend/src/endpoints/loginEndpoints")
 // import { signUpAPI } from './backend/src/endpoints/loginEndpoints';
 
@@ -58,17 +58,17 @@ exports.logInUser = functions.https.onRequest(async (request, response) => {
       }
 });
 
-// exports.getAllPreviews = functions.https.onRequest(async (request, response) => {
-//     try {
-//         // Parse user input from the request body
-//         // Call the signUpAPI and await the result
-//         const apiResult = await getAllDocuments();
+exports.getAllPreviews = functions.https.onRequest(async (request, response) => {
+    try {
+        // Parse user input from the request body
+        // Call the signUpAPI and await the result
+        const apiResult = await getAllDocuments();
     
-//         // Send a successful response back
-//         response.status(200).send({ message: 'Here are all the documents', data: apiResult });
-//       } catch (error) {
-//         // Send an error response if something goes wrong
-//         response.status(500).send({ message: 'Failed to get documents' });
-//       }
-// });
+        // Send a successful response back
+        response.status(200).send({ message: 'Here are all the documents', data: apiResult });
+      } catch (error) {
+        // Send an error response if something goes wrong
+        response.status(500).send({ message: 'Failed to get documents' });
+      }
+});
 

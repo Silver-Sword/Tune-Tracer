@@ -2,7 +2,7 @@
 import firebase from "firebase/compat/app";
 import "firebase/compat/firestore";
 
-import { ShareStyle } from "@lib/documentTypes";
+import { ShareStyle } from "../../../lib/documentTypes";
 
 import { processDocumentUpdate } from "./documentOperations";
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";

@@ -1,5 +1,5 @@
 import { deleteDocument } from '../document-utils/documentOperations';
-import { Document } from '@lib/documentTypes';
+import { Document } from '../../../lib/documentTypes';
 import firebase from 'firebase/compat/app';
 
 export async function deleteWorkspace(document: Document)

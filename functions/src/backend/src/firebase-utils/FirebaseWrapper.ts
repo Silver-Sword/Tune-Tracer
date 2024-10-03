@@ -3,9 +3,9 @@ import 'firebase/compat/auth';
 import "firebase/compat/database";
 import 'firebase/compat/firestore';
 
-import { DocumentMetadata, Document } from '@lib/documentTypes';
-import { OnlineEntity, UpdateType } from '@lib/realtimeUserTypes';
-import { AccessType, getDefaultUser, UserEntity } from '@lib/userTypes';
+import { DocumentMetadata, Document } from '../../../lib/documentTypes';
+import { OnlineEntity, UpdateType } from '../../../lib/realtimeUserTypes';
+import { AccessType, getDefaultUser, UserEntity } from '../../../lib/userTypes';
 
 import { 
     DOCUMENT_DATABASE_NAME, 
@@ -13,9 +13,9 @@ import {
     SHARE_CODE_DATABASE,
     USER_DATABASE_NAME
 } from '../firebaseSecrets'
-import { ShareCodeEntity } from 'src/document-utils/sharing/ShareCodeEntity';
+import { ShareCodeEntity } from '../document-utils/sharing/ShareCodeEntity';
 
-type PartialWithRequired<T, K extends keyof T> = Partial<T> & Required<Pick<T, K>>;
+// type PartialWithRequired<T, K extends keyof T> = Partial<T> & Required<Pick<T, K>>;
 type PartialWithRequiredAndWithout<T, K extends keyof T, U extends keyof T> = Partial<T> & Required<Omit<Pick<T, K>, U>>;
 
 /*

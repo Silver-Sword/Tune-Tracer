@@ -1,7 +1,7 @@
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
+// import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import firebase from 'firebase/compat/app';
 import { createDocument } from '../document-utils/documentOperations';
-import { Document } from '@lib/documentTypes';
+import { Document } from '../../../lib/documentTypes';
 
 // returns new document (not just id)
 export async function createWorkspace () : Promise<Document | null>

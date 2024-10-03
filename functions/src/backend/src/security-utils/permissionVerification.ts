@@ -1,4 +1,4 @@
-import { DocumentMetadata, ShareStyle, Document } from "@lib/documentTypes";
+import { DocumentMetadata, ShareStyle, Document } from "../../../lib/documentTypes";
 
 // returns true iff a user has read access
 // takes in the email of a user and the document to check
@@ -8,9 +8,9 @@ export function userHasReadAccess(userId: string, document: Document): boolean {
 
 // returns true iff a user has comment access
 // takes in the email of a user and the document to check
-function userHasCommentAccess(userId: string, document: Document): boolean {
-  return highestPermissions(userId, document.metadata) >= ShareStyle.COMMENT;
-}
+// function userHasCommentAccess(userId: string, document: Document): boolean {
+//   return highestPermissions(userId, document.metadata) >= ShareStyle.COMMENT;
+// }
 
 // returns true iff a user has edit access
 // takes in the email of a user and the document to check

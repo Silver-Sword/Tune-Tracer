@@ -65,7 +65,7 @@ export async function login (email: string, password: string)
 
     try
     {
-        const response = await firebaseWrapper.signInUser(email, password);
+        await firebaseWrapper.signInUser(email, password);
         const auth = getAuth();
         const user = auth.currentUser;
 

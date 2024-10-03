@@ -1,10 +1,10 @@
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
+// import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { getDocumentPreviewsOwnedByUser, getDocumentPreviewsSharedWithUser } from '../document-utils/documentBatchRead';
 import { getDocument } from '../document-utils/documentOperations';
-import { Document,DocumentPreview } from '@lib/documentTypes';
-import { UpdateType,OnlineEntity } from '@lib/realtimeUserTypes';
+import { Document,DocumentPreview } from '../../../lib/documentTypes';
+import { UpdateType,OnlineEntity } from '../../../lib/realtimeUserTypes';
 import firebase from 'firebase/compat/app';
-import { subscribeToDocument } from "src/document-utils/realtimeDocumentUpdates";
+import { subscribeToDocument } from "../document-utils/realtimeDocumentUpdates";
 
 export async function readDocument (documentId: string) : Promise<Document | null>
 {
