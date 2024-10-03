@@ -1,8 +1,8 @@
-import { Measure } from './Measure';
+import { getDefaultMeasureData, MeasureData } from './Measure';
 
 type ScoreData = {
-    top_measures: Measure[];
-    bottom_measures: Measure[];  // both are equal in length
+    top_measures: MeasureData[];
+    bottom_measures: MeasureData[];  // both are equal in length
     // Will most definitely need to add more objects here, but it depends on some factors
 };
 
@@ -13,3 +13,23 @@ export type CompositionData =
     tempo: number,
     contents: ScoreData,             // the contents of the composition
 };
+
+// returns a "blank" CompositionData object
+export function getDefaultCompositionData(): CompositionData
+{
+    return {
+        composition_title: "",
+        composer_name: "",
+        tempo: 0,
+        contents: getDefaultScoreData() 
+    };
+}
+
+// returns a "blank" ScoreData object
+export function getDefaultScoreData(): ScoreData
+{
+    return {
+        top_measures: [getDefaultMeasureData()],
+        bottom_measures: [getDefaultMeasureData()],
+    };
+}

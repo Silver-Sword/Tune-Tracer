@@ -3,6 +3,7 @@ import { Document, DocumentMetadata, DocumentPreview, ShareStyle } from '@lib/sr
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';
 import { recordOnlineUserUpdatedDocument } from "./realtimeOnlineUsers";
+import { getDefaultCompositionData } from '@lib/src/CompToolData';
 
 // NOTE: UPDATE functions MODIFY the document that is passed to it
 
@@ -27,7 +28,7 @@ export async function createDocument(writerId: string): Promise<Document>
     };
     const document : Document = {
         document_title: "",
-        contents: JSON.parse(JSON.stringify("{}")),
+        composition: getDefaultCompositionData(),
         comments: [],
         metadata: metadata
     };
