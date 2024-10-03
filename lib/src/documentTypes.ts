@@ -18,6 +18,7 @@ export type DocumentMetadata =
     last_edit_time: number,             // the time (in milliseconds) when the document was last updated
     last_edit_user: string,             // the user that last updated the document
     is_favorited: boolean,              // whether or not the user has starred/favorited the document
+    is_trashed: boolean,                // whether or not the user has trashed the document
     preview_emoji?: string,             // the emoji that represents this document | visible on the storage page
     preview_color?: string,             // the color that the user chose for this document | visible on the storage page
     share_link_style: ShareStyle,       // the type of publicity for the document (specific to links and share codes)
