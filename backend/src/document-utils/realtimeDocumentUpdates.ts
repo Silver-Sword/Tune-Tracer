@@ -1,8 +1,8 @@
 // TO DO: auth checks after first access
 
-import { Document } from "@lib/src/documentTypes";
+import { Document } from "@lib/src/Document";
 import { OnlineEntity, UpdateType } from "@lib/src/realtimeUserTypes";
-import { UserEntity } from "@lib/src/userTypes";
+import { UserEntity } from "@lib/src/UserEntity";
 
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { subscribeUserToUserDocumentPool } from "./realtimeOnlineUsers";
