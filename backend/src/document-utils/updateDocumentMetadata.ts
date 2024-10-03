@@ -95,6 +95,20 @@ export async function updateDocumentFavoritedStatus(
   );
 }
 
+// ASSUMPTION: ONLY LET AUTHOR TRASH THEIR DOCUMENT
+export async function updateDocumentTrashedStatus(
+  documentId: string,
+  isTrashed: boolean,
+  writerId: string
+) {
+  await updateDocumentMetadata(
+    documentId,
+    "is_trashed",
+    isTrashed,
+    writerId
+  );
+}
+
 // TO DO: verify that key passed in to updateDocumentMetadata is valid
 // generic version of all the other functions in this file; updates a metadata field for a document
 async function updateDocumentMetadata(

@@ -1,9 +1,9 @@
-import { Document,  ShareStyle } from '@lib/src/documentTypes';
+import { Document,  DocumentPreview,  ShareStyle } from '@lib/src/documentTypes';
 import { OnlineEntity, UpdateType } from '@lib/src/realtimeUserTypes';
 
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { createDocument, updateDocument, deleteDocument, getDocument } from '../document-utils/documentOperations';
-import { getDocumentPreviewsOwnedByUser, getDocumentPreviewsSharedWithUser } from "../document-utils/documentBatchRead";
+import { getDocumentPreviewsOwnedByUser, getDocumentPreviewsSharedWithUser, getTrashedDocumentPreviews } from "../document-utils/documentBatchRead";
 import { subscribeToDocument } from "../document-utils/realtimeDocumentUpdates";
 import { 
     recordOnlineUserUpdatedDocument, 
@@ -16,7 +16,8 @@ import {
     updateDocumentEmoji, 
     updateDocumentColor, 
     unshareDocumentWithUser, 
-    updateDocumentFavoritedStatus
+    updateDocumentFavoritedStatus,
+    updateDocumentTrashedStatus
 } from '../document-utils/updateDocumentMetadata';
 import { createShareCode, deleteShareCode, getDocumentIdFromShareCode } from "../document-utils/sharing/sharingUtils";
 
@@ -55,6 +56,7 @@ const TEST_DOCUMENT: Document = {
         last_edit_time: 12,
         last_edit_user: PRIMARY_TEST_ID,
         is_favorited: false,
+        is_trashed: false,
     },
     document_title: "Document Title",
 };
@@ -80,6 +82,7 @@ async function runAllUnitTests(firebase: FirebaseWrapper)
 {
     await testDocumentMetadataUpdates(firebase);
     await testShareCodeFunctions(firebase);
+    await testDocumentTrashing(firebase);
 }
 
 export async function testDocumentChanges()
@@ -208,6 +211,11 @@ function sortKeysOfDocument(document: Document): Document
     return JSON.parse(JSON.stringify(documentCopy)) as Document;
 }
 
+function documentInPreviews(documentId: string, previews: DocumentPreview[]): boolean
+{
+    return previews.filter((preview) => preview.document_id === documentId).length > 0;
+}
+
 /* TESTS */
 // calls all metadata update functions for a document and checks that the resulting document is correct
 // also checks the share lists of the users that should and should not have access to the document
@@ -242,7 +250,7 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
 
     // grab the stored information
     const databaseDocument = await getDocument(id, PRIMARY_TEST_ID);
-    const secondaryUserShares = await getDocumentPreviewsSharedWithUser(SECONDARY_TEST_ID);
+    let secondaryUserShares = await getDocumentPreviewsSharedWithUser(SECONDARY_TEST_ID);
     let tertiaryUserShares = await getDocumentPreviewsSharedWithUser(TERTIARY_TEST_ID);
 
     // verification checks
@@ -278,6 +286,7 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
     `Tertiary user shared list not updated with the document`
     );
 
+    await deleteDocument(databaseDocument, PRIMARY_TEST_ID);
 }
 
 async function testShareCodeFunctions(firebase: FirebaseWrapper)
@@ -298,4 +307,42 @@ async function testShareCodeFunctions(firebase: FirebaseWrapper)
     // check structure of code
     assert(shareCode2.length === 6);
     assert(Number(shareCode2) >= 0 && Number(shareCode2) < 1_000_000);
+
+    await deleteDocument(document, PRIMARY_TEST_ID);
+}
+
+async function testDocumentTrashing(firebase: FirebaseWrapper)
+{
+    console.log(`Testing Document Trashing Functions...`);
+    const document = await createDocument(PRIMARY_TEST_ID);
+    const documentId = document.metadata.document_id;
+
+    await shareDocumentWithUser(documentId, SECONDARY_TEST_ID, ShareStyle.COMMENT, PRIMARY_TEST_ID);
+
+    const getPreviews = async (userId: string) => [
+        await getDocumentPreviewsOwnedByUser(userId),
+        await getDocumentPreviewsSharedWithUser(userId),
+        await getTrashedDocumentPreviews(userId)
+    ];
+
+    // check the three lists of each
+    let primaryPreviews = await getPreviews(PRIMARY_TEST_ID), 
+        secondaryPreview = await getPreviews(SECONDARY_TEST_ID);
+
+    assert(documentInPreviews(documentId, primaryPreviews[0]), `Document ${documentId} not in primary owned list`);
+    assert(!documentInPreviews(documentId, primaryPreviews[2]), `Document ${documentId} found in author's trash`);
+    assert(documentInPreviews(documentId, secondaryPreview[1]), `Document ${documentId} not in secondary's shared list`);
+    assert(!documentInPreviews(documentId, secondaryPreview[2]), `Document ${documentId} found in secondary's trash`);
+
+    await updateDocumentTrashedStatus(documentId, true, PRIMARY_TEST_ID);
+    primaryPreviews = await getPreviews(PRIMARY_TEST_ID);
+    secondaryPreview = await getPreviews(SECONDARY_TEST_ID);
+
+    assert(!documentInPreviews(documentId, primaryPreviews[0]), `Document ${documentId} still in primary owned list`);
+    assert(documentInPreviews(documentId, primaryPreviews[2]), `Document ${documentId} not found in author's trash`);
+    assert(!documentInPreviews(documentId, secondaryPreview[1]), `Document ${documentId} still in secondary's shared list`);
+    assert(!documentInPreviews(documentId, secondaryPreview[2]), `Document ${documentId} found in secondary's trash`);
+
+    await deleteDocument(document, PRIMARY_TEST_ID);
+    assert(!documentInPreviews(documentId, await getTrashedDocumentPreviews(PRIMARY_TEST_ID)));
 }
