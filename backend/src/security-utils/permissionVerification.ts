@@ -1,4 +1,4 @@
-import { DocumentMetadata, ShareStyle, Document } from "@lib/documentTypes";
+import { DocumentMetadata, ShareStyle, Document } from "@lib/src/documentTypes";
 
 // returns true iff a user has read access
 // takes in the email of a user and the document to check

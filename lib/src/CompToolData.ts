@@ -1,4 +1,4 @@
-import { Measure } from '../frontend/src/app/edit/Measure';
+import { Measure } from '../../frontend/src/app/edit/Measure';
 
 type ScoreData = {
     top_measures: Measure[];
@@ -8,9 +8,8 @@ type ScoreData = {
 
 export type CompositionData =
 {
-    composition_title: string,     // the title of the composition; the label of the document used on the storage page
+    composition_title: string,       // the title of the composition; the label of the document used on the storage page
     composer_name: string,
     tempo: number,
     contents: ScoreData,             // the contents of the composition
-    comments: Comment[],        // comments (THIS WILL BE REPLACED LATER); 
 };
