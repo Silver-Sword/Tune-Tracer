@@ -1,9 +1,11 @@
+import { CompositionData } from "./CompToolData";
+
 // purpose: for storing and representing a Composition Document
 export type Document =
 {
     document_title: string,             // the title of the document; the label of the document used on the storage page
-    contents: JSON,                     // the contents of the composition; the type is temporary (to be replaced later)
     comments: Comment[],                // comments; unusued
+    composition: CompositionData,       // the contents of the composition
     metadata: DocumentMetadata,         // the document metadata; this should be treated as a CONST by the frontend
 };
 

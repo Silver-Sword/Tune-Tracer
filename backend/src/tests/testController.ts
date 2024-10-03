@@ -21,6 +21,7 @@ import {
 import { createShareCode, deleteShareCode, getDocumentIdFromShareCode } from "../document-utils/sharing/sharingUtils";
 
 import { isEqual } from 'lodash';
+import { getDefaultCompositionData } from '@lib/src/CompToolData';
 
 const PRIMARY_TEST_EMAIL = "test-user-1@tune-tracer.com";
 const PRIMARY_TEST_ID = "OgGilSJwqCW3qMuHWlChEYka9js1";
@@ -34,10 +35,7 @@ const TERTIARY_TEST_ID = "1HyvutGfMdaQmaU2ASTIBP8h4HT2";
 // check get user owned documents correctly grabbed
 
 const TEST_DOCUMENT: Document = {
-    contents: JSON.parse(JSON.stringify({
-        json_list: ["help", "me", "plz"],
-        user_id: "@email.com"
-    })),
+    composition: getDefaultCompositionData(),
     comments: [
         {
             comment_id: "1234",
@@ -216,7 +214,7 @@ function sortKeysOfDocument(document: Document): Document
 async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
 {
     // create the initial document
-    const SOURCE_DOCUMENT = JSON.parse(JSON.stringify(TEST_DOCUMENT)) as Document;
+    const SOURCE_DOCUMENT = TEST_DOCUMENT as Document;
     const document = await createDocument(TEST_DOCUMENT.metadata.owner_id);
     const id = document.metadata.document_id;
     SOURCE_DOCUMENT.metadata.document_id = id;
