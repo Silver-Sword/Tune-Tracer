@@ -1,4 +1,5 @@
-import { Document,  DocumentPreview,  ShareStyle } from '@lib/src/documentTypes';
+import { DocumentPreview, ShareStyle } from '@lib/src/documentProperties';
+import { Document } from '@lib/src/Document';
 import { OnlineEntity, UpdateType } from '@lib/src/realtimeUserTypes';
 
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";

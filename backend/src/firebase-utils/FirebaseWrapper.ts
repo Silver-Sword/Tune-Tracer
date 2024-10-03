@@ -3,9 +3,10 @@ import 'firebase/compat/auth';
 import "firebase/compat/database";
 import 'firebase/compat/firestore';
 
-import { DocumentMetadata, Document } from '@lib/src/documentTypes';
+import { DocumentMetadata } from '@lib/src/documentProperties';
+import { Document } from '@lib/src/Document';
 import { OnlineEntity, UpdateType } from '@lib/src/realtimeUserTypes';
-import { AccessType, getDefaultUser, UserEntity } from '@lib/src/userTypes';
+import { AccessType, getDefaultUser, UserEntity } from '@lib/src/UserEntity';
 
 import { 
     DOCUMENT_DATABASE_NAME, 

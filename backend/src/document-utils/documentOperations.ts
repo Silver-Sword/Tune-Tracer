@@ -1,4 +1,5 @@
-import { Document, DocumentMetadata, DocumentPreview, ShareStyle } from '@lib/src/documentTypes';
+import { DocumentMetadata, DocumentPreview, ShareStyle } from '@lib/src/documentProperties';
+import { Document } from '@lib/src/Document';
 
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';
