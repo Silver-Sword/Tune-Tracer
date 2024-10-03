@@ -9,9 +9,6 @@ export type DocumentMetadata =
     is_trashed: boolean,                // whether or not the user has trashed the document
     share_link_style: ShareStyle,       // the type of publicity for the document (specific to links and share codes)
     share_list: Record<string, ShareStyle>,      // the users that have access to the document and the permissions given to them
-    is_favorited: boolean,              // whether or not the user has starred/favorited the document
-    preview_emoji?: string,             // the emoji that represents this document | visible on the storage page
-    preview_color?: string,             // the color that the user chose for this document | visible on the storage page
 };
 
 // purpose: for defining how a document has been shared
@@ -23,5 +20,13 @@ export enum ShareStyle
     WRITE = 4,                          // the document can be read, commented on, and edited by other users
 };
 
+// purpose: the properties of a document that are local to a user
+export type UserLevelDocumentProperties =
+{
+    is_favorited: boolean,              // whether or not the user has starred/favorited the document
+    preview_emoji?: string,             // the emoji that represents this document | visible on the storage page
+    preview_color?: string,             // the color that the user chose for this document | visible on the storage page
+};
+
 // purpose: the preview information of a document for use on a user's storage page
-export type DocumentPreview = DocumentMetadata & { document_title: string };
+export type DocumentPreview = DocumentMetadata & { document_title: string } & UserLevelDocumentProperties;

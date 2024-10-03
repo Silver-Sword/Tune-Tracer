@@ -24,7 +24,6 @@ export async function createDocument(writerId: string): Promise<Document>
         time_created: currentTime,
         last_edit_time: currentTime,
         last_edit_user: writerId,
-        is_favorited: false,
         is_trashed: false,
         share_list: {},
     };
@@ -107,16 +106,6 @@ export async function getDocument(documentId: string, readerId: string): Promise
         await firebase.insertUserDocument(readerId, firebaseDocument.metadata.document_id, "accessed");
     }
     return firebaseDocument;
-}
-
-// gets a Document and extracts and returns its DocumentPreview
-export async function getDocumentPreview(documentId: string, readerId: string): Promise<DocumentPreview>
-{
-    const document = await getDocument(documentId, readerId);
-    return {
-        ...document.metadata, 
-        ...{document_title: document.document_title}
-    };
 }
 
 // deletes the document associated with the given document id

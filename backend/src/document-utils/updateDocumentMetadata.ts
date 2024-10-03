@@ -20,32 +20,6 @@ export async function updateDocumentShareStyle(
   );
 }
 
-export async function updateDocumentEmoji(
-  documentId: string,
-  newEmoji: string,
-  writerId: string
-) {
-  await updateDocumentMetadata(
-    documentId,
-    "preview_emoji",
-    newEmoji,
-    writerId
-  );
-}
-
-export async function updateDocumentColor(
-  documentId: string,
-  newColor: string,
-  writerId: string
-) {
-  await updateDocumentMetadata(
-    documentId,
-    "preview_color",
-    newColor,
-    writerId
-  );
-}
-
 // assumption: only share with existing users
 export async function shareDocumentWithUser(
   documentId: string,
@@ -80,19 +54,6 @@ export async function unshareDocumentWithUser(
   ) {
     await getFirebase().deleteUserDocument(userId, documentId, "shared");
   }
-}
-
-export async function updateDocumentFavoritedStatus(
-  documentId: string,
-  isFavorited: boolean,
-  writerId: string
-) {
-  await updateDocumentMetadata(
-    documentId,
-    "is_favorited",
-    isFavorited,
-    writerId
-  );
 }
 
 // ASSUMPTION: ONLY LET AUTHOR TRASH THEIR DOCUMENT
