@@ -1,5 +1,5 @@
-import { Document,  ShareStyle } from '@lib/documentTypes';
-import { OnlineEntity, UpdateType } from '@lib/realtimeUserTypes';
+import { Document,  ShareStyle } from '@lib/src/documentTypes';
+import { OnlineEntity, UpdateType } from '@lib/src/realtimeUserTypes';
 
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { createDocument, updateDocument, deleteDocument, getDocument } from '../document-utils/documentOperations';
