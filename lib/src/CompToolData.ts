@@ -1,4 +1,4 @@
-import { getDefaultMeasureData, MeasureData } from './Measure';
+import { getDefaultMeasureData, MeasureData } from './MeasureData';
 
 type ScoreData = {
     top_measures: MeasureData[];
