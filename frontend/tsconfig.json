@@ -8,7 +8,6 @@
     "forceConsistentCasingInFileNames": true, // Ensures consistent casing in file names.
     "outDir": "./dist", // Specifies the output directory for compiled JavaScript files.
     "rootDir": "../", // Specifies the root directory of TypeScript files.
-    "allowImportingTsExtensions": true,
     "moduleResolution": "node", // Specifies module resolution strategy: "node" for Node.js-style resolution.
     "resolveJsonModule": true, // Allows importing JSON files as modules.
     "sourceMap": true, // Generates corresponding .map files for debugging.
