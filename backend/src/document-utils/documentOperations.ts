@@ -44,7 +44,8 @@ export async function createDocument(writerId: string): Promise<Document>
 export async function processDocumentUpdate(
     documentObject: Record<string, unknown>, 
     documentId: string, 
-    writerId: string
+    writerId: string,
+    requireAuthorStatus: boolean = false,
 ): Promise<boolean> {
     const firebase: FirebaseWrapper = new FirebaseWrapper();
     firebase.initApp();
@@ -53,6 +54,8 @@ export async function processDocumentUpdate(
     const initialDocument = await firebase.getDocument(documentId);
     if(initialDocument === null) {
         throw Error(`Trying to update document ${documentId}, which doesn't exist in Firestore`);
+    } else if(requireAuthorStatus && initialDocument.metadata.owner_id !== writerId) {
+        throw Error(`User ${writerId} is trying to update document ${documentId}, but doesn't have the permissions to do so`);
     } else if(!userHasWriteAccess(writerId, initialDocument)) {
         throw Error(`User ${writerId} is trying to update document ${documentId}, but doesn't have the permissions to do so`);
     }
