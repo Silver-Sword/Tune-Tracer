@@ -1,5 +1,3 @@
-// TO DO: auth checks after first access
-
 import { Document } from "@lib/src/Document";
 import { OnlineEntity, UpdateType } from "@lib/src/realtimeUserTypes";
 import { UserEntity } from "@lib/src/UserEntity";
@@ -39,13 +37,11 @@ export async function subscribeToDocument(
       snapshot.data() !== undefined
     ) {
       const document = snapshot.data() as Document;
-      if(firstAccess)
-      {
-        if(!processFirstAccessAndAuth(user, document, firebase))
-        {
-          throw Error(`User with id ${user.user_id} does not have read access to document with id ${document.metadata.document_id}`);
-        }
+      if(!userHasReadAccess(user.user_id, document)) {
+          throw Error(`User with id ${user.user_id} does not have read access to document with id ${document.metadata.document_id}`)
+      } else if(firstAccess) {
         firstAccess = false;
+        processFirstAccessAndAuth(user, document, firebase);
       }
       
       onDocumentUpdateFn(document as Document);
@@ -58,13 +54,7 @@ function processFirstAccessAndAuth(
   user: Record<string, unknown> & Required<Pick<UserEntity, 'user_id' | 'user_email' | 'display_name'>>,
   document: Document,
   firebase: FirebaseWrapper
-): boolean
-{
-  if(!userHasReadAccess(user.user_id, document))
-  {
-      return false;
-  }
-
+) {
   // update access list if necessary
   if(
     user.user_id !== document.metadata.owner_id && 
@@ -72,6 +62,4 @@ function processFirstAccessAndAuth(
   ) {
     firebase.insertUserDocument(user.user_id, document.metadata.document_id, "accessed");
   }
-
-  return true;
 }
