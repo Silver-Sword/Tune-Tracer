@@ -4,7 +4,7 @@ import { Document } from '@lib/src/Document';
 import { OnlineEntity, UpdateType } from '@lib/src/realtimeUserTypes';
 
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { createDocument, updateDocument, deleteDocument, getDocument, processDocumentUpdate } from '../document-utils/documentOperations';
+import { createDocument, deleteDocument, getDocument, processDocumentUpdate, updatePartialDocument } from '../document-utils/documentOperations';
 import { 
     getDocumentPreviewsOwnedByUser, 
     getDocumentPreviewsSharedWithUser, 
@@ -129,7 +129,7 @@ export async function testDocumentChanges()
 
     // setting document to test document
     console.log(`Setting initial document...`);
-    await updateDocument(SOURCE_DOCUMENT, PRIMARY_TEST_ID);
+    await updatePartialDocument(SOURCE_DOCUMENT, SOURCE_DOCUMENT.metadata.document_id, PRIMARY_TEST_ID);
     console.log(`Updating Document Color...`);
     await updateDocumentColor(id, "blue", user.user_email);
     console.log(`Updating cursor...`)
@@ -157,12 +157,12 @@ async function testDocumentUpdate(firebase: FirebaseWrapper)
     const doc = await createDocument(TEST_DOCUMENT.metadata.owner_id);
     console.log(`Document Id: ${doc.metadata.document_id}`);
     TEST_DOCUMENT.metadata.document_id = doc.metadata.document_id;
-    await updateDocument(TEST_DOCUMENT, PRIMARY_TEST_ID);
+    await updatePartialDocument(TEST_DOCUMENT, TEST_DOCUMENT.metadata.document_id, PRIMARY_TEST_ID);
 
     const updatedDocumentTest = JSON.parse(JSON.stringify(TEST_DOCUMENT)) as Document;
 
     updatedDocumentTest.document_title = "New Document Title";
-    const success = await updateDocument(updatedDocumentTest, PRIMARY_TEST_ID);
+    const success = await updatePartialDocument(updatedDocumentTest, updatedDocumentTest.metadata.document_id, PRIMARY_TEST_ID);
     console.log(`Document Update was successful: ${success ? "true" : "false"}`);
 }
 
@@ -239,7 +239,7 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
     const id = document.metadata.document_id;
     SOURCE_DOCUMENT.metadata.document_id = id;
     console.log(`Document Id: ${id}`);
-    await updateDocument(SOURCE_DOCUMENT, PRIMARY_TEST_ID);
+    await updatePartialDocument(SOURCE_DOCUMENT, SOURCE_DOCUMENT.metadata.document_id, PRIMARY_TEST_ID);
 
     // update the metadata to alternative values
     await Promise.all([

@@ -76,12 +76,20 @@ export async function processDocumentUpdate(
     return firebase.updatePartialDocument(documentId, documentObject);
 }
 
-// takes in the updated document and the id of the user making the edit(s)
-// returns a promise containing true iff the document was successfully updated
-// ONLY UPDATE THE DOCUMENT CONTENT USING THIS FUNCTION (metadata should be updated in a different function)
-export async function updateDocument(updatedDocument: Document, writerId: string): Promise<boolean>
-{
-    return processDocumentUpdate(updatedDocument, updatedDocument.metadata.document_id, writerId);
+/**
+ * DANGEROUS: PLZ KNOW WHAT YOU'RE DOING BEFORE CALLING
+ * The partial update function for the document content. Use Firestore's dot notation to indicate what is updating.
+ * @param partialUpdateObject the key-value pairs of updates. Pass in the whole Document if you want to overwrite it.
+ * @param documentId the id of the document that is being updated
+ * @param writerId the id of the user who is making the writes
+ * @returns a promise containing a boolean representing if the write was successful
+ */
+export async function updatePartialDocument(
+    partialUpdateObject: Record<string, unknown>, 
+    documentId: string, 
+    writerId: string
+): Promise<boolean> {
+    return processDocumentUpdate(partialUpdateObject, documentId, writerId);
 }
 
 // DO NOT DIRECTLY CALL THIS FUNCTION IN THE APIs
