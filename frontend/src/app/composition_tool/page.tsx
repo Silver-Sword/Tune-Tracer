@@ -12,7 +12,46 @@ import {
     Stack,
     SimpleGrid,
     Grid,
+    Flex,
+    Input,
+    TextInput,
 } from "@mantine/core";
+
+
+const ToolbarHeader: React.FC = () => {
+    return (
+      <AppShell.Header height={120} p="md" sx={{ display: 'flex', flexDirection: 'column' }}>
+        {/* First layer (top section) */}
+        <Group align="center" style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
+            <Text size="xl" component="a" href="/storage">Tune Tracer</Text>
+            <TextInput 
+                size="md"
+                placeholder="Enter Document Name"
+                // value={}
+                // onChange={}
+            />
+            <Button>Share</Button>
+        </Group>
+  
+        {/* Second layer (middle section) */}
+        <Group align="center" mt="md" style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
+            <Group>
+                <Button variant="outline">Home</Button>
+                <Button variant="outline">About</Button>
+                <Button variant="outline">Services</Button>
+                <Button variant="outline">Contact</Button>
+            </Group>
+            <Input placeholder="Search..." />
+        </Group>
+  
+        {/* Third layer (bottom section) */}
+        <Flex justify="flex-end" align="center" mt="md">
+            <Text>Support: +123-456-789</Text>
+        </Flex>
+      </AppShell.Header>
+    );
+  };
+
 
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
@@ -44,7 +83,7 @@ export default function CompositionTool() {
 
     return (
         <AppShell
-            header={{ height: 60 }}
+            header={{ height: 120 }}
             navbar={{
                 width: 250,
                 breakpoint: "sm",
@@ -52,21 +91,7 @@ export default function CompositionTool() {
             padding="md"
         >
             <AppShell.Main>
-                <AppShell.Header
-                    style={{
-                        justifyContent: "center",
-                        display: "flex",
-                        flexDirection: "column",
-                    }}
-                >
-                    <Group justify="space-between" px="lg">
-                        <Text>Tune Tracer</Text>
-
-                        <Button component="a">Share</Button>
-                    </Group>
-                    
-                    
-                </AppShell.Header>
+                <ToolbarHeader />
                     
                     {/* Somehow adding the NavBar removes the score and its container */}
                 {/* <AppShell.Navbar>
@@ -87,6 +112,8 @@ export default function CompositionTool() {
                         "linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)",
                     }}
                 >
+                    <Space h="xl"></Space>
+                    <Text>Score Name</Text>
 
                     <div>
                         <div ref={notationRef}></div>
