@@ -1,3 +1,4 @@
+// make sure to update this function as you edit the measure data
 export function getDefaultMeasureData(): MeasureData
 {
     return {
@@ -14,6 +15,8 @@ export function getDefaultMeasureData(): MeasureData
     }
 };
 
+// update this type with all the variables you need to store in order to recreate a Measure
+// do not use classes
 export type MeasureData = {
     num_beats: number,
     beat_value: number,

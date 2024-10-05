@@ -1,4 +1,5 @@
 import { Vex, Stave, StaveNote, Voice, Tickable } from 'vexflow';
+import { MeasureData } from '../../../../lib/src/MeasureData'; // edit the tsconfig file to include this import 
 
 
 type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
@@ -26,6 +27,28 @@ export class Measure {
     private timeSignature: string = "";
     private clef: string = "";
     private rest_location: string = "";
+
+    // see this resource for actually setting up multiple constructors: https://www.educba.com/typescript-multiple-constructors/
+    // this constructor can be used to take a Document object and convert it to something usable by the frontend
+    constructor(
+        measure: MeasureData
+    ) {
+        // fill in information using the measure data
+        this.width = measure.width;
+        this.height = measure.height;
+        // and so on
+    }
+
+    // this function takes the current instance of Measure and returns a MeasureData object
+    // it's mostly useful for converting the current measure to something we can store in Firebase 
+    // the function is not required if you are just going to make incremental updates
+    protected toMeasureData(): MeasureData {
+        return {
+            width: this.width,
+            height: this.height,
+            // and so on
+        };
+    }
 
     constructor(
         context: RenderContext,
