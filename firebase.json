@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "frontend",
+    "public": "frontend/src",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -9,12 +9,19 @@
     "rewrites": [
       {
         "source": "**",
-        "destination": "/index.html"
+        "destination": "nextApp"
       }, 
       {
         "source": "/workspace/**",
         "dynamicLinks": true
-      }
+      },
+      {
+        "source": "/signUpUser",
+        "function": {
+          "functionId": "signUpUser",
+          "region": "us-central1"
+        }
+      } 
     ]
   },
   "functions": [

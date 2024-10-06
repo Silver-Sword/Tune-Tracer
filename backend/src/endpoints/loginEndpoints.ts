@@ -3,7 +3,7 @@ import { getAuth} from 'firebase/auth';
 // import 'firebase/compat/auth';
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 
-export async function signUp (email: string, password: string, displayName: string)
+export async function signUpAPI (email: string, password: string, displayName: string)
 {
     const firebaseWrapper = new FirebaseWrapper();
     firebaseWrapper.initApp();
@@ -14,7 +14,7 @@ export async function signUp (email: string, password: string, displayName: stri
         console.log("Your password does not meet the requirements");
         return false;
     }
-
+    
     const response = await firebaseWrapper.signUpNewUser(email, password, displayName);
 
     if (!response)
@@ -29,6 +29,10 @@ export async function signUp (email: string, password: string, displayName: stri
             if (user)
             {
                 user.sendEmailVerification()
+            }
+            else 
+            {
+                throw new Error("Error with email");
             }
         } 
         catch (error)
@@ -65,7 +69,7 @@ export async function login (email: string, password: string)
 
     try
     {
-        const response = await firebaseWrapper.signInUser(email, password);
+        await firebaseWrapper.signInUser(email, password);
         const auth = getAuth();
         const user = auth.currentUser;
 
