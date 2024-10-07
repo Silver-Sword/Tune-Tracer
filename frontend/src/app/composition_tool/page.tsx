@@ -15,12 +15,14 @@ import {
     Flex,
     Input,
     TextInput,
+    Paper,
+    Avatar,
 } from "@mantine/core";
 
 
 const ToolbarHeader: React.FC = () => {
     return (
-      <AppShell.Header height={120} p="md" sx={{ display: 'flex', flexDirection: 'column' }}>
+      <AppShell.Header p="md">
         {/* First layer (top section) */}
         <Group align="center" style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
             <Text size="xl" component="a" href="/storage">Tune Tracer</Text>
@@ -30,7 +32,8 @@ const ToolbarHeader: React.FC = () => {
                 // value={}
                 // onChange={}
             />
-            <Button>Share</Button>
+                <Button>Share</Button>
+            
         </Group>
   
         {/* Second layer (middle section) */}
@@ -52,6 +55,44 @@ const ToolbarHeader: React.FC = () => {
     );
   };
 
+// CommentCard component only used for the comment sidebar
+const CommentCard: React.FC = () => {
+
+    return (
+        <Paper withBorder shadow="sm" p="md" radius="md">
+            <Group>
+                {/* Need user logic for avatars, names, and date*/}
+                <Avatar
+                radius="xl"/>
+                <div>
+                    <Text fz="sm">
+                        [name]
+                    </Text>
+                    <Text fz="xs" c="dimmed">
+                        [date/time]
+                    </Text>
+                </div>
+                </Group>
+                    <Text pl={54} pt="sm" size="sm">
+                        Lorem ipsum 
+                    </Text>
+        </Paper>
+    );
+};
+
+// Right sidebar that contains all the comments in the document
+const CommentAside: React.FC = () => {
+    
+    return (
+        <AppShell.Aside withBorder p="md">
+            <Stack gap="xs">
+                <CommentCard />
+                <CommentCard />
+                <CommentCard />
+            </Stack>
+        </AppShell.Aside>
+    );
+};
 
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
@@ -83,15 +124,21 @@ export default function CompositionTool() {
 
     return (
         <AppShell
-            header={{ height: 120 }}
+            
+            header={{ height: 150 }}
             navbar={{
-                width: 250,
+                width: 150,
+                breakpoint: "sm",
+            }}
+            aside={{ 
+                width: 300, 
                 breakpoint: "sm",
             }}
             padding="md"
         >
             <AppShell.Main>
                 <ToolbarHeader />
+                <CommentAside />
                     
                     {/* Somehow adding the NavBar removes the score and its container */}
                 {/* <AppShell.Navbar>
