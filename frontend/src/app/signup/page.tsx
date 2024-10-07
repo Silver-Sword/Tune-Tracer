@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import { Container, Center, Title, TextInput, PasswordInput, Stack, Space, Button, rem, Group } from '@mantine/core';
 import { IconAt } from '@tabler/icons-react';
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { app } from '../../firebaseSecrets';
 
-const functions = getFunctions();
+const functions = getFunctions(app);
 
 
 export default function SignUp() {
@@ -15,34 +16,30 @@ export default function SignUp() {
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
 
-    setEmail("random@gmail.com");
-    setDisplayName("displayname");
-    setPassword("password");
-
     const handleRegister = async () => {
         setLoading(true);
         setMessage('');
 
+        // const email2 = email as string;
+        // const displayName2 = displayName as string;
+        // const password2 = password as string;
         try {
-            const signUp = httpsCallable(functions, 'signUp');
-            signUp({email, password, displayName})
+            const signUp = await httpsCallable(functions, 'signUpUser');
+            await signUp({email: email, password: password, displayName: displayName})
                 .then((result) => {
                     // Read result of the Cloud Function.
-                    /** @type {any} */
                     const data = result.data;
                     console.log("Data:" + data);
                     
                 }).catch((error) => {
                     // Getting the Error details.
-                    const code = error.code;
                     const message = error.message;
-                    const details = error.details;
                     setMessage(`Error: ${message}`);
                     return;
                     // ...
                   });
 
-            setMessage(`User registered successfully. Please check email to get verified`);
+                  setMessage(`User registered successfully. Please check email to get verified`);
         } catch (error: any) {
             // Handle any error and display the message
             setMessage(`Error: ${error.message}`);
@@ -97,12 +94,16 @@ export default function SignUp() {
                         radius='md'
                         label='Email'
                         placeholder='email'
-                    />
+                    value={email}
+                    onChange={(event) => setEmail(event.currentTarget.value)}
+                />
                     <TextInput
                         withAsterisk
                         radius='md'
                         label='Display Name'
                         placeholder='Name'
+                        value={displayName}
+                    onChange={(event) => setDisplayName(event.currentTarget.value)}
                     />
                     <PasswordInput
                         radius='md'
@@ -110,6 +111,8 @@ export default function SignUp() {
                         placeholder='password'
                         withAsterisk
                         error={error}
+                        value={password}
+                        onChange={(event) => setPassword(event.currentTarget.value)}
                     />
                     <PasswordInput
                         radius='md'
