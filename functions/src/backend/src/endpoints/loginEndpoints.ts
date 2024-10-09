@@ -1,6 +1,5 @@
 import firebase from 'firebase/compat/app'
 import { getAuth} from 'firebase/auth';
-// import 'firebase/compat/auth';
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 
 export async function signUpAPI (email: string, password: string, displayName: string)
@@ -11,15 +10,14 @@ export async function signUpAPI (email: string, password: string, displayName: s
 
     if (!passwordReqs)
     {
-        console.log("Your password does not meet the requirements");
-        return false;
+        throw new Error("Password does not meet requirements");
     }
     
     const response = await firebaseWrapper.signUpNewUser(email, password, displayName);
 
     if (!response)
     {
-        return false;
+        throw new Error("No response from server");
     }
     else
     {
@@ -32,13 +30,12 @@ export async function signUpAPI (email: string, password: string, displayName: s
             }
             else 
             {
-                throw new Error("Error with email");
+                throw new Error("Error with user identification");
             }
         } 
         catch (error)
         {
-            console.log("Error with email");
-            return false;
+            throw new Error("Error with email verification");
         }
     }
     
@@ -78,18 +75,17 @@ export async function login (email: string, password: string)
             if (!user.emailVerified)
             {
                 await signOut();
-                console.log("Please verify your email before signing in");
-                return false;
+                throw new Error("Please verify your email before signing in");
             }
         }
+        
+        return user;
     }
     catch (error)
     {
-        console.log("Could not sign in. Please check your username or password");
-        return false;
+        throw new Error("Could not sign in. Please check your username or password");
     }
 
-    return true;
 }
 
 export async function signOut ()

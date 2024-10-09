@@ -9,23 +9,23 @@
 
 "use strict";
 
+
 // [START all]
 // [START import]
 // The Cloud Functions for Firebase SDK to setup triggers and logging.
 // const {onValueCreated} = require("firebase-functions/v2/database");
-const functions = require('firebase-functions');
+const functions = require('firebase-functions/v1');
 // const express = require('express');
 // const {logger} = require("firebase-functions");
 const { signUpAPI, login } = require('./backend/src/endpoints/loginEndpoints');
 const { getAllDocuments } = require('./backend/src/endpoints/readEndpoints');
-import * as cors from 'cors';
-import * as admin from 'firebase-admin';
+// import * as cors from 'cors';
+const cors = require('cors');
+// import * as admin from 'firebase-admin';
 
 const corsHandler = cors({ origin: true });
-admin.initializeApp();
+// admin.initializeApp();
 // import { Request, Response } from 'express';
-// const (signUpAPI) = require("./backend/src/endpoints/loginEndpoints")
-// import { signUpAPI } from './backend/src/endpoints/loginEndpoints';
 
 // The Firebase Admin SDK to access the Firebase Realtime Database.
 // const admin = require("firebase-admin");
@@ -49,28 +49,36 @@ exports.signUpUser = functions.https.onRequest(async (request, response) => {
     response.status(200).send({ message: 'User signed up successfully', data: apiResult });
   } catch (error) {
     // Send an error response if something goes wrong
-    response.status(500).send({ message: `Failed to sign up user: ${(error as Error).message}` });
+    response.status(500).send({ message: 'Failed to sign up user:'+ error });
   }
   });
 });
 
 exports.logInUser = functions.https.onRequest(async (request, response) => {
-    try {
-        // Parse user input from the request body
-        const { email, password } = request.body;
-    
-        // Call the signUpAPI and await the result
-        const apiResult = await login(email, password);
-    
-        // Send a successful response back
-        response.status(200).send({ message: 'User signed n successfully', data: apiResult });
-      } catch (error) {
-        // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to sign in user' });
+  corsHandler(request, response, async () => {
+  try {
+      // Parse user input from the request body
+      const { email, password } = request.body;
+  
+      // Call the signUpAPI and await the result
+      const apiResult = await login(email, password);
+
+      if (!apiResult) 
+      {
+        throw new Error("Could not identify user");
       }
+  
+      // Send a successful response back
+      response.status(200).send({ message: 'User signed in successfully', data: apiResult });
+    } catch (error) {
+      // Send an error response if something goes wrong
+      response.status(500).send({ message: 'Failed to log in user:' + error });
+    }
+  });
 });
 
 exports.getAllPreviews = functions.https.onRequest(async (request, response) => {
+  corsHandler(request, response, async () => {
     try {
         // Parse user input from the request body
         // Call the signUpAPI and await the result
@@ -80,7 +88,8 @@ exports.getAllPreviews = functions.https.onRequest(async (request, response) => 
         response.status(200).send({ message: 'Here are all the documents', data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to get documents' });
+        response.status(500).send({ message: 'Failed to get documents' + error });
       }
+  });
 });
 
