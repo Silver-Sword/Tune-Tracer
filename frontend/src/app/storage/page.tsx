@@ -116,7 +116,8 @@ const CreateCard: React.FC = () => {
       style={{ maxWidth: 400, margin: "0 auto" }}
     >
       <Stack>
-        <Button fullWidth onClick={handleCreateDocument}>
+        {/* THE HREF IS TEMPORARY FOR DEMO */}
+        <Button component='a' href='/composition_tool' fullWidth onClick={handleCreateDocument}>
           Create New Document
         </Button>
 
@@ -171,8 +172,9 @@ export default function Storage() {
           <Group justify="space-between" px="lg">
             <Text>Tune Tracer</Text>
             <SearchBar />
+            {/* THIS IS A PLACEHOLDER FOR DEMO AND WILL BE POPULATED WITH USER EMAIL */}
             <Button component="a" href="/login">
-              Profile
+              user123456789@outlook.example.com
             </Button>
           </Group>
         </AppShell.Header>

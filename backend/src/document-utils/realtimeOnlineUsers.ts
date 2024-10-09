@@ -1,5 +1,7 @@
-import { OnlineEntity, UpdateType } from "@lib/realtimeUserTypes";
-import { UserEntity } from "@lib/userTypes";
+import { OnlineEntity } from "@lib/src/realtimeUserTypes";
+import { UpdateType } from "@lib/src/UpdateType";
+
+import { UserEntity } from "@lib/src/UserEntity";
 
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 

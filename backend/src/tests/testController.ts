@@ -1,9 +1,17 @@
-import { Document,  ShareStyle } from '@lib/documentTypes';
-import { OnlineEntity, UpdateType } from '@lib/realtimeUserTypes';
+import { getDefaultCompositionData } from '@lib/src/CompToolData';
+import { DocumentPreview, ShareStyle } from '@lib/src/documentProperties';
+import { Document } from '@lib/src/Document';
+import { OnlineEntity } from "@lib/src/realtimeUserTypes";
+import { UpdateType } from "@lib/src/UpdateType";
 
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { createDocument, updateDocument, deleteDocument, getDocument } from '../document-utils/documentOperations';
-import { getDocumentPreviewsOwnedByUser, getDocumentPreviewsSharedWithUser } from "../document-utils/documentBatchRead";
+import { createDocument, deleteDocument, getDocument, processDocumentUpdate, updatePartialDocument } from '../document-utils/documentOperations';
+import { 
+    getDocumentPreviewsOwnedByUser, 
+    getDocumentPreviewsSharedWithUser, 
+    getSingleDocumentPreview, 
+    getTrashedDocumentPreviews 
+} from "../document-utils/documentBatchRead";
 import { subscribeToDocument } from "../document-utils/realtimeDocumentUpdates";
 import { 
     recordOnlineUserUpdatedDocument, 
@@ -11,13 +19,21 @@ import {
     updateUserCursor 
 } from "../document-utils/realtimeOnlineUsers";
 import { 
+    createShareCode, 
+    deleteShareCode, 
+    getDocumentIdFromShareCode 
+} from "../document-utils/sharing/sharingUtils";
+import { 
     shareDocumentWithUser, 
-    updateDocumentShareStyle,       
-    updateDocumentEmoji, 
-    updateDocumentColor, 
-    unshareDocumentWithUser 
+    updateDocumentShareStyle,
+    unshareDocumentWithUser,
+    updateDocumentTrashedStatus 
 } from '../document-utils/updateDocumentMetadata';
-import { createShareCode, deleteShareCode, getDocumentIdFromShareCode } from "../document-utils/sharing/sharingUtils";
+import { 
+    updateDocumentColor, 
+    updateDocumentEmoji, 
+    updateDocumentFavoritedStatus 
+} from '../document-utils/updateUserLevelDocumentProperties';
 
 import { isEqual } from 'lodash';
 
@@ -33,10 +49,7 @@ const TERTIARY_TEST_ID = "1HyvutGfMdaQmaU2ASTIBP8h4HT2";
 // check get user owned documents correctly grabbed
 
 const TEST_DOCUMENT: Document = {
-    contents: JSON.parse(JSON.stringify({
-        json_list: ["help", "me", "plz"],
-        user_id: "@email.com"
-    })),
+    composition: getDefaultCompositionData(),
     comments: [
         {
             comment_id: "1234",
@@ -55,6 +68,7 @@ const TEST_DOCUMENT: Document = {
         time_created: 0,
         last_edit_time: 12,
         last_edit_user: PRIMARY_TEST_ID,
+        is_trashed: false,
     },
     document_title: "Document Title",
 };
@@ -78,8 +92,10 @@ export async function runTest()
 
 async function runAllUnitTests(firebase: FirebaseWrapper)
 {
+    await testUserLevelProperties(firebase),
     await testDocumentMetadataUpdates(firebase);
     await testShareCodeFunctions(firebase);
+    await testDocumentTrashing(firebase);
 }
 
 export async function testDocumentChanges()
@@ -114,7 +130,7 @@ export async function testDocumentChanges()
 
     // setting document to test document
     console.log(`Setting initial document...`);
-    await updateDocument(SOURCE_DOCUMENT, PRIMARY_TEST_ID);
+    await updatePartialDocument(SOURCE_DOCUMENT, SOURCE_DOCUMENT.metadata.document_id, PRIMARY_TEST_ID);
     console.log(`Updating Document Color...`);
     await updateDocumentColor(id, "blue", user.user_email);
     console.log(`Updating cursor...`)
@@ -142,12 +158,12 @@ async function testDocumentUpdate(firebase: FirebaseWrapper)
     const doc = await createDocument(TEST_DOCUMENT.metadata.owner_id);
     console.log(`Document Id: ${doc.metadata.document_id}`);
     TEST_DOCUMENT.metadata.document_id = doc.metadata.document_id;
-    await updateDocument(TEST_DOCUMENT, PRIMARY_TEST_ID);
+    await updatePartialDocument(TEST_DOCUMENT, TEST_DOCUMENT.metadata.document_id, PRIMARY_TEST_ID);
 
     const updatedDocumentTest = JSON.parse(JSON.stringify(TEST_DOCUMENT)) as Document;
 
     updatedDocumentTest.document_title = "New Document Title";
-    const success = await updateDocument(updatedDocumentTest, PRIMARY_TEST_ID);
+    const success = await updatePartialDocument(updatedDocumentTest, updatedDocumentTest.metadata.document_id, PRIMARY_TEST_ID);
     console.log(`Document Update was successful: ${success ? "true" : "false"}`);
 }
 
@@ -208,65 +224,65 @@ function sortKeysOfDocument(document: Document): Document
     return JSON.parse(JSON.stringify(documentCopy)) as Document;
 }
 
+function documentInPreviews(documentId: string, previews: DocumentPreview[]): boolean
+{
+    return previews.filter((preview) => preview.document_id === documentId).length > 0;
+}
+
 /* TESTS */
 // calls all metadata update functions for a document and checks that the resulting document is correct
 // also checks the share lists of the users that should and should not have access to the document
 async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
 {
     // create the initial document
-    const SOURCE_DOCUMENT = JSON.parse(JSON.stringify(TEST_DOCUMENT)) as Document;
+    const SOURCE_DOCUMENT = TEST_DOCUMENT as Document;
     const document = await createDocument(TEST_DOCUMENT.metadata.owner_id);
     const id = document.metadata.document_id;
     SOURCE_DOCUMENT.metadata.document_id = id;
     console.log(`Document Id: ${id}`);
-    await updateDocument(SOURCE_DOCUMENT, PRIMARY_TEST_ID);
+    await updatePartialDocument(SOURCE_DOCUMENT, SOURCE_DOCUMENT.metadata.document_id, PRIMARY_TEST_ID);
 
     // update the metadata to alternative values
     await Promise.all([
         updateDocumentShareStyle(id, ShareStyle.WRITE, PRIMARY_TEST_ID),
-        updateDocumentColor(id, "blue", PRIMARY_TEST_ID),
-        updateDocumentEmoji(id, "&#x1f602", PRIMARY_TEST_ID),
         shareDocumentWithUser(id, SECONDARY_TEST_ID, ShareStyle.WRITE, PRIMARY_TEST_ID),
         shareDocumentWithUser(id, TERTIARY_TEST_ID, ShareStyle.COMMENT, PRIMARY_TEST_ID),
     ]);
     await unshareDocumentWithUser(id, TERTIARY_TEST_ID, PRIMARY_TEST_ID);
-    await updateDocumentEmoji(id, ":celebration:", SECONDARY_TEST_ID);
+    await processDocumentUpdate({document_title: 'Updated Title'}, id, SECONDARY_TEST_ID);
 
     // update source of truth
     SOURCE_DOCUMENT.metadata.share_link_style = ShareStyle.WRITE;
-    SOURCE_DOCUMENT.metadata.preview_color = "blue";
-    SOURCE_DOCUMENT.metadata.preview_emoji = ":celebration:";
     SOURCE_DOCUMENT.metadata.share_list[SECONDARY_TEST_ID] = ShareStyle.WRITE;
+    SOURCE_DOCUMENT.document_title = 'Updated Title';
 
     // grab the stored information
     const databaseDocument = await getDocument(id, PRIMARY_TEST_ID);
-    const secondaryUserShares = await getDocumentPreviewsSharedWithUser(SECONDARY_TEST_ID);
+    let secondaryUserShares = await getDocumentPreviewsSharedWithUser(SECONDARY_TEST_ID);
     let tertiaryUserShares = await getDocumentPreviewsSharedWithUser(TERTIARY_TEST_ID);
 
     // verification checks
     SOURCE_DOCUMENT.metadata.last_edit_time = databaseDocument.metadata.last_edit_time;
     SOURCE_DOCUMENT.metadata.last_edit_user = SECONDARY_TEST_ID;
+    // SOURCE_DOCUMENT.metadata.last_edit_user = SECONDARY_TEST_ID;
     assert(isEqual(SOURCE_DOCUMENT, databaseDocument), `Source document and firestore document are not equal`);
     // the shared document is in the shared list
-    assert(secondaryUserShares
-                .filter((sharedDoc) => sharedDoc.document_id === id)
-                .length > 0,
-            `Secondary user shared list not updated with the new document id`
+    assert(
+        documentInPreviews(id, secondaryUserShares),
+        `Secondary user shared list not updated with the new document id`
     );
     // the shared document is not in the shared list
-    assert(tertiaryUserShares
-                .filter((sharedDoc) => sharedDoc.document_id === id)
-                .length === 0,
-            `Tertiary user has new document id in its shared list, but shouldn't`        
+    assert(
+        !documentInPreviews(id, tertiaryUserShares),
+        `Tertiary user has new document id in its shared list, but shouldn't`        
     );
 
     // test access list
     await getDocument(document.metadata.document_id, TERTIARY_TEST_ID);
     tertiaryUserShares = await getDocumentPreviewsSharedWithUser(TERTIARY_TEST_ID);
-    assert(tertiaryUserShares
-        .filter((sharedDoc) => sharedDoc.document_id === id)
-        .length > 0,
-    `Tertiary user shared list not updated with the document`
+    assert(
+        documentInPreviews(id, tertiaryUserShares),
+        `Tertiary user shared list not updated with the document`
     );
     await updateDocumentShareStyle(document.metadata.document_id, ShareStyle.NONE, PRIMARY_TEST_ID);
     tertiaryUserShares = await getDocumentPreviewsSharedWithUser(TERTIARY_TEST_ID);
@@ -276,6 +292,7 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
     `Tertiary user shared list not updated with the document`
     );
 
+    await deleteDocument(databaseDocument, PRIMARY_TEST_ID);
 }
 
 async function testShareCodeFunctions(firebase: FirebaseWrapper)
@@ -296,4 +313,75 @@ async function testShareCodeFunctions(firebase: FirebaseWrapper)
     // check structure of code
     assert(shareCode2.length === 6);
     assert(Number(shareCode2) >= 0 && Number(shareCode2) < 1_000_000);
+
+    await deleteDocument(document, PRIMARY_TEST_ID);
+}
+
+async function testDocumentTrashing(firebase: FirebaseWrapper)
+{
+    console.log(`Testing Document Trashing Functions...`);
+    const document = await createDocument(PRIMARY_TEST_ID);
+    const documentId = document.metadata.document_id;
+
+    await shareDocumentWithUser(documentId, SECONDARY_TEST_ID, ShareStyle.COMMENT, PRIMARY_TEST_ID);
+
+    const getPreviews = async (userId: string) => [
+        await getDocumentPreviewsOwnedByUser(userId),
+        await getDocumentPreviewsSharedWithUser(userId),
+        await getTrashedDocumentPreviews(userId)
+    ];
+
+    // check the three lists of each
+    let primaryPreviews = await getPreviews(PRIMARY_TEST_ID), 
+        secondaryPreview = await getPreviews(SECONDARY_TEST_ID);
+
+    assert(documentInPreviews(documentId, primaryPreviews[0]), `Document ${documentId} not in primary owned list`);
+    assert(!documentInPreviews(documentId, primaryPreviews[2]), `Document ${documentId} found in author's trash`);
+    assert(documentInPreviews(documentId, secondaryPreview[1]), `Document ${documentId} not in secondary's shared list`);
+    assert(!documentInPreviews(documentId, secondaryPreview[2]), `Document ${documentId} found in secondary's trash`);
+
+    await updateDocumentTrashedStatus(documentId, true, PRIMARY_TEST_ID);
+    primaryPreviews = await getPreviews(PRIMARY_TEST_ID);
+    secondaryPreview = await getPreviews(SECONDARY_TEST_ID);
+
+    assert(!documentInPreviews(documentId, primaryPreviews[0]), `Document ${documentId} still in primary owned list`);
+    assert(documentInPreviews(documentId, primaryPreviews[2]), `Document ${documentId} not found in author's trash`);
+    assert(!documentInPreviews(documentId, secondaryPreview[1]), `Document ${documentId} still in secondary's shared list`);
+    assert(!documentInPreviews(documentId, secondaryPreview[2]), `Document ${documentId} found in secondary's trash`);
+
+    await deleteDocument(document, PRIMARY_TEST_ID);
+    assert(!documentInPreviews(documentId, await getTrashedDocumentPreviews(PRIMARY_TEST_ID)));
+}
+
+async function testUserLevelProperties(firebase: FirebaseWrapper)
+{
+    console.log(`Testing User Level Properties Functions...`);
+    const document = await createDocument(PRIMARY_TEST_ID);
+    const documentId = document.metadata.document_id;
+
+    await shareDocumentWithUser(documentId, SECONDARY_TEST_ID, ShareStyle.COMMENT, PRIMARY_TEST_ID);
+
+    await updateDocumentColor(documentId, "blue", PRIMARY_TEST_ID);
+    await updateDocumentColor(documentId, "red", SECONDARY_TEST_ID);
+    await updateDocumentFavoritedStatus(documentId, true, SECONDARY_TEST_ID);
+    await updateDocumentEmoji(documentId, ":smile:", PRIMARY_TEST_ID);
+
+    const primaryPreview = await getSingleDocumentPreview(documentId, PRIMARY_TEST_ID);
+    assert(
+        primaryPreview.is_favorited === false &&
+        primaryPreview.preview_color === "blue" &&
+        primaryPreview.preview_emoji === ":smile:",
+        `Primary preview is incorrect. Expected {is_favorited: false, preview_color:"blue", preview_emoji:":smile:"}, got: \n${JSON.stringify(primaryPreview)}`
+    );
+
+    const secondaryPreview = await getSingleDocumentPreview(documentId, SECONDARY_TEST_ID);
+    assert(
+        secondaryPreview.is_favorited === true &&
+        secondaryPreview.preview_color === "red" &&
+        secondaryPreview.preview_emoji === undefined,
+        `Secondary preview is incorrect. Expected {is_favorited: true, preview_color:"red", preview_emoji:undefined}, got: \n${JSON.stringify(secondaryPreview)}`
+    );
+    
+
+    await deleteDocument(document, PRIMARY_TEST_ID);
 }
