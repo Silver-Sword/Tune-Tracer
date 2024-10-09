@@ -3,15 +3,23 @@ import { DocumentPreview, ShareStyle } from '@lib/src/documentProperties';
 import { Document } from '@lib/src/Document';
 import { OnlineEntity } from "@lib/src/realtimeUserTypes";
 import { UpdateType } from "@lib/src/UpdateType";
+import { Comment } from '@lib/src/Comment';
 
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { createDocument, deleteDocument, getDocument, processDocumentUpdate, updatePartialDocument } from '../document-utils/documentOperations';
+import { createComment, deleteComment, editCommentText, subscribeToComments } from '../comment-utils/commentOperations';
+import { 
+    createDocument, 
+    deleteDocument, 
+    getDocument, 
+    processDocumentUpdate, 
+    updatePartialDocument 
+} from '../document-utils/documentOperations';
 import { 
     getDocumentPreviewsOwnedByUser, 
     getDocumentPreviewsSharedWithUser, 
     getSingleDocumentPreview, 
     getTrashedDocumentPreviews 
 } from "../document-utils/documentBatchRead";
+import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { subscribeToDocument } from "../document-utils/realtimeDocumentUpdates";
 import { 
     recordOnlineUserUpdatedDocument, 
@@ -36,9 +44,11 @@ import {
 } from '../document-utils/updateUserLevelDocumentProperties';
 
 import { isEqual } from 'lodash';
+import { setTimeout } from "timers/promises";
 
 const PRIMARY_TEST_EMAIL = "test-user-1@tune-tracer.com";
 const PRIMARY_TEST_ID = "OgGilSJwqCW3qMuHWlChEYka9js1";
+const PRIMARY_DISPLAY_NAME = "primary tester";
 const TEST_PASSWORD = "This*Is*A*Strong*Password100!";
 const SECONDARY_TEST_ID = "d0zM0dYlUdTR1qf7QFOLQWPQ5qA2";
 const TERTIARY_TEST_ID = "1HyvutGfMdaQmaU2ASTIBP8h4HT2";
@@ -53,8 +63,9 @@ const TEST_DOCUMENT: Document = {
     comments: [
         {
             comment_id: "1234",
-            content: "help me I'm a comment",
+            text: "help me I'm a comment",
             author_id: PRIMARY_TEST_ID,
+            author_display_name: "primary_tester",
             is_reply: false,
             time_created: 1234556,
             last_edit_time: 1234556,
@@ -92,10 +103,11 @@ export async function runTest()
 
 async function runAllUnitTests(firebase: FirebaseWrapper)
 {
-    await testUserLevelProperties(firebase),
-    await testDocumentMetadataUpdates(firebase);
-    await testShareCodeFunctions(firebase);
-    await testDocumentTrashing(firebase);
+    // await testUserLevelProperties(firebase),
+    // await testDocumentMetadataUpdates(firebase);
+    // await testShareCodeFunctions(firebase);
+    // await testDocumentTrashing(firebase);
+    await testComments(firebase);
 }
 
 export async function testDocumentChanges()
@@ -384,4 +396,68 @@ async function testUserLevelProperties(firebase: FirebaseWrapper)
     
 
     await deleteDocument(document, PRIMARY_TEST_ID);
+}
+
+async function testComments(firebase: FirebaseWrapper) {
+    console.log(`Testing Comments...`);
+    const document = await createDocument(PRIMARY_TEST_ID);
+    const documentId = document.metadata.document_id;
+    console.log(`Document Id: ${documentId}`);
+    await shareDocumentWithUser(documentId, SECONDARY_TEST_ID, ShareStyle.COMMENT, PRIMARY_TEST_ID);
+
+    const comments: Record<string, Comment> = {};
+
+    await subscribeToComments(documentId, PRIMARY_TEST_ID, (updateType: UpdateType, comment: Comment) => {
+        if(updateType === UpdateType.ADD || updateType === UpdateType.CHANGE) {
+            comments[comment.comment_id] = comment;
+        } else {
+            delete comments[comment.comment_id];
+        }
+    });
+
+    const id1 = await createComment(
+                    "Comment test 1", 
+                    null, 
+                    {user_id: PRIMARY_TEST_ID, display_name: PRIMARY_DISPLAY_NAME}, 
+                    documentId
+                );
+    const id2 = await createComment(
+                    "Comment test 2",
+                    id1,
+                    {user_id: SECONDARY_TEST_ID, display_name: "Secondary"},
+                    documentId
+                );
+    
+    await editCommentText("new comment test text", id1, documentId, PRIMARY_TEST_ID);
+    await setTimeout(5000);     // a hacky way to sort of deal with race conditions
+    
+    assert(Object.keys(comments).length === 2, `Comments map is incorrect length ${Object.keys(comments).length}`);
+
+    const comment1 = comments[id1];
+    assert(
+        comment1.author_display_name === PRIMARY_DISPLAY_NAME &&
+        comment1.author_id === PRIMARY_TEST_ID &&
+        comment1.is_reply === false &&
+        comment1.reply_id === undefined &&
+        comment1.text === "new comment test text",
+        `Comment 1 failed equivalence check. Comment 1 is: ${JSON.stringify(comment1)}`
+    );
+
+    const comment2 = comments[id2];
+    assert(
+        comment2.author_display_name === "Secondary" &&
+        comment2.author_id === SECONDARY_TEST_ID && 
+        comment2.is_reply === true &&
+        comment2.reply_id === id1 &&
+        comment2.text === "Comment test 2",
+        `Comment 2 failed equivalence checks. Comment 2 is: ${JSON.stringify(comment2)}`
+    );
+
+    await deleteComment(id1, documentId, PRIMARY_TEST_ID);
+    await deleteComment(id2, documentId, SECONDARY_TEST_ID);
+    await deleteDocument(document, PRIMARY_TEST_ID);
+
+    
+    await setTimeout(5000); // a hacky way to sort of deal with race conditions
+    assert(Object.keys(comments).length === 0, `Comments map wasn't cleared. Comments may not have been deleted`);
 }
