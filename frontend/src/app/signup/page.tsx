@@ -24,9 +24,12 @@ export default function SignUp() {
         // const displayName2 = displayName as string;
         // const password2 = password as string;
         try {
-            const signUp = await httpsCallable(functions, 'signUpUser');
+            console.log("Got here tho");
+            const signUp = httpsCallable(functions, 'signUpUser');
+            
             await signUp({email: email, password: password, displayName: displayName})
                 .then((result) => {
+                    console.log("GOT HERE");
                     // Read result of the Cloud Function.
                     const data = result.data;
                     console.log("Data:" + data);
@@ -121,7 +124,7 @@ export default function SignUp() {
                         withAsterisk
                         error={error}
                     />
-                    <Button component='a' href='/edit' onClick={handleRegister}>Sign Up</Button>
+                    <Button component='a' onClick={handleRegister}>Sign Up</Button>
                 </Stack>
             </Container>
         </Group>
