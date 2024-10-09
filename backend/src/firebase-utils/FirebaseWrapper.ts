@@ -5,7 +5,8 @@ import 'firebase/compat/firestore';
 
 import { DocumentMetadata } from '@lib/src/documentProperties';
 import { Document } from '@lib/src/Document';
-import { OnlineEntity, UpdateType } from '@lib/src/realtimeUserTypes';
+import { OnlineEntity } from "@lib/src/realtimeUserTypes";
+import { UpdateType } from "@lib/src/UpdateType";
 import { AccessType, getDefaultUser, UserEntity } from '@lib/src/UserEntity';
 
 import { 

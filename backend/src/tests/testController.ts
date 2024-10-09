@@ -1,7 +1,8 @@
 import { getDefaultCompositionData } from '@lib/src/CompToolData';
 import { DocumentPreview, ShareStyle } from '@lib/src/documentProperties';
 import { Document } from '@lib/src/Document';
-import { OnlineEntity, UpdateType } from '@lib/src/realtimeUserTypes';
+import { OnlineEntity } from "@lib/src/realtimeUserTypes";
+import { UpdateType } from "@lib/src/UpdateType";
 
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 import { createDocument, deleteDocument, getDocument, processDocumentUpdate, updatePartialDocument } from '../document-utils/documentOperations';
