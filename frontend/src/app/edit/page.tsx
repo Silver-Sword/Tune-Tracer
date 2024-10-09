@@ -12,25 +12,32 @@ export default function Editor() {
     const score = useRef<Score | null>(null);
 
     // State for each input field
-    const [keys, setKeys] = useState('');
-    const [duration, setDuration] = useState('');
-    const [addNoteMeasureIndex, setAddNoteMeasureIndex] = useState<number>(0);
-    const [durationMeasureIndex, setDurationNoteMeasureIndex] = useState<number>(0);
+    
+    
+    const [addKeys, setAddKeys] = useState('');
     const [addNoteId, setAddNoteId] = useState('auto');
+    const [addNoteMeasureIndex, setAddNoteMeasureIndex] = useState<number>(0);
+
+    
+    const [duration, setDuration] = useState('');
+    const [durationMeasureIndex, setDurationNoteMeasureIndex] = useState<number>(0);
     const [durationNoteId, setDurationNoteId] = useState('auto');
+    
+    const [removeKeys, setRemoveKeys] = useState('');
+    const [removeNoteId, setRemoveNoteId] = useState('auto');
+    const [removeNoteMeasureIndex, setRemoveNoteMeasureIndex] = useState<number>(0);
+    
     const [firstNoteId, setFirstNoteId] = useState('auto');
     const [firstMeasureIndex, setFirstMeasureIndex] = useState<number>(0);
 
 
     // Handlers for input changes
-    const handleKeysChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setKeys(event.target.value);
+    const handleAddKeysChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setAddKeys(event.target.value);
     };
-
-    const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setDuration(event.target.value);
+    const handleAddNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setAddNoteId(event.target.value);
     };
-
     const handleAddNoteMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
         // Ensure that measureIndex is an integer or empty
@@ -42,6 +49,27 @@ export default function Editor() {
         }
     };
 
+    const handleRemoveKeysChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setRemoveKeys(event.target.value);
+    };
+    const handleRemoveNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setRemoveNoteId(event.target.value);
+    };
+    const handleRemoveNoteMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        // Ensure that measureIndex is an integer or empty
+        if (/^[0-9]+$/.test(value)) {
+            setRemoveNoteMeasureIndex(parseInt(value, 10));
+        }
+        else {
+            setRemoveNoteMeasureIndex(0);
+        }
+    };
+
+    const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setDuration(event.target.value);
+    };
+
     const handleDurationMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
         // Ensure that measureIndex is an integer or empty
@@ -51,17 +79,13 @@ export default function Editor() {
         else {
             setDurationNoteMeasureIndex(0);
         }
-    };
-
-    const handleAddNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setAddNoteId(event.target.value);
-    };
+    };    
 
     const handleDurationNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setDurationNoteId(event.target.value);
     };
 
-
+    // Adding a Tie
     const handleFirstNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFirstNoteId(event.target.value);
     };
@@ -81,8 +105,18 @@ export default function Editor() {
         if (score.current) {
             score.current.addNoteInMeasure(
                 /*measure index*/ addNoteMeasureIndex,
-                /*keys*/keys.split(','),
+                /*keys*/addKeys.split(','),
                 /*noteId*/ addNoteId
+            );
+        }
+    };
+
+    const removeNote = () => {
+        if (score.current) {
+            score.current.removeNoteInMeasure(
+                /*measure index*/ removeNoteMeasureIndex,
+                /*keys*/removeKeys.split(','),
+                /*noteId*/ removeNoteId
             );
         }
     };
@@ -144,8 +178,8 @@ export default function Editor() {
                 <input
                     type="text"
                     id="keys"
-                    value={keys}
-                    onChange={handleKeysChange}
+                    value={addKeys}
+                    onChange={handleAddKeysChange}
                 />
             </div>
             <div>
@@ -167,8 +201,40 @@ export default function Editor() {
                 />
             </div>
             <button onClick={addNote}>Add note!</button>
+            <h2>Removing Keys</h2>
+            <div>
+                <label htmlFor="keys">Insert keys (comma-separated):</label>
+                <input
+                    type="text"
+                    id="keys"
+                    value={removeKeys}
+                    onChange={handleRemoveKeysChange}
+                />
+            </div>
+            <div>
+                <label htmlFor="removeNoteId">Insert note id:</label>
+                <input
+                    type="text"
+                    id="removeNoteId"
+                    value={removeNoteId}
+                    onChange={handleRemoveNoteIdChange}
+                />
+            </div>
+            <div>
+                <label htmlFor="measureIndex">Insert measure index:</label>
+                <input
+                    type="text"
+                    id="measureIndex"
+                    value={removeNoteMeasureIndex.toString()}
+                    onChange={handleRemoveNoteMeasureIndexChange}
+                />
+            </div>
+            <button onClick={removeNote}>Remove key/note!</button>
             <h2>Changing Duration</h2>
             <div>
+                <p>If you want to add a dot to a note, append a 'd' to the duration below, or 'dd' for two dots. 
+                    NOTE: If you are adding a dot, the duration HAS to be the same as the duration of the note at the specified note ID, 
+                    or else it will be invalid. For example, if you want to add a dot to a quarter note, you specify duration: 'qd', but '8d' will break vexflow</p>
                 <label htmlFor="duration">Insert duration:</label>
                 <input
                     type="text"

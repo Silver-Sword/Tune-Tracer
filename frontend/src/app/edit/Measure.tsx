@@ -161,7 +161,7 @@ export class Measure {
 
     addNote = (keys: string[], noteId: string): StaveNote | null => {
         if (!this.voice1) return null;
-        let found: boolean = false;
+
         const VF = Vex.Flow;
         console.log("adding note noteID: " + noteId);
         const notes: StaveNote[] = [];
@@ -170,14 +170,13 @@ export class Measure {
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
             if (staveNote.getAttributes().id === noteId) {
-                found = true;
                 let countDots = staveNote.getModifiersByType('Dot').length;
                 let duration = staveNote.getDuration();
 
                 if (countDots > 0) duration += "d";
                 if (countDots > 1) duration += "d";
 
-                if (staveNote.getNoteType() !== 'r') {
+                if (!staveNote.isRest()) {
                     const newKeys = staveNote.getKeys();
                     keys.forEach(key => {
                         // We don't want repeat keys
@@ -195,8 +194,8 @@ export class Measure {
                 // We just add the note that existed here previously (not changing anything on this beat)
                 notes.push(staveNote as StaveNote);
             }
-            const svgNote = document.getElementById(this.createId(staveNote.getAttributes().id));
-            if (svgNote) svgNote.remove();
+            // const svgNote = document.getElementById(this.createId(staveNote.getAttributes().id));
+            // if (svgNote) svgNote.remove();
         });
         console.log("Notes: " + notes);
         this.voice1 = new VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
@@ -320,7 +319,7 @@ export class Measure {
 
     modifyDuration = (duration: string, noteId: string): boolean => {
         if (!this.voice1) return false;
-        if(duration.includes("r")) return false;
+        if (duration.includes("r")) return false;
         const VF = Vex.Flow;
         const notes: StaveNote[] = [];
         let ticksSeen: number = 0;
@@ -351,10 +350,8 @@ export class Measure {
                     // Say we replace a double dotted quarter note with a quarter note
                     // We can put in one quarter left, but there is .75 of a quarter note left in ticks
                     let leftOverTicks = currentNoteTicks - (numberOfNewRests * newDesiredTicks);
-                    if(leftOverTicks > 0)
-                    {
-                        this.fillInTicks(leftOverTicks).forEach(staveNote =>
-                        {
+                    if (leftOverTicks > 0) {
+                        this.fillInTicks(leftOverTicks).forEach(staveNote => {
                             notes.push(staveNote);
                         });
                     }
@@ -391,13 +388,80 @@ export class Measure {
                 notes.push(staveNote as StaveNote);
             }
             ticksSeen += staveNote.getTicks().value();
-            const svgNote = document.getElementById(this.createId(staveNote.getAttributes().id));
-            if (svgNote) svgNote.remove();
+            // Not sure if these had a purpose but commenting for now
+            // const svgNote = document.getElementById(this.createId(staveNote.getAttributes().id));
+            // if (svgNote) svgNote.remove();
         };
         this.voice1 = new VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
         // Ensure to check that the total ticks match
 
         return found;
+    }
+
+    removeNote = (keys: string[], noteId: string): { staveNote: StaveNote | null, found: boolean } => {
+        if (!this.voice1) return { staveNote: null, found: false };
+        let fillInBack: boolean = false;
+        let ticksToFill: number = 0;
+        let returnNote: StaveNote | null = null;
+        let found: boolean = false;
+
+        const notes: StaveNote[] = [];
+
+        this.voice1.getTickables().forEach(tickable => {
+            let staveNote = tickable as StaveNote;
+            if (staveNote.getAttributes().id === noteId) {
+                ticksToFill = staveNote.getTicks().value();
+                found = true;
+                // If its a rest, nice and simple, move to back
+                if (staveNote.isRest()) {
+                    fillInBack = true;
+                }
+                // If its a note, we should remove specified keys, then turn into rest if needed
+                else {
+                    const newKeys: string[] = [];
+                    const oldKeys = staveNote.getKeys();
+                    oldKeys.forEach(key => {
+                        // Only include keys that we didn't specify for removal
+                        if (!keys.includes(key)) newKeys.push(key);
+                    });
+                    // We've removed all the keys, fill in with appropriate rests
+                    if (newKeys.length == 0) {
+                        // We need to fill ticks here in case its a dotted note
+                        this.fillInTicks(ticksToFill).forEach(staveNote => {
+                            notes.push(staveNote);
+                        });
+                    }
+                    // We haven't removed all keys, re-draw note
+                    else {
+                        // getDuration doesn't include dots, so we have to manually do it ourselves, yay!
+                        let newDuration = staveNote.getDuration();
+                        const modifiers = staveNote.getModifiers();
+
+                        // Filter the modifiers to count how many are dots
+                        const dotCount = modifiers.filter(modifier => modifier.getCategory() === 'Dot').length;
+                        if(dotCount > 0) newDuration+= "d";
+                        if(dotCount > 1) newDuration+= "d";
+        
+                        returnNote = new this.VF.StaveNote({ clef: this.clef, keys: newKeys, duration: newDuration });
+                        this.createAnyDots(returnNote,dotCount);
+                        notes.push(returnNote);
+                    }
+
+                }
+            }
+            else {
+                notes.push(staveNote as StaveNote);
+            }
+        });
+
+        if (fillInBack) {
+            this.fillInTicks(ticksToFill).forEach(staveNote => {
+                notes.push(staveNote);
+            });
+        }
+
+        this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
+        return { staveNote: returnNote, found };
     }
 
 

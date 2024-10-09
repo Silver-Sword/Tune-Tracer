@@ -115,16 +115,47 @@ export class Score {
         this.renderMeasures();
     }
 
-    private updateTies = (oldId: string, note: StaveNote): void => {
-        this.ties.forEach(tieObject => {
+    removeNoteInMeasure = (
+        measureIndex: number,
+        keys: string[],
+        noteId: string
+    ): void => {
+        // Return new ID of note instead of boolean
+        // Use that ID to record whether that staveNote has a Tie
+        // If we ever see the ID get a note added to it, update its ID
+        // Then add a Tie using the new ID
+        // Change tie logic to take only one note
+        // At render time, clean obselete ties
+        let newNote: {staveNote: StaveNote | null, found: boolean};
+        newNote = this.top_measures[measureIndex].removeNote(keys, noteId);
+        if (newNote.found == false) {
+            newNote = this.bottom_measures[measureIndex].removeNote(keys, noteId)
+        }
+        if(newNote.found)
+        {
+            this.updateTies(noteId, newNote.staveNote);
+        }
+        
+        this.renderMeasures();
+    }
+
+    private updateTies = (oldId: string, note: StaveNote | null): void => {
+        for (let i = 0; i < this.ties.length; i++) {
+            let tieObject = this.ties[i];
             if (tieObject.getFirstNote()?.getAttribute('id') === oldId) {
-                tieObject.setFirstNote(note);
+                if (note == null)  this.ties.splice(i, 1);
+                else tieObject.setFirstNote(note);
                 return;
             }
             if (tieObject.getSecondNote()?.getAttribute('id') === oldId) {
-                tieObject.setSecondNote(note);
+                if (note == null)  this.ties.splice(i, 1);
+                else tieObject.setSecondNote(note);
                 return;
             }
+
+        }
+        this.ties.forEach(tieObject => {
+
         });
     }
 
@@ -366,7 +397,7 @@ export class Score {
             // Vexflow can auto generate beams for us so we can render them here
             this.generateBeams(topMeasure);
             this.generateBeams(bottomMeasure);
-            
+
             // With Beams in place we can draw voices
             topMeasure.getVoice1().draw(this.context, topStave);
             bottomMeasure.getVoice1().draw(this.context, bottomStave);
@@ -453,7 +484,7 @@ export class Score {
         }
 
         let largestBottomMeasureBoundingBoxBottomY: number = largestBottomMeasureBoundingBoxY + largestBottomMeasureBoundingBoxH;
-        
+
         this.renderMeasureLine(topMeasures, bottomMeasures, topMeasureDeltaDown, bottomMeasureDeltaDown);
         return largestBottomMeasureBoundingBoxBottomY;
     }
@@ -470,7 +501,7 @@ export class Score {
         for (let i = 1; i < this.top_measures.length; i++) {
             let currentTopMeasure = this.top_measures[i];
             let prevTopMeasure = this.top_measures[i - 1];
-            
+
             // this means there was a line shift
             if (prevTopMeasure.getStave().getY() != currentTopMeasure.getStave().getY()) {
                 ceiling = this.calculateMeasureLine(
