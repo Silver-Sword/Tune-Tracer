@@ -197,7 +197,6 @@ export class Measure {
             // const svgNote = document.getElementById(this.createId(staveNote.getAttributes().id));
             // if (svgNote) svgNote.remove();
         });
-        console.log("Notes: " + notes);
         this.voice1 = new VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
         return newNote;
         // When adding a note you never want to override another note

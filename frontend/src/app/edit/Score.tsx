@@ -50,6 +50,9 @@ export class TieObject {
     getSecondIndices() {
         return this.matched_second_indices;
     }
+    toString(): string {
+        return `${this.firstNote},  ${this.secondNote}`;
+    }
 }
 
 class SortKeyObj {
@@ -126,37 +129,48 @@ export class Score {
         // Then add a Tie using the new ID
         // Change tie logic to take only one note
         // At render time, clean obselete ties
-        let newNote: {staveNote: StaveNote | null, found: boolean};
+        let newNote: { staveNote: StaveNote | null, found: boolean };
         newNote = this.top_measures[measureIndex].removeNote(keys, noteId);
         if (newNote.found == false) {
             newNote = this.bottom_measures[measureIndex].removeNote(keys, noteId)
         }
-        if(newNote.found)
-        {
-            this.updateTies(noteId, newNote.staveNote);
+        console.log("ties object before: " + this.ties);
+        if (newNote.found) {
+            this.updateNoteRemovalTies(noteId, newNote.staveNote);
         }
-        
+        console.log("ties object after: " + this.ties);
+
         this.renderMeasures();
     }
 
-    private updateTies = (oldId: string, note: StaveNote | null): void => {
+    private updateTies = (oldId: string, note: StaveNote): void => {
         for (let i = 0; i < this.ties.length; i++) {
             let tieObject = this.ties[i];
             if (tieObject.getFirstNote()?.getAttribute('id') === oldId) {
-                if (note == null)  this.ties.splice(i, 1);
-                else tieObject.setFirstNote(note);
+                tieObject.setFirstNote(note);
                 return;
             }
             if (tieObject.getSecondNote()?.getAttribute('id') === oldId) {
-                if (note == null)  this.ties.splice(i, 1);
-                else tieObject.setSecondNote(note);
+                tieObject.setSecondNote(note);
                 return;
             }
 
         }
-        this.ties.forEach(tieObject => {
+    }
 
-        });
+    private updateNoteRemovalTies = (oldId: string, note: StaveNote | null): void => {
+        for (let i = 0; i < this.ties.length; i++) {
+            let tieObject = this.ties[i];
+            if(tieObject.getFirstNote()?.getAttribute('id') === oldId || tieObject.getSecondNote()?.getAttribute('id') === oldId)
+            {
+                // This means they are on different y values, which means we need to delete 2 tie objs
+                if (tieObject.getFirstNote() == undefined || tieObject.getSecondNote() == undefined) {
+                    this.ties.splice(i, 2);
+                }
+                else this.ties.splice(i, 1);
+                return;
+            }
+        }
     }
 
     // This method sorts keys by vertical height. Vexflow does this internally but doesn't expose
@@ -189,7 +203,8 @@ export class Score {
     //last_indices: [0,1]      // Tie on the second note
     //  Then just include the stavenote that is connecting to the end (first note will connect to end of measure, second to start)
     // If on same measure, then connect the indices such that the pitch is preserved
-    private createTieObjects = (firstNote: StaveNote, secondNote: StaveNote): boolean => {
+    private createTieObjects = (firstNote: StaveNote | undefined, secondNote: StaveNote | undefined): boolean => {
+        if (firstNote === undefined || secondNote === undefined) return false;
         // Get keys sorted by their vertical position
         const firstNoteSortedKeys = this.sortKeys(firstNote);
         const secondNoteKeys = this.sortKeys(secondNote);
@@ -393,7 +408,6 @@ export class Score {
             const lineRight = new this.VF.StaveConnector(topStave, bottomStave);
             lineRight.setType(this.VF.StaveConnector.type.SINGLE_RIGHT);
             lineRight.setContext(this.context).draw();
-            console.log("beams boutta generate");
             // Vexflow can auto generate beams for us so we can render them here
             this.generateBeams(topMeasure);
             this.generateBeams(bottomMeasure);
@@ -518,7 +532,6 @@ export class Score {
             this.top_measures.slice(firstLineIndex, this.top_measures.length),
             this.bottom_measures.slice(firstLineIndex, this.bottom_measures.length),
             formatter, ceiling);
-        console.log("got here");
         // From this point forward we render all elements that need voices to be drawn to be able to get placed
         // Render Ties/Slurs
         this.ties.forEach(tieObject => {
