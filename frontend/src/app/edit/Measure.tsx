@@ -1,6 +1,6 @@
 import { count } from 'console';
 import { Vex, Stave, StaveNote, Voice, Tickable } from 'vexflow';
-
+import { MeasureData } from '../../../../lib/src/MeasureData'; // edit the tsconfig file to include this import
 
 type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
 
@@ -27,13 +27,23 @@ export class Measure {
     private whole_rest_location: string = "";
 
     constructor(
-        x: number,
-        y: number,
-        width: number,
+        // These all have defaults so that you can cleanly call Measure(MeasureData) if you want.
+        x: number = 0,
+        y: number = 0,
+        width: number = 0,
         timeSignature: string = "none",
         clef: string = "none",
-        renderTimeSignature = false
+        renderTimeSignature = false,
+        measureData: MeasureData | undefined = undefined
     ) {
+        if (measureData !== undefined) {
+            x = measureData.x;
+            y = measureData.y;
+            width = measureData.width;
+            timeSignature = measureData.timeSignature;
+            clef = measureData.clef;
+            renderTimeSignature = measureData.renderTimeSignature;
+        }
         this.stave = new this.VF.Stave(x, y, width);
         this.timeSignature = timeSignature;
 
@@ -58,13 +68,20 @@ export class Measure {
         this.clef = clef;
 
 
+        let notes: StaveNote[] = [];
+        if (measureData !== undefined && measureData.notes.length > 0) {
 
-        let notes = [
-            new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
-            new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
-            new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
-            new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
-        ];
+        }
+        else {
+            notes = [
+                new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
+                new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
+                new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
+                new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
+            ];
+            notes[0].getSVGElement
+        }
+
 
 
         this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
@@ -169,6 +186,7 @@ export class Measure {
 
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
+            console.log("staveNote?.getSVGElement()?.getAttribute('id'): " + staveNote?.getSVGElement()?.getAttribute('id'));
             if (staveNote.getAttributes().id === noteId) {
                 let countDots = staveNote.getModifiersByType('Dot').length;
                 let duration = staveNote.getDuration();
@@ -438,11 +456,11 @@ export class Measure {
 
                         // Filter the modifiers to count how many are dots
                         const dotCount = modifiers.filter(modifier => modifier.getCategory() === 'Dot').length;
-                        if(dotCount > 0) newDuration+= "d";
-                        if(dotCount > 1) newDuration+= "d";
-        
+                        if (dotCount > 0) newDuration += "d";
+                        if (dotCount > 1) newDuration += "d";
+
                         returnNote = new this.VF.StaveNote({ clef: this.clef, keys: newKeys, duration: newDuration });
-                        this.createAnyDots(returnNote,dotCount);
+                        this.createAnyDots(returnNote, dotCount);
                         notes.push(returnNote);
                     }
 

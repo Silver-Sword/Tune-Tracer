@@ -1,4 +1,4 @@
-import { Vex, Formatter, StaveNote, StaveTie, Beam } from 'vexflow';
+import { Vex, Formatter, StaveNote, StaveTie, Beam, Tickable } from 'vexflow';
 import { Measure } from './Measure';
 import { render } from '@testing-library/react';
 
@@ -74,6 +74,7 @@ export class Score {
     private total_width: number = 0;
     private renderer_height = 0;
     private renderer_width = 0;
+    private ID_to_MeasureIndexID: Map<number, {measureIndex: number,noteId: string}> = new Map();
 
     constructor(
         notationRef: HTMLDivElement,
@@ -97,10 +98,12 @@ export class Score {
     }
 
     addNoteInMeasure = (
-        measureIndex: number,
         keys: string[],
-        noteId: string
+        noteId: number
     ): void => {
+        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
+        if(measureIndex == undefined || noteIdStr == undefined) return;
         // Return new ID of note instead of boolean
         // Use that ID to record whether that staveNote has a Tie
         // If we ever see the ID get a note added to it, update its ID
@@ -108,21 +111,24 @@ export class Score {
         // Change tie logic to take only one note
         // At render time, clean obselete ties
         let newNote: StaveNote | null = null;
-        newNote = this.top_measures[measureIndex].addNote(keys, noteId);
+        newNote = this.top_measures[measureIndex].addNote(keys, noteIdStr);
         if (newNote == null) {
-            newNote = this.bottom_measures[measureIndex].addNote(keys, noteId)
+            newNote = this.bottom_measures[measureIndex].addNote(keys, noteIdStr)
         }
         if (newNote !== null) {
-            this.updateTies(noteId, newNote);
+            this.updateTies(noteId+"", newNote);
         }
         this.renderMeasures();
+        newNote?.getSVGElement()?.setAttribute('id', "1420");
     }
 
-    removeNoteInMeasure = (
-        measureIndex: number,
+    removeNote= (
         keys: string[],
-        noteId: string
+        noteId: number
     ): void => {
+        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
+        if(measureIndex == undefined || noteIdStr == undefined) return;
         // Return new ID of note instead of boolean
         // Use that ID to record whether that staveNote has a Tie
         // If we ever see the ID get a note added to it, update its ID
@@ -130,13 +136,13 @@ export class Score {
         // Change tie logic to take only one note
         // At render time, clean obselete ties
         let newNote: { staveNote: StaveNote | null, found: boolean };
-        newNote = this.top_measures[measureIndex].removeNote(keys, noteId);
+        newNote = this.top_measures[measureIndex].removeNote(keys, noteIdStr);
         if (newNote.found == false) {
-            newNote = this.bottom_measures[measureIndex].removeNote(keys, noteId)
+            newNote = this.bottom_measures[measureIndex].removeNote(keys, noteIdStr)
         }
         console.log("ties object before: " + this.ties);
         if (newNote.found) {
-            this.updateNoteRemovalTies(noteId, newNote.staveNote);
+            this.updateNoteRemovalTies(noteIdStr, newNote.staveNote);
         }
         console.log("ties object after: " + this.ties);
 
@@ -161,8 +167,7 @@ export class Score {
     private updateNoteRemovalTies = (oldId: string, note: StaveNote | null): void => {
         for (let i = 0; i < this.ties.length; i++) {
             let tieObject = this.ties[i];
-            if(tieObject.getFirstNote()?.getAttribute('id') === oldId || tieObject.getSecondNote()?.getAttribute('id') === oldId)
-            {
+            if (tieObject.getFirstNote()?.getAttribute('id') === oldId || tieObject.getSecondNote()?.getAttribute('id') === oldId) {
                 // This means they are on different y values, which means we need to delete 2 tie objs
                 if (tieObject.getFirstNote() == undefined || tieObject.getSecondNote() == undefined) {
                     this.ties.splice(i, 2);
@@ -277,17 +282,20 @@ export class Score {
     }
 
     addTieBetweenNotes = (
-        firstNoteId: string,
-        firstNoteMeasureIndex: number,
+        noteId: number,
     ): void => {
+        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
+        if(measureIndex == undefined || noteIdStr == undefined) return;
+
         // Assume its in top at first
         let top: boolean = true;
         let notePair: { firstNote: StaveNote, secondNote: StaveNote | null } | null
-            = this.searchForNotePairs(firstNoteId, firstNoteMeasureIndex, /*top*/true);
+            = this.searchForNotePairs(noteIdStr, measureIndex, /*top*/true);
         if (notePair == null) {
             // It may be in bottom
             top = false;
-            notePair = this.searchForNotePairs(firstNoteId, firstNoteMeasureIndex, /*top*/false);
+            notePair = this.searchForNotePairs(noteIdStr, measureIndex, /*top*/false);
         }
         // If notePair is null, then it couldn't find first note
         if (notePair == null) return;
@@ -295,7 +303,7 @@ export class Score {
 
         // Found first, but second was not in the measure
         if (notePair.secondNote == null) {
-            notePair.secondNote = this.getFirstNoteInMeasure(firstNoteMeasureIndex + 1, top);
+            notePair.secondNote = this.getFirstNoteInMeasure(measureIndex + 1, top);
             // We want to exclude rests
             if (notePair.secondNote?.isRest() !== undefined) notePair.secondNote = null;
         }
@@ -310,19 +318,22 @@ export class Score {
     }
 
     modifyDurationInMeasure = (
-        measureIndex: number,
         duration: string,
-        noteId: string
+        noteId: number
     ): void => {
-        let found: boolean = this.top_measures[measureIndex].modifyDuration(duration, noteId);
+        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
+        if(measureIndex == undefined || noteIdStr == undefined) return;
+
+        let found: boolean = this.top_measures[measureIndex].modifyDuration(duration, noteIdStr);
         if (!found) {
-            found = this.bottom_measures[measureIndex].modifyDuration(duration, noteId)
+            found = this.bottom_measures[measureIndex].modifyDuration(duration, noteIdStr)
         }
         if (found) {
             console.log(this.ties);
             // Remove ties associated with noteId
             // If the modified duration is the second note, then we don't remove it cause its ok to keep the tie
-            this.ties = this.ties.filter(obj => obj.getFirstNote()?.getAttribute('id') !== noteId);
+            this.ties = this.ties.filter(obj => obj.getFirstNote()?.getAttribute('id') !== noteIdStr);
         }
         this.renderMeasures();
     }
@@ -377,7 +388,24 @@ export class Score {
         });
     }
 
+    private giveIDs = (tickables: Tickable[], IDCounter: number, measureIndex: number): number => {
+        tickables.forEach(tickable => {
+            let staveNote = tickable as StaveNote;
+            staveNote.getSVGElement()?.setAttribute('id', IDCounter+"");
+            // We map our generated ID to the ID vexflow generates. This is because we don't have access to the SVG ID before note is drawn
+            // Before the note is drawn, we need a way to reference that. 
+            // Instead of re-inventing the wheel, I'm mapping new IDs to old IDs to not mess with logic
+            // This means we can reference notes with new ID, but under the hood its still using old logic
+            console.log("Mapping: " +  IDCounter +" to " + staveNote.getAttributes().id)
+            this.ID_to_MeasureIndexID.set(IDCounter,{measureIndex,noteId: staveNote.getAttributes().id});
+            IDCounter++;
+        });
+        return IDCounter;
+    }
+
     private renderMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], topMeasureDeltaDown: number, bottomMeasureDeltaDown: number) => {
+        // This will give a unique ID to each StaveNote
+        let IDCounter = 0;
         for (let i = 0; i < topMeasures.length; i++) {
             let topMeasure = topMeasures[i];
             let bottomMeasure = bottomMeasures[i];
@@ -415,6 +443,10 @@ export class Score {
             // With Beams in place we can draw voices
             topMeasure.getVoice1().draw(this.context, topStave);
             bottomMeasure.getVoice1().draw(this.context, bottomStave);
+
+            // Give all the elements we care about a unique ID
+            IDCounter = this.giveIDs(topMeasure.getVoice1().getTickables(), IDCounter, i);
+            IDCounter = this.giveIDs(bottomMeasure.getVoice1().getTickables(), IDCounter, i);
 
         }
     }

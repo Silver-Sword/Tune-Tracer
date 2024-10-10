@@ -1,28 +1,24 @@
+import { getDefaultStaveNoteData, StaveNoteData } from './StaveNoteData';
+
 export function getDefaultMeasureData(): MeasureData
 {
     return {
-        num_beats: 0,
-        beat_value: 0,
-        total_ticks: 0,
-        width: 0,
-        height: 0,
         x: 0,
         y: 0,
+        width: 0,
         timeSignature: "",
         clef: "",
-        rest_location: "",
+        renderTimeSignature: false,
+        notes: []
     }
 };
 
 export type MeasureData = {
-    num_beats: number,
-    beat_value: number,
-    total_ticks: number,
-    width: number,
-    height: number,
     x: number,
     y: number,
+    width: number,
     timeSignature: string,
     clef: string,
-    rest_location: string,
+    renderTimeSignature: boolean,
+    notes: StaveNoteData[]
 };
