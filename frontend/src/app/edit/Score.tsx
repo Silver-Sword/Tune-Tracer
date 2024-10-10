@@ -74,7 +74,7 @@ export class Score {
     private total_width: number = 0;
     private renderer_height = 0;
     private renderer_width = 0;
-    private ID_to_MeasureIndexID: Map<number, {measureIndex: number,noteId: string}> = new Map();
+    private ID_to_MeasureIndexID: Map<number, { measureIndex: number, noteId: string }> = new Map();
 
     constructor(
         notationRef: HTMLDivElement,
@@ -103,7 +103,7 @@ export class Score {
     ): void => {
         let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
         let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
-        if(measureIndex == undefined || noteIdStr == undefined) return;
+        if (measureIndex == undefined || noteIdStr == undefined) return;
         // Return new ID of note instead of boolean
         // Use that ID to record whether that staveNote has a Tie
         // If we ever see the ID get a note added to it, update its ID
@@ -116,19 +116,19 @@ export class Score {
             newNote = this.bottom_measures[measureIndex].addNote(keys, noteIdStr)
         }
         if (newNote !== null) {
-            this.updateTies(noteId+"", newNote);
+            this.updateTies(noteId + "", newNote);
         }
         this.renderMeasures();
         newNote?.getSVGElement()?.setAttribute('id', "1420");
     }
 
-    removeNote= (
+    removeNote = (
         keys: string[],
         noteId: number
     ): void => {
         let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
         let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
-        if(measureIndex == undefined || noteIdStr == undefined) return;
+        if (measureIndex == undefined || noteIdStr == undefined) return;
         // Return new ID of note instead of boolean
         // Use that ID to record whether that staveNote has a Tie
         // If we ever see the ID get a note added to it, update its ID
@@ -286,7 +286,7 @@ export class Score {
     ): void => {
         let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
         let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
-        if(measureIndex == undefined || noteIdStr == undefined) return;
+        if (measureIndex == undefined || noteIdStr == undefined) return;
 
         // Assume its in top at first
         let top: boolean = true;
@@ -323,7 +323,7 @@ export class Score {
     ): void => {
         let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
         let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
-        if(measureIndex == undefined || noteIdStr == undefined) return;
+        if (measureIndex == undefined || noteIdStr == undefined) return;
 
         let found: boolean = this.top_measures[measureIndex].modifyDuration(duration, noteIdStr);
         if (!found) {
@@ -388,16 +388,16 @@ export class Score {
         });
     }
 
-    private giveIDs = (tickables: Tickable[], IDCounter: number, measureIndex: number): number => {
+    private giveIDs = (tickables: Tickable[], measureIndex: number, IDCounter: number) => {
         tickables.forEach(tickable => {
             let staveNote = tickable as StaveNote;
-            staveNote.getSVGElement()?.setAttribute('id', IDCounter+"");
+            staveNote.getSVGElement()?.setAttribute('id', IDCounter + "");
             // We map our generated ID to the ID vexflow generates. This is because we don't have access to the SVG ID before note is drawn
             // Before the note is drawn, we need a way to reference that. 
             // Instead of re-inventing the wheel, I'm mapping new IDs to old IDs to not mess with logic
             // This means we can reference notes with new ID, but under the hood its still using old logic
-            console.log("Mapping: " +  IDCounter +" to " + staveNote.getAttributes().id)
-            this.ID_to_MeasureIndexID.set(IDCounter,{measureIndex,noteId: staveNote.getAttributes().id});
+            console.log("Mapping: " + IDCounter + " to " + staveNote.getAttributes().id)
+            this.ID_to_MeasureIndexID.set(IDCounter, { measureIndex, noteId: staveNote.getAttributes().id });
             IDCounter++;
         });
         return IDCounter;
@@ -405,7 +405,6 @@ export class Score {
 
     private renderMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], topMeasureDeltaDown: number, bottomMeasureDeltaDown: number) => {
         // This will give a unique ID to each StaveNote
-        let IDCounter = 0;
         for (let i = 0; i < topMeasures.length; i++) {
             let topMeasure = topMeasures[i];
             let bottomMeasure = bottomMeasures[i];
@@ -443,11 +442,6 @@ export class Score {
             // With Beams in place we can draw voices
             topMeasure.getVoice1().draw(this.context, topStave);
             bottomMeasure.getVoice1().draw(this.context, bottomStave);
-
-            // Give all the elements we care about a unique ID
-            IDCounter = this.giveIDs(topMeasure.getVoice1().getTickables(), IDCounter, i);
-            IDCounter = this.giveIDs(bottomMeasure.getVoice1().getTickables(), IDCounter, i);
-
         }
     }
 
@@ -564,6 +558,13 @@ export class Score {
             this.top_measures.slice(firstLineIndex, this.top_measures.length),
             this.bottom_measures.slice(firstLineIndex, this.bottom_measures.length),
             formatter, ceiling);
+        
+        // With all measures rendered, we can now give them unique IDs
+        let IDCounter = 0;
+        for (let i = 0; i < this.top_measures.length; i++) {
+            IDCounter = this.giveIDs(this.top_measures[i].getVoice1().getTickables(), i, IDCounter);
+            IDCounter = this.giveIDs(this.bottom_measures[i].getVoice1().getTickables(), i, IDCounter);
+        }
         // From this point forward we render all elements that need voices to be drawn to be able to get placed
         // Render Ties/Slurs
         this.ties.forEach(tieObject => {
