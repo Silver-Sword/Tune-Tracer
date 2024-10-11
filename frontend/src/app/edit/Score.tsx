@@ -15,45 +15,7 @@ const DEFAULT_FIRST_MEASURES_Y = 0;
 const DEFAULT_MEASURE_WIDTH = 325;
 const DEFAULT_SPACING_BETWEEN_LINES_OF_MEASURES = 200;
 
-export class TieObject {
-    private firstNote: StaveNote | undefined;
-    private secondNote: StaveNote | undefined;
-    private matched_first_indices: number[] | undefined;
-    private matched_second_indices: number[] | undefined;
 
-    constructor(firstNote: StaveNote | undefined,
-        secondNote: StaveNote | undefined,
-        matched_first_indices?: number[],
-        matched_second_indices?: number[]
-    ) {
-        this.firstNote = firstNote;
-        this.secondNote = secondNote;
-
-        this.matched_first_indices = matched_first_indices;
-        this.matched_second_indices = matched_second_indices;
-    }
-    getFirstNote() {
-        return this.firstNote;
-    }
-    getSecondNote() {
-        return this.secondNote;
-    }
-    setFirstNote(note: StaveNote) {
-        this.firstNote = note;
-    }
-    setSecondNote(note: StaveNote) {
-        this.secondNote = note;
-    }
-    getFirstIndices() {
-        return this.matched_first_indices;
-    }
-    getSecondIndices() {
-        return this.matched_second_indices;
-    }
-    toString(): string {
-        return `${this.firstNote},  ${this.secondNote}`;
-    }
-}
 
 class SortKeyObj {
     public key: string;
@@ -69,7 +31,7 @@ export class Score {
     private VF = Vex.Flow;
     private top_measures: Measure[] = [];
     private bottom_measures: Measure[] = [];  // both are equal in length
-    private ties: TieObject[] = [];
+    private ties: Set<number> = new Set<number>();
     private context: RenderContext;
     private total_width: number = 0;
     private renderer_height = 0;
@@ -115,9 +77,7 @@ export class Score {
         if (newNote == null) {
             newNote = this.bottom_measures[measureIndex].addNote(keys, noteIdStr)
         }
-        if (newNote !== null) {
-            this.updateTies(noteId + "", newNote);
-        }
+
         this.renderMeasures();
         newNote?.getSVGElement()?.setAttribute('id', "1420");
     }
@@ -137,45 +97,11 @@ export class Score {
         // At render time, clean obselete ties
         let newNote: { staveNote: StaveNote | null, found: boolean };
         newNote = this.top_measures[measureIndex].removeNote(keys, noteIdStr);
-        if (newNote.found == false) {
+        if (newNote.found === false) {
             newNote = this.bottom_measures[measureIndex].removeNote(keys, noteIdStr)
         }
-        console.log("ties object before: " + this.ties);
-        if (newNote.found) {
-            this.updateNoteRemovalTies(noteIdStr, newNote.staveNote);
-        }
-        console.log("ties object after: " + this.ties);
 
         this.renderMeasures();
-    }
-
-    private updateTies = (oldId: string, note: StaveNote): void => {
-        for (let i = 0; i < this.ties.length; i++) {
-            let tieObject = this.ties[i];
-            if (tieObject.getFirstNote()?.getAttribute('id') === oldId) {
-                tieObject.setFirstNote(note);
-                return;
-            }
-            if (tieObject.getSecondNote()?.getAttribute('id') === oldId) {
-                tieObject.setSecondNote(note);
-                return;
-            }
-
-        }
-    }
-
-    private updateNoteRemovalTies = (oldId: string, note: StaveNote | null): void => {
-        for (let i = 0; i < this.ties.length; i++) {
-            let tieObject = this.ties[i];
-            if (tieObject.getFirstNote()?.getAttribute('id') === oldId || tieObject.getSecondNote()?.getAttribute('id') === oldId) {
-                // This means they are on different y values, which means we need to delete 2 tie objs
-                if (tieObject.getFirstNote() == undefined || tieObject.getSecondNote() == undefined) {
-                    this.ties.splice(i, 2);
-                }
-                else this.ties.splice(i, 1);
-                return;
-            }
-        }
     }
 
     // This method sorts keys by vertical height. Vexflow does this internally but doesn't expose
@@ -202,120 +128,11 @@ export class Score {
         return keys;
     }
 
-
-    // If you want to connect a tie to the end of the measure, repeat the indices for which the notes match: 
-    //first_indices: [0,1],    // Tie on the first note (single note)
-    //last_indices: [0,1]      // Tie on the second note
-    //  Then just include the stavenote that is connecting to the end (first note will connect to end of measure, second to start)
-    // If on same measure, then connect the indices such that the pitch is preserved
-    private createTieObjects = (firstNote: StaveNote | undefined, secondNote: StaveNote | undefined): boolean => {
-        if (firstNote === undefined || secondNote === undefined) return false;
-        // Get keys sorted by their vertical position
-        const firstNoteSortedKeys = this.sortKeys(firstNote);
-        const secondNoteKeys = this.sortKeys(secondNote);
-
-        // We need to map keys to their vertical index position (they are sorted by vertical position so array index == vertical position)
-        const secondNoteKeyMap = new Map<string, number>();
-        secondNoteKeys.forEach((key, index) => {
-            secondNoteKeyMap.set(key, index);
-        });
-
-        // These arrays will be the ones used when creating the ties. They specify the vertical index of the note that should be attached to another
-        // the notes that are going to be attached need to maintain the same pitch
-        let matchedFirstNoteKeyIndices: number[] = [];
-        let matchedSecondNoteKeyIndices: number[] = [];
-
-        let differentYs: boolean = false;
-
-        // MatchedKeys will store the index of the matching keys present in both StaveNotes
-        // Run thru the first set of keys, and if the second set of keys has it, 
-        // store the vertical index for which the key occurs for both StaveNotes
-        firstNoteSortedKeys.forEach((key, index) => {
-            if (secondNoteKeyMap.has(key)) {
-                matchedFirstNoteKeyIndices.push(index);
-                // find the index for which the key occurs for the second note
-                let secondIndex: number | undefined = secondNoteKeyMap.get(key);
-                if (secondIndex == undefined) return;
-                matchedSecondNoteKeyIndices.push(secondIndex);
-                // If both staveNotes have the same key, cool we can make a tie
-                // However, for rendering, we need to see if the StaveNotes are on a different
-                // line of measures
-                if (!differentYs) {
-                    differentYs = firstNote.getYs()[index] == secondNote.getYs()[secondIndex];
-                }
-            }
-        });
-
-        // If its in the same measure, then we connect the tie between the two notes in the measure
-        if (differentYs) {
-            this.ties.push(new TieObject(firstNote, secondNote, matchedFirstNoteKeyIndices, matchedSecondNoteKeyIndices));
-        }
-        // Else, we'll want to make two separate tie objects,
-        //the first that connects the first note to the END of ITS measure, 
-        // and then another object that connects the START of the SECOND NOTE'S measure to the second note
-        else {
-            this.ties.push(new TieObject(firstNote, undefined, matchedFirstNoteKeyIndices, matchedSecondNoteKeyIndices));
-            this.ties.push(new TieObject(undefined, secondNote, matchedFirstNoteKeyIndices, matchedSecondNoteKeyIndices));
-        }
-        // If no matched keys, invalid tie
-        return !(matchedFirstNoteKeyIndices.length == 0);
-    }
-
-    private searchForNotePairs = (noteId: string, measureIndex: number, top: boolean): { firstNote: StaveNote, secondNote: StaveNote | null } | null => {
-        if (top) {
-            return this.top_measures[measureIndex].getStaveNotePair(noteId);
-        }
-        else {
-            return this.bottom_measures[measureIndex].getStaveNotePair(noteId);
-        }
-    }
-
-    private getFirstNoteInMeasure = (measureIndex: number, top: boolean): StaveNote | null => {
-        // Measure counts are same for top and bottom
-        if (measureIndex >= this.top_measures.length) return null;
-        if (top) {
-            return this.top_measures[measureIndex].getFirstStaveNoteInMeasure();
-        }
-        else {
-            return this.bottom_measures[measureIndex].getFirstStaveNoteInMeasure();
-        }
-    }
-
-    addTieBetweenNotes = (
-        noteId: number,
-    ): void => {
-        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
-        let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
-        if (measureIndex == undefined || noteIdStr == undefined) return;
-
-        // Assume its in top at first
-        let top: boolean = true;
-        let notePair: { firstNote: StaveNote, secondNote: StaveNote | null } | null
-            = this.searchForNotePairs(noteIdStr, measureIndex, /*top*/true);
-        if (notePair == null) {
-            // It may be in bottom
-            top = false;
-            notePair = this.searchForNotePairs(noteIdStr, measureIndex, /*top*/false);
-        }
-        // If notePair is null, then it couldn't find first note
-        if (notePair == null) return;
-        console.log("Found first!");
-
-        // Found first, but second was not in the measure
-        if (notePair.secondNote == null) {
-            notePair.secondNote = this.getFirstNoteInMeasure(measureIndex + 1, top);
-            // We want to exclude rests
-            if (notePair.secondNote?.isRest() !== undefined) notePair.secondNote = null;
-        }
-        // If secondNote is null, then we tried to make a tie on the last note in Score, which for
-        // now should just be invalid
-        // Later, we can add a note, alongside a new measure
-        if (notePair.secondNote == null) return;
-        console.log("Found second!");
-
-        if (!this.createTieObjects(notePair.firstNote, notePair.secondNote)) return;
+    addTie = (noteId: number): void => {
+        this.ties.add(noteId);
         this.renderMeasures();
     }
+
 
     modifyDurationInMeasure = (
         duration: string,
@@ -332,8 +149,7 @@ export class Score {
         if (found) {
             console.log(this.ties);
             // Remove ties associated with noteId
-            // If the modified duration is the second note, then we don't remove it cause its ok to keep the tie
-            this.ties = this.ties.filter(obj => obj.getFirstNote()?.getAttribute('id') !== noteIdStr);
+            if (this.ties.has(noteId)) this.ties.delete(noteId);
         }
         this.renderMeasures();
     }
@@ -396,7 +212,6 @@ export class Score {
             // Before the note is drawn, we need a way to reference that. 
             // Instead of re-inventing the wheel, I'm mapping new IDs to old IDs to not mess with logic
             // This means we can reference notes with new ID, but under the hood its still using old logic
-            console.log("Mapping: " + IDCounter + " to " + staveNote.getAttributes().id)
             this.ID_to_MeasureIndexID.set(IDCounter, { measureIndex, noteId: staveNote.getAttributes().id });
             IDCounter++;
         });
@@ -529,6 +344,138 @@ export class Score {
         return largestBottomMeasureBoundingBoxBottomY;
     }
 
+    // If you want to connect a tie to the end of the measure, repeat the indices for which the notes match: 
+    //first_indices: [0,1],    // Tie on the first note (single note)
+    //last_indices: [0,1]      // Tie on the second note
+    //  Then just include the stavenote that is connecting to the end (first note will connect to end of measure, second to start)
+    // If on same measure, then connect the indices such that the pitch is preserved
+    private createTies = (firstNote: StaveNote | undefined, secondNote: StaveNote | undefined): boolean => {
+        if (firstNote === undefined || secondNote === undefined) return false;
+        // Get keys sorted by their vertical position
+        const firstNoteSortedKeys = this.sortKeys(firstNote);
+        const secondNoteKeys = this.sortKeys(secondNote);
+
+        // We need to map keys to their vertical index position (they are sorted by vertical position so array index == vertical position)
+        const secondNoteKeyMap = new Map<string, number>();
+        secondNoteKeys.forEach((key, index) => {
+            secondNoteKeyMap.set(key, index);
+        });
+
+        // These arrays will be the ones used when creating the ties. They specify the vertical index of the note that should be attached to another
+        // the notes that are going to be attached need to maintain the same pitch
+        let matchedFirstNoteKeyIndices: number[] = [];
+        let matchedSecondNoteKeyIndices: number[] = [];
+
+        let sameYCoords: boolean = false;
+
+        // MatchedKeys will store the index of the matching keys present in both StaveNotes
+        // Run thru the first set of keys, and if the second set of keys has it, 
+        // store the vertical index for which the key occurs for both StaveNotes
+        firstNoteSortedKeys.forEach((key, index) => {
+            if (secondNoteKeyMap.has(key)) {
+                matchedFirstNoteKeyIndices.push(index);
+                // find the index for which the key occurs for the second note
+                let secondIndex: number | undefined = secondNoteKeyMap.get(key);
+                if (secondIndex == undefined) return;
+                matchedSecondNoteKeyIndices.push(secondIndex);
+                // If both staveNotes have the same key, cool we can make a tie
+                // However, for rendering, we need to see if the StaveNotes are on a different
+                // line of measures
+                if (!sameYCoords) {
+                    sameYCoords = firstNote.getYs()[index] == secondNote.getYs()[secondIndex];
+                }
+            }
+        });
+
+        // If its in the same measure, then we connect the tie between the two notes in the measure
+        if (sameYCoords) {
+            let tie = new StaveTie({
+                first_note: firstNote,
+                last_note: secondNote,
+                first_indices: matchedFirstNoteKeyIndices,
+                last_indices: matchedSecondNoteKeyIndices,
+            });
+            // Draw the curve
+            tie.setContext(this.context).draw();
+        }
+        // Else, we'll want to make two separate tie objects,
+        //the first that connects the first note to the END of ITS measure, 
+        // and then another object that connects the START of the SECOND NOTE'S measure to the second note
+        else {
+            let tie1 = new StaveTie({
+                first_note: firstNote,
+                last_note: undefined,
+                first_indices: matchedFirstNoteKeyIndices,
+                last_indices: matchedSecondNoteKeyIndices,
+            });
+            let tie2 = new StaveTie({
+                first_note: undefined,
+                last_note: secondNote,
+                first_indices: matchedFirstNoteKeyIndices,
+                last_indices: matchedSecondNoteKeyIndices,
+            });
+            tie1.setContext(this.context).draw();
+            tie2.setContext(this.context).draw();
+        }
+        // If no matched keys, invalid tie
+        return !(matchedFirstNoteKeyIndices.length == 0);
+    }
+
+    private searchForNotePairs = (noteId: string, measureIndex: number, top: boolean): { firstNote: StaveNote, secondNote: StaveNote | null } | null => {
+        if (top) {
+            return this.top_measures[measureIndex].getStaveNotePair(noteId);
+        }
+        else {
+            return this.bottom_measures[measureIndex].getStaveNotePair(noteId);
+        }
+    }
+
+    private getFirstNoteInMeasure = (measureIndex: number, top: boolean): StaveNote | null => {
+        // Measure counts are same for top and bottom
+        if (measureIndex >= this.top_measures.length) return null;
+        if (top) {
+            return this.top_measures[measureIndex].getFirstStaveNoteInMeasure();
+        }
+        else {
+            return this.bottom_measures[measureIndex].getFirstStaveNoteInMeasure();
+        }
+    }
+
+    private addTieBetweenNotes = (
+        noteId: number,
+    ): boolean => {
+        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
+        if (measureIndex == undefined || noteIdStr == undefined) return false;
+
+        // Assume its in top at first
+        let top: boolean = true;
+        let notePair: { firstNote: StaveNote, secondNote: StaveNote | null } | null
+            = this.searchForNotePairs(noteIdStr, measureIndex, /*top*/true);
+        if (notePair == null) {
+            // It may be in bottom
+            top = false;
+            notePair = this.searchForNotePairs(noteIdStr, measureIndex, /*top*/false);
+        }
+        // If notePair is null, then it couldn't find first note
+        if (notePair == null) return false;
+        console.log("Found first!");
+
+        // Found first, but second was not in the measure
+        if (notePair.secondNote == null) {
+            notePair.secondNote = this.getFirstNoteInMeasure(measureIndex + 1, top);
+            // We want to exclude rests
+            if (notePair.secondNote?.isRest()) notePair.secondNote = null;
+        }
+        // If secondNote is null, then we tried to make a tie on the last note in Score, which for
+        // now should just be invalid
+        // Later, we can add a note, alongside a new measure
+        if (notePair.secondNote == null) return false;
+        console.log("Found second!");
+
+        return this.createTies(notePair.firstNote, notePair.secondNote);
+    }
+
     // Figure out how many measures in a line, then put all this logic into a function to be called
     // for each line, pass in an array of top and bottom measures, as well as a ceiling value
     private renderMeasures = (): void => {
@@ -558,8 +505,8 @@ export class Score {
             this.top_measures.slice(firstLineIndex, this.top_measures.length),
             this.bottom_measures.slice(firstLineIndex, this.bottom_measures.length),
             formatter, ceiling);
-        
-        // With all measures rendered, we can now give them unique IDs
+
+        // With all measures rendered, we can now give them unique IDs, and Render Ties
         let IDCounter = 0;
         for (let i = 0; i < this.top_measures.length; i++) {
             IDCounter = this.giveIDs(this.top_measures[i].getVoice1().getTickables(), i, IDCounter);
@@ -567,16 +514,11 @@ export class Score {
         }
         // From this point forward we render all elements that need voices to be drawn to be able to get placed
         // Render Ties/Slurs
-        this.ties.forEach(tieObject => {
-
-            let tie = new StaveTie({
-                first_note: tieObject.getFirstNote(),
-                last_note: tieObject.getSecondNote(),
-                first_indices: tieObject.getFirstIndices(),
-                last_indices: tieObject.getSecondIndices(),
-            });
-            // Draw the curve
-            tie.setContext(this.context).draw();
+        this.ties.forEach((noteID) => {
+            // If we couldn't add a tie here, it was a bad tie, remove it from set
+            if(!this.addTieBetweenNotes(noteID)){
+                this.ties.delete(noteID);
+            }
         });
 
         formatter.postFormat();

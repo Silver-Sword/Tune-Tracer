@@ -98,7 +98,7 @@ export default function Editor() {
 
     const addTieBetweenNotes = () => {
         if (score.current) {
-            score.current.addTieBetweenNotes(
+            score.current.addTie(
                 tieNoteId
             )
         }
