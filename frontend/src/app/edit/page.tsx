@@ -96,9 +96,17 @@ export default function Editor() {
         }
     };
 
-    const addTieBetweenNotes = () => {
+    const addTie = () => {
         if (score.current) {
             score.current.addTie(
+                tieNoteId
+            )
+        }
+    }
+
+    const removeTie = () => {
+        if (score.current) {
+            score.current.removeTie(
                 tieNoteId
             )
         }
@@ -196,7 +204,7 @@ export default function Editor() {
             <button onClick={addMeasureToEnd}>Add a measure to the end</button>
             <h2>Adding a Tie</h2>
             <div>
-                <label htmlFor="noteId">Insert first note id:</label>
+                <label htmlFor="noteId">Insert note id:</label>
                 <input
                     type="text"
                     id="firstNoteId"
@@ -204,7 +212,8 @@ export default function Editor() {
                     onChange={handleTieNoteIdChange}
                 />
             </div>
-            <button onClick={addTieBetweenNotes}>Add Tie between notes</button>
+            <button onClick={addTie}>Add Tie </button>
+            <button onClick={removeTie}>Remove Tie </button>
             <div ref={notationRef}></div>
         </div>
     );

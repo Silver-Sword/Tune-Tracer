@@ -133,6 +133,11 @@ export class Score {
         this.renderMeasures();
     }
 
+    removeTie = (noteId: number): void => {
+        this.ties.delete(noteId);
+        this.renderMeasures();
+    }
+
 
     modifyDurationInMeasure = (
         duration: string,
