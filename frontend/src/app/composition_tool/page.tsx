@@ -147,12 +147,6 @@ export default function CompositionTool() {
             <AppShell.Main>
                 <ToolbarHeader />
                 <CommentAside />
-                    
-                    {/* Somehow adding the NavBar removes the score and its container */}
-                {/* <AppShell.Navbar>
-
-                </AppShell.Navbar> */}
-
                 
                     {/* get rid of the background later, use it for formatting */}
                 <Container
@@ -174,9 +168,6 @@ export default function CompositionTool() {
                         <div ref={notationRef}></div>
                     </div>
                 </Container>
-
-
-                    
             </AppShell.Main>
         </AppShell>
     );
