@@ -1,6 +1,7 @@
 import { Vex, Formatter, StaveNote, StaveTie, Beam, Tickable } from 'vexflow';
 import { Measure } from './Measure';
 import { render } from '@testing-library/react';
+import { MeasureData } from '../../../../lib/src/MeasureData';
 
 type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
 
@@ -56,6 +57,15 @@ export class Score {
         const firstBottomMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y + DEFAULT_MEASURE_VERTICAL_SPACING, DEFAULT_MEASURE_WIDTH, timeSignature, "bass", true);
         this.top_measures.push(firstTopMeasure);
         this.bottom_measures.push(firstBottomMeasure);
+        this.renderMeasures();
+    }
+
+    exportScore = (): void => {
+        this.top_measures[0].exportMeasureDataObj();
+    }
+
+    loadScore = (measureData: MeasureData): void => {
+        this.top_measures[0] = new Measure(undefined,undefined,undefined,undefined,undefined,undefined,measureData);
         this.renderMeasures();
     }
 

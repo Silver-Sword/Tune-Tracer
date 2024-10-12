@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Score } from './Score';
 import { Button } from '@mantine/core';
+import { MeasureData } from '../../../../lib/src/MeasureData'; // edit the tsconfig file to include this import
+
 
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
@@ -100,7 +102,7 @@ export default function Editor() {
         if (score.current) {
             score.current.addTie(
                 tieNoteId
-            )
+            );
         }
     }
 
@@ -108,7 +110,55 @@ export default function Editor() {
         if (score.current) {
             score.current.removeTie(
                 tieNoteId
-            )
+            );
+        }
+    }
+
+    const exportScore = () => {
+        if (score.current) {
+            score.current.exportScore();
+        }
+    }
+
+    const loadMeasure = () => {
+        if (score.current) {
+            let measureData: MeasureData = {
+                x: 20,
+                y: 0,
+                width: 325,
+                timeSignature: "4/4",
+                clef: "treble",
+                renderTimeSignature: true,
+                notes: [
+                    {
+                        keys: ["c/4"], 
+                        duration: "q", 
+                        dots: 0
+                    },
+                    {
+                        keys: ["c/4"], 
+                        duration: "q", 
+                        dots: 0
+                    },
+                    {
+                        keys: ["c/4,e/4,g/4"], 
+                        duration: "qdd", 
+                        dots: 2
+                    },
+                    {
+                        keys: ["c/4,e/4,g/4"], 
+                        duration: "32", 
+                        dots: 0
+                    },
+                    {
+                        keys: ["c/4,e/4,g/4"], 
+                        duration: "32", 
+                        dots: 0
+                    }
+                ]
+
+            }
+            score.current.loadScore(measureData);
         }
     }
 
@@ -214,6 +264,8 @@ export default function Editor() {
             </div>
             <button onClick={addTie}>Add Tie </button>
             <button onClick={removeTie}>Remove Tie </button>
+            <button onClick={exportScore}>Export Score</button>
+            <button onClick={loadMeasure}>Load Measure</button>
             <div ref={notationRef}></div>
         </div>
     );
