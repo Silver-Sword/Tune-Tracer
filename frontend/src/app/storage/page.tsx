@@ -21,14 +21,11 @@ import {
   SimpleGrid,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-// import {
-//   createDocument,
-//   getDocument,
-//   updateDocument,
-//   deleteDocument,
-//   doesDocumentExist,
-// } from "../backend/src/document-utils/documentOperations.ts";
-import { IconSearch } from "@tabler/icons-react";
+import { IconSearch, IconHeart } from "@tabler/icons-react";
+import { getFunctions, httpsCallable } from "firebase/functions";
+// import { app } from '../../firebaseSecrets';
+
+// const functions = getFunctions(app);
 
 // Define filter labels for the navbar
 const filterLabels = [
@@ -93,8 +90,7 @@ const SearchBar: React.FC = () => {
 // CreateCard component
 const CreateCard: React.FC = () => {
   const [inviteCode, setInviteCode] = useState("");
-  const [opened, { toggle }] = useDisclosure(false);
-
+ 
   const handleCreateDocument = () => {
     console.log("Create document clicked");
   };
@@ -106,14 +102,14 @@ const CreateCard: React.FC = () => {
   const handleJoinWithCode = () => {
     console.log("Join with invite code:", inviteCode);
   };
-
-  return (
+  
+  return (    
     <Card
       shadow="md"
       padding="lg"
       radius="md"
       withBorder
-      style={{ maxWidth: 400, margin: "0 auto" }}
+      style={{ width: 260, margin: "0 auto" }}
     >
       <Stack>
         {/* THE HREF IS TEMPORARY FOR DEMO */}
@@ -139,16 +135,29 @@ const CreateCard: React.FC = () => {
   );
 };
 
+interface DocCardProps {
+  document: Document;
+  toggleFavorite: (id: number) => void;
+}
+
 // DocCard Component
-// const DocCard: React.FC<{ document: Document; toggleFavorite: (id: number)} = () => {
-//   const
+const DocCard: React.FC = () => {
+  const [favorited, { toggle }] = useDisclosure(false);
 
-//   return (
-//     <Card shadow='md' padding='lg' radius='md' withBorder style={{ maxWidth: 400, margin: '0 auto' }}>
+  return (
+    <Card
+        shadow='md'
+        padding='lg'
+        radius='md'
+        withBorder
+        style={{ width: 260, margin: '0 auto' }}
+      >
 
-//     </Card>
-//   )
-// }
+        <Text>Name of Document aaaaaaaaaaaaaaaaaaaaaaaaaa</Text>
+
+    </Card>
+  );
+};
 
 // Main storage component
 export default function Storage() {
@@ -167,6 +176,8 @@ export default function Storage() {
             justifyContent: "center",
             display: "flex",
             flexDirection: "column",
+            background:
+              "rgba(154,215,255,1)",
           }}
         >
           <Group justify="space-between" px="lg">
@@ -181,14 +192,15 @@ export default function Storage() {
         <FiltersNavbar />
         <Container
           fluid
-          size="responsive"
           style={{
             justifyContent: "center",
-            display: "flex",
+            // display: "flex",
             flexDirection: "column",
             textAlign: "center",
-            background:
-              "linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)",
+            height: '89vh',
+            width: '100vw',
+            // background:
+            //   "rgba(154,215,255,1)",
           }}
         >
           <Space h="xl"></Space>
@@ -202,8 +214,35 @@ export default function Storage() {
           >
             <CreateCard />
             
-          {/* Uncomment to see card behaviors for storage page  
+          {/* Uncomment to see card behaviors for storage page   */}
           
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+
+
+
+
+
+
+
+
+
+            {/* <CreateCard />
+            <CreateCard />
+            <CreateCard />
+            <CreateCard />
+            <CreateCard />
+            <CreateCard />
+            <CreateCard />
+            <CreateCard />
+            <CreateCard />
+            <CreateCard />
             <CreateCard />
             <CreateCard />
             <CreateCard />
@@ -216,7 +255,6 @@ export default function Storage() {
             <CreateCard />
             <CreateCard />
             <CreateCard /> */}
-
 
             {/* {documents.map((document) =>(
               <DocCard key={document.id} document={document} toggleFavorite={toggleFavorite} />
