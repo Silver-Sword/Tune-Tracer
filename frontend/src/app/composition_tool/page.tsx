@@ -2,6 +2,105 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Score } from '../edit/Score';
+import {
+    AppShell, 
+    Container, 
+    Text,
+    Button,
+    Group,
+    Space,
+    Stack,
+    SimpleGrid,
+    Grid,
+    Flex,
+    Input,
+    TextInput,
+    Paper,
+    Avatar,
+    Divider,
+} from "@mantine/core";
+
+
+const ToolbarHeader: React.FC = () => {
+    return (
+      <AppShell.Header p="md">
+        {/* First layer (top section) */}
+        <Group align="center" style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
+            <Text size="xl" component="a" href="/storage">Tune Tracer</Text>
+            <TextInput 
+                size="md"
+                placeholder="Enter Document Name"
+                // value={}
+                // onChange={}
+            />
+                <Button>Share</Button>
+            
+        </Group>
+  
+        {/* Second layer (middle section) */}
+        <Group align="center" mt="md" style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
+            <Group>
+                <Button variant="outline">Natural</Button>
+                <Button variant="outline">Sharp</Button>
+                <Button variant="outline">Flat</Button>
+
+                <Divider size="sm" orientation="vertical" />
+
+                <Button variant="outline">Whole</Button>
+                <Button variant="outline">Half</Button>
+                <Button variant="outline">Quarter</Button>
+                <Button variant="outline">Eighth</Button>
+                <Button variant="outline">Sixteenth</Button>
+                <Button variant="outline">Thirty-Second</Button>
+                <Button variant="outline">Sixty-Fourth</Button>
+
+                <Divider size="sm" orientation="vertical" />
+
+            </Group>
+            <Input placeholder="Search..." />
+        </Group>
+      </AppShell.Header>
+    );
+  };
+
+// CommentCard component only used for the comment sidebar
+const CommentCard: React.FC = () => {
+
+    return (
+        <Paper withBorder shadow="sm" p="md" radius="md">
+            <Group>
+                {/* Need user logic for avatars, names, and date*/}
+                <Avatar
+                radius="xl"/>
+                <div>
+                    <Text fz="sm">
+                        [name]
+                    </Text>
+                    <Text fz="xs" c="dimmed">
+                        [date/time]
+                    </Text>
+                </div>
+                </Group>
+                    <Text pl={54} pt="sm" size="sm">
+                        Lorem ipsum 
+                    </Text>
+        </Paper>
+    );
+};
+
+// Right sidebar that contains all the comments in the document
+const CommentAside: React.FC = () => {
+    
+    return (
+        <AppShell.Aside withBorder p="md">
+            <Stack gap="xs">
+                <CommentCard />
+                <CommentCard />
+                <CommentCard />
+            </Stack>
+        </AppShell.Aside>
+    );
+};
 
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
@@ -32,10 +131,44 @@ export default function CompositionTool() {
     }, []);
 
     return (
-        <div>
-            {/* Button to replace a rest with a quarter note the button would call a function that boston made*/}
-            <div ref={notationRef}></div>
+        <AppShell
             
-        </div>
+            header={{ height: 150 }}
+            navbar={{
+                width: 150,
+                breakpoint: "sm",
+            }}
+            aside={{ 
+                width: 300, 
+                breakpoint: "sm",
+            }}
+            padding="md"
+        >
+            <AppShell.Main>
+                <ToolbarHeader />
+                <CommentAside />
+                
+                    {/* get rid of the background later, use it for formatting */}
+                <Container
+                    fluid
+                    size="responsive"
+                    style={{
+                        justifyContent: "center",
+                        display: "flex",
+                        flexDirection: "column",
+                        textAlign: "center",
+                        background:
+                        "linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)",
+                    }}
+                >
+                    <Space h="xl"></Space>
+                    <Text>Score Name</Text>
+
+                    <div>
+                        <div ref={notationRef}></div>
+                    </div>
+                </Container>
+            </AppShell.Main>
+        </AppShell>
     );
 };
