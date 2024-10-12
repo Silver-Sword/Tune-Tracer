@@ -17,6 +17,7 @@ import {
     TextInput,
     Paper,
     Avatar,
+    Divider,
 } from "@mantine/core";
 
 
@@ -39,18 +40,25 @@ const ToolbarHeader: React.FC = () => {
         {/* Second layer (middle section) */}
         <Group align="center" mt="md" style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
             <Group>
-                <Button variant="outline">Home</Button>
-                <Button variant="outline">About</Button>
-                <Button variant="outline">Services</Button>
-                <Button variant="outline">Contact</Button>
+                <Button variant="outline">Natural</Button>
+                <Button variant="outline">Sharp</Button>
+                <Button variant="outline">Flat</Button>
+
+                <Divider size="sm" orientation="vertical" />
+
+                <Button variant="outline">Whole</Button>
+                <Button variant="outline">Half</Button>
+                <Button variant="outline">Quarter</Button>
+                <Button variant="outline">Eighth</Button>
+                <Button variant="outline">Sixteenth</Button>
+                <Button variant="outline">Thirty-Second</Button>
+                <Button variant="outline">Sixty-Fourth</Button>
+
+                <Divider size="sm" orientation="vertical" />
+
             </Group>
             <Input placeholder="Search..." />
         </Group>
-  
-        {/* Third layer (bottom section) */}
-        <Flex justify="flex-end" align="center" mt="md">
-            <Text>Support: +123-456-789</Text>
-        </Flex>
       </AppShell.Header>
     );
   };
