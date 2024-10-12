@@ -108,7 +108,7 @@ const DEFAULT_RENDERER_HEIGHT = 2000;
 export default function CompositionTool() {
     const notationRef = useRef<HTMLDivElement>(null);
     const score = useRef<Score | null>(null);
-
+    
     useEffect(() => {
         const clearSVG = () => {
             if (notationRef.current) {
