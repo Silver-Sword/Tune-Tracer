@@ -25,7 +25,7 @@ export default function SignUp() {
         // const password2 = password as string;
         try {
             console.log("Got here tho");
-            const signUp = httpsCallable(functions, 'signUpAPI');
+            const signUp = httpsCallable(functions, 'signUpUser');
             
             await signUp({email: email, password: password, displayName: displayName})
                 .then((result) => {
