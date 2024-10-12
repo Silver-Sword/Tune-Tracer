@@ -42,9 +42,10 @@ export async function recordOnlineUserUpdatedDocument(
     
     // check if document exists (TO DO: remove the need for this check)
     if(!firebase.doesDocumentExist(documentId)) {
-        throw Error(
+        console.error(
             `Trying to register user ${onlineUser.user_id} to nonexistant document ${documentId}`
         );
+        return;
     }
     
     // update the online user information in firebase

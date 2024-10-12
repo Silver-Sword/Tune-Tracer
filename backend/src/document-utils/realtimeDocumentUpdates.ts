@@ -42,7 +42,7 @@ export async function subscribeToDocument(
           throw Error(`User with id ${user.user_id} does not have read access to document with id ${document.metadata.document_id}`)
       } else if(firstAccess) {
         firstAccess = false;
-        processFirstAccessAndAuth(user, document, firebase);
+        processFirstAccess(user, document, firebase);
       }
       
       onDocumentUpdateFn(document as Document);
@@ -51,7 +51,7 @@ export async function subscribeToDocument(
 }
 
 // NOTE: ACCESS LIST INSERTION IS NOT AWAITED ON
-function processFirstAccessAndAuth(
+function processFirstAccess(
   user: Record<string, unknown> & Required<Pick<UserEntity, 'user_id' | 'user_email' | 'display_name'>>,
   document: Document,
   firebase: FirebaseWrapper
