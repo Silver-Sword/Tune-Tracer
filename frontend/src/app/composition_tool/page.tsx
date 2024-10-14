@@ -18,6 +18,7 @@ import {
     Paper,
     Avatar,
     Divider,
+    ScrollArea,
 } from "@mantine/core";
 
 
@@ -107,24 +108,30 @@ const CommentAside: React.FC = () => {
         <AppShell.Aside withBorder p="md">
             <Paper withBorder shadow="sm" p="md" radius="md">
                 <Stack gap="xs">
-                    <TextInput
-                    value={commentInput}
-                    onChange={(event) => setCommentInput(event.currentTarget.value)}
-                    >
-                    </TextInput>
+                    <TextInput value={commentInput} onChange={(event) => setCommentInput(event.currentTarget.value)}></TextInput>
                     <Group>
                         <Button color="red" onClick={handleClear}>Clear</Button>
                         <Button onClick={handleComment}>Add Comment</Button>
                     </Group>
-                    
                 </Stack>
             </Paper>
+            <Space h="xs"></Space>
             <Divider size="sm" />
-            <Stack gap="xs">
-                <CommentCard />
-                <CommentCard />
-                <CommentCard />
-            </Stack>
+            <Space h="xs"></Space>
+            <ScrollArea scrollbarSize={4}>
+                <Stack gap="xs">
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                </Stack>
+            </ScrollArea>
+            <Space h="xs"></Space>
         </AppShell.Aside>
     );
 };
