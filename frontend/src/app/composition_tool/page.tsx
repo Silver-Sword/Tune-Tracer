@@ -90,9 +90,36 @@ const CommentCard: React.FC = () => {
 
 // Right sidebar that contains all the comments in the document
 const CommentAside: React.FC = () => {
-    
+    const [commentInput, setCommentInput] = useState("");
+
+    const handleComment = (event: { currentTarget: { value: any; }; }) => {
+        const value = event.currentTarget.value;
+        setCommentInput(value);
+        console.log(`Comment Published: ${value}`);
+        // Add more comment publishing logic here
+    };
+
+    const handleClear = () => {
+        setCommentInput('');
+    };
+
     return (
         <AppShell.Aside withBorder p="md">
+            <Paper withBorder shadow="sm" p="md" radius="md">
+                <Stack gap="xs">
+                    <TextInput
+                    value={commentInput}
+                    onChange={(event) => setCommentInput(event.currentTarget.value)}
+                    >
+                    </TextInput>
+                    <Group>
+                        <Button color="red" onClick={handleClear}>Clear</Button>
+                        <Button onClick={handleComment}>Add Comment</Button>
+                    </Group>
+                    
+                </Stack>
+            </Paper>
+            <Divider size="sm" />
             <Stack gap="xs">
                 <CommentCard />
                 <CommentCard />
