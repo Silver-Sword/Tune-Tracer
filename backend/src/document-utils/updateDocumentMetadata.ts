@@ -82,7 +82,8 @@ async function updateDocumentMetadata(
   return processDocumentUpdate(
     { [firebaseKey]: newValue },
     documentId,
-    writerId
+    writerId,
+    true
   );
 }
 

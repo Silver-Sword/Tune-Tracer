@@ -12,7 +12,7 @@ export type DocumentMetadata =
 };
 
 // purpose: for defining how a document has been shared
-export enum ShareStyle 
+export enum ShareStyle
 {
     NONE = 1,                           // the document has not been shared
     READ = 2,                           // the document can be read by other users 
