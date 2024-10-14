@@ -1,40 +1,66 @@
-import { UserEntity } from "@lib/UserEntity";
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
-import { Document } from "@lib/documentTypes";
+import { Document } from "@lib/src/Document";
+import { OnlineEntity } from "@lib/src/realtimeUserTypes";
+import { UpdateType } from "@lib/src/UpdateType";
+import { UserEntity } from "@lib/src/UserEntity";
 
-// takes in the documentId and a function that is called whenever the document is updated in firebase
-// the onUpdateFn function takes in the updated document and is intended to be used to update the local
-// document version (ie use this updated document)
-export async function subscribeToDocumentUpdates(
+import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
+import { subscribeUserToUserDocumentPool } from "./realtimeOnlineUsers";
+import { userHasReadAccess } from "../security-utils/permissionVerification";
+
+/**
+ * Subscribes the user to a document. Adds the user to the user pool and calls the onDocumentUpdateFn and onUserPoolUpdateFn
+ * whenever updates occur.  Both callback functions will be triggered on first call to the subscribeToDocument function will
+ * the initial information.
+ * @param documentId the id of the document that the user is subscribing to
+ * @param user the user account information (the user_id, user_email, and display_name fields are required, others are optional)
+ * @param onDocumentUpdateFn the callback function that is called everytime the document is updated (locally or remotely).
+ *  updatedDocument is the document that has been updated. 
+ *  Race conditions possible, make sure to verify that the updated version is newer.
+ * @param onUserPoolUpdateFn the callback function that is called everytime the user pool is updated (locally or remotely).
+ *  Is called on the type of update and the updated OnlineEntity. Race conditions possible, make sure last_active_time is more recent
+ */
+export async function subscribeToDocument(
   documentId: string,
-  onUpdateFn: (updatedDocument: Document) => void
+  user: Record<string, unknown> & Required<Pick<UserEntity, 'user_id' | 'user_email' | 'display_name'>>,
+  onDocumentUpdateFn: (updatedDocument: Document) => void,
+  onUserPoolUpdateFn: (updateType: UpdateType, updatedUser: OnlineEntity) => void,
 ) {
+  let firstAccess = true;
   const firebase = new FirebaseWrapper();
   firebase.initApp();
 
+  await subscribeUserToUserDocumentPool(documentId, user, onUserPoolUpdateFn);
+  
   firebase.subscribeToDocument(documentId, (snapshot) => {
     if (
       snapshot.exists &&
       snapshot.data() !== null &&
       snapshot.data() !== undefined
     ) {
-      onUpdateFn(snapshot.data() as Document);
+      const document = snapshot.data() as Document;
+      if(!userHasReadAccess(user.user_id, document)) {
+          throw Error(`User with id ${user.user_id} does not have read access to document with id ${document.metadata.document_id}`)
+      } else if(firstAccess) {
+        firstAccess = false;
+        processFirstAccess(user, document, firebase);
+      }
+      
+      onDocumentUpdateFn(document as Document);
     }
   });
 }
 
-export async function registerUserToDocument(
-    documentId: string, 
-    user: {user_email: string, user_id: string, display_name: string}
-){
-    const firebase = new FirebaseWrapper();
-    firebase.initApp();
-
-    // check if document exists (TO DO: remove the need for this check)
-    if(!firebase.doesDocumentExist(documentId))
-    {
-        throw Error(`Trying to register user ${user.user_email} to nonexistant document ${documentId}`);
-    }
-
-    await firebase.registerUserToDocument(documentId, user);
+// NOTE: ACCESS LIST INSERTION IS NOT AWAITED ON
+function processFirstAccess(
+  user: Record<string, unknown> & Required<Pick<UserEntity, 'user_id' | 'user_email' | 'display_name'>>,
+  document: Document,
+  firebase: FirebaseWrapper
+) {
+  // update access list if necessary
+  if(
+    user.user_id !== document.metadata.owner_id && 
+    !Object.keys(document.metadata.share_list).includes(user.user_id)
+  ) {
+    firebase.insertUserDocument(user.user_id, document.metadata.document_id, "accessed");
+  }
 }

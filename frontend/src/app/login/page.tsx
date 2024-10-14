@@ -42,7 +42,8 @@ export default function Login() {
                         label='Password'
                         placeholder='password'
                     />
-                    <Button component='a' href='/edit'>Login</Button>
+                    
+                    <Button component='a' href='/storage'>Login</Button> 
                 </Stack>
             </Container>
         </Group>

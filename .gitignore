@@ -89,4 +89,6 @@ coverage/
 # private
 backend/src/firebaseSecrets.ts
 
+frontend/src/firebaseSecrets.ts
+
 *.js
