@@ -137,6 +137,14 @@ export default function CompositionTool() {
         if (score && score.current)
         {
             score.current.addNoteInMeasure(notes, noteId);
+            setSelectedNoteId(noteId);
+
+            // Manually reapply the 'selected-note' class
+            const noteElement = document.getElementById(noteId.toString());
+            if (noteElement)
+            {
+                noteElement.classList.add('selected-note');
+            }
         }
     }
 
