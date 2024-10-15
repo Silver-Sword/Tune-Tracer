@@ -38,7 +38,7 @@ export class Score {
     private total_width: number = 0;
     private renderer_height = 0;
     private renderer_width = 0;
-    private ID_to_MeasureIndexID: Map<number, { measureIndex: number, noteId: string }> = new Map();
+    private ID_to_MeasureIndexID: Map<number, { measureIndex: number, noteId: string, topMeasure: boolean }> = new Map();
 
     constructor(
         notationRef: HTMLDivElement,
@@ -63,11 +63,11 @@ export class Score {
         if (scoreData !== undefined) {
             this.ties = new Set<number>(scoreData.ties);
             scoreData.topMeasures.forEach((topMeasure) => {
-                this.top_measures.push(new Measure(undefined,undefined,undefined,undefined,undefined,undefined,topMeasure));
+                this.top_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, topMeasure));
             });
 
             scoreData.bottomMeasures.forEach((bottomMeasure) => {
-                this.bottom_measures.push(new Measure(undefined,undefined,undefined,undefined,undefined,undefined,bottomMeasure));
+                this.bottom_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, bottomMeasure));
             });
         }
         else {
@@ -186,6 +186,25 @@ export class Score {
         this.renderMeasures();
     }
 
+    getAdjacentNote = (noteId: number): number => {
+        let measureIndex1 = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        if (measureIndex1 == null) return noteId;
+        let measureIndex2 = this.ID_to_MeasureIndexID.get(noteId + 1)?.measureIndex;
+        if (measureIndex2 == null) return noteId;
+
+        if (measureIndex1 !== measureIndex2) {
+            if (topMeasure) {
+                return noteId + this.bottom_measures[measureIndex1].getVoice1().getTickables().length;
+            }
+            else {
+                // We know measureIndex1 + 1 
+                return noteId + this.top_measures[measureIndex1 + 1].getVoice1().getTickables().length;
+            }
+        }
+        return noteId + 1;
+    }
+
 
     modifyDurationInMeasure = (
         duration: string,
@@ -257,7 +276,7 @@ export class Score {
         });
     }
 
-    private giveIDs = (tickables: Tickable[], measureIndex: number, IDCounter: number) => {
+    private giveIDs = (tickables: Tickable[], measureIndex: number, IDCounter: number, topMeasure: boolean) => {
         tickables.forEach(tickable => {
             let staveNote = tickable as StaveNote;
             staveNote.getSVGElement()?.setAttribute('id', IDCounter + "");
@@ -265,7 +284,7 @@ export class Score {
             // Before the note is drawn, we need a way to reference that. 
             // Instead of re-inventing the wheel, I'm mapping new IDs to old IDs to not mess with logic
             // This means we can reference notes with new ID, but under the hood its still using old logic
-            this.ID_to_MeasureIndexID.set(IDCounter, { measureIndex, noteId: staveNote.getAttributes().id });
+            this.ID_to_MeasureIndexID.set(IDCounter, { measureIndex, noteId: staveNote.getAttributes().id, topMeasure });
             IDCounter++;
         });
         return IDCounter;
@@ -560,8 +579,8 @@ export class Score {
         // With all measures rendered, we can now give them unique IDs, and Render Ties
         let IDCounter = 0;
         for (let i = 0; i < this.top_measures.length; i++) {
-            IDCounter = this.giveIDs(this.top_measures[i].getVoice1().getTickables(), i, IDCounter);
-            IDCounter = this.giveIDs(this.bottom_measures[i].getVoice1().getTickables(), i, IDCounter);
+            IDCounter = this.giveIDs(this.top_measures[i].getVoice1().getTickables(), i, IDCounter, true);
+            IDCounter = this.giveIDs(this.bottom_measures[i].getVoice1().getTickables(), i, IDCounter, true);
         }
         // From this point forward we render all elements that need voices to be drawn to be able to get placed
         // Render Ties/Slurs
