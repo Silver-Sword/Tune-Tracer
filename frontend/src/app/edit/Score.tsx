@@ -2,6 +2,7 @@ import { Vex, Formatter, StaveNote, StaveTie, Beam, Tickable } from 'vexflow';
 import { Measure } from './Measure';
 import { render } from '@testing-library/react';
 import { MeasureData } from '../../../../lib/src/MeasureData';
+import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
 
 type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
 
@@ -43,30 +44,67 @@ export class Score {
         notationRef: HTMLDivElement,
         rendererHeight: number,
         rendererWidth: number,
-        timeSignature: string = "4/4"
+        timeSignature: string = "4/4",
+        scoreData?: ScoreData
     ) {
         this.total_width += DEFAULT_MEASURE_WIDTH + DEFAULT_FIRST_MEASURES_X;
+        if (scoreData !== undefined) {
+            rendererHeight = scoreData.rendererHeight;
+            rendererWidth = scoreData.rendererWidth;
+            this.total_width = scoreData.totalWidth;
+        }
+
         this.renderer_height = rendererHeight;
         this.renderer_width = rendererWidth;
 
         const renderer = new this.VF.Renderer(notationRef, this.VF.Renderer.Backends.SVG);
         renderer.resize(this.renderer_width, this.renderer_height);
         this.context = renderer.getContext();
-        const firstTopMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y, DEFAULT_MEASURE_WIDTH, timeSignature, "treble", true);
-        // X and Y don't matter here because bottom measure always adjusts based on top measure
-        const firstBottomMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y + DEFAULT_MEASURE_VERTICAL_SPACING, DEFAULT_MEASURE_WIDTH, timeSignature, "bass", true);
-        this.top_measures.push(firstTopMeasure);
-        this.bottom_measures.push(firstBottomMeasure);
+        if (scoreData !== undefined) {
+            this.ties = new Set<number>(scoreData.ties);
+            scoreData.topMeasures.forEach((topMeasure) => {
+                this.top_measures.push(new Measure(undefined,undefined,undefined,undefined,undefined,undefined,topMeasure));
+            });
+
+            scoreData.bottomMeasures.forEach((bottomMeasure) => {
+                this.bottom_measures.push(new Measure(undefined,undefined,undefined,undefined,undefined,undefined,bottomMeasure));
+            });
+        }
+        else {
+            const firstTopMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y, DEFAULT_MEASURE_WIDTH, timeSignature, "treble", true);
+            // X and Y don't matter here because bottom measure always adjusts based on top measure
+            const firstBottomMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y + DEFAULT_MEASURE_VERTICAL_SPACING, DEFAULT_MEASURE_WIDTH, timeSignature, "bass", true);
+            this.top_measures.push(firstTopMeasure);
+            this.bottom_measures.push(firstBottomMeasure);
+        }
+
+
         this.renderMeasures();
     }
 
-    exportScore = (): void => {
-        this.top_measures[0].exportMeasureDataObj();
-    }
+    exportScoreDataObj = (): ScoreData => {
+        let scoreData: ScoreData = getDefaultScoreData();
+        scoreData.rendererHeight = this.renderer_height;
+        scoreData.rendererWidth = this.renderer_width;
+        scoreData.totalWidth = this.total_width;
+        scoreData.ties = Array.from(this.ties);
 
-    loadScore = (measureData: MeasureData): void => {
-        this.top_measures[0] = new Measure(undefined,undefined,undefined,undefined,undefined,undefined,measureData);
-        this.renderMeasures();
+        let topMeasures: MeasureData[] = [];
+        this.top_measures.forEach((topMeasure) => {
+            topMeasures.push(topMeasure.exportMeasureDataObj());
+        });
+
+        let bottomMeasures: MeasureData[] = [];
+        this.bottom_measures.forEach((bottomMeasure) => {
+            bottomMeasures.push(bottomMeasure.exportMeasureDataObj());
+        });
+
+        scoreData.topMeasures = topMeasures;
+        scoreData.bottomMeasures = bottomMeasures;
+
+        console.log(printScoreData(scoreData));
+        return scoreData;
+
     }
 
     addNoteInMeasure = (
@@ -234,7 +272,6 @@ export class Score {
     }
 
     private renderMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], topMeasureDeltaDown: number, bottomMeasureDeltaDown: number) => {
-        // This will give a unique ID to each StaveNote
         for (let i = 0; i < topMeasures.length; i++) {
             let topMeasure = topMeasures[i];
             let bottomMeasure = bottomMeasures[i];
@@ -244,7 +281,6 @@ export class Score {
             topStave.setY(topStave.getY() + topMeasureDeltaDown);
 
             bottomStave.setY(bottomStave.getY() + bottomMeasureDeltaDown);
-
             topStave.setContext(this.context).draw();
             bottomStave.setContext(this.context).draw();
 
@@ -531,7 +567,7 @@ export class Score {
         // Render Ties/Slurs
         this.ties.forEach((noteID) => {
             // If we couldn't add a tie here, it was a bad tie, remove it from set
-            if(!this.addTieBetweenNotes(noteID)){
+            if (!this.addTieBetweenNotes(noteID)) {
                 this.ties.delete(noteID);
             }
         });

@@ -22,7 +22,8 @@ export default function CompositionTool() {
                 score.current = new Score(
                     notationRef.current,
                     DEFAULT_RENDERER_HEIGHT,
-                    DEFAULT_RENDERER_WIDTH
+                    DEFAULT_RENDERER_WIDTH,
+                    undefined
                 );
             }
         };
