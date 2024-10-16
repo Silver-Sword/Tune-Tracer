@@ -53,41 +53,44 @@ const ToolbarHeader: React.FC = () => {
       <AppShell.Header p="md">
         {/* First layer (top section) */}
         <Group align="center" style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
-            <Text size="xl" component="a" href="/storage">Tune Tracer</Text>
-            <TextInput 
-                size="md"
-                placeholder="Enter Document Name"
-                // value={}
-                // onChange={}
-            />
-
-            {/* PlayBack UI */}
-            <Container fluid style={{ width: '25%' }}>
-                <Center>
-                <Group> 
-                    <ActionIcon>
-                        <IconPlayerPlay />
-                    </ActionIcon>
-                    <ActionIcon>
-                        <IconPlayerPause />
-                    </ActionIcon>
-                    <ActionIcon>
-                        <IconPlayerStop />
-                    </ActionIcon>
-                </Group>
-                </Center>
-                <Space h="xs"></Space>
-                <Slider
-                    value={volume}
-                    onChange={handleVolumeChange}
-                    thumbChildren={<IconVolume/>}
-                    label={null}
-                    defaultValue={50}
-                    thumbSize={26}
-                    styles={{ thumb: { borderWidth: rem(2), padding: rem(3)}}}
+            {/* <Group align="left"> */}
+                <Text size="xl" component="a" href="/storage">Tune Tracer</Text>
+                <TextInput 
+                    size="md"
+                    placeholder="Enter Document Name"
+                    // value={}
+                    // onChange={}
                 />
-            </Container>
-           
+
+                {/* PlayBack UI */}
+                <Container fluid style={{ width: '40%' }}>
+                    <Center>
+                        <Group> 
+                            <ActionIcon>
+                                <IconPlayerPlay />
+                            </ActionIcon>
+                            <ActionIcon>
+                                <IconPlayerPause />
+                            </ActionIcon>
+                            <ActionIcon>
+                                <IconPlayerStop />
+                            </ActionIcon>
+                        </Group>
+                    </Center>
+                    <Space h="xs"></Space>
+                    <Slider
+                        value={volume}
+                        onChange={handleVolumeChange}
+                        thumbChildren={<IconVolume/>}
+                        label={(value) => `${value}%`}
+                        defaultValue={50}
+                        thumbSize={26}
+                        styles={{ thumb: { borderWidth: rem(2), padding: rem(3)}}}
+                    />
+                </Container>
+            {/* </Group> */}
+           {/* I'd like to have everything left justified except the sharing button */}
+
             {/* Sharing UI */}
             <Modal opened={openShare} onClose={close} title="Sharing" centered>
             {/* Modal content */}
