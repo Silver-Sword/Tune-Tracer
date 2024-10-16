@@ -19,10 +19,17 @@ import {
     Avatar,
     Divider,
     ScrollArea,
+    Tooltip,
+    Tabs,
+    SegmentedControl,
+    ActionIcon,
 } from "@mantine/core";
-
+import { IconPlayerPlay, IconPlayerPause, IconPlayerStop } from "@tabler/icons-react"
 
 const ToolbarHeader: React.FC = () => {
+    // Need logic for swapping pause and play buttons, also if hitting stop it completely resets the time back to 0
+
+    
     return (
       <AppShell.Header p="md">
         {/* First layer (top section) */}
@@ -34,31 +41,59 @@ const ToolbarHeader: React.FC = () => {
                 // value={}
                 // onChange={}
             />
-                <Button>Share</Button>
+            <Group> 
+                <ActionIcon>
+                    <IconPlayerPlay />
+                </ActionIcon>
+                <ActionIcon>
+                    <IconPlayerPause />
+                </ActionIcon>
+                <ActionIcon>
+                    <IconPlayerStop />
+                </ActionIcon>
+            </Group>
+
+            <Button>Share</Button>
             
         </Group>
   
         {/* Second layer (middle section) */}
-        <Group align="center" mt="md" style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
-            <Group>
-                <Button variant="outline">Natural</Button>
-                <Button variant="outline">Sharp</Button>
-                <Button variant="outline">Flat</Button>
+        <Group align="center" mt="md" style={{ paddingBottom: '10px' }}>
+            <Tabs defaultValue="notes">
+                <Tabs.List>
+                    <Tabs.Tab value="notes">
+                        Notes
+                    </Tabs.Tab>
+                </Tabs.List>
+                
+                {/* Notes Tab */}
+                <Tabs.Panel value="notes">
+                    <Space h="xs"></Space>
+                    <Group>
+                        <Button variant="outline">Natural</Button>
+                        <Button variant="outline">Sharp</Button>
+                        <Button variant="outline">Flat</Button>
 
-                <Divider size="sm" orientation="vertical" />
+                        <Divider size="sm" orientation="vertical" />
 
-                <Button variant="outline">Whole</Button>
-                <Button variant="outline">Half</Button>
-                <Button variant="outline">Quarter</Button>
-                <Button variant="outline">Eighth</Button>
-                <Button variant="outline">Sixteenth</Button>
-                <Button variant="outline">Thirty-Second</Button>
-                <Button variant="outline">Sixty-Fourth</Button>
+                        <Button variant="outline">Whole</Button>
+                        <Button variant="outline">Half</Button>
+                        <Button variant="outline">Quarter</Button>
+                        <Button variant="outline">Eighth</Button>
+                        <Button variant="outline">Sixteenth</Button>
+                        <Button variant="outline">Thirty-Second</Button>
+                        <Button variant="outline">Sixty-Fourth</Button>
 
-                <Divider size="sm" orientation="vertical" />
+                        <Divider size="sm" orientation="vertical" />
+                        
+                        <Button variant="outline">Dot</Button>
 
-            </Group>
-            <Input placeholder="Search..." />
+                        <Divider size="sm" orientation="vertical" />
+
+                        <Button>Help</Button>
+                    </Group>
+                </Tabs.Panel>
+            </Tabs>
         </Group>
       </AppShell.Header>
     );
@@ -167,7 +202,7 @@ export default function CompositionTool() {
     return (
         <AppShell
             
-            header={{ height: 150 }}
+            header={{ height: 175 }}
             navbar={{
                 width: 150,
                 breakpoint: "sm",
