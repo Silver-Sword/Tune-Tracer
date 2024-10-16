@@ -37,6 +37,7 @@ export default function SignUp() {
                 }).catch((error) => {
                     // Getting the Error details.
                     const message = error.message;
+                    console.log(`Error: ${message}`);
                     setMessage(`Error: ${message}`);
                     return;
                     // ...
@@ -44,6 +45,7 @@ export default function SignUp() {
 
                   setMessage(`User registered successfully. Please check email to get verified`);
         } catch (error: any) {
+            console.log(`Error: ${error.message}`);
             // Handle any error and display the message
             setMessage(`Error: ${error.message}`);
         } finally {
