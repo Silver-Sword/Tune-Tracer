@@ -71,7 +71,7 @@ const FiltersNavbar: React.FC = () => {
 const SearchBar: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const handleSearch = (event) => {
+  const handleSearch = (event: { currentTarget: { value: any; }; }) => {
     const value = event.currentTarget.value;
     setSearchTerm(value);
     console.log(`Searching for: ${value}`);
@@ -99,7 +99,7 @@ const CreateCard: React.FC = () => {
     console.log("Create document clicked");
   };
 
-  const handleInviteCodeChange = (event) => {
+  const handleInviteCodeChange = (event: { target: { value: React.SetStateAction<string>; }; }) => {
     setInviteCode(event.target.value);
   };
 

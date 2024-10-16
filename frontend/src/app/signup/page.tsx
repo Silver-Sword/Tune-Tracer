@@ -1,12 +1,17 @@
 'use client'
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Container, Center, Title, TextInput, PasswordInput, Stack, Space, Button, rem, Group } from '@mantine/core';
 import { IconAt } from '@tabler/icons-react';
 
 export default function SignUp() {
     const icon = <IconAt style={{ width: rem(16), height: rem(16) }} />;
-    const [error, setError] = React.useState('');
+    const [error, setError] = useState("");
+    const [email, setEmail] = useState("");
+    const [userName, setUserName] = useState("");
+    const [password, setPassword] = useState("");
+    const [passwordCheck, setPasswordCheck] = useState("");
+    
     const props = {
         width: '50vw',
         height: '100vh',
@@ -72,7 +77,7 @@ export default function SignUp() {
                         withAsterisk
                         error={error}
                     />
-                    <Button component='a' href='/edit'>Sign Up</Button>
+                    <Button component='a' href='/storage'>Sign Up</Button>
                 </Stack>
             </Container>
         </Group>
