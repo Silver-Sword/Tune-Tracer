@@ -24,9 +24,10 @@ export class Measure {
     private rest_location: string = "";
     private whole_rest_location: string = "";
     private render_time_sig = false;
+    private x: number;
+    private y: number;
 
     constructor(
-        // These all have defaults so that you can cleanly call Measure(MeasureData) if you want.
         x: number = 0,
         y: number = 0,
         width: number = 0,
@@ -43,6 +44,8 @@ export class Measure {
             clef = measureData.clef;
             renderTimeSignature = measureData.renderTimeSignature;
         }
+        this.x = x;
+        this.y = y;
         this.stave = new this.VF.Stave(x, y, width);
         this.timeSignature = timeSignature;
         this.render_time_sig = renderTimeSignature;
@@ -102,6 +105,8 @@ export class Measure {
         measureData.renderTimeSignature = this.render_time_sig;
         measureData.timeSignature = this.timeSignature;
         measureData.notes = [];
+        measureData.x = this.x;
+        measureData.y = this.y;
         
         this.voice1.getTickables().forEach((tickable) => {
             let staveNote = tickable as StaveNote;
@@ -125,7 +130,7 @@ export class Measure {
             
             measureData.notes.push(staveNoteData);
         });
-        console.log("Measure Data: " + printMeasureData(measureData));
+        //console.log("Measure Data: " + printMeasureData(measureData));
         return measureData;
     }
 

@@ -3,6 +3,7 @@ import { Measure } from './Measure';
 import * as d3 from 'd3';
 import { render } from '@testing-library/react';
 import { MeasureData } from '../../../../lib/src/MeasureData';
+import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
 
 type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
 
@@ -39,15 +40,22 @@ export class Score {
     private total_width: number = 0;
     private renderer_height = 0;
     private renderer_width = 0;
-    private ID_to_MeasureIndexID: Map<number, { measureIndex: number, noteId: string }> = new Map();
+    private ID_to_MeasureIndexID: Map<number, { measureIndex: number, noteId: string, topMeasure: boolean }> = new Map();
 
     constructor(
         notationRef: HTMLDivElement,
         rendererHeight: number,
         rendererWidth: number,
-        timeSignature: string = "4/4"
+        timeSignature: string = "4/4",
+        scoreData?: ScoreData
     ) {
         this.total_width += DEFAULT_MEASURE_WIDTH + DEFAULT_FIRST_MEASURES_X;
+        if (scoreData !== undefined) {
+            rendererHeight = scoreData.rendererHeight;
+            rendererWidth = scoreData.rendererWidth;
+            this.total_width = scoreData.totalWidth;
+        }
+
         this.renderer_height = rendererHeight;
         this.renderer_width = rendererWidth;
         this.notationRef = notationRef;
@@ -55,21 +63,51 @@ export class Score {
         const renderer = new this.VF.Renderer(notationRef, this.VF.Renderer.Backends.SVG);
         renderer.resize(this.renderer_width, this.renderer_height);
         this.context = renderer.getContext();
-        const firstTopMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y, DEFAULT_MEASURE_WIDTH, timeSignature, "treble", true);
-        // X and Y don't matter here because bottom measure always adjusts based on top measure
-        const firstBottomMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y + DEFAULT_MEASURE_VERTICAL_SPACING, DEFAULT_MEASURE_WIDTH, timeSignature, "bass", true);
-        this.top_measures.push(firstTopMeasure);
-        this.bottom_measures.push(firstBottomMeasure);
+        if (scoreData !== undefined) {
+            this.ties = new Set<number>(scoreData.ties);
+            scoreData.topMeasures.forEach((topMeasure) => {
+                this.top_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, topMeasure));
+            });
+
+            scoreData.bottomMeasures.forEach((bottomMeasure) => {
+                this.bottom_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, bottomMeasure));
+            });
+        }
+        else {
+            const firstTopMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y, DEFAULT_MEASURE_WIDTH, timeSignature, "treble", true);
+            // X and Y don't matter here because bottom measure always adjusts based on top measure
+            const firstBottomMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y + DEFAULT_MEASURE_VERTICAL_SPACING, DEFAULT_MEASURE_WIDTH, timeSignature, "bass", true);
+            this.top_measures.push(firstTopMeasure);
+            this.bottom_measures.push(firstBottomMeasure);
+        }
+
+
         this.renderMeasures();
     }
 
-    exportScore = (): void => {
-        this.top_measures[0].exportMeasureDataObj();
-    }
+    exportScoreDataObj = (): ScoreData => {
+        let scoreData: ScoreData = getDefaultScoreData();
+        scoreData.rendererHeight = this.renderer_height;
+        scoreData.rendererWidth = this.renderer_width;
+        scoreData.totalWidth = this.total_width;
+        scoreData.ties = Array.from(this.ties);
 
-    loadScore = (measureData: MeasureData): void => {
-        this.top_measures[0] = new Measure(undefined,undefined,undefined,undefined,undefined,undefined,measureData);
-        this.renderMeasures();
+        let topMeasures: MeasureData[] = [];
+        this.top_measures.forEach((topMeasure) => {
+            topMeasures.push(topMeasure.exportMeasureDataObj());
+        });
+
+        let bottomMeasures: MeasureData[] = [];
+        this.bottom_measures.forEach((bottomMeasure) => {
+            bottomMeasures.push(bottomMeasure.exportMeasureDataObj());
+        });
+
+        scoreData.topMeasures = topMeasures;
+        scoreData.bottomMeasures = bottomMeasures;
+
+        console.log(printScoreData(scoreData));
+        return scoreData;
+
     }
 
     addNoteInMeasure = (
@@ -151,6 +189,25 @@ export class Score {
         this.renderMeasures();
     }
 
+    getAdjacentNote = (noteId: number): number => {
+        let measureIndex1 = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        if (measureIndex1 == null) return noteId;
+        let measureIndex2 = this.ID_to_MeasureIndexID.get(noteId + 1)?.measureIndex;
+        if (measureIndex2 == null) return noteId;
+
+        if (measureIndex1 !== measureIndex2) {
+            if (topMeasure) {
+                return noteId + this.bottom_measures[measureIndex1].getVoice1().getTickables().length;
+            }
+            else {
+                // We know measureIndex1 + 1 
+                return noteId + this.top_measures[measureIndex1 + 1].getVoice1().getTickables().length;
+            }
+        }
+        return noteId + 1;
+    }
+
 
     modifyDurationInMeasure = (
         duration: string,
@@ -222,7 +279,7 @@ export class Score {
         });
     }
 
-    private giveIDs = (tickables: Tickable[], measureIndex: number, IDCounter: number) => {
+    private giveIDs = (tickables: Tickable[], measureIndex: number, IDCounter: number, topMeasure: boolean) => {
         tickables.forEach(tickable => {
             let staveNote = tickable as StaveNote;
             staveNote.getSVGElement()?.setAttribute('id', IDCounter + "");
@@ -230,14 +287,13 @@ export class Score {
             // Before the note is drawn, we need a way to reference that. 
             // Instead of re-inventing the wheel, I'm mapping new IDs to old IDs to not mess with logic
             // This means we can reference notes with new ID, but under the hood its still using old logic
-            this.ID_to_MeasureIndexID.set(IDCounter, { measureIndex, noteId: staveNote.getAttributes().id });
+            this.ID_to_MeasureIndexID.set(IDCounter, { measureIndex, noteId: staveNote.getAttributes().id, topMeasure });
             IDCounter++;
         });
         return IDCounter;
     }
 
     private renderMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], topMeasureDeltaDown: number, bottomMeasureDeltaDown: number) => {
-        // This will give a unique ID to each StaveNote
         for (let i = 0; i < topMeasures.length; i++) {
             let topMeasure = topMeasures[i];
             let bottomMeasure = bottomMeasures[i];
@@ -247,7 +303,6 @@ export class Score {
             topStave.setY(topStave.getY() + topMeasureDeltaDown);
 
             bottomStave.setY(bottomStave.getY() + bottomMeasureDeltaDown);
-
             topStave.setContext(this.context).draw();
             bottomStave.setContext(this.context).draw();
 
@@ -527,14 +582,14 @@ export class Score {
         // With all measures rendered, we can now give them unique IDs, and Render Ties
         let IDCounter = 0;
         for (let i = 0; i < this.top_measures.length; i++) {
-            IDCounter = this.giveIDs(this.top_measures[i].getVoice1().getTickables(), i, IDCounter);
-            IDCounter = this.giveIDs(this.bottom_measures[i].getVoice1().getTickables(), i, IDCounter);
+            IDCounter = this.giveIDs(this.top_measures[i].getVoice1().getTickables(), i, IDCounter, true);
+            IDCounter = this.giveIDs(this.bottom_measures[i].getVoice1().getTickables(), i, IDCounter, true);
         }
         // From this point forward we render all elements that need voices to be drawn to be able to get placed
         // Render Ties/Slurs
         this.ties.forEach((noteID) => {
             // If we couldn't add a tie here, it was a bad tie, remove it from set
-            if(!this.addTieBetweenNotes(noteID)){
+            if (!this.addTieBetweenNotes(noteID)) {
                 this.ties.delete(noteID);
             }
         });
