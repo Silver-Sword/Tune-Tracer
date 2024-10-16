@@ -223,6 +223,11 @@ export default function CompositionTool() {
             // If a valid note was pressed and we have a note selected
             if (note && selectedNoteId !== -1) {
                 addNoteHandler([note], selectedNoteId);
+                const nextNote = score.current?.getAdjacentNote(selectedNoteId);
+                if (nextNote)
+                {
+                    setSelectedNoteId(nextNote);
+                }
             }
         };
 
