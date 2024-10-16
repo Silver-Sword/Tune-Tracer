@@ -2,7 +2,7 @@ import { deleteDocument } from '../document-utils/documentOperations';
 import { Document } from '@lib/documentTypes';
 import firebase from 'firebase/compat/app';
 
-export async function deleteWorkspace(document: Document)
+export async function deleteWorkspace(document: Document, userId: string) 
 {
     try
     {
@@ -11,8 +11,6 @@ export async function deleteWorkspace(document: Document)
     }
     catch (error)
     {
-        return false;
+        throw new Error(`Failed to delete workspace: ${error}`);
     }
-
-    return true;
 }
