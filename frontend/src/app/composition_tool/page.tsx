@@ -18,46 +18,128 @@ import {
     Paper,
     Avatar,
     Divider,
+    ScrollArea,
+    Tooltip,
+    Tabs,
+    SegmentedControl,
+    ActionIcon,
+    Modal,
+    Slider,
+    rem,
+    Center,
 } from "@mantine/core";
-
+import { IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconVolume } from "@tabler/icons-react"
+import { useDisclosure } from '@mantine/hooks';
 
 const ToolbarHeader: React.FC = () => {
+    // Need logic for setting document name
+    
+    // Need logic for swapping pause and play buttons, also if hitting stop it completely resets the time back to 0
+
+    const [volume, setVolume] = useState(50);
+
+    const handleVolumeChange = (value: React.SetStateAction<number>) => {
+        setVolume(value);
+        console.log(`Volume value is: ${value}`);
+        // if (audioRef.current) {
+        //   audioRef.current.volume = value / 100; // Convert to a scale of 0 to 1 for audio API
+        // }
+      };
+
+    // Logic for Sharing
+    const [ openShare, { open, close }] = useDisclosure(false);
+    
     return (
       <AppShell.Header p="md">
         {/* First layer (top section) */}
         <Group align="center" style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
-            <Text size="xl" component="a" href="/storage">Tune Tracer</Text>
-            <TextInput 
-                size="md"
-                placeholder="Enter Document Name"
-                // value={}
-                // onChange={}
-            />
-                <Button>Share</Button>
+            {/* <Group align="left"> */}
+                <Text size="xl" component="a" href="/storage">Tune Tracer</Text>
+                <TextInput 
+                    size="md"
+                    placeholder="Enter Document Name"
+                    // value={}
+                    // onChange={}
+                />
+
+                {/* PlayBack UI */}
+                <Container fluid style={{ width: '40%' }}>
+                    <Center>
+                        <Group> 
+                            <ActionIcon>
+                                <IconPlayerPlay />
+                            </ActionIcon>
+                            <ActionIcon>
+                                <IconPlayerPause />
+                            </ActionIcon>
+                            <ActionIcon>
+                                <IconPlayerStop />
+                            </ActionIcon>
+                        </Group>
+                    </Center>
+                    <Space h="xs"></Space>
+                    <Slider
+                        value={volume}
+                        onChange={handleVolumeChange}
+                        thumbChildren={<IconVolume/>}
+                        label={(value) => `${value}%`}
+                        defaultValue={50}
+                        thumbSize={26}
+                        styles={{ thumb: { borderWidth: rem(2), padding: rem(3)}}}
+                    />
+                </Container>
+            {/* </Group> */}
+           {/* I'd like to have everything left justified except the sharing button */}
+
+            {/* Sharing UI */}
+            <Modal opened={openShare} onClose={close} title="Sharing" centered>
+            {/* Modal content */}
+            Share??
+            </Modal>
+
+            <Button onClick={open}>Share</Button>
             
         </Group>
   
         {/* Second layer (middle section) */}
-        <Group align="center" mt="md" style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
-            <Group>
-                <Button variant="outline">Natural</Button>
-                <Button variant="outline">Sharp</Button>
-                <Button variant="outline">Flat</Button>
+        <Group align="center" mt="xs" style={{ paddingBottom: '10px' }}>
+            <Tabs defaultValue="notes">
+                <Tabs.List>
+                    <Tabs.Tab value="notes">
+                        Notes
+                    </Tabs.Tab>
+                </Tabs.List>
+                
+                {/* Notes Tab */}
+                <Tabs.Panel value="notes">
+                    <Space h="xs"></Space>
+                    <Group>
+                        <Button variant="outline">Natural</Button>
+                        <Button variant="outline">Sharp</Button>
+                        <Button variant="outline">Flat</Button>
 
-                <Divider size="sm" orientation="vertical" />
+                        <Divider size="sm" orientation="vertical" />
 
-                <Button variant="outline">Whole</Button>
-                <Button variant="outline">Half</Button>
-                <Button variant="outline">Quarter</Button>
-                <Button variant="outline">Eighth</Button>
-                <Button variant="outline">Sixteenth</Button>
-                <Button variant="outline">Thirty-Second</Button>
-                <Button variant="outline">Sixty-Fourth</Button>
+                        <Button variant="outline">Whole</Button>
+                        <Button variant="outline">Half</Button>
+                        <Button variant="outline">Quarter</Button>
+                        <Button variant="outline">Eighth</Button>
+                        <Button variant="outline">Sixteenth</Button>
+                        <Button variant="outline">Thirty-Second</Button>
+                        <Button variant="outline">Sixty-Fourth</Button>
 
-                <Divider size="sm" orientation="vertical" />
+                        <Divider size="sm" orientation="vertical" />
+                        
+                        <Button variant="outline">Dot</Button>
 
-            </Group>
-            <Input placeholder="Search..." />
+                        <Divider size="sm" orientation="vertical" />
+
+                        <Button>Help</Button>
+                    </Group>
+                </Tabs.Panel>
+
+                
+            </Tabs>
         </Group>
       </AppShell.Header>
     );
@@ -90,14 +172,47 @@ const CommentCard: React.FC = () => {
 
 // Right sidebar that contains all the comments in the document
 const CommentAside: React.FC = () => {
-    
+    const [commentInput, setCommentInput] = useState("");
+
+    const handleComment = (event: { currentTarget: { value: any; }; }) => {
+        const value = event.currentTarget.value;
+        setCommentInput(value);
+        console.log(`Comment Published: ${value}`);
+        // Add more comment publishing logic here
+    };
+
+    const handleClear = () => {
+        setCommentInput('');
+    };
+
     return (
         <AppShell.Aside withBorder p="md">
-            <Stack gap="xs">
-                <CommentCard />
-                <CommentCard />
-                <CommentCard />
-            </Stack>
+            <Paper withBorder shadow="sm" p="md" radius="md">
+                <Stack gap="xs">
+                    <TextInput value={commentInput} onChange={(event) => setCommentInput(event.currentTarget.value)}></TextInput>
+                    <Group>
+                        <Button color="red" onClick={handleClear}>Clear</Button>
+                        <Button onClick={handleComment}>Add Comment</Button>
+                    </Group>
+                </Stack>
+            </Paper>
+            <Space h="xs"></Space>
+            <Divider size="sm" />
+            <Space h="xs"></Space>
+            <ScrollArea scrollbarSize={4}>
+                <Stack gap="xs">
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                </Stack>
+            </ScrollArea>
+            <Space h="xs"></Space>
         </AppShell.Aside>
     );
 };
@@ -134,7 +249,7 @@ export default function CompositionTool() {
     return (
         <AppShell
             
-            header={{ height: 150 }}
+            header={{ height: 175 }}
             navbar={{
                 width: 150,
                 breakpoint: "sm",
