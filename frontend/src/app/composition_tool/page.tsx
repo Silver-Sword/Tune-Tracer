@@ -23,12 +23,31 @@ import {
     Tabs,
     SegmentedControl,
     ActionIcon,
+    Modal,
+    Slider,
+    rem,
+    Center,
 } from "@mantine/core";
-import { IconPlayerPlay, IconPlayerPause, IconPlayerStop } from "@tabler/icons-react"
+import { IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconVolume } from "@tabler/icons-react"
+import { useDisclosure } from '@mantine/hooks';
 
 const ToolbarHeader: React.FC = () => {
+    // Need logic for setting document name
+    
     // Need logic for swapping pause and play buttons, also if hitting stop it completely resets the time back to 0
 
+    const [volume, setVolume] = useState(50);
+
+    const handleVolumeChange = (value: React.SetStateAction<number>) => {
+        setVolume(value);
+        console.log(`Volume value is: ${value}`);
+        // if (audioRef.current) {
+        //   audioRef.current.volume = value / 100; // Convert to a scale of 0 to 1 for audio API
+        // }
+      };
+
+    // Logic for Sharing
+    const [ openShare, { open, close }] = useDisclosure(false);
     
     return (
       <AppShell.Header p="md">
@@ -41,24 +60,46 @@ const ToolbarHeader: React.FC = () => {
                 // value={}
                 // onChange={}
             />
-            <Group> 
-                <ActionIcon>
-                    <IconPlayerPlay />
-                </ActionIcon>
-                <ActionIcon>
-                    <IconPlayerPause />
-                </ActionIcon>
-                <ActionIcon>
-                    <IconPlayerStop />
-                </ActionIcon>
-            </Group>
 
-            <Button>Share</Button>
+            {/* PlayBack UI */}
+            <Container fluid style={{ width: '25%' }}>
+                <Center>
+                <Group> 
+                    <ActionIcon>
+                        <IconPlayerPlay />
+                    </ActionIcon>
+                    <ActionIcon>
+                        <IconPlayerPause />
+                    </ActionIcon>
+                    <ActionIcon>
+                        <IconPlayerStop />
+                    </ActionIcon>
+                </Group>
+                </Center>
+                <Space h="xs"></Space>
+                <Slider
+                    value={volume}
+                    onChange={handleVolumeChange}
+                    thumbChildren={<IconVolume/>}
+                    label={null}
+                    defaultValue={50}
+                    thumbSize={26}
+                    styles={{ thumb: { borderWidth: rem(2), padding: rem(3)}}}
+                />
+            </Container>
+           
+            {/* Sharing UI */}
+            <Modal opened={openShare} onClose={close} title="Sharing" centered>
+            {/* Modal content */}
+            Share??
+            </Modal>
+
+            <Button onClick={open}>Share</Button>
             
         </Group>
   
         {/* Second layer (middle section) */}
-        <Group align="center" mt="md" style={{ paddingBottom: '10px' }}>
+        <Group align="center" mt="xs" style={{ paddingBottom: '10px' }}>
             <Tabs defaultValue="notes">
                 <Tabs.List>
                     <Tabs.Tab value="notes">
@@ -93,6 +134,8 @@ const ToolbarHeader: React.FC = () => {
                         <Button>Help</Button>
                     </Group>
                 </Tabs.Panel>
+
+                
             </Tabs>
         </Group>
       </AppShell.Header>
