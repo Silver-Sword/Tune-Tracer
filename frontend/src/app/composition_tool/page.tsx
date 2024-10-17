@@ -52,7 +52,6 @@ const SharingModal: React.FC = () => {
                 
                     <Text>Code Access</Text>
 
-                    
                     <Divider size="sm" my="sm"></Divider>
 
                     <Text>Link Access</Text>
@@ -79,7 +78,21 @@ const SharingModal: React.FC = () => {
 
 
 const ToolbarHeader: React.FC = () => {
-    // Need logic for setting document name
+    // State to manage the input value
+    const [inputValue, setInputValue] = useState('Untitled Score');
+    
+    // State to toggle between edit and display modes
+    const [isChangingName, setIsChangingName] = useState(false);
+
+    // Handle the save action (when pressing Enter or clicking outside)
+    const handleSave = () => {
+        setIsChangingName(false); // Exit edit mode and save
+    };
+
+    // Handle when the user clicks the text to switch to editing mode
+    const handleEdit = () => {
+        setIsChangingName(true);
+    };
     
     // Need logic for swapping pause and play buttons, also if hitting stop it completely resets the time back to 0
 
@@ -101,12 +114,37 @@ const ToolbarHeader: React.FC = () => {
                 <Tooltip label="Back to Home">
                     <Text size="xl" component="a" href="/storage">Tune Tracer</Text>
                 </Tooltip>
-                <TextInput 
+                {isChangingName ? (
+                    <TextInput
                     size="md"
+                    value={inputValue}
+                    onChange={(event) => setInputValue(event.currentTarget.value)} // Update input value
+                    onBlur={handleSave} // Save on focus loss
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                        handleSave(); // Save on Enter key press
+                        }
+                    }}
                     placeholder="Enter Document Name"
-                    // value={}
-                    // onChange={}
-                />
+                    autoFocus // Auto-focus when entering edit mode
+                    />
+                ) : (
+                    <Text
+                    onClick={handleEdit}
+                    style={{
+                        cursor: 'text', 
+                        padding: '3px', 
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.outline = '2px solid rgba(128, 128, 128, 0.6)'; // Slightly dimmed gray outline
+                        e.currentTarget.style.outlineOffset = '3px'; // Space between outline and text
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.outline = 'none'; // Remove outline on mouse leave
+                      }}>
+                    {inputValue || 'Untitled Score'}
+                    </Text>
+                )}
 
                 {/* PlayBack UI */}
                 <Container fluid style={{ width: '20%' }}>
