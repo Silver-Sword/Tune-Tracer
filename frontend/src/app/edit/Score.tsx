@@ -90,6 +90,25 @@ export class Score {
         this.renderMeasures();
     }
 
+    setKeySignature = (keySignature: string): void => {
+        this.key_signature = keySignature;
+        this.top_measures.forEach((measure) => {
+            if(measure.render_time_sig)
+            {
+                measure.getStave().setKeySignature(this.key_signature);
+            }
+            
+        });
+        this.bottom_measures.forEach((measure) => {
+            if(measure.render_time_sig)
+            {
+                measure.getStave().setKeySignature(this.key_signature);
+            }
+            
+        });
+        this.renderMeasures();
+    }
+
     exportScoreDataObj = (): ScoreData => {
         let scoreData: ScoreData = getDefaultScoreData();
         scoreData.rendererHeight = this.renderer_height;

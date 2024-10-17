@@ -23,7 +23,7 @@ export class Measure {
     private clef: string = "";
     private rest_location: string = "";
     private whole_rest_location: string = "";
-    private render_time_sig = false;
+    public render_time_sig = false;
     private x: number;
     private y: number;
 
