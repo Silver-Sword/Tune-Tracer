@@ -178,6 +178,7 @@ export default function Editor() {
                     DEFAULT_RENDERER_HEIGHT,
                     DEFAULT_RENDERER_WIDTH,
                     "4/4",
+                    "Bb",
                     undefined
                 );
             }
