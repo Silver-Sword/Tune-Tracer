@@ -27,9 +27,56 @@ import {
     Slider,
     rem,
     Center,
+    CopyButton,
+    Menu,
 } from "@mantine/core";
-import { IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconVolume } from "@tabler/icons-react"
+import { IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconVolume, IconCopy, IconCheck } from "@tabler/icons-react"
 import { useDisclosure } from '@mantine/hooks';
+
+// Sharing Modal Component
+const SharingModal: React.FC = () => {
+    // Sharing logic here
+    const [ openShare, { open, close }] = useDisclosure(false);
+    
+    return (
+        <>
+            <Modal opened={openShare} onClose={close} title="Share: [Document Name]" centered>
+                {/* Modal content */}
+                    <TextInput
+                        placeholder='Add collaborators by email here'
+                    ></TextInput>
+                    <Space h="sm" />
+                    <Text>Collaborators</Text>
+                    
+                    <Divider size="sm" my="sm"></Divider>
+                
+                    <Text>Code Access</Text>
+
+                    
+                    <Divider size="sm" my="sm"></Divider>
+
+                    <Text>Link Access</Text>
+                    <></>
+
+                    {/* Replace value with the colab link */}
+                    <CopyButton value="null" timeout={10000}>
+                        {({ copied, copy }) => (
+                            <Button
+                                rightSection={copied ? <IconCheck/> : <IconCopy/>}
+                                variant={copied ? 'filled' : 'outline'}
+                                onClick={copy}
+                            >
+                                {copied ? 'Copied' : 'Copy Link'}
+                            </Button>
+                        )}
+                    </CopyButton>
+            </Modal>
+            <Button onClick={open}>Share</Button>
+                {/* Profile Icon */}
+        </>
+    );
+};
+
 
 const ToolbarHeader: React.FC = () => {
     // Need logic for setting document name
@@ -45,16 +92,15 @@ const ToolbarHeader: React.FC = () => {
         //   audioRef.current.volume = value / 100; // Convert to a scale of 0 to 1 for audio API
         // }
       };
-
-    // Logic for Sharing
-    const [ openShare, { open, close }] = useDisclosure(false);
     
     return (
       <AppShell.Header p="md">
         {/* First layer (top section) */}
-        <Group align="center" style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
+        <Group align="center" style={{ borderBottom: '1px solid #eee', paddingBottom: '7px' }}>
             {/* <Group align="left"> */}
-                <Text size="xl" component="a" href="/storage">Tune Tracer</Text>
+                <Tooltip label="Back to Home">
+                    <Text size="xl" component="a" href="/storage">Tune Tracer</Text>
+                </Tooltip>
                 <TextInput 
                     size="md"
                     placeholder="Enter Document Name"
@@ -63,7 +109,7 @@ const ToolbarHeader: React.FC = () => {
                 />
 
                 {/* PlayBack UI */}
-                <Container fluid style={{ width: '40%' }}>
+                <Container fluid style={{ width: '20%' }}>
                     <Center>
                         <Group> 
                             <ActionIcon>
@@ -92,13 +138,7 @@ const ToolbarHeader: React.FC = () => {
            {/* I'd like to have everything left justified except the sharing button */}
 
             {/* Sharing UI */}
-            <Modal opened={openShare} onClose={close} title="Sharing" centered>
-            {/* Modal content */}
-            Share??
-            </Modal>
-
-            <Button onClick={open}>Share</Button>
-            
+            <SharingModal />
         </Group>
   
         {/* Second layer (middle section) */}
@@ -248,7 +288,7 @@ export default function CompositionTool() {
     return (
         <AppShell
             
-            header={{ height: 175 }}
+            header={{ height: 180 }}
             navbar={{
                 width: 150,
                 breakpoint: "sm",
