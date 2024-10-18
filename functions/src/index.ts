@@ -15,6 +15,8 @@
 // The Cloud Functions for Firebase SDK to setup triggers and logging.
 // const {onValueCreated} = require("firebase-functions/v2/database");
 const functions = require('firebase-functions/v1');
+
+// const adminApp = require('.backend/src/firebaseSecrets');
 // const express = require('express');
 // const {logger} = require("firebase-functions");
 const { signUpAPI, login } = require('./backend/src/endpoints/loginEndpoints');
@@ -24,46 +26,64 @@ const { getTrashedDocumentPreviews } = require('./backend/src/document-utils/doc
 const {updateDocumentEmoji, updateDocumentColor, updateDocumentFavoritedStatus} = require('./backend/src/document-utils/updateUserLevelDocumentProperties');
 const { createWorkspace } = require('./backend/src/endpoints/createEndpoint');
 const { deleteWorkspace } = require('./backend/src/endpoints/deleteEndpoint');
-const { subscribeToDocument } = require('./backend/src/document-utils/realtimeDocumentUpdates');
+// const { subscribeToDocument } = require('./backend/src/document-utils/realtimeDocumentUpdates');
 const { updateUserCursor } = require('./backend/src/document-utils/realtimeOnlineUsers');
-const { updatePartialDocument } = require('./backend/src/endpoints/updateEndpoints');
+// const { updatePartialDocument } = require('./backend/src/endpoints/updateEndpoints');
 const { updateDocumentShareStyle, updateDocumentTrashedStatus } = require('./backend/src/document-utils/updateDocumentMetadata');
 const { shareDocumentWithUser, unshareDocumentWithUser } = require('./backend/src/document-utils/updateDocumentMetadata');
 const { ShareStyle } = require('./lib/src/documentProperties');
 // const { Document } = require('./lib/documentTypes');
 const cors = require('cors');
-
 const corsHandler = cors({ origin: true });
-// import { Request, Response } from 'express';
+// const adminApp = require('./backend/src/firebaseSecrets');
+const { FIREBASE_CONFIG } = require('./backend/src/firebaseSecrets');
+const firebase = require('firebase/compat/app');
 
+const express = require('express');
 
-exports.signUpUser = functions.https.onRequest(async (request, response) => {
-  corsHandler(request, response, async () => {
+// const { Request, Response } = require('express');
+
+exports.signUpUser = functions.https.onRequest( async (req, res) => {
+  corsHandler(req, res, async() => {
   try {
     // Parse user input from the request body
-    const { email, password, displayName } = request.body;
+    // if (!req.body)
+    // {
+    //   throw new Error('Missing any inputs');
+    // }
+
+    const email : string = req.body.email;
+    const password : string = req.body.password;
+    // const displayName : string = req.body.displayName;
 
     // if (!email || !password || !displayName) {
     //   throw new Error('Missing required fields');
     // }
   
     // Call the signUpAPI and await the result
-    const apiResult = await signUpAPI(email, password, displayName);
-  
+    // const apiResult = await signUpAPI(email, password, displayName);
+
+    if (firebase.apps.length === 0) {
+      firebase.initializeApp(FIREBASE_CONFIG);
+    }
+    const apiResult = await firebase.auth().createUserWithEmailAndPassword(email, password);
+
+    
     // Send a successful response back
-    request.status(200).send({ message: 'User signed up successfully ', data: apiResult });
+    // request.status(200).send({ message: 'User signed up successfully ', data: apiResult });
+    res.send({ message: 'User signed in successfully', data: apiResult });
   } catch (error) {
     // Send an error response if something goes wrong
-    request.status(500).send({ message: 'Failed to sign up user: '+ error });
+    res.send({ message: 'Failed to log in user:' + error });
   }
   });
 });
 
-exports.logInUser = functions.https.onRequest(async (request, response) => {
-  corsHandler(request, response, async () => {
+exports.logInUser = functions.https.onRequest(async (request: any, response: any) => {
+  cors(request, response, async () => {
   try {
       // Parse user input from the request body
-      const { email, password } = request.body;
+      const { email, password } = request.data;
   
       // Call the signUpAPI and await the result
       const apiResult = await login(email, password);
@@ -84,7 +104,7 @@ exports.logInUser = functions.https.onRequest(async (request, response) => {
 
 // document preview endpoints
 
-exports.getAllPreviews = functions.https.onRequest(async (request, response) => {
+exports.getAllPreviews = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
         const userId = request.body.userId;
@@ -99,7 +119,7 @@ exports.getAllPreviews = functions.https.onRequest(async (request, response) => 
   });
 });
 
-exports.getOwnedPreviews = functions.https.onRequest(async (request, response) => {
+exports.getOwnedPreviews = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
         const userId = request.body.userId;
@@ -114,7 +134,7 @@ exports.getOwnedPreviews = functions.https.onRequest(async (request, response) =
   });
 });
 
-exports.getSharedPreviews = functions.https.onRequest(async (request, response) => {
+exports.getSharedPreviews = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
         const userId = request.body.userId;
@@ -129,7 +149,7 @@ exports.getSharedPreviews = functions.https.onRequest(async (request, response) 
   });
 });
 
-exports.getTrashedDocumentPreviews = functions.https.onRequest(async (request, response) => {
+exports.getTrashedDocumentPreviews = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
         const userId = request.body.userId;
@@ -146,7 +166,7 @@ exports.getTrashedDocumentPreviews = functions.https.onRequest(async (request, r
 
 // share code endpoints
 
-exports.createShareCode = functions.https.onRequest(async (request, response) => {
+exports.createShareCode = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
         const documentId = request.body.documentId;
@@ -164,7 +184,7 @@ exports.createShareCode = functions.https.onRequest(async (request, response) =>
 // frontend doesnt need - make getDocumentFromShareCode instead
 // getDocumentIdFromShareCode return!!!!
 
-exports.deleteShareCode = functions.https.onRequest(async (request, response) => {
+exports.deleteShareCode = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
         const {documentId, shareCode} = request.body;
@@ -181,7 +201,7 @@ exports.deleteShareCode = functions.https.onRequest(async (request, response) =>
 
 // preview customization endpoints
 
-exports.updateDocumentEmoji = functions.https.onRequest(async (request, response) => {
+exports.updateDocumentEmoji = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
         const {documentId, newEmoji, writerId} = request.body;
@@ -195,7 +215,7 @@ exports.updateDocumentEmoji = functions.https.onRequest(async (request, response
       }
   });
 });
-exports.updateDocumentColor = functions.https.onRequest(async (request, response) => {
+exports.updateDocumentColor = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
 
@@ -211,7 +231,7 @@ exports.updateDocumentColor = functions.https.onRequest(async (request, response
   });
 });
 
-exports.updateDocumentFavoritedStatus = functions.https.onRequest(async (request, response) => {
+exports.updateDocumentFavoritedStatus = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
       const {documentId, isFavorited, writerId} = request.body;
@@ -229,7 +249,7 @@ exports.updateDocumentFavoritedStatus = functions.https.onRequest(async (request
 
 // CRUD operations endpoints
 
-exports.createDocument = functions.https.onRequest(async (request, response) => {
+exports.createDocument = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
       const userId = request.body.userId;
@@ -245,7 +265,7 @@ exports.createDocument = functions.https.onRequest(async (request, response) => 
   });
 });
 
-exports.deleteDocument = functions.https.onRequest(async (request, response) => {
+exports.deleteDocument = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
       const userId = request.body.userId;
@@ -261,7 +281,7 @@ exports.deleteDocument = functions.https.onRequest(async (request, response) => 
   });
 });
 
-exports.deleteDocument = functions.https.onRequest(async (request, response) => {
+exports.deleteDocument = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
       const {documentId, userId} = request.body;
@@ -277,7 +297,7 @@ exports.deleteDocument = functions.https.onRequest(async (request, response) => 
   });
 });
 
-// exports.subscribeToDocument = functions.https.onRequest(async (request, response) => {
+// exports.subscribeToDocument = functions.https.onRequest(async (request: any, response: any) => {
 //   corsHandler(request, response, async () => {
 //     try {
 //       var currentDocument = request.body.currentDocument as Document;
@@ -303,7 +323,7 @@ exports.deleteDocument = functions.https.onRequest(async (request, response) => 
 //   });
 // }); // return!!!
 
-// exports.updatePartialDocument = functions.https.onRequest(async (request, response) => {
+// exports.updatePartialDocument = functions.https.onRequest(async (request: any, response: any) => {
 //   corsHandler(request, response, async () => {
 //     try {
 //       const {documentId, documentChanges} = request.body;
@@ -321,7 +341,7 @@ exports.deleteDocument = functions.https.onRequest(async (request, response) => 
 
 // cursor endpoint 
 
-exports.updateUserCursor = functions.https.onRequest(async (request, response) => {
+exports.updateUserCursor = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
       const {documentId, userId, cursor} = request.body;
@@ -339,7 +359,7 @@ exports.updateUserCursor = functions.https.onRequest(async (request, response) =
 
 // sharing endpoints
 
-exports.updateDocumentShareStyle = functions.https.onRequest(async (request, response) => {
+exports.updateDocumentShareStyle = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
       const {documentId, sharing, writerId} = request.body;
@@ -354,7 +374,7 @@ exports.updateDocumentShareStyle = functions.https.onRequest(async (request, res
   });
 });
 
-exports.shareDocumentWithUser = functions.https.onRequest(async (request, response) => {
+exports.shareDocumentWithUser = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
       const {documentId, userId, sharing, writerId} = request.body;
@@ -369,7 +389,7 @@ exports.shareDocumentWithUser = functions.https.onRequest(async (request, respon
   });
 });
 
-exports.unshareDocumentWithUser = functions.https.onRequest(async (request, response) => {
+exports.unshareDocumentWithUser = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
       const {documentId, userId, writerId} = request.body;
@@ -384,7 +404,7 @@ exports.unshareDocumentWithUser = functions.https.onRequest(async (request, resp
   });
 });
 
-exports.updateDocumentTrashedStatus = functions.https.onRequest(async (request, response) => {
+exports.updateDocumentTrashedStatus = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
       const {documentId, is_trashed, writerId} = request.body;

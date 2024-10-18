@@ -6,7 +6,7 @@ import { IconAt } from '@tabler/icons-react';
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { app } from '../../firebaseSecrets';
 
-const functions = getFunctions(app);
+const functions = getFunctions(app, "us-central1");
 
 
 export default function SignUp() {
@@ -25,9 +25,9 @@ export default function SignUp() {
         // const password2 = password as string;
         try {
             console.log("Got here tho");
-            const signUp = httpsCallable(functions, 'signUpUser');
+            const signUpUser = await httpsCallable(functions, 'signUpUser');
             
-            await signUp({email: email, password: password, displayName: displayName})
+            await signUpUser({email: email as string, password: password as string, displayName: displayName as string})
                 .then((result) => {
                     console.log("GOT HERE");
                     // Read result of the Cloud Function.
