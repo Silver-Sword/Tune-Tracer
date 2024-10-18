@@ -1,5 +1,5 @@
 import firebase from 'firebase/compat/app'
-import { getAuth} from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 
 export async function signUpAPI (email: string, password: string, displayName: string)

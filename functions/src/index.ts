@@ -43,7 +43,7 @@ const firebase = require('firebase/compat/app');
 
 // const { Request, Response } = require('express');
 
-exports.signUpUser = functions.https.onRequest  ( async (req, res) => {
+exports.signUpUser = functions.https.onRequest( async (req, res) => {
   corsHandler(req, res, async() => {
   try {
     // Parse user input from the request body
@@ -56,23 +56,8 @@ exports.signUpUser = functions.https.onRequest  ( async (req, res) => {
     const password : string = req.body.password;
     const displayName : string = req.body.displayName;
 
-    if (!email) {
-      if (!password) {
-        if (!displayName) {
-          throw new Error('Missing all fields');
-        }
-        throw new Error('Missing password and email fields');
-      }
-      if (!displayName) {
-        throw new Error('Missing displayName and email');
-      }
-      throw new Error('Missing email');
-    }
-    if (!password) {
-      if (!displayName) {
-        throw new Error('Missing displayName and password');
-      }
-      throw new Error('Missing password');
+    if (!email || !password || !displayName) {
+      throw new Error('Missing required fields');
     }
 
     // Call the signUpAPI and await the result

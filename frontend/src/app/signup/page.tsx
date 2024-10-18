@@ -21,13 +21,11 @@ export default function SignUp() {
 
     const handleRegister = async () => {
         setLoading(true);
-        setMessage('');
 
         // const email2 = email as string;
         // const displayName2 = displayName as string;
         // const password2 = password as string;
         try {
-            console.log("Got here");
             // const signUpUser = await httpsCallable(functions, 'signUpUser');
             const userInfo =
             {
@@ -70,7 +68,6 @@ export default function SignUp() {
     };
 
     const icon = <IconAt style={{ width: rem(16), height: rem(16) }} />;
-    const [error, setError] = React.useState('');
     const props = {
         width: '50vw',
         height: '100vh',

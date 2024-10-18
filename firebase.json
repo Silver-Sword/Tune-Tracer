@@ -1,28 +1,14 @@
 {
   "hosting": {
-    "public": "frontend/src",
+    "source": "frontend",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "nextApp"
-      }, 
-      {
-        "source": "/workspace/**",
-        "dynamicLinks": true
-      },
-      {
-        "source": "/signUpUser",
-        "function": {
-          "functionId": "signUpUser",
-          "region": "us-central1"
-        }
-      } 
-    ]
+    "frameworksBackend": {
+      "region": "us-central1"
+    }
   },
   "functions": [
     {
@@ -36,7 +22,6 @@
         "*.local"
       ],
       "predeploy": [
-        
         "npm --prefix \"$RESOURCE_DIR\" run build"
       ]
     }
