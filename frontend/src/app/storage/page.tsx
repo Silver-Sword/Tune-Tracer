@@ -7,27 +7,14 @@ import {
   Text,
   Button,
   Card,
-  Grid,
-  Image,
-  Title,
-  Center,
   Group,
   Space,
   TextInput,
-  Skeleton,
-  Code,
-  rem,
   Stack,
   SimpleGrid,
+  rem,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-// import {
-//   createDocument,
-//   getDocument,
-//   updateDocument,
-//   deleteDocument,
-//   doesDocumentExist,
-// } from "../backend/src/document-utils/documentOperations.ts";
 import { IconSearch } from "@tabler/icons-react";
 
 // Define filter labels for the navbar
@@ -71,7 +58,7 @@ const FiltersNavbar: React.FC = () => {
 const SearchBar: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const handleSearch = (event: { currentTarget: { value: any; }; }) => {
+  const handleSearch = (event: { currentTarget: { value: any } }) => {
     const value = event.currentTarget.value;
     setSearchTerm(value);
     console.log(`Searching for: ${value}`);
@@ -99,7 +86,7 @@ const CreateCard: React.FC = () => {
     console.log("Create document clicked");
   };
 
-  const handleInviteCodeChange = (event: { target: { value: React.SetStateAction<string>; }; }) => {
+  const handleInviteCodeChange = (event: { target: { value: React.SetStateAction<string> } }) => {
     setInviteCode(event.target.value);
   };
 
@@ -113,23 +100,26 @@ const CreateCard: React.FC = () => {
       padding="lg"
       radius="md"
       withBorder
-      style={{ maxWidth: 400, margin: "0 auto" }}
+      style={{
+        maxWidth: 400,
+        minHeight: 200, // Ensures minimum height matches DocCard
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between", // Ensure content spreads evenly
+      }}
     >
       <Stack>
         {/* THE HREF IS TEMPORARY FOR DEMO */}
-        <Button component='a' href='/composition_tool' fullWidth onClick={handleCreateDocument}>
+        {/* Probably needs a handleDocumentCreation to push a new document into the user that creates this */}
+        <Button component="a" href="/composition_tool" fullWidth onClick={handleCreateDocument}>
           Create New Document
         </Button>
 
-        <Text size="sm" c="dimmed">
+        <Text size="sm" color="dimmed">
           or
         </Text>
 
-        <TextInput
-          placeholder="Enter invite code"
-          value={inviteCode}
-          onChange={handleInviteCodeChange}
-        />
+        <TextInput placeholder="Enter invite code" value={inviteCode} onChange={handleInviteCodeChange} />
 
         <Button size="sm" color="green" onClick={handleJoinWithCode}>
           Join with Code
@@ -140,15 +130,31 @@ const CreateCard: React.FC = () => {
 };
 
 // DocCard Component
-// const DocCard: React.FC<{ document: Document; toggleFavorite: (id: number)} = () => {
-//   const
-
-//   return (
-//     <Card shadow='md' padding='lg' radius='md' withBorder style={{ maxWidth: 400, margin: '0 auto' }}>
-
-//     </Card>
-//   )
-// }
+const DocCard: React.FC = () => {
+  return (
+    <Card
+      shadow="md"
+      padding="lg"
+      radius="md"
+      withBorder
+      style={{
+        maxWidth: 400,
+        minHeight: 200, // Ensures consistent height with CreateCard
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between", // Ensure consistent spacing
+      }}
+    >
+      <Stack>
+        {/* Truncate title text to prevent overflow */}
+        <Text lineClamp={3}>
+          This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum.
+        </Text>
+        {/* Add more content like document info, actions, etc. */}
+      </Stack>
+    </Card>
+  );
+};
 
 // Main storage component
 export default function Storage() {
@@ -178,7 +184,9 @@ export default function Storage() {
             </Button>
           </Group>
         </AppShell.Header>
+
         <FiltersNavbar />
+
         <Container
           fluid
           size="responsive"
@@ -187,37 +195,28 @@ export default function Storage() {
             display: "flex",
             flexDirection: "column",
             textAlign: "center",
-            background:
-              "linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)",
+            // background: "#f0f8ff",  
+
+            // background: "linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)",
           }}
         >
           <Space h="xl"></Space>
 
-          {/* Grid showing compositions
-              Needs logic to show documents as cards + create always at beginning */}
-          {/* Current cards are place holders to see behaviors */}
+          {/* Updated SimpleGrid with responsive breakpoints */}
           <SimpleGrid
-            cols={{ base: 1, sm: 3, lg: 5 }}
-            spacing={{ base: 10, sm: "xl" }}
+            cols={{ base: 1, sm: 2, md: 3, lg: 5}}
+            spacing={{ base: "lg"}}
           >
             <CreateCard />
             
-          {/* Uncomment to see card behaviors for storage page  
-          
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard /> */}
-
-
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            {/* Uncomment to see card behaviors for storage page */}
             {/* {documents.map((document) =>(
               <DocCard key={document.id} document={document} toggleFavorite={toggleFavorite} />
             ))} */}
