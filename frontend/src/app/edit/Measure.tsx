@@ -48,7 +48,7 @@ export class Measure {
         this.x = x;
         this.y = y;
         this.stave = new this.VF.Stave(x, y, width);
-        
+
         this.timeSignature = timeSignature;
         this.render_time_sig = renderTimeSignature;
 
@@ -478,6 +478,9 @@ export class Measure {
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
             if (staveNote.getAttributes().id === noteId) {
+                if (keys.length === 1 && keys[0] === '') {
+                    keys = staveNote.getKeys();
+                }
                 ticksToFill = staveNote.getTicks().value();
                 found = true;
                 // If its a rest, nice and simple, move to back
