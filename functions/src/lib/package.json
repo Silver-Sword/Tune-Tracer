@@ -1,0 +1,18 @@
+{
+    "name": "lib",
+    "version": "0.0.0",
+    "description": "shared folder for tune tracer frontend and backend projects",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "build": "tsc"
+    },
+    "devDependencies": {
+      "ts-node": "^10.9.2"
+    },
+    "dependencies": {
+      "@types/node": "^22.5.4",
+      "typescript": "^5.5.4",
+      "vexflow": "^4.2.5"
+    }
+  }
+  
