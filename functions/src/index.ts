@@ -9,11 +9,9 @@
 
 "use strict";
 
-
 // [START all]
 // [START import]
 // The Cloud Functions for Firebase SDK to setup triggers and logging.
-// const {onValueCreated} = require("firebase-functions/v2/database");
 const functions = require('firebase-functions/v1');
 const express = require('express');
 const app = express();

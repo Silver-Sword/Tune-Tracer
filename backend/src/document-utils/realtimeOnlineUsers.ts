@@ -1,4 +1,6 @@
-import { OnlineEntity, UpdateType } from "@lib/src/realtimeUserTypes";
+import { OnlineEntity } from "@lib/src/realtimeUserTypes";
+import { UpdateType } from "@lib/src/UpdateType";
+
 import { UserEntity } from "@lib/src/UserEntity";
 
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
@@ -40,9 +42,10 @@ export async function recordOnlineUserUpdatedDocument(
     
     // check if document exists (TO DO: remove the need for this check)
     if(!firebase.doesDocumentExist(documentId)) {
-        throw Error(
+        console.error(
             `Trying to register user ${onlineUser.user_id} to nonexistant document ${documentId}`
         );
+        return;
     }
     
     // update the online user information in firebase

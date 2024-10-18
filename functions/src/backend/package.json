@@ -4,7 +4,7 @@
   "description": "backend components of tune tracer",
   "main": "main.ts",
   "_moduleAliases": {
-    "@lib": "../../../lib"
+    "@lib": "../lib"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

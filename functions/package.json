@@ -9,6 +9,9 @@
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log"
   },
+  "_moduleAliases": {
+    "@lib": "../../../lib"
+  },
   "engines": {
     "node": "18"
   },

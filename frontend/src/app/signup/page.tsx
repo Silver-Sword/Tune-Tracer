@@ -3,13 +3,8 @@
 import React, { useState } from 'react';
 import { Container, Center, Title, TextInput, PasswordInput, Stack, Space, Button, rem, Group } from '@mantine/core';
 import { IconAt } from '@tabler/icons-react';
-import { getFunctions, httpsCallable, httpsCallableFromURL } from "firebase/functions";
-import { app } from '../../firebaseSecrets';
-import firebase from 'firebase/compat/app';
 
 const SIGN_UP_URL = "https://us-central1-l17-tune-tracer.cloudfunctions.net/signUpUser";
-
-const functions = getFunctions(app, "us-central1");
 
 
 export default function SignUp() {
@@ -68,6 +63,8 @@ export default function SignUp() {
     };
 
     const icon = <IconAt style={{ width: rem(16), height: rem(16) }} />;
+    const [error, setError] = useState("");
+    
     const props = {
         width: '50vw',
         height: '100vh',

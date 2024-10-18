@@ -1,7 +1,7 @@
-// import firebase from "firebase/compat/app";
+import firebase from "firebase/compat/app";
 import "firebase/compat/firestore";
 
-import { UserLevelDocumentProperties } from "../../../lib/src/documentProperties";
+import { UserLevelDocumentProperties } from "@lib/src/documentProperties";
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
 
 export async function updateDocumentEmoji(
@@ -50,7 +50,7 @@ async function updateUserLevelDocumentProperty(
     newValue: unknown,
     userId: string
   ) {
-    await getFirebase().updateUserLevelProperty(userId, documentId, property as string, newValue);
+    await getFirebase().updateUserLevelProperty(userId, documentId, property, newValue);
   }
   
 const getFirebase = (): FirebaseWrapper => {

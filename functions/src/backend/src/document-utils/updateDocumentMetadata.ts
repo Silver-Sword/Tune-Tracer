@@ -2,7 +2,7 @@
 import firebase from "firebase/compat/app";
 import "firebase/compat/firestore";
 
-import { ShareStyle } from "../../../lib/src/documentProperties";
+import { ShareStyle } from "@lib/src/documentProperties";
 
 import { processDocumentUpdate } from "./documentOperations";
 import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
@@ -82,7 +82,8 @@ async function updateDocumentMetadata(
   return processDocumentUpdate(
     { [firebaseKey]: newValue },
     documentId,
-    writerId
+    writerId,
+    true
   );
 }
 

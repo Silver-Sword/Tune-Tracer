@@ -1,28 +1,44 @@
+import { getDefaultStaveNoteData, StaveNoteData, printNoteData } from './StaveNoteData';
+
 export function getDefaultMeasureData(): MeasureData
 {
     return {
-        num_beats: 0,
-        beat_value: 0,
-        total_ticks: 0,
-        width: 0,
-        height: 0,
-        x: 0,
+        x: 20,
         y: 0,
-        timeSignature: "",
-        clef: "",
-        rest_location: "",
+        width: 325,
+        timeSignature: "4/4",
+        clef: "treble",
+        renderTimeSignature: false,
+        notes: [getDefaultStaveNoteData(), getDefaultStaveNoteData(), getDefaultStaveNoteData(), getDefaultStaveNoteData()]
     }
 };
 
+export function printMeasureData(measureData: MeasureData): string 
+{
+    let returnString = 
+     `
+     MeasureData:
+        x: ${measureData.x}
+        y: ${measureData.y}
+        width: ${measureData.width}
+        timeSignature: ${measureData.timeSignature},
+        clef: ${measureData.clef},
+        renderTimeSignature: ${measureData.renderTimeSignature},
+        notes:
+    `;
+    let noteString = "";
+    measureData.notes.forEach((note) => {
+        noteString += printNoteData(note) +"\n";
+    })
+    return returnString + noteString;
+};
+
 export type MeasureData = {
-    num_beats: number,
-    beat_value: number,
-    total_ticks: number,
-    width: number,
-    height: number,
     x: number,
     y: number,
+    width: number,
     timeSignature: string,
     clef: string,
-    rest_location: string,
+    renderTimeSignature: boolean,
+    notes: StaveNoteData[]
 };
