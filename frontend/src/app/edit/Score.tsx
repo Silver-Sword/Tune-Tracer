@@ -74,13 +74,13 @@ export class Score {
         }
         else {
             const firstTopMeasure = new Measure(
-                DEFAULT_FIRST_MEASURES_X, 
-                DEFAULT_FIRST_MEASURES_Y, 
+                DEFAULT_FIRST_MEASURES_X,
+                DEFAULT_FIRST_MEASURES_Y,
                 DEFAULT_MEASURE_WIDTH, timeSignature, "treble", true, this.key_signature);
             // X and Y don't matter here because bottom measure always adjusts based on top measure
             const firstBottomMeasure = new Measure(
-                DEFAULT_FIRST_MEASURES_X, 
-                DEFAULT_FIRST_MEASURES_Y + DEFAULT_MEASURE_VERTICAL_SPACING, 
+                DEFAULT_FIRST_MEASURES_X,
+                DEFAULT_FIRST_MEASURES_Y + DEFAULT_MEASURE_VERTICAL_SPACING,
                 DEFAULT_MEASURE_WIDTH, timeSignature, "bass", true, this.key_signature);
             this.top_measures.push(firstTopMeasure);
             this.bottom_measures.push(firstBottomMeasure);
@@ -90,21 +90,32 @@ export class Score {
         this.renderMeasures();
     }
 
+    findNote = (noteId: number): StaveNote | null => {
+        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
+        let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        if (measureIndex == undefined || noteIdStr == undefined || topMeasure == undefined) return null;
+        if (topMeasure) {
+            return this.top_measures[measureIndex].findNote(noteIdStr);
+        }
+        else {
+            return this.bottom_measures[measureIndex].findNote(noteIdStr);
+        }
+    }
+
     setKeySignature = (keySignature: string): void => {
         this.key_signature = keySignature;
         this.top_measures.forEach((measure) => {
-            if(measure.render_time_sig)
-            {
+            if (measure.render_time_sig) {
                 measure.getStave().setKeySignature(this.key_signature);
             }
-            
+
         });
         this.bottom_measures.forEach((measure) => {
-            if(measure.render_time_sig)
-            {
+            if (measure.render_time_sig) {
                 measure.getStave().setKeySignature(this.key_signature);
             }
-            
+
         });
         this.renderMeasures();
     }

@@ -103,6 +103,17 @@ export class Measure {
         this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
     }
 
+    findNote = (noteId: string): StaveNote | null => {
+        let tickables = this.voice1.getTickables();
+        for(let i = 0; i < tickables.length; i++){
+            let staveNote = tickables[0] as StaveNote;
+            if (staveNote.getAttributes().id === noteId) {
+                return staveNote;
+            }
+        }
+        return null;
+    }
+
     exportMeasureDataObj = (): MeasureData => {
         let measureData: MeasureData = getDefaultMeasureData();
         measureData.clef = this.getClef();
@@ -237,7 +248,6 @@ export class Measure {
 
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
-            console.log("staveNote?.getSVGElement()?.getAttribute('id'): " + staveNote?.getSVGElement()?.getAttribute('id'));
             if (staveNote.getAttributes().id === noteId) {
                 let countDots = staveNote.getModifiersByType('Dot').length;
                 let duration = staveNote.getDuration();
