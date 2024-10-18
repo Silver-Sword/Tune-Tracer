@@ -15,6 +15,8 @@
 // The Cloud Functions for Firebase SDK to setup triggers and logging.
 // const {onValueCreated} = require("firebase-functions/v2/database");
 const functions = require('firebase-functions/v1');
+const express = require('express');
+const app = express();
 
 // const adminApp = require('.backend/src/firebaseSecrets');
 // const express = require('express');
@@ -39,11 +41,9 @@ const corsHandler = cors({ origin: true });
 const { FIREBASE_CONFIG } = require('./backend/src/firebaseSecrets');
 const firebase = require('firebase/compat/app');
 
-const express = require('express');
-
 // const { Request, Response } = require('express');
 
-exports.signUpUser = functions.https.onRequest( async (req, res) => {
+exports.signUpUser = functions.https.onRequest  ( async (req, res) => {
   corsHandler(req, res, async() => {
   try {
     // Parse user input from the request body
@@ -54,27 +54,40 @@ exports.signUpUser = functions.https.onRequest( async (req, res) => {
 
     const email : string = req.body.email;
     const password : string = req.body.password;
-    // const displayName : string = req.body.displayName;
+    const displayName : string = req.body.displayName;
 
-    // if (!email || !password || !displayName) {
-    //   throw new Error('Missing required fields');
-    // }
-  
-    // Call the signUpAPI and await the result
-    // const apiResult = await signUpAPI(email, password, displayName);
-
-    if (firebase.apps.length === 0) {
-      firebase.initializeApp(FIREBASE_CONFIG);
+    if (!email) {
+      if (!password) {
+        if (!displayName) {
+          throw new Error('Missing all fields');
+        }
+        throw new Error('Missing password and email fields');
+      }
+      if (!displayName) {
+        throw new Error('Missing displayName and email');
+      }
+      throw new Error('Missing email');
     }
-    const apiResult = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    if (!password) {
+      if (!displayName) {
+        throw new Error('Missing displayName and password');
+      }
+      throw new Error('Missing password');
+    }
 
-    
-    // Send a successful response back
-    // request.status(200).send({ message: 'User signed up successfully ', data: apiResult });
-    res.send({ message: 'User signed in successfully', data: apiResult });
-  } catch (error) {
-    // Send an error response if something goes wrong
-    res.send({ message: 'Failed to log in user:' + error });
+    // Call the signUpAPI and await the result
+    const apiResult = await signUpAPI(email, password, displayName);
+
+    res.send({ 
+      message: 'User signed up successfully', 
+      data: apiResult 
+    });
+    } catch (error) {
+      // Send an error response if something goes wrong
+      console.log('Failed to sign up user:' + (error as Error).message);
+      res.send({ message: 'Failed to sign up user:' + (error as Error).message, 
+      data: (error as Error).message
+    });
   }
   });
 });

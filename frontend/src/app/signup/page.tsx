@@ -3,8 +3,11 @@
 import React, { useState } from 'react';
 import { Container, Center, Title, TextInput, PasswordInput, Stack, Space, Button, rem, Group } from '@mantine/core';
 import { IconAt } from '@tabler/icons-react';
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { getFunctions, httpsCallable, httpsCallableFromURL } from "firebase/functions";
 import { app } from '../../firebaseSecrets';
+import firebase from 'firebase/compat/app';
+
+const SIGN_UP_URL = "https://us-central1-l17-tune-tracer.cloudfunctions.net/signUpUser";
 
 const functions = getFunctions(app, "us-central1");
 
@@ -24,14 +27,27 @@ export default function SignUp() {
         // const displayName2 = displayName as string;
         // const password2 = password as string;
         try {
-            console.log("Got here tho");
-            const signUpUser = await httpsCallable(functions, 'signUpUser');
-            
-            await signUpUser({email: email as string, password: password as string, displayName: displayName as string})
-                .then((result) => {
-                    console.log("GOT HERE");
+            console.log("Got here");
+            // const signUpUser = await httpsCallable(functions, 'signUpUser');
+            const userInfo =
+            {
+                email: email,
+                password: password, 
+                displayName: displayName
+            }
+            const requestOptions = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userInfo),
+            }
+
+            fetch(SIGN_UP_URL, requestOptions)
+               .then((res) => {
+                    console.log(res);
                     // Read result of the Cloud Function.
-                    const data = result.data;
+                    const data = res;
                     console.log("Data:" + data);
                     
                 }).catch((error) => {
