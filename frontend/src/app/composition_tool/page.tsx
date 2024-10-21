@@ -51,7 +51,7 @@ const ToolbarHeader: React.FC = () => {
     
     return (
       <AppShell.Header p="md">
-        {/* First layer (top section) */}
+        {/* First layer (top section) PUT IF STATEMENT HERE IF READ ONLY*/}
         <Group align="center" style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
             {/* <Group align="left"> */}
                 <Text size="xl" component="a" href="/storage">Tune Tracer</Text>
