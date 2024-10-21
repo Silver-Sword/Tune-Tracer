@@ -16,28 +16,29 @@ const functions = require('firebase-functions/v1');
 const express = require('express');
 const app = express();
 
+const { ShareStyle } = require('./lib/src/documentProperties');
+const { Document: LibDocument } = require('./lib/src/Document');
+const { getDefaultCompositionData } = require('./lib/src/CompToolData');
+const { UpdateType } = require('./lib/src/UpdateType');
+const { UserEntity } = require('./lib/src/UserEntity');
+
 // const adminApp = require('.backend/src/firebaseSecrets');
-// const express = require('express');
-// const {logger} = require("firebase-functions");
 const { signUpAPI, login } = require('./backend/src/endpoints/loginEndpoints');
 const { getAllDocuments, getUserDocuments, getSharedDocuments } = require('./backend/src/endpoints/readEndpoints');
+const { createWorkspace } = require('./backend/src/endpoints/createEndpoint');
+const { deleteWorkspace } = require('./backend/src/endpoints/deleteEndpoint');
+const { updateDocumentParts } = require('./backend/src/endpoints/updateEndpoints');
 const { createShareCode, deleteShareCode } = require('./backend/src/document-utils/sharing/sharingUtils');
 const { getTrashedDocumentPreviews } = require('./backend/src/document-utils/documentBatchRead');
 const {updateDocumentEmoji, updateDocumentColor, updateDocumentFavoritedStatus} = require('./backend/src/document-utils/updateUserLevelDocumentProperties');
-const { createWorkspace } = require('./backend/src/endpoints/createEndpoint');
-const { deleteWorkspace } = require('./backend/src/endpoints/deleteEndpoint');
-// const { subscribeToDocument } = require('./backend/src/document-utils/realtimeDocumentUpdates');
+const { subscribeToDocument, OnlineEntity } = require('./backend/src/document-utils/realtimeDocumentUpdates');
 const { updateUserCursor } = require('./backend/src/document-utils/realtimeOnlineUsers');
-// const { updatePartialDocument } = require('./backend/src/endpoints/updateEndpoints');
 const { updateDocumentShareStyle, updateDocumentTrashedStatus } = require('./backend/src/document-utils/updateDocumentMetadata');
 const { shareDocumentWithUser, unshareDocumentWithUser } = require('./backend/src/document-utils/updateDocumentMetadata');
-const { ShareStyle } = require('./lib/src/documentProperties');
-// const { Document } = require('./lib/documentTypes');
+const { updatePartialDocument } = require("./backend/src/document-utils/documentOperations");  
+
 const cors = require('cors');
 const corsHandler = cors({ origin: true });
-// const adminApp = require('./backend/src/firebaseSecrets');
-const { FIREBASE_CONFIG } = require('./backend/src/firebaseSecrets');
-const firebase = require('firebase/compat/app');
 
 // const { Request, Response } = require('express');
 
@@ -249,27 +250,20 @@ exports.createDocument = functions.https.onRequest(async (request: any, response
   corsHandler(request, response, async () => {
     try {
       const userId = request.body.userId;
-      
-      const apiResult = await createWorkspace(userId);
-    
-        // Send a successful response back
-        response.status(200).send({ message: 'Here are all the documents', data: apiResult });
-      } catch (error) {
-        // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to get documents' + error });
-      }
-  });
-});
 
-exports.deleteDocument = functions.https.onRequest(async (request: any, response: any) => {
-  corsHandler(request, response, async () => {
-    try {
-      const userId = request.body.userId;
-      
-      const apiResult = await deleteWorkspace(userId);
-    
+      var document = await createWorkspace(userId);
+
+      await subscribeToDocument(document.document_id, userId, 
+        (updatedDocument: typeof LibDocument) => {
+          document = updatedDocument;
+          response.status(200).send({ message: 'Successfully subscribed to document', data: document });
+      }, 
+      (updateType: typeof UpdateType, onlineEntity: typeof OnlineEntity) => {
+          console.log(`Update type ${updateType} with entity: ${JSON.stringify(onlineEntity)}`);
+      }
+      );
         // Send a successful response back
-        response.status(200).send({ message: 'Here are all the documents', data: apiResult });
+        response.status(200).send({ message: 'Here are all the documents', data: document });
       } catch (error) {
         // Send an error response if something goes wrong
         response.status(500).send({ message: 'Failed to get documents' + error });
@@ -293,47 +287,89 @@ exports.deleteDocument = functions.https.onRequest(async (request: any, response
   });
 });
 
-// exports.subscribeToDocument = functions.https.onRequest(async (request: any, response: any) => {
-//   corsHandler(request, response, async () => {
-//     try {
-//       var currentDocument = request.body.currentDocument as Document;
-//       const {documentId, userId} = request.body;
-      
-//       const apiResult = await subscribeToDocument(documentId, userId, 
-//         (updatedDocument: Document) => {
-//           console.log(`Detected changes in document ${id}`);
-//           console.log(`Updated Document: ${JSON.stringify(updatedDocument)}`);
-//           currentDocument = updatedDocument;
-//       }, 
-//       (updateType: UpdateType, onlineEntity: OnlineEntity) => {
-//           console.log(`Update type ${updateType} with entity: ${JSON.stringify(onlineEntity)}`);
-//       }
-//       );
-    
-//         // Send a successful response back
-//         response.status(200).send({ message: 'Here are all the documents', data: apiResult });
-//       } catch (error) {
-//         // Send an error response if something goes wrong
-//         response.status(500).send({ message: 'Failed to get documents' + error });
-//       }
-//   });
-// }); // return!!!
+exports.subscribeToDocument = functions.https.onRequest(async (request: any, response: any) => {
+  corsHandler(request, response, async () => {
+    try {
+      // var currentDocument = request.body.currentDocument as typeof LibDocument;
+      const documentId = request.body.documentId;
+      const userId = request.body.userId;
+      const user_email = request.body.user_email;
+      const displayName = request.body.displayName;
 
-// exports.updatePartialDocument = functions.https.onRequest(async (request: any, response: any) => {
-//   corsHandler(request, response, async () => {
-//     try {
-//       const {documentId, documentChanges} = request.body;
+      if (!documentId || !userId) 
+      {
+        throw new Error('Missing required fields');
+      }
+      // const email = request.body.email;
+
+      const user = {
+        user_email: user_email as string,
+        user_id: userId as string,
+        display_name: displayName as string
+      };
+
+      const DEFAULT_DOC: typeof LibDocument = {
+        composition: getDefaultCompositionData(),
+        comments: [
+            {
+                comment_id: "",
+                text: "",
+                author_id: "",
+                author_display_name: "",
+                is_reply: false,
+                time_created: 0,
+                last_edit_time: 0,
+            }
+        ],
+        metadata: {
+            document_id: "",
+            owner_id: "",
+            share_link_style: ShareStyle.NONE,
+            share_list: {},
+            time_created: 0,
+            last_edit_time: 0,
+            last_edit_user: "",
+            is_trashed: false,
+        },
+        document_title: "",
+      };
       
-//       const apiResult = await updatePartialDocument(documentId, documentChanges);
+      var currentDocument = DEFAULT_DOC;
+
+      await subscribeToDocument(documentId, user, 
+        (updatedDocument: typeof LibDocument) => {
+          currentDocument = updatedDocument;
+          response.status(200).send({ message: 'Successfully subscribed to document', data: currentDocument });
+      }, 
+      (updateType: typeof UpdateType, onlineEntity: typeof OnlineEntity) => {
+          console.log(`Update type ${updateType} with entity: ${JSON.stringify(onlineEntity)}`);
+      }
+      );
+
+      } catch (error) {
+      response.status(500).send({ message: 'Failed to subscribe to document ', data: (error as Error).message });
+    }
+  });
+}); // return!!!
+
+exports.updatePartialDocument = functions.https.onRequest(async (request: any, response: any) => {
+  corsHandler(request, response, async () => {
+    try {
+      const documentId = request.body.documentId;
+      const documentChanges = request.body.documentChanges;
+      const writerId = request.body.writerId;
+      const documentObject: Record<string,unknown> = JSON.parse(JSON.stringify(documentChanges));
+
+      const apiResult = await updatePartialDocument(documentObject, documentId, writerId);
     
-//         // Send a successful response back
-//         response.status(200).send({ message: 'Here are all the documents', data: apiResult });
-//       } catch (error) {
-//         // Send an error response if something goes wrong
-//         response.status(500).send({ message: 'Failed to get documents' + error });
-//       }
-//   });
-// }); // return!!!
+        // Send a successful response back
+        response.status(200).send({ message: 'Document has been updated', data: apiResult });
+      } catch (error) {
+        // Send an error response if something goes wrong
+        response.status(500).send({ message: 'Failed to update document ' + error });
+      }
+  });
+}); // return!!!
 
 // cursor endpoint 
 
@@ -414,3 +450,8 @@ exports.updateDocumentTrashedStatus = functions.https.onRequest(async (request: 
       }
   });
 });
+
+// createComment
+// deleteComment
+// editCommentText
+// subscribeToComments
