@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from "react";
 import { Title, Center, Group, Container, TextInput, PasswordInput, Button, Space, Stack, rem } from '@mantine/core';
 import { IconAt } from '@tabler/icons-react';
 
 export default function Login() {
+
     const icon = <IconAt style={{ width: rem(16), height: rem(16) }} />;
+
     return (
         <Group style={{
             height: '100vh',
@@ -42,8 +44,8 @@ export default function Login() {
                         label='Password'
                         placeholder='password'
                     />
-                    
-                    <Button component='a' href='/storage'>Login</Button> 
+
+                    <Button component='a' href='/storage'>Login</Button>
                 </Stack>
             </Container>
         </Group>
