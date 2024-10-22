@@ -81,7 +81,6 @@ const SearchBar: React.FC = () => {
 
 // CreateCard component
 
-// TODO: make the join w code button disabled if no code present
 // TODO: make the join w code button responsive if invalid code apart from no code is entered
 const CreateCard: React.FC = () => {
   const [inviteCode, setInviteCode] = useState("");
@@ -131,7 +130,6 @@ const CreateCard: React.FC = () => {
           color="green"
           onClick={handleJoinWithCode}
           disabled={!inviteCode.trim()} // Disable if the invite code is empty or contains only spaces
-          
         >
           Join with Code
         </Button>
