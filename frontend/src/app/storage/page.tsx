@@ -14,6 +14,7 @@ import {
   SimpleGrid,
   rem,
   Modal,
+  Tooltip,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconSearch, IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
@@ -159,6 +160,8 @@ const DocCard: React.FC = () => {
     setDeleteModalOpened(false); // Close modal after deletion
   };
 
+  const documentTitle = "[DOCUMENT NAME] OVERFLOW TEST TEXT: This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum."
+
   return (
     <>
       {/* Delete confirmation modal */}
@@ -231,9 +234,12 @@ const DocCard: React.FC = () => {
           </div>
 
           {/* Truncate title text to prevent overflow */}
-          <Text lineClamp={3}>
-            [DOCUMENT NAME] OVERFLOW TEST TEXT: This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum.
-          </Text>
+          {/* Tooltip for the title to show full text on hover */}
+          <Tooltip label={documentTitle} withArrow>
+            <Text lineClamp={2} style={{ cursor: 'pointer' }}>
+              {documentTitle}
+            </Text>
+          </Tooltip>
           <Text size="md">[Original Author Name]</Text>
           <Text size="sm" c="dimmed">[Date Last Edited: ]</Text>
         </Stack>
