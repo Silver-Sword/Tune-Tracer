@@ -142,6 +142,7 @@ export default function Editor() {
                 y: 0,
                 width: 325,
                 timeSignature: "4/4",
+                keySignature: "G",
                 clef: "treble",
                 renderTimeSignature: true,
                 notes: [

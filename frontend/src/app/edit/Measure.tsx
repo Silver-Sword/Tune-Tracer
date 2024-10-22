@@ -24,8 +24,10 @@ export class Measure {
     private rest_location: string = "";
     private whole_rest_location: string = "";
     public render_time_sig = false;
+    private key_signature: string = "C";
     private x: number;
     private y: number;
+    private width: number;
 
     constructor(
         x: number = 0,
@@ -48,12 +50,15 @@ export class Measure {
         this.x = x;
         this.y = y;
         this.stave = new this.VF.Stave(x, y, width);
+        this.key_signature = keySignature;
+        this.width = this.stave.getWidth();
+
 
         this.timeSignature = timeSignature;
         this.render_time_sig = renderTimeSignature;
 
         if (timeSignature !== "none") {
-            this.processTimeSignature(timeSignature, renderTimeSignature);
+            this.processTimeSignature(timeSignature);
         }
 
         if (clef === "none" || clef === "treble") {
@@ -71,7 +76,7 @@ export class Measure {
         // We don't want to render the clef if its none
         if (renderTimeSignature) {
             this.setClef(clef);
-            this.stave.addKeySignature(keySignature);
+            this.stave.setKeySignature(keySignature);
         }
         this.clef = clef;
 
@@ -103,6 +108,25 @@ export class Measure {
         this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
     }
 
+    renderTimeSignature()
+    {
+        if(this.timeSignature === "none") return;
+        this.stave.setTimeSignature(this.timeSignature);
+    }
+
+    renderSignatures = (render: boolean) => {
+        this.render_time_sig = render; 
+        if(render)
+        {
+            this.setClef(this.clef);
+            this.stave.setKeySignature(this.key_signature);
+        }
+        else
+        {
+            this.stave = new this.VF.Stave(this.x, this.y, this.width);
+        }
+    }
+
     findNote = (noteId: string): StaveNote | null => {
         let tickables = this.voice1.getTickables();
         for(let i = 0; i < tickables.length; i++){
@@ -122,6 +146,8 @@ export class Measure {
         measureData.notes = [];
         measureData.x = this.x;
         measureData.y = this.y;
+        measureData.width = this.stave.getWidth();
+        measureData.keySignature = this.key_signature;
 
         this.voice1.getTickables().forEach((tickable) => {
             let staveNote = tickable as StaveNote;
@@ -141,7 +167,6 @@ export class Measure {
             staveNoteData.dots = dotCount;
             staveNoteData.duration = newDuration;
             staveNoteData.keys = staveNote.getKeys();
-
 
             measureData.notes.push(staveNoteData);
         });
@@ -174,6 +199,10 @@ export class Measure {
         return this.timeSignature;
     }
 
+    getKeySignature = (): string => {
+        return this.key_signature;
+    }
+
     getVoice1 = (): Voice => {
         return this.voice1;
     }
@@ -194,11 +223,8 @@ export class Measure {
         return this.clef;
     }
 
-    processTimeSignature = (timeSignature: string, renderTimeSig: boolean): void => {
+    processTimeSignature = (timeSignature: string): void => {
         if (this.stave) {
-            if (renderTimeSig) {
-                this.stave.setTimeSignature(timeSignature);
-            }
             const [numBeats, beatValue] = timeSignature.split("/").map(Number);
             this.num_beats = numBeats;
             this.beat_value = beatValue;

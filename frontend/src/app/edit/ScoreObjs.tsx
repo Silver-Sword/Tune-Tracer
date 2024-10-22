@@ -18,6 +18,7 @@ function getTopMeasuresObj1(): MeasureData[] {
         y: 0,
         width: 325,
         timeSignature: "4/4",
+        keySignature: "Bb",
         clef: "treble",
         renderTimeSignature: true,
         notes: [
@@ -48,6 +49,7 @@ function getTopMeasuresObj1(): MeasureData[] {
         y: 0,
         width: 325,
         timeSignature: "4/4",
+        keySignature: "Bb",
         clef: "treble",
         renderTimeSignature: false,
         notes: [
@@ -78,6 +80,7 @@ function getTopMeasuresObj1(): MeasureData[] {
         y: 0,
         width: 325,
         timeSignature: "4/4",
+        keySignature: "Bb",
         clef: "treble",
         renderTimeSignature: false,
         notes: [
@@ -108,6 +111,7 @@ function getTopMeasuresObj1(): MeasureData[] {
         y: 200,
         width: 325,
         timeSignature: "4/4",
+        keySignature: "Bb",
         clef: "treble",
         renderTimeSignature: true,
         notes: [
@@ -143,6 +147,7 @@ function getBottomMeasuresObj1(): MeasureData[] {
         y: 0,
         width: 325,
         timeSignature: "4/4",
+        keySignature: "Bb",
         clef: "bass",
         renderTimeSignature: true,
         notes: [
@@ -173,6 +178,7 @@ function getBottomMeasuresObj1(): MeasureData[] {
         y: 0,
         width: 325,
         timeSignature: "4/4",
+        keySignature: "Bb",
         clef: "bass",
         renderTimeSignature: false,
         notes: [
@@ -203,6 +209,7 @@ function getBottomMeasuresObj1(): MeasureData[] {
         y: 0,
         width: 325,
         timeSignature: "4/4",
+        keySignature: "Bb",
         clef: "bass",
         renderTimeSignature: false,
         notes: [
@@ -233,6 +240,7 @@ function getBottomMeasuresObj1(): MeasureData[] {
         y: 0,
         width: 325,
         timeSignature: "4/4",
+        keySignature: "Bb",
         clef: "bass",
         renderTimeSignature: true,
         notes: [
