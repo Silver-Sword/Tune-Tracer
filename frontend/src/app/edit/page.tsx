@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Score } from './Score';
 import { Button } from '@mantine/core';
 import { MeasureData } from '../../../../lib/src/MeasureData'; // edit the tsconfig file to include this import
+import { getScoreObj1} from './ScoreObjs'
 
 
 const DEFAULT_RENDERER_WIDTH = 1000;
@@ -116,10 +117,11 @@ export default function Editor() {
 
     const exportScore = () => {
         if (score.current) {
-            score.current.exportScore();
+            score.current.exportScoreDataObj();
         }
     }
 
+    // Here for reference
     const loadMeasure = () => {
         if (score.current) {
             let measureData: MeasureData = {
@@ -158,7 +160,7 @@ export default function Editor() {
                 ]
 
             }
-            score.current.loadScore(measureData);
+            //score.current.loadScore(measureData);
         }
     }
 
@@ -174,7 +176,9 @@ export default function Editor() {
                 score.current = new Score(
                     notationRef.current,
                     DEFAULT_RENDERER_HEIGHT,
-                    DEFAULT_RENDERER_WIDTH
+                    DEFAULT_RENDERER_WIDTH,
+                    "4/4",
+                    undefined
                 );
             }
         };
