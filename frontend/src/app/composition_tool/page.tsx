@@ -204,19 +204,20 @@ const ToolbarHeader: React.FC = () => {
           data={['Editable', 'Read-Only']}
           value={mode}
           onChange={handleModeChange}
-          placeholder="Select Mode"
+          placeholder="Select Sharing Mode"
           allowDeselect={false}
           withCheckIcon={false}
-          style={{ width: 150, marginLeft: '10px' }}
+          style={{ width: 125, marginLeft: '10px' }}
         />
         <SharingModal />
       </Group>
 
       {/* Second layer (middle section) */}
-      <Group align="center" mt="xs" style={{ paddingBottom: "10px" }}>
+      {/* <Group align="center" mt="xs" style={{ paddingBottom: "10px" }}> */}
         <Tabs defaultValue="notes">
           <Tabs.List>
             <Tabs.Tab value="notes">Notes</Tabs.Tab>
+            <Tabs.Tab value="measure">Measure</Tabs.Tab>
           </Tabs.List>
 
           {/* Notes Tab */}
@@ -246,8 +247,18 @@ const ToolbarHeader: React.FC = () => {
               <Button>Help</Button>
             </Group>
           </Tabs.Panel>
+
+          <Tabs.Panel value="measure">
+            <Space h="xs"></Space>
+            <Group>
+              <Button variant="outline">Add Measure</Button>
+              <Button variant="outline">Delete Measure</Button>
+            </Group>
+          </Tabs.Panel>
+
+          <></>
         </Tabs>
-      </Group>
+      {/* </Group> */}
     </AppShell.Header>
   );
 };
