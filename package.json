@@ -11,7 +11,11 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.6.2"
   },
+  "_moduleAliases": {
+    "@lib": "../../../lib"
+  },
   "dependencies": {
+    "d3": "^7.9.0",
     "firebase": "^10.13.0",
     "firebase-functions": "^6.0.1",
     "methods": "^1.1.2",

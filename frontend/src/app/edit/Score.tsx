@@ -1,5 +1,6 @@
 import { Vex, Formatter, StaveNote, StaveTie, Beam, Tickable } from 'vexflow';
 import { Measure } from './Measure';
+import * as d3 from 'd3';
 import { render } from '@testing-library/react';
 import { MeasureData } from '../../../../lib/src/MeasureData';
 import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
@@ -35,6 +36,7 @@ export class Score {
     private bottom_measures: Measure[] = [];  // both are equal in length
     private ties: Set<number> = new Set<number>();
     private context: RenderContext;
+    private notationRef: HTMLDivElement;
     private total_width: number = 0;
     private renderer_height = 0;
     private renderer_width = 0;
@@ -58,6 +60,7 @@ export class Score {
         this.renderer_height = rendererHeight;
         this.renderer_width = rendererWidth;
         this.key_signature = keySignature;
+        this.notationRef = notationRef;
 
         const renderer = new this.VF.Renderer(notationRef, this.VF.Renderer.Backends.SVG);
         renderer.resize(this.renderer_width, this.renderer_height);
