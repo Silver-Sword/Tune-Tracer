@@ -126,7 +126,13 @@ const CreateCard: React.FC = () => {
 
         <TextInput placeholder="Enter invite code" value={inviteCode} onChange={handleInviteCodeChange} />
 
-        <Button size="sm" color="green" onClick={handleJoinWithCode}>
+        <Button
+          size="sm"
+          color="green"
+          onClick={handleJoinWithCode}
+          disabled={!inviteCode.trim()} // Disable if the invite code is empty or contains only spaces
+          
+        >
           Join with Code
         </Button>
       </Stack>
