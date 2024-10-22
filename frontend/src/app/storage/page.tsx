@@ -15,6 +15,7 @@ import {
   rem,
   Modal,
   Tooltip,
+  Menu,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconSearch, IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
@@ -263,6 +264,10 @@ const DocCard: React.FC = () => {
 
 // Main storage component
 export default function Storage() {
+  const handleLogout = () => {
+    console.log(`Successfully logged out of: ACCOUNTNAME`);
+  }
+
   return (
     <AppShell
       header={{ height: 60 }}
@@ -283,13 +288,27 @@ export default function Storage() {
           <Group justify="space-between" px="lg">
             <Text>Tune Tracer</Text>
             <SearchBar />
-            {/* THIS IS A PLACEHOLDER FOR DEMO AND WILL BE POPULATED WITH USER EMAIL */}
-            <Button component="a" href="/login">
-              user123456789@outlook.example.com
-            </Button> 
+
+            {/* Profile Menu */}
+            <Menu shadow="md" width={200}>
+              <Menu.Target>
+                <Button>[NAME]</Button>                   
+              </Menu.Target> 
+
+              <Menu.Dropdown>
+                <Menu.Label>[USER EMAIL]</Menu.Label>
+                <Menu.Divider />
+                <Menu.Item
+                  color="red"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+
           </Group>
         </AppShell.Header>
-
         <FiltersNavbar />
 
         <Container
@@ -300,9 +319,6 @@ export default function Storage() {
             display: "flex",
             flexDirection: "column",
             textAlign: "center",
-            // background: "#f0f8ff",  
-
-            // background: "linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)",
           }}
         >
           <Space h="xl"></Space>
