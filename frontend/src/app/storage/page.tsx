@@ -160,6 +160,11 @@ const DocCard: React.FC = () => {
     setDeleteModalOpened(false); // Close modal after deletion
   };
 
+  const handleDocumentOpen = () => {
+    console.log('Document opened'); 
+    // Navigates to /document/{documentId}
+  };
+
   const documentTitle = "[DOCUMENT NAME] OVERFLOW TEST TEXT: This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum."
 
   return (
@@ -171,7 +176,7 @@ const DocCard: React.FC = () => {
         title="Confirm Deletion"
         centered
       >
-        <Text>Are you sure you want to delete [DOCUMENT NAME]?</Text>
+        <Text>Are you sure you want to delete {documentTitle}?</Text>
         <Group 
           justify="flex-end" 
           mt="md"
@@ -235,8 +240,12 @@ const DocCard: React.FC = () => {
 
           {/* Truncate title text to prevent overflow */}
           {/* Tooltip for the title to show full text on hover */}
-          <Tooltip label={documentTitle} withArrow>
-            <Text lineClamp={2} style={{ cursor: 'pointer' }}>
+          <Tooltip label={`Open: ${documentTitle}`} withArrow>
+            <Text 
+              lineClamp={2}
+              style={{ cursor: 'pointer'}}
+              onClick={handleDocumentOpen}
+              >
               {documentTitle}
             </Text>
           </Tooltip>
