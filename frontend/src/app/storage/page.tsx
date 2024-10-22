@@ -7,28 +7,18 @@ import {
   Text,
   Button,
   Card,
-  Grid,
-  Image,
-  Title,
-  Center,
   Group,
   Space,
   TextInput,
-  Skeleton,
-  Code,
-  rem,
   Stack,
   SimpleGrid,
+  rem,
+  Modal,
+  Tooltip,
+  Menu,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-// import {
-//   createDocument,
-//   getDocument,
-//   updateDocument,
-//   deleteDocument,
-//   doesDocumentExist,
-// } from "../backend/src/document-utils/documentOperations.ts";
-import { IconSearch } from "@tabler/icons-react";
+import { IconSearch, IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
 
 // Define filter labels for the navbar
 const filterLabels = [
@@ -71,7 +61,7 @@ const FiltersNavbar: React.FC = () => {
 const SearchBar: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const handleSearch = (event: { currentTarget: { value: any; }; }) => {
+  const handleSearch = (event: { currentTarget: { value: any } }) => {
     const value = event.currentTarget.value;
     setSearchTerm(value);
     console.log(`Searching for: ${value}`);
@@ -91,6 +81,8 @@ const SearchBar: React.FC = () => {
 };
 
 // CreateCard component
+
+// TODO: make the join w code button responsive if invalid code apart from no code is entered
 const CreateCard: React.FC = () => {
   const [inviteCode, setInviteCode] = useState("");
   const [opened, { toggle }] = useDisclosure(false);
@@ -99,7 +91,7 @@ const CreateCard: React.FC = () => {
     console.log("Create document clicked");
   };
 
-  const handleInviteCodeChange = (event: { target: { value: React.SetStateAction<string>; }; }) => {
+  const handleInviteCodeChange = (event: { target: { value: React.SetStateAction<string> } }) => {
     setInviteCode(event.target.value);
   };
 
@@ -113,25 +105,33 @@ const CreateCard: React.FC = () => {
       padding="lg"
       radius="md"
       withBorder
-      style={{ maxWidth: 400, margin: "0 auto" }}
+      style={{
+        maxWidth: 375,
+        minHeight: 200, // Ensures minimum height matches DocCard
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between", // Ensure content spreads evenly
+      }}
     >
       <Stack>
         {/* THE HREF IS TEMPORARY FOR DEMO */}
-        <Button component='a' href='/composition_tool' fullWidth onClick={handleCreateDocument}>
-          Create New Document
+        {/* Probably needs a handleDocumentCreation to push a new document into the user that creates this */}
+        <Button component="a" href="/composition_tool" fullWidth onClick={handleCreateDocument}>
+          New Document
         </Button>
 
-        <Text size="sm" c="dimmed">
+        <Text size="sm" color="dimmed">
           or
         </Text>
 
-        <TextInput
-          placeholder="Enter invite code"
-          value={inviteCode}
-          onChange={handleInviteCodeChange}
-        />
+        <TextInput placeholder="Enter invite code" value={inviteCode} onChange={handleInviteCodeChange} />
 
-        <Button size="sm" color="green" onClick={handleJoinWithCode}>
+        <Button
+          size="sm"
+          color="green"
+          onClick={handleJoinWithCode}
+          disabled={!inviteCode.trim()} // Disable if the invite code is empty or contains only spaces
+        >
           Join with Code
         </Button>
       </Stack>
@@ -140,18 +140,134 @@ const CreateCard: React.FC = () => {
 };
 
 // DocCard Component
-// const DocCard: React.FC<{ document: Document; toggleFavorite: (id: number)} = () => {
-//   const
+const DocCard: React.FC = () => {
+  const [isFavorited, setIsFavorited] = useState(false); // State to track if the card is favorited
+  const [deleteModalOpened, setDeleteModalOpened] = useState(false); // State for the delete confirmation modal
 
-//   return (
-//     <Card shadow='md' padding='lg' radius='md' withBorder style={{ maxWidth: 400, margin: '0 auto' }}>
+  // Toggle favorite state
+  const toggleFavorite = () => {
+    setIsFavorited((prev) => !prev);
+  };
 
-//     </Card>
-//   )
-// }
+  // Open delete confirmation modal
+  const openDeleteModal = () => {
+    setDeleteModalOpened(true);
+  };
+
+  // Close delete confirmation modal
+  const closeDeleteModal = () => {
+    setDeleteModalOpened(false);
+  };
+
+  // Handle card deletion (only proceed after confirmation)
+  const handleDelete = () => {
+    console.log('Document deleted');
+    setDeleteModalOpened(false); // Close modal after deletion
+  };
+
+  const handleDocumentOpen = () => {
+    console.log('Document opened'); 
+    // Navigates to /document/{documentId}
+  };
+
+  const documentTitle = "[DOCUMENT NAME] OVERFLOW TEST TEXT: This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum."
+
+  return (
+    <>
+      {/* Delete confirmation modal */}
+      <Modal
+        opened={deleteModalOpened}
+        onClose={closeDeleteModal}
+        title="Confirm Deletion"
+        centered
+      >
+        <Text>Are you sure you want to delete {documentTitle}?</Text>
+        <Group 
+          justify="flex-end" 
+          mt="md"
+          >
+          <Button onClick={closeDeleteModal} variant="default">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="red">
+            Delete
+          </Button>
+        </Group>
+      </Modal>
+
+      {/* Card content */}
+      <Card
+        shadow="md"
+        padding="lg"
+        radius="md"
+        withBorder
+        style={{
+          maxWidth: 375,
+          minHeight: 200, // Ensures consistent height with CreateCard
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between", 
+        }}
+      >
+        <Stack 
+          style={{ paddingTop: '25px' /* Add padding to avoid button overlap */ }}
+          gap="xs"
+          align="flex-start"
+        >
+          {/* Favorite and Delete buttons */}
+          <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: '8px' }}>
+            {/* Favorite button */}
+            <Button
+              variant="subtle"
+              onClick={toggleFavorite}
+              style={{
+                padding: 0, // Remove padding to make the button size smaller
+              }}
+            >
+              {isFavorited ? (
+                <IconHeartFilled size={18} color="red" />
+              ) : (
+                <IconHeart size={18} />
+              )}
+            </Button>
+
+            {/* Delete button */}
+            <Button
+              variant="subtle"
+              onClick={openDeleteModal}
+              style={{
+                padding: 0, // Remove padding to make the button size smaller
+              }}
+            >
+              <IconTrash size={18} />
+            </Button>
+          </div>
+
+          {/* Truncate title text to prevent overflow */}
+          {/* Tooltip for the title to show full text on hover */}
+          <Tooltip label={`Open: ${documentTitle}`} withArrow>
+            <Text 
+              lineClamp={2}
+              style={{ cursor: 'pointer'}}
+              onClick={handleDocumentOpen}
+              >
+              {documentTitle}
+            </Text>
+          </Tooltip>
+          <Text size="md">[Original Author Name]</Text>
+          <Text size="sm" c="dimmed">[Date Last Edited: ]</Text>
+        </Stack>
+      </Card>
+    </>
+  );
+};
 
 // Main storage component
 export default function Storage() {
+  const handleLogout = () => {
+    console.log(`Successfully logged out of: ACCOUNTNAME`);
+  }
+
   return (
     <AppShell
       header={{ height: 60 }}
@@ -172,13 +288,29 @@ export default function Storage() {
           <Group justify="space-between" px="lg">
             <Text>Tune Tracer</Text>
             <SearchBar />
-            {/* THIS IS A PLACEHOLDER FOR DEMO AND WILL BE POPULATED WITH USER EMAIL */}
-            <Button component="a" href="/login">
-              user123456789@outlook.example.com
-            </Button>
+
+            {/* Profile Menu */}
+            <Menu shadow="md" width={200}>
+              <Menu.Target>
+                <Button>[NAME]</Button>                   
+              </Menu.Target> 
+
+              <Menu.Dropdown>
+                <Menu.Label>[USER EMAIL]</Menu.Label>
+                <Menu.Divider />
+                <Menu.Item
+                  color="red"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+
           </Group>
         </AppShell.Header>
         <FiltersNavbar />
+
         <Container
           fluid
           size="responsive"
@@ -187,37 +319,37 @@ export default function Storage() {
             display: "flex",
             flexDirection: "column",
             textAlign: "center",
-            background:
-              "linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)",
           }}
         >
           <Space h="xl"></Space>
 
-          {/* Grid showing compositions
-              Needs logic to show documents as cards + create always at beginning */}
-          {/* Current cards are place holders to see behaviors */}
+          {/* Updated SimpleGrid with responsive breakpoints */}
           <SimpleGrid
-            cols={{ base: 1, sm: 3, lg: 5 }}
-            spacing={{ base: 10, sm: "xl" }}
+            cols={{ base: 1, sm: 2, md: 3, lg: 5}}
+            spacing={{ base: "xl"}}
           >
             <CreateCard />
-            
-          {/* Uncomment to see card behaviors for storage page  
-          
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard />
-            <CreateCard /> */}
 
-
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            <DocCard />
+            {/* Uncomment to see card behaviors for storage page */}
             {/* {documents.map((document) =>(
               <DocCard key={document.id} document={document} toggleFavorite={toggleFavorite} />
             ))} */}

@@ -3,6 +3,7 @@ import { getDefaultMeasureData, MeasureData, printMeasureData } from './MeasureD
 export function getDefaultScoreData(): ScoreData
 {
     return {
+        title: "Untitled",
         topMeasures: [getDefaultMeasureData()],
         bottomMeasures: [getDefaultMeasureData()],
         ties: [],
@@ -25,6 +26,7 @@ export function printScoreData(scoreData: ScoreData): string
     
     return `
     Score Data:
+        title: ${scoreData.title}
         ties: ${[...scoreData.ties]}
         total_width: ${scoreData.totalWidth}
         renderer_height: ${scoreData.rendererHeight}
@@ -37,6 +39,7 @@ export function printScoreData(scoreData: ScoreData): string
 };
 
 export type ScoreData = {
+    title: string,
     topMeasures: MeasureData[],
     bottomMeasures: MeasureData[],
     ties: number[],

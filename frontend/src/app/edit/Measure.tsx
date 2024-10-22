@@ -23,7 +23,7 @@ export class Measure {
     private clef: string = "";
     private rest_location: string = "";
     private whole_rest_location: string = "";
-    private render_time_sig = false;
+    public render_time_sig = false;
     private x: number;
     private y: number;
 
@@ -34,6 +34,7 @@ export class Measure {
         timeSignature: string = "none",
         clef: string = "none",
         renderTimeSignature = false,
+        keySignature: string = "C",
         measureData: MeasureData | undefined = undefined
     ) {
         if (measureData !== undefined) {
@@ -47,6 +48,7 @@ export class Measure {
         this.x = x;
         this.y = y;
         this.stave = new this.VF.Stave(x, y, width);
+
         this.timeSignature = timeSignature;
         this.render_time_sig = renderTimeSignature;
 
@@ -67,17 +69,19 @@ export class Measure {
             console.error("CLEF IS INVALID");
         }
         // We don't want to render the clef if its none
-        if (renderTimeSignature) this.setClef(clef);
+        if (renderTimeSignature) {
+            this.setClef(clef);
+            this.stave.addKeySignature(keySignature);
+        }
         this.clef = clef;
 
 
         let notes: StaveNote[] = [];
         if (measureData !== undefined && measureData.notes.length > 0) {
             measureData.notes.forEach((note) => {
-                let newNote: StaveNote = new this.VF.StaveNote({ clef: this.clef, keys: note.keys, duration: note.duration});
+                let newNote: StaveNote = new this.VF.StaveNote({ clef: this.clef, keys: note.keys, duration: note.duration });
                 notes.push(newNote);
-                if(note.dots > 0)
-                {
+                if (note.dots > 0) {
                     this.createAnyDots(newNote, note.dots);
                 }
                 console.log("New Note Ticks: " + newNote.getTicks().value());
@@ -95,11 +99,22 @@ export class Measure {
         notes.forEach((note) => {
             console.log("needed: " + new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }).getTicks().value());
         })
-        
+
         this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
     }
 
-    exportMeasureDataObj = (): MeasureData =>{
+    findNote = (noteId: string): StaveNote | null => {
+        let tickables = this.voice1.getTickables();
+        for(let i = 0; i < tickables.length; i++){
+            let staveNote = tickables[0] as StaveNote;
+            if (staveNote.getAttributes().id === noteId) {
+                return staveNote;
+            }
+        }
+        return null;
+    }
+
+    exportMeasureDataObj = (): MeasureData => {
         let measureData: MeasureData = getDefaultMeasureData();
         measureData.clef = this.getClef();
         measureData.renderTimeSignature = this.render_time_sig;
@@ -107,11 +122,11 @@ export class Measure {
         measureData.notes = [];
         measureData.x = this.x;
         measureData.y = this.y;
-        
+
         this.voice1.getTickables().forEach((tickable) => {
             let staveNote = tickable as StaveNote;
             let staveNoteData: StaveNoteData = getDefaultStaveNoteData();
-            
+
 
             // getDuration doesn't include dots, so we have to manually do it ourselves, yay!
             let newDuration = staveNote.getDuration();
@@ -121,13 +136,13 @@ export class Measure {
             const dotCount = modifiers.filter(modifier => modifier.getCategory() === 'Dot').length;
             if (dotCount > 0) newDuration += "d";
             if (dotCount > 1) newDuration += "d";
-            if(staveNote.isRest())newDuration += "r";
+            if (staveNote.isRest()) newDuration += "r";
 
             staveNoteData.dots = dotCount;
             staveNoteData.duration = newDuration;
             staveNoteData.keys = staveNote.getKeys();
 
-            
+
             measureData.notes.push(staveNoteData);
         });
         //console.log("Measure Data: " + printMeasureData(measureData));
@@ -233,7 +248,6 @@ export class Measure {
 
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
-            console.log("staveNote?.getSVGElement()?.getAttribute('id'): " + staveNote?.getSVGElement()?.getAttribute('id'));
             if (staveNote.getAttributes().id === noteId) {
                 let countDots = staveNote.getModifiersByType('Dot').length;
                 let duration = staveNote.getDuration();
@@ -474,6 +488,9 @@ export class Measure {
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
             if (staveNote.getAttributes().id === noteId) {
+                if (keys.length === 1 && keys[0] === '') {
+                    keys = staveNote.getKeys();
+                }
                 ticksToFill = staveNote.getTicks().value();
                 found = true;
                 // If its a rest, nice and simple, move to back

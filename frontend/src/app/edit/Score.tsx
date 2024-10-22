@@ -39,12 +39,14 @@ export class Score {
     private renderer_height = 0;
     private renderer_width = 0;
     private ID_to_MeasureIndexID: Map<number, { measureIndex: number, noteId: string, topMeasure: boolean }> = new Map();
-
+    private key_signature = "C";
+    private title: string = "Untitled";
     constructor(
         notationRef: HTMLDivElement,
         rendererHeight: number,
         rendererWidth: number,
         timeSignature: string = "4/4",
+        keySignature: string = "C",
         scoreData?: ScoreData
     ) {
         this.total_width += DEFAULT_MEASURE_WIDTH + DEFAULT_FIRST_MEASURES_X;
@@ -56,6 +58,7 @@ export class Score {
 
         this.renderer_height = rendererHeight;
         this.renderer_width = rendererWidth;
+        this.key_signature = keySignature;
 
         const renderer = new this.VF.Renderer(notationRef, this.VF.Renderer.Backends.SVG);
         renderer.resize(this.renderer_width, this.renderer_height);
@@ -63,22 +66,62 @@ export class Score {
         if (scoreData !== undefined) {
             this.ties = new Set<number>(scoreData.ties);
             scoreData.topMeasures.forEach((topMeasure) => {
-                this.top_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, topMeasure));
+                this.top_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, undefined, topMeasure));
             });
 
             scoreData.bottomMeasures.forEach((bottomMeasure) => {
-                this.bottom_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, bottomMeasure));
+                this.bottom_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, undefined, bottomMeasure));
             });
         }
         else {
-            const firstTopMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y, DEFAULT_MEASURE_WIDTH, timeSignature, "treble", true);
+            const firstTopMeasure = new Measure(
+                DEFAULT_FIRST_MEASURES_X,
+                DEFAULT_FIRST_MEASURES_Y,
+                DEFAULT_MEASURE_WIDTH, timeSignature, "treble", true, this.key_signature);
             // X and Y don't matter here because bottom measure always adjusts based on top measure
-            const firstBottomMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y + DEFAULT_MEASURE_VERTICAL_SPACING, DEFAULT_MEASURE_WIDTH, timeSignature, "bass", true);
+            const firstBottomMeasure = new Measure(
+                DEFAULT_FIRST_MEASURES_X,
+                DEFAULT_FIRST_MEASURES_Y + DEFAULT_MEASURE_VERTICAL_SPACING,
+                DEFAULT_MEASURE_WIDTH, timeSignature, "bass", true, this.key_signature);
             this.top_measures.push(firstTopMeasure);
             this.bottom_measures.push(firstBottomMeasure);
         }
 
 
+        this.renderMeasures();
+    }
+    setTitle = (title: string) =>
+    {
+        this.title = title;
+    }
+
+    findNote = (noteId: number): StaveNote | null => {
+        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
+        let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        if (measureIndex == undefined || noteIdStr == undefined || topMeasure == undefined) return null;
+        if (topMeasure) {
+            return this.top_measures[measureIndex].findNote(noteIdStr);
+        }
+        else {
+            return this.bottom_measures[measureIndex].findNote(noteIdStr);
+        }
+    }
+
+    setKeySignature = (keySignature: string): void => {
+        this.key_signature = keySignature;
+        this.top_measures.forEach((measure) => {
+            if (measure.render_time_sig) {
+                measure.getStave().setKeySignature(this.key_signature);
+            }
+
+        });
+        this.bottom_measures.forEach((measure) => {
+            if (measure.render_time_sig) {
+                measure.getStave().setKeySignature(this.key_signature);
+            }
+
+        });
         this.renderMeasures();
     }
 
@@ -101,6 +144,7 @@ export class Score {
 
         scoreData.topMeasures = topMeasures;
         scoreData.bottomMeasures = bottomMeasures;
+        scoreData.title = this.title;
 
         console.log(printScoreData(scoreData));
         return scoreData;
@@ -262,8 +306,8 @@ export class Score {
 
         this.total_width += DEFAULT_MEASURE_WIDTH;
 
-        const newTopMeasure = new Measure(topX, topY, DEFAULT_MEASURE_WIDTH, topTimeSignature, topClef, renderTopTimeSig);
-        const newBottomMeasure = new Measure(bottomX, bottomY, DEFAULT_MEASURE_WIDTH, bottomTimeSignature, bottomClef, renderBottomTimeSig);
+        const newTopMeasure = new Measure(topX, topY, DEFAULT_MEASURE_WIDTH, topTimeSignature, topClef, renderTopTimeSig, this.key_signature);
+        const newBottomMeasure = new Measure(bottomX, bottomY, DEFAULT_MEASURE_WIDTH, bottomTimeSignature, bottomClef, renderBottomTimeSig, this.key_signature);
         this.top_measures.push(newTopMeasure);
         this.bottom_measures.push(newBottomMeasure);
         this.renderMeasures();
