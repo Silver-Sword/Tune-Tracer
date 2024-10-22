@@ -40,6 +40,7 @@ export class Score {
     private renderer_width = 0;
     private ID_to_MeasureIndexID: Map<number, { measureIndex: number, noteId: string, topMeasure: boolean }> = new Map();
     private key_signature = "C";
+    private title: string = "Untitled";
     constructor(
         notationRef: HTMLDivElement,
         rendererHeight: number,
@@ -88,6 +89,10 @@ export class Score {
 
 
         this.renderMeasures();
+    }
+    setTitle = (title: string) =>
+    {
+        this.title = title;
     }
 
     findNote = (noteId: number): StaveNote | null => {
@@ -139,6 +144,7 @@ export class Score {
 
         scoreData.topMeasures = topMeasures;
         scoreData.bottomMeasures = bottomMeasures;
+        scoreData.title = this.title;
 
         console.log(printScoreData(scoreData));
         return scoreData;
