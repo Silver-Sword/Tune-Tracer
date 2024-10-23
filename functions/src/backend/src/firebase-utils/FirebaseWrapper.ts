@@ -14,7 +14,8 @@ import {
     DOCUMENT_DATABASE_NAME, 
     FIREBASE_CONFIG, 
     SHARE_CODE_DATABASE,
-    USER_DATABASE_NAME
+    USER_DATABASE_NAME,
+    USER_MAP,
 } from '../firebaseSecrets'
 import { ShareCodeEntity } from '../document-utils/sharing/ShareCodeEntity';
 
@@ -128,12 +129,11 @@ export default class FirebaseWrapper
             userEntity.display_name = displayName;
             userEntity.user_id = user.uid;
 
-            await this.setUser(userEntity);
+            await this.addUserToFirestore(userEntity);
 
         } catch(error) {
-            // if the account creation failed, make sure to remove all updates made to Firestore
+            // if the account creation failed, make sure to remove auth updates
             if(user) {
-                await this.deleteDataFromFirestore(USER_DATABASE_NAME, user.uid);
                 await user?.delete()
                             .catch( (deletionError) => {
                                 console.log(
@@ -236,6 +236,22 @@ export default class FirebaseWrapper
     {
         await this.setDataInFirestore(USER_DATABASE_NAME, userEntity.user_id, userEntity);
     }
+
+    public async addUserToFirestore(userEntity: UserEntity)
+    {
+        await this.setUser(userEntity);
+        await this.setDataInFirestore(USER_MAP, userEntity.user_email, {"user_id": userEntity.user_id});
+    }
+
+    public async getUserIdFromEmail(userEmail: string): Promise<string> {
+        const userMap = await this.getDataFromFirestore<{ user_id: string }>(USER_MAP, userEmail);
+        if(!userMap)
+        {
+            throw Error(`Could not find user with email ${userEmail}`);
+        }
+        return userMap.user_id;
+    }
+
     // gets the list of document ids of documents owned (if isOwned is true) or shared (is isOwned is false)
     // by a particular user
     public async getUserDocuments(userId: string, accessTypes: AccessType[]): Promise<string[]>
