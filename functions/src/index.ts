@@ -87,10 +87,11 @@ exports.signUpUser = functions.https.onRequest( async (req, res) => {
 });
 
 exports.logInUser = functions.https.onRequest(async (request: any, response: any) => {
-  cors(request, response, async () => {
+  corsHandler(request, response, async () => {
   try {
       // Parse user input from the request body
-      const { email, password } = request.data;
+      const email = request.body.email; 
+      const password  = request.body.password;
   
       // Call the signUpAPI and await the result
       const apiResult = await login(email, password);
@@ -99,9 +100,16 @@ exports.logInUser = functions.https.onRequest(async (request: any, response: any
       {
         throw new Error("Could not identify user");
       }
+
+      const user: typeof UserEntity = {
+        user_id: apiResult.uid,
+        user_email: apiResult.email,
+        display_name: apiResult.displayName,
+        account_creation_time: apiResult.createdAt
+      };
   
       // Send a successful response back
-      response.status(200).send({ message: 'User signed in successfully', data: apiResult });
+      response.status(200).send({ message: 'User signed in successfully', data: user });
     } catch (error) {
       // Send an error response if something goes wrong
       response.status(500).send({ message: 'Failed to log in user:' + error });
@@ -276,27 +284,11 @@ exports.createDocument = functions.https.onRequest(async (request: any, response
   corsHandler(request, response, async () => {
     try {
       const userId = request.body.userId;
-      const user_email = request.body.user_email;
-      const displayName = request.body.displayName;
 
-      const user = {
-        user_email: user_email as string,
-        user_id: userId as string,
-        display_name: displayName as string
-      };
+      const currentDocument = await createDocument(userId);
 
-      var currentDocument = await createDocument(userId);
-      const documentId = currentDocument.metadata.document_id;
-
-      await subscribeToDocument(documentId, user, 
-        (updatedDocument: typeof LibDocument) => {
-          currentDocument = updatedDocument;
-          response.status(200).send({ message: 'Successfully subscribed to document', data: currentDocument });
-      }, 
-      (updateType: typeof UpdateType, onlineEntity: typeof OnlineEntity) => {
-          console.log(`Update type ${updateType} with entity: ${JSON.stringify(onlineEntity)}`);
-      }
-      );
+      response.status(200).send({ message: 'Successfully subscribed to document', data: currentDocument });
+      
         // Send a successful response back
       } catch (error) {
         // Send an error response if something goes wrong
@@ -450,7 +442,7 @@ exports.shareDocumentWithUser = functions.https.onRequest(async (request: any, r
       
       await shareDocumentWithUser(documentId, userId, sharing, writerId);
         // Send a successful response back
-        response.status(200).send({ message: 'Successfully shared document with ' + userId ' with ' + ShareStyle[sharing] + ' permissions.', data: true });
+        response.status(200).send({ message: 'Successfully shared document with ' + userId + ' with ' + ShareStyle[sharing] + ' permissions.', data: true });
       } catch (error) {
         // Send an error response if something goes wrong
         response.status(500).send({ message: 'Failed to update document sharing style with user. ', data: error as Error });
