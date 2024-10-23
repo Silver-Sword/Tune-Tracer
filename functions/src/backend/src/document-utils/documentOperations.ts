@@ -5,6 +5,7 @@ import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';
 import { recordOnlineUserUpdatedDocument } from "./realtimeOnlineUsers";
 import { getDefaultCompositionData } from '@lib/src/CompToolData';
+import { getUserAccessLevel } from 'src/security-utils/getUserAccessLevel';
 
 // NOTE: UPDATE functions MODIFY the document that is passed to it
 
@@ -116,28 +117,26 @@ export async function getDocument(documentId: string, readerId: string): Promise
     return firebaseDocument;
 }
 
+// NOTE: This function does not check if the user deleting the document is the owner
 // deletes the document associated with the given document id
-// will only delete the document if it exists and the user that is attempting the delete is the creator
-// writerId is the user id of the user doing the deletion
-export async function deleteDocument(document: Document, writerId: string): Promise<void>
+// will only delete the document if it exists and the user that is attempting the delete has write access
+// userId is the user id of the user doing the deletion
+export async function deleteDocument(documentId: string, userId: string): Promise<void>
 {
     const firebase = getFirebase();
 
-    if(writerId !== document.metadata.owner_id)
-    {
-        throw Error(`User ${writerId} is trying to delete document ${document.metadata.document_id}, which is owned by another user`);
+    if((await getUserAccessLevel(userId, documentId)) !== ShareStyle.WRITE) {
+        throw Error(`User ${userId} is trying to delete document ${documentId}, but does not have write access`);
     }
 
-    const documentId = document.metadata.document_id;
-    const userId = document.metadata.owner_id;
-
+    const metadata = await firebase.getDocumentMetadata(documentId); 
     await firebase.deleteDocument(documentId);
     
     // delete the document from the user owned documents
     await firebase.deleteUserDocument(userId, documentId, "owned");
 
     // delete the document from the user shared documents
-    for(const sharedUser of Object.keys(document.metadata.share_list))
+    for(const sharedUser of Object.keys(metadata?.share_list ?? []))
     {
         await firebase.deleteUserDocument(sharedUser, documentId, "shared");
     }
