@@ -4,7 +4,7 @@ import { Document } from '@lib/src/Document';
 import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';
 import { recordOnlineUserUpdatedDocument } from "./realtimeOnlineUsers";
-import { getDefaultCompositionData } from '@lib/src/CompToolData';
+import { getDefaultScoreData } from '@lib/src/ScoreData';
 import { getUserAccessLevel } from 'src/security-utils/getUserAccessLevel';
 
 // NOTE: UPDATE functions MODIFY the document that is passed to it
@@ -29,7 +29,7 @@ export async function createDocument(writerId: string): Promise<Document>
     };
     const document : Document = {
         document_title: "",
-        composition: getDefaultCompositionData(),
+        score: getDefaultScoreData(),
         comments: [],
         metadata: metadata
     };
