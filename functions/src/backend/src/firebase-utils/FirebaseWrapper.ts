@@ -23,6 +23,12 @@ type PartialWithRequiredAndWithout<T, K extends keyof T, U extends keyof T> = Pa
 
 const COMMENT_DATABASE_NAME = "Comments_Collection";
 
+export function getFirebase(): FirebaseWrapper {
+    const fb = new FirebaseWrapper();
+    fb.initApp();
+    return fb;
+}
+
 /*
     Wrapper class for doing firebase stuff
     Remember to call .initApp() before doing anything

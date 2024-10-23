@@ -1,6 +1,6 @@
 import { DocumentPreview, UserLevelDocumentProperties } from "@lib/src/documentProperties";
 
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
+import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 import { AccessType } from "@lib/src/UserEntity";
 import { getDocument } from "./documentOperations";
 
@@ -41,8 +41,7 @@ async function getDocumentPreviewsByUser(
     userId: string,
     accessTypes: AccessType[]
 ): Promise<DocumentPreview[]> {
-  const firebase = new FirebaseWrapper();
-  firebase.initApp();
+  const firebase = getFirebase();
   const documentIdList = await getDocumentIdsByUser(userId, accessTypes);
   const user = await firebase.getUser(userId);
 
@@ -99,8 +98,7 @@ async function getDocumentIdsByUser(
   userId: string,
   accessTypes: AccessType[]
 ): Promise<string[]> {
-  const firebase = new FirebaseWrapper();
-  firebase.initApp();
+  const firebase = getFirebase();
   return await firebase.getUserDocuments(userId, accessTypes);
 }
 
@@ -121,10 +119,3 @@ export async function getSingleDocumentPreview(
         ...userLevel,
     };
 }
-
-const getFirebase = (): FirebaseWrapper => {
-    const firebase = new FirebaseWrapper();
-    firebase.initApp();
-    return firebase;
-  };
-  

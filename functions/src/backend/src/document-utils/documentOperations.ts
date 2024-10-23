@@ -1,7 +1,7 @@
 import { DocumentMetadata, DocumentPreview, ShareStyle } from '@lib/src/documentProperties';
 import { Document } from '@lib/src/Document';
 
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
+import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';
 import { recordOnlineUserUpdatedDocument } from "./realtimeOnlineUsers";
 import { getDefaultCompositionData } from '@lib/src/CompToolData';
@@ -12,8 +12,7 @@ import { getDefaultCompositionData } from '@lib/src/CompToolData';
 // promise containing a default (blank) document as a Document
 export async function createDocument(writerId: string): Promise<Document>
 {
-    const firebase: FirebaseWrapper = new FirebaseWrapper();
-    firebase.initApp();
+    const firebase = getFirebase();
     const documentId = await firebase.createDocument();
 
     const currentTime = Date.now();
@@ -47,8 +46,7 @@ export async function processDocumentUpdate(
     writerId: string,
     requireAuthorStatus: boolean = false,
 ): Promise<boolean> {
-    const firebase: FirebaseWrapper = new FirebaseWrapper();
-    firebase.initApp();
+    const firebase = getFirebase();
 
     // check that the document exists and the user can write to it
     const initialDocument = await firebase.getDocument(documentId);
@@ -98,8 +96,7 @@ export async function updatePartialDocument(
 // readerId is the user id of the user attempting to get the document
 export async function getDocument(documentId: string, readerId: string): Promise<Document>
 {
-    const firebase: FirebaseWrapper = new FirebaseWrapper();
-    firebase.initApp();
+    const firebase = getFirebase();
 
     const firebaseDocument = await firebase.getDocument(documentId);
     if(firebaseDocument === null)
@@ -124,8 +121,7 @@ export async function getDocument(documentId: string, readerId: string): Promise
 // writerId is the user id of the user doing the deletion
 export async function deleteDocument(document: Document, writerId: string): Promise<void>
 {
-    const firebase: FirebaseWrapper = new FirebaseWrapper();
-    firebase.initApp();
+    const firebase = getFirebase();
 
     if(writerId !== document.metadata.owner_id)
     {
@@ -151,7 +147,6 @@ export async function deleteDocument(document: Document, writerId: string): Prom
 // returns a promise containing true iff the document exists in a valid storage format
 export async function doesDocumentExist(documentId: string): Promise<boolean>
 {
-    const firebase: FirebaseWrapper = new FirebaseWrapper();
-    firebase.initApp();
+    const firebase = getFirebase();
     return (await firebase.doesDocumentExist(documentId));
 }
