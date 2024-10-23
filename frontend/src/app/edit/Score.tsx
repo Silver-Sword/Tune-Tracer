@@ -161,6 +161,8 @@ export class Score {
         if (newNote == null) {
             newNote = this.bottom_measures[measureIndex].addNote(keys, noteIdStr)
         }
+        // Voice changes, so widths need to be recalculated
+        this.calculateWidths();
         this.renderMeasures();
         newNote?.getSVGElement()?.setAttribute('id', "1420");
     }
@@ -183,6 +185,8 @@ export class Score {
         if (newNote.found === false) {
             newNote = this.bottom_measures[measureIndex].removeNote(keys, noteIdStr)
         }
+        // Voice changes, so widths need to be recalculated
+        this.calculateWidths();
         this.renderMeasures();
     }
 
@@ -257,53 +261,30 @@ export class Score {
             // Remove ties associated with noteId
             if (this.ties.has(noteId)) this.ties.delete(noteId);
         }
+        // Voice changes so recalculate widths
+        this.calculateWidths();
         this.renderMeasures();
     }
 
     addMeasure = (): void => {
-        // First get all the information from the previous measure as a baseline
+        // First get all the necessary information from the previous measure as a baseline
         let topPrevMeasure: Measure = this.top_measures[this.top_measures.length - 1];
-        let topPrevStave = topPrevMeasure.getStave();
-        // Staves should always be the same width so this is declared once using top width
-        let width = topPrevStave.getWidth();
-        let topX = topPrevStave.getX() + width;
-        let topY = topPrevStave.getY();
+
         let topTimeSignature = topPrevMeasure.getTimeSignature();
         let topKeySignature = topPrevMeasure.getKeySignature();
         let topClef = topPrevMeasure.getClef();
         let renderTopTimeSig = false;
 
         let bottomPrevMeasure: Measure = this.bottom_measures[this.bottom_measures.length - 1];
-        let bottomPrevStave = bottomPrevMeasure.getStave();
-        let bottomX = bottomPrevStave.getX() + width;
-        let bottomY = bottomPrevStave.getY();
+
         let bottomTimeSignature = bottomPrevMeasure.getTimeSignature();
         let bottomKeySignature = bottomPrevMeasure.getKeySignature();
         let bottomClef = bottomPrevMeasure.getClef();
         let renderBottomTimeSig = false;
 
-        // If this next new measure will go out of bounds...
-        if (this.total_width + DEFAULT_MEASURE_WIDTH > this.renderer_width) {
-            // Then put the next measures on the next 'measure line' 
-
-            topX = DEFAULT_FIRST_MEASURES_X;
-            // Render Measures will take care of properly pushing this down 
-            // based on the bottom measure's bounding box when formatted to Stave
-            topY += DEFAULT_SPACING_BETWEEN_LINES_OF_MEASURES;
-            renderTopTimeSig = true;
-
-            bottomX = DEFAULT_FIRST_MEASURES_X;
-            bottomY = topY + DEFAULT_MEASURE_VERTICAL_SPACING;
-            renderBottomTimeSig = true;
-
-            this.total_width = DEFAULT_FIRST_MEASURES_X;
-
-        }
-
-        this.total_width += DEFAULT_MEASURE_WIDTH;
-
-        const newTopMeasure = new Measure(topX, topY, DEFAULT_MEASURE_WIDTH, topTimeSignature, topClef, renderTopTimeSig, topKeySignature);
-        const newBottomMeasure = new Measure(bottomX, bottomY, DEFAULT_MEASURE_WIDTH, bottomTimeSignature, bottomClef, renderBottomTimeSig, bottomKeySignature);
+        // We don't care about the X and Y here anymore. The render measure line will be the only source of truth for X and Y coordinates
+        const newTopMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y, DEFAULT_MEASURE_WIDTH, topTimeSignature, topClef, renderTopTimeSig, topKeySignature);
+        const newBottomMeasure = new Measure(DEFAULT_FIRST_MEASURES_X, DEFAULT_FIRST_MEASURES_Y, DEFAULT_MEASURE_WIDTH, bottomTimeSignature, bottomClef, renderBottomTimeSig, bottomKeySignature);
         this.top_measures.push(newTopMeasure);
         this.bottom_measures.push(newBottomMeasure);
         this.renderMeasures();
@@ -370,7 +351,8 @@ export class Score {
         }
     }
 
-    private calculateMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], ceiling: number): number => {
+    private calculateMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], ceiling: number, currentWidth: number): number => {
+
         // We want to know the largest bounding box in this line of measures
         // We'll use its coordinates to space all measures in the line
         let largestTopMeasureBoundingBoxY: number = 0;
@@ -423,6 +405,10 @@ export class Score {
             }
 
         }
+        // First, we'll position the Y value of the top measure
+        // We'll need the different between the top of the stave, and the top of the bounding box
+        // 
+
         // Figure out the Y values for the Top measure and bottom measure
         // For now, we'll just figure out deltas for the measures
 
@@ -586,6 +572,97 @@ export class Score {
         return this.createTies(notePair.firstNote, notePair.secondNote);
     }
 
+    private calculateWidths = (): void => {
+        this.total_width = DEFAULT_FIRST_MEASURES_X;
+        this.formatter.preFormat();
+        let topY = DEFAULT_FIRST_MEASURES_Y;
+        let currentX = DEFAULT_FIRST_MEASURES_X;
+        let bottomY = DEFAULT_FIRST_MEASURES_Y;
+
+        for (let i = 0; i < this.top_measures.length; i++) {
+            let topMeasure = this.top_measures[i];
+            let topStave = topMeasure.getStave();
+            let topVoice1 = topMeasure.getVoice1();
+
+            let bottomMeasure = this.bottom_measures[i];
+            let bottomStave = bottomMeasure.getStave();
+            let bottomVoice1 = bottomMeasure.getVoice1();
+
+            // Set the X and Y. This helps cascade width changes that cause both x and y to change for measures
+            if(i > 0)
+            {
+                let prevTopStave = this.top_measures[i - 1].getStave();
+                // X should be same for both measures
+                currentX = prevTopStave.getX() + prevTopStave.getWidth();
+                topY = this.top_measures[i - 1].getStave().getY();
+                bottomY = this. bottom_measures[i - 1].getStave().getY();
+            }
+            this.top_measures[i].getStave().setX(currentX);
+            this.bottom_measures[i].getStave().setX(currentX);
+            this.top_measures[i].getStave().setY(topY);
+            this.bottom_measures[i].getStave().setY(bottomY);
+
+            this.formatter.formatToStave([topVoice1], topStave);
+            this.formatter.formatToStave([bottomVoice1], bottomStave);
+            
+            // Join Voices for calculation
+            this.formatter.joinVoices([topVoice1]);
+            this.formatter.joinVoices([bottomVoice1]);
+            // Calculate the minimum required width for the top notes
+            const minTopStaveWidth = this.formatter.preCalculateMinTotalWidth([topMeasure.getVoice1()]);
+            const topModifiers = topStave.getModifiers();
+            const topModifierWidths = topModifiers.reduce((total, modifier) => total + modifier.getWidth(), 0);
+            const topWidth = minTopStaveWidth + topModifierWidths;
+            // Calculate the minimum required width for the bottom notes
+            const minBottomStaveWidth = this.formatter.preCalculateMinTotalWidth([bottomMeasure.getVoice1()]);
+            const bottomModifiers = bottomStave.getModifiers();
+            const bottomModifierWidths = bottomModifiers.reduce((total, modifier) => total + modifier.getWidth(), 0);
+            const bottomWidth = minBottomStaveWidth + bottomModifierWidths;
+            // Get the largest width needed
+            const finalWidth = Math.max(DEFAULT_MEASURE_WIDTH, Math.max(topWidth, bottomWidth));
+            // Set max width for both staves
+            topStave.setWidth(finalWidth);
+            bottomStave.setWidth(finalWidth);
+            // Assume signatures aren't rendered unless this is the first measure
+            // This resets signatures that would be incorrectly rendered after adjusting widths
+            if(i !== 0)
+            {
+                topMeasure.renderSignatures(false);
+                bottomMeasure.renderSignatures(false);
+            }
+            console.log("topStave beforeeeeee width change Y  i: " +i+" :" + topStave.getY());
+
+            // If this next measure will go out of bounds...
+            if (this.total_width + finalWidth > this.renderer_width) {
+                // Then put the next measures on the next 'measure line' 
+                let topX = DEFAULT_FIRST_MEASURES_X;
+                console.log("topStave before width change Y  i: " +i+" :" + topStave.getY());
+                // If bounding boxes overlap, we'll take care of that in rendering phase
+                let topY = topStave.getY() + DEFAULT_SPACING_BETWEEN_LINES_OF_MEASURES;
+                this.top_measures[i].getStave().setX(topX);
+                this.top_measures[i].getStave().setY(topY);
+                console.log("topStave width change Y  i: " +i+" :" + topStave.getY());
+
+
+                let bottomX = DEFAULT_FIRST_MEASURES_X;
+                // If bounding boxes overlap, we'll take care of that in rendering phase
+                let bottomY = topY + DEFAULT_MEASURE_VERTICAL_SPACING;
+                this.bottom_measures[i].getStave().setX(bottomX);
+                this.bottom_measures[i].getStave().setY(bottomY);
+                // Since this is going on a new measure line, render the signatures
+                topMeasure.renderSignatures(true);
+                bottomMeasure.renderSignatures(true);
+
+                this.total_width = DEFAULT_FIRST_MEASURES_X;
+                console.log("topStave width change Y ENDDD  i: " +i+" :" + topStave.getY());
+            }
+
+            this.total_width += finalWidth;
+        }
+       
+    }
+
+
     // Figure out how many measures in a line, then put all this logic into a function to be called
     // for each line, pass in an array of top and bottom measures, as well as a ceiling value
     private renderMeasures = (): void => {
@@ -593,22 +670,23 @@ export class Score {
 
         let firstLineIndex = 0;
         let ceiling = 0;
-        for (let i = 1; i < this.top_measures.length; i++) {
-            let currentTopMeasure = this.top_measures[i];
-            let prevTopMeasure = this.top_measures[i - 1];
-            console.log("topStave Y  i: " +i+" :" + currentTopMeasure.getStave().getY());
-            // this means there was a line shift
-            if (prevTopMeasure.getStave().getY() != currentTopMeasure.getStave().getY()) {
-                // console.log("I HERE is: " + i);
-                // console.log("prevTopMeasure.getStave().getY(): " + prevTopMeasure.getStave().getY());
-                // console.log("currentTopMeasure.getStave().getY(): " + currentTopMeasure.getStave().getY());
+        let currentWidth = DEFAULT_FIRST_MEASURES_X;
+        for (let i = 0; i < this.top_measures.length; i++) {
+            let topMeasure = this.top_measures[i];
+            let topStave = topMeasure.getStave();
+            let width = topStave.getWidth();
+
+            // there needs to be a line shift
+            if (currentWidth + width > this.renderer_width) {
                 ceiling = this.calculateMeasureLine(
                     this.top_measures.slice(firstLineIndex, i),
-                    this.bottom_measures.slice(firstLineIndex, i), ceiling);
+                    this.bottom_measures.slice(firstLineIndex, i), ceiling, currentWidth);
                 firstLineIndex = i;
                 // padding for next measure lines
                 ceiling += DEFAULT_PADDING_IN_BETWEEN_MEASURES;
+                currentWidth = DEFAULT_FIRST_MEASURES_X;
             }
+            currentWidth += topMeasure.getStave().getWidth();
         }
 
         this.calculateMeasureLine(
