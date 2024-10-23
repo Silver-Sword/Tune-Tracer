@@ -2,7 +2,7 @@
 import { Comment } from "@lib/src/Comment";
 import { UpdateType } from "@lib/src/UpdateType";
 
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
+import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 import { recordOnlineUserUpdatedDocument } from "../document-utils/realtimeOnlineUsers";
 import { userHasCommentAccess } from "../security-utils/permissionVerification";
 
@@ -82,12 +82,6 @@ export async function subscribeToComments(
 
     await getFirebase().subscribeToDocumentComments(documentId, updateCommentFn);
 }
-
-const getFirebase = (): FirebaseWrapper => {
-    const firebase = new FirebaseWrapper();
-    firebase.initApp();
-    return firebase;
-};
 
 async function hasCommentPermissions(userId: string, documentId: string): Promise<boolean> {
     const document = await getFirebase().getDocument(documentId);

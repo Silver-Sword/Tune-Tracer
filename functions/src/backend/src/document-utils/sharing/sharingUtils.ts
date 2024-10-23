@@ -1,5 +1,5 @@
 // TO DO: add auth
-import FirebaseWrapper from "../../firebase-utils/FirebaseWrapper";
+import { getFirebase } from "../../firebase-utils/FirebaseWrapper";
 import { ShareCodeEntity } from "./ShareCodeEntity";
 
 const MINUTES_TO_MILLISECONDS = 60000;
@@ -89,10 +89,3 @@ function getRandomShareCode(): string
     const value = Math.floor(Math.random() * (high - low) + low);
     return String(value).padStart(6, "0");
 }
-
-// initializes and returns the firebase wrapper
-const getFirebase = (): FirebaseWrapper => {
-  const firebase = new FirebaseWrapper();
-  firebase.initApp();
-  return firebase;
-};

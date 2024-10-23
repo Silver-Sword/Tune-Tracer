@@ -5,7 +5,7 @@ import "firebase/compat/firestore";
 import { ShareStyle } from "@lib/src/documentProperties";
 
 import { processDocumentUpdate } from "./documentOperations";
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
+import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 
 export async function updateDocumentShareStyle(
   documentId: string,
@@ -86,9 +86,3 @@ async function updateDocumentMetadata(
     true
   );
 }
-
-const getFirebase = (): FirebaseWrapper => {
-  const firebase = new FirebaseWrapper();
-  firebase.initApp();
-  return firebase;
-};

@@ -1,4 +1,4 @@
-import { getDefaultCompositionData } from '@lib/src/CompToolData';
+import { getDefaultScoreData } from '@lib/src/ScoreData';
 import { DocumentPreview, ShareStyle } from '@lib/src/documentProperties';
 import { Document } from '@lib/src/Document';
 import { OnlineEntity } from "@lib/src/realtimeUserTypes";
@@ -59,7 +59,7 @@ const TERTIARY_TEST_ID = "1HyvutGfMdaQmaU2ASTIBP8h4HT2";
 // check get user owned documents correctly grabbed
 
 const TEST_DOCUMENT: Document = {
-    composition: getDefaultCompositionData(),
+    score: getDefaultScoreData(),
     comments: [
         {
             comment_id: "1234",
@@ -103,10 +103,10 @@ export async function runTest()
 
 async function runAllUnitTests(firebase: FirebaseWrapper)
 {
-    // await testUserLevelProperties(firebase),
-    // await testDocumentMetadataUpdates(firebase);
-    // await testShareCodeFunctions(firebase);
-    // await testDocumentTrashing(firebase);
+    await testUserLevelProperties(firebase),
+    await testDocumentMetadataUpdates(firebase);
+    await testShareCodeFunctions(firebase);
+    await testDocumentTrashing(firebase);
     await testComments(firebase);
 }
 
@@ -183,7 +183,7 @@ async function testDocumentDeletion(firebase: FirebaseWrapper)
 {
     const doc = await createDocument(TEST_DOCUMENT.metadata.owner_id);
     console.log(`Document Id: ${doc.metadata.document_id}`);
-    await deleteDocument(doc, TEST_DOCUMENT.metadata.owner_id);
+    await deleteDocument(doc.metadata.document_id, TEST_DOCUMENT.metadata.owner_id);
 }
 
 async function testUserRegistrationToDocument(firebase: FirebaseWrapper) {
@@ -304,7 +304,7 @@ async function testDocumentMetadataUpdates(firebase: FirebaseWrapper)
     `Tertiary user shared list not updated with the document`
     );
 
-    await deleteDocument(databaseDocument, PRIMARY_TEST_ID);
+    await deleteDocument(id, PRIMARY_TEST_ID);
 }
 
 async function testShareCodeFunctions(firebase: FirebaseWrapper)
@@ -326,7 +326,7 @@ async function testShareCodeFunctions(firebase: FirebaseWrapper)
     assert(shareCode2.length === 6);
     assert(Number(shareCode2) >= 0 && Number(shareCode2) < 1_000_000);
 
-    await deleteDocument(document, PRIMARY_TEST_ID);
+    await deleteDocument(documentId, PRIMARY_TEST_ID);
 }
 
 async function testDocumentTrashing(firebase: FirebaseWrapper)
@@ -361,7 +361,7 @@ async function testDocumentTrashing(firebase: FirebaseWrapper)
     assert(!documentInPreviews(documentId, secondaryPreview[1]), `Document ${documentId} still in secondary's shared list`);
     assert(!documentInPreviews(documentId, secondaryPreview[2]), `Document ${documentId} found in secondary's trash`);
 
-    await deleteDocument(document, PRIMARY_TEST_ID);
+    await deleteDocument(documentId, PRIMARY_TEST_ID);
     assert(!documentInPreviews(documentId, await getTrashedDocumentPreviews(PRIMARY_TEST_ID)));
 }
 
@@ -393,9 +393,8 @@ async function testUserLevelProperties(firebase: FirebaseWrapper)
         secondaryPreview.preview_emoji === undefined,
         `Secondary preview is incorrect. Expected {is_favorited: true, preview_color:"red", preview_emoji:undefined}, got: \n${JSON.stringify(secondaryPreview)}`
     );
-    
 
-    await deleteDocument(document, PRIMARY_TEST_ID);
+    await deleteDocument(documentId, PRIMARY_TEST_ID);
 }
 
 async function testComments(firebase: FirebaseWrapper) {
@@ -455,7 +454,7 @@ async function testComments(firebase: FirebaseWrapper) {
 
     await deleteComment(id1, documentId, PRIMARY_TEST_ID);
     await deleteComment(id2, documentId, SECONDARY_TEST_ID);
-    await deleteDocument(document, PRIMARY_TEST_ID);
+    await deleteDocument(documentId, PRIMARY_TEST_ID);
 
     
     await setTimeout(5000); // a hacky way to sort of deal with race conditions
