@@ -88,6 +88,7 @@ const CollaboratorCard: React.FC<{
 
       {/* Role Selector */}
       <Select
+        checkIconPosition="right"
         value={currentRole}
         onChange={(newRole) => handleRoleChange(newRole as 'Viewer' | 'Commenter' | 'Editor' | 'Remove access')}
         data={[
@@ -140,7 +141,7 @@ const SharingModal: React.FC = () => {
         <TextInput placeholder="Add collaborators by email here"></TextInput>
         <Space h="sm" />
         <Text>Collaborators</Text>
-        <ScrollArea h={300}>
+        <ScrollArea h={250}>
           {collaborators.map((collab, index) => (
             <CollaboratorCard
               key={index}
@@ -156,23 +157,51 @@ const SharingModal: React.FC = () => {
         <Divider size="sm" my="sm"></Divider>
 
         <Text>Code Access</Text>
+        <Space h="sm"></Space>
+        <Group justify="space-between">
+          <Container>
+          {/* Code gets rendered here, it is limited to 6 numbers */}
+            <Text ta="center" c="blue" fw={700} style={{ letterSpacing: '0.5em'}}>
+              651172
+            </Text>
+          </Container>
 
+          <Group>
+          {/* Uncomment block if multiple codes are allowed to exist based on access level */}
+          <Select
+            checkIconPosition="right"
+            value={null}
+            placeholder="Access Level"
+            data={[
+              { value: 'Viewer', label: 'Viewer' },
+              { value: 'Commenter', label: 'Commenter' },
+              { value: 'Editor', label: 'Editor' },
+            ]}
+            style={{ width: 150 }}
+          />
+
+          <Button>Generate Code</Button>
+          </Group>
+        </Group>
+          
         <Divider size="sm" my="sm"></Divider>
-
+          
         <Text>Link Access</Text>
-
-        {/* Replace value with the colab link */}
-        <CopyButton value="null" timeout={10000}>
-          {({ copied, copy }) => (
-            <Button
-              rightSection={copied ? <IconCheck /> : <IconCopy />}
-              variant={copied ? "filled" : "outline"}
-              onClick={copy}
-            >
-              {copied ? "Copied" : "Copy Link"}
-            </Button>
-          )}
-        </CopyButton>
+        <Space h="sm"></Space>    
+          {/* Replace value with the document link */}
+          <Center>
+          <CopyButton value="null" timeout={10000}>
+            {({ copied, copy }) => (
+              <Button
+                rightSection={copied ? <IconCheck /> : <IconCopy />}
+                variant={copied ? "filled" : "outline"}
+                onClick={copy}
+              >
+                {copied ? "Copied" : "Copy Link"}
+              </Button>
+            )}
+          </CopyButton>
+          </Center>
       </Modal>
       <Button onClick={open}>Share</Button>
       {/* Profile Icon */}
