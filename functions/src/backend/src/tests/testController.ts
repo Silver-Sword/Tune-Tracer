@@ -103,10 +103,10 @@ export async function runTest()
 
 async function runAllUnitTests(firebase: FirebaseWrapper)
 {
-    // await testUserLevelProperties(firebase),
-    // await testDocumentMetadataUpdates(firebase);
-    // await testShareCodeFunctions(firebase);
-    // await testDocumentTrashing(firebase);
+    await testUserLevelProperties(firebase),
+    await testDocumentMetadataUpdates(firebase);
+    await testShareCodeFunctions(firebase);
+    await testDocumentTrashing(firebase);
     await testComments(firebase);
 }
 
