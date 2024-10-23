@@ -1,6 +1,6 @@
 import { DocumentMetadata, ShareStyle } from "@lib/src/documentProperties";
 import { highestPermissions } from "./permissionVerification";
-import { getFirebase } from "src/firebase-utils/FirebaseWrapper";
+import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 
 // Returns the highest access level a user has for a document (WRITE, COMMENT, READ, or NONE)
 export async function getUserAccessLevel(userId: string, documentId: string): Promise<ShareStyle> {

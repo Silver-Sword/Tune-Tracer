@@ -5,7 +5,7 @@ import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';
 import { recordOnlineUserUpdatedDocument } from "./realtimeOnlineUsers";
 import { getDefaultScoreData } from '@lib/src/ScoreData';
-import { getUserAccessLevel } from 'src/security-utils/getUserAccessLevel';
+import { getUserAccessLevel } from '../security-utils/getUserAccessLevel';
 
 // NOTE: UPDATE functions MODIFY the document that is passed to it
 
