@@ -40,10 +40,92 @@ import {
 } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 
+
+// Define types for the collaborator
+interface Collaborator {
+  name: string;
+  email: string;
+  role: 'Viewer' | 'Commenter' | 'Editor';
+}
+
+// CollaboratorCard component used in SharingModal to show who has access 
+const CollaboratorCard: React.FC<{
+  name: string;
+  email: string;
+  role: 'Viewer' | 'Commenter' | 'Editor';
+  onRoleChange: (newRole: 'Viewer' | 'Commenter' | 'Editor') => void;
+  onRemove: () => void;
+}> = ({ name, email, role, onRoleChange, onRemove }) => {
+  const [currentRole, setCurrentRole] = useState<'Viewer' | 'Commenter' | 'Editor' | 'Remove access'>(role);
+
+  const handleRoleChange = (newRole: 'Viewer' | 'Commenter' | 'Editor' | 'Remove access') => {
+    if (newRole === 'Remove access') {
+      onRemove(); // Call the remove function if "Remove access" is selected
+    } else {
+      setCurrentRole(newRole);
+      onRoleChange(newRole);
+    }
+  };
+
+  return (
+    <Group
+      justify="space-between"
+      style={{
+        padding: '15px',
+        border: '1px solid #e0e0e0',
+        borderRadius: '8px',
+        marginBottom: '10px',
+        boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
+      }}
+    >
+      {/* Avatar and Collaborator Info */}
+      <Group>
+        <div>
+          <Text size="sm">{name}</Text>
+          <Text size="xs" c="dimmed">{email}</Text>
+        </div>
+      </Group>
+
+      {/* Role Selector */}
+      <Select
+        value={currentRole}
+        onChange={(newRole) => handleRoleChange(newRole as 'Viewer' | 'Commenter' | 'Editor' | 'Remove access')}
+        data={[
+          { value: 'Viewer', label: 'Viewer' },
+          { value: 'Commenter', label: 'Commenter' },
+          { value: 'Editor', label: 'Editor' },
+          { value: 'Remove access', label: 'Remove access' }  // Red to differentiate remove
+        ]}
+        style={{ width: 150 }}
+      />
+    </Group>
+  );
+};
+
 // Sharing Modal Component
 const SharingModal: React.FC = () => {
   // Sharing logic here
   const [openShare, { open, close }] = useDisclosure(false);
+
+  // SAMPLE
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([
+    { name: 'Jose Cuyugan', email: 'werhhh@gmail.com', role: 'Editor' },
+    { name: 'Chris Gittings', email: 'asdfadf.cg@gmail.com', role: 'Viewer' },
+    { name: 'Jordy Valois', email: 'dddddd@gmail.com', role: 'Commenter' },
+    { name: 'Sophia DeAngelo', email: 'ssss@hotmail.com', role: 'Editor' },
+  ]);
+  
+  const handleRoleChange = (newRole: 'Viewer' | 'Commenter' | 'Editor', index: number) => {
+    const updatedCollaborators = [...collaborators];
+    updatedCollaborators[index].role = newRole;
+    setCollaborators(updatedCollaborators);
+  };
+
+  // Function to remove a collaborator
+  const handleRemove = (index: number) => {
+    const updatedCollaborators = collaborators.filter((_, i) => i !== index);
+    setCollaborators(updatedCollaborators);
+  };
 
   return (
     <>
@@ -52,12 +134,25 @@ const SharingModal: React.FC = () => {
         onClose={close}
         title="Share: [Document Name]"
         centered
+        size="lg"
       >
         {/* Modal content */}
         <TextInput placeholder="Add collaborators by email here"></TextInput>
         <Space h="sm" />
         <Text>Collaborators</Text>
-
+        <ScrollArea h={300}>
+          {collaborators.map((collab, index) => (
+            <CollaboratorCard
+              key={index}
+              name={collab.name}
+              email={collab.email}
+              role={collab.role}
+              onRoleChange={(newRole) => handleRoleChange(newRole, index)}
+              onRemove={() => handleRemove(index)}
+            />
+          ))}
+        </ScrollArea>
+          
         <Divider size="sm" my="sm"></Divider>
 
         <Text>Code Access</Text>
@@ -65,7 +160,6 @@ const SharingModal: React.FC = () => {
         <Divider size="sm" my="sm"></Divider>
 
         <Text>Link Access</Text>
-        <></>
 
         {/* Replace value with the colab link */}
         <CopyButton value="null" timeout={10000}>
