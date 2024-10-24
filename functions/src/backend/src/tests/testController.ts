@@ -42,6 +42,7 @@ import {
     updateDocumentEmoji, 
     updateDocumentFavoritedStatus 
 } from '../document-utils/updateUserLevelDocumentProperties';
+import { getUserIdFromEmail } from '../user-utils/getUserData';
 
 import { isEqual } from 'lodash';
 import { setTimeout } from "timers/promises";
@@ -90,12 +91,6 @@ export async function runTest()
     firebase.initApp();
 
     await runAllUnitTests(firebase);
-
-    // await testDocumentChanges();
-    // await testUserRegistrationToDocument(firebase);
-    // await testSignUp(firebase);
-    // await testDocumentDeletion(firebase);
-    // await testDocumentUpdate(firebase);
     
     console.log(`Tests completed successfully`);
     // process.exit(0);
@@ -108,6 +103,7 @@ async function runAllUnitTests(firebase: FirebaseWrapper)
     // await testShareCodeFunctions(firebase);
     // await testDocumentTrashing(firebase);
     await testComments(firebase);
+    await testUserEmailToId(firebase);
 }
 
 export async function testDocumentChanges()
@@ -460,4 +456,10 @@ async function testComments(firebase: FirebaseWrapper) {
     
     await setTimeout(5000); // a hacky way to sort of deal with race conditions
     assert(Object.keys(comments).length === 0, `Comments map wasn't cleared. Comments may not have been deleted`);
+}
+
+async function testUserEmailToId(firebase: FirebaseWrapper) {
+    console.log(`Testing User Email to ID...`);
+    const id = await getUserIdFromEmail(PRIMARY_TEST_EMAIL);
+    assert(id === PRIMARY_TEST_ID, `User ID for ${PRIMARY_TEST_EMAIL} does not match expected ID. Got: ${id}`);
 }
