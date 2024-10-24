@@ -2,6 +2,10 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Score } from "../edit/Score";
+import { ScoreData } from "../lib/src/ScoreData";
+import { Document } from "../lib/src/Document";
+import { DocumentMetadata } from "../lib/src/documentProperties";
+import { Comment } from "../lib/src/Comment";
 import {
   AppShell,
   Container,
@@ -488,6 +492,194 @@ export default function CompositionTool() {
     renderNotation();
   }, []);
 
+    const SUBSCRIBE_TO_DOC_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToDocument';
+    const SUBSCRIBE_TO_COMMENTS_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToComments';
+    const CHECK_CHANGE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/checkDocumentChanges';
+
+    const [currentDocument, setDocument] = useState<Document>({
+        document_title: '',
+        comments: [],
+        score: {} as ScoreData,
+        metadata: {} as DocumentMetadata
+    });
+    const [loaded, setLoadState] = useState<boolean>(false);
+    const [changes, setChanges] = useState<Record<string, unknown>>({});
+
+    const [userTemp, setUserTemp] = useState("");
+
+    const handleUserIdChange = (event: { currentTarget: { value: string; }; }) => {
+        const value = event.currentTarget.value;
+        setUserTemp(value);
+    };
+
+    const handleScoreNameChange = (event: { currentTarget: { value: string; }; }) => {
+        const value = event.currentTarget.value;
+
+        const changesTemp = 
+        {
+            documentChanges: { score: { title: value } }
+        }
+        var recordTemp : Record<string, unknown> = changes;
+        if (!('score' in recordTemp)) 
+        {
+            recordTemp['score'] = {title: value};
+        }
+        else
+        {
+            (recordTemp['score'] as ScoreData).title = value;
+        }
+
+        setChanges(recordTemp);
+
+        const PUT_OPTION = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(changesTemp)
+        }
+        fetch(CHECK_CHANGE_URL, PUT_OPTION)
+            .then((res) => {
+                res.json().then((data) => {
+                    const compData : ScoreData = (data.data).score;
+                    const document_title : string = (data.data).document_title;
+                    const comments: Comment[] = (data.data).comments; 
+                    const metadata: DocumentMetadata = (data.data).metadata; 
+                    const tempDocument : Document = {
+                        document_title: document_title,
+                        comments: comments,
+                        score: compData,
+                        metadata: metadata
+                    };
+                    setDocument(tempDocument);
+                }).catch((error) => {
+                    // Getting the Error details.
+                    const message = error.message;
+                    console.log(`Error: ${message}`);
+                    return;
+                });;
+            });
+    }
+
+        // loads in background
+    useEffect(() => {
+        if (!loaded && userTemp !== '') {
+            var userInfo;
+            if (userTemp === '1')
+            {
+                userInfo = {
+                    documentId: 'aco5tXEzQt7dSeB1WSlV',
+                    userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
+                    user_email: 'sophiad03@hotmail.com',
+                    displayName: 'Sopa'
+                };
+            }
+            else if (userTemp === '2')
+            {
+                userInfo = {
+                    documentId: 'aco5tXEzQt7dSeB1WSlV',
+                    userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
+                    user_email: 'test-user-1@tune-tracer.com',
+                    displayName: 'test_one'  
+                }
+            }
+            else
+            {
+                return;
+            }
+            const GET_OPTION = {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }
+            fetch(CHECK_CHANGE_URL, GET_OPTION)
+            .then((res) => {
+                res.json().then((data) => {
+                    const compData : ScoreData = (data.data).score;
+                    const document_title : string = (data.data).document_title;
+                    const comments: Comment[] = (data.data).comments; 
+                    const metadata: DocumentMetadata = (data.data).metadata; 
+                    const tempDocument : Document = {
+                        document_title: document_title,
+                        comments: comments,
+                        score: compData,
+                        metadata: metadata
+                    };
+                    setDocument(tempDocument);
+                }).catch((error) => {
+                    // Getting the Error details.
+                    const message = error.message;
+                    console.log(`Error: ${message}`);
+                    return;
+                });
+            });
+            console.log("Hello");
+        }
+    }, []);
+    // for networking
+    useEffect(() => {
+        if (!loaded && userTemp !== '') {
+            var userInfo;
+            if (userTemp === '1')
+            {
+                userInfo = {
+                    documentId: 'aco5tXEzQt7dSeB1WSlV',
+                    userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
+                    user_email: 'sophiad03@hotmail.com',
+                    displayName: 'Sopa'
+                };
+            }
+            else if (userTemp === '2')
+            {
+                userInfo = {
+                    documentId: 'aco5tXEzQt7dSeB1WSlV',
+                    userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
+                    user_email: 'test-user-1@tune-tracer.com',
+                    displayName: 'test_one'  
+                }
+
+            }
+            else
+            {
+                return;
+            }
+            const POST_OPTION = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userInfo),
+            }
+        fetch(SUBSCRIBE_TO_DOC_URL, POST_OPTION)
+            .then((res) => {
+                // Read result of the Cloud Function.
+                res.json().then((data) => {
+                    const compData : ScoreData = (data.data).score;
+                    const document_title : string = (data.data).document_title;
+                    const comments: Comment[] = (data.data).comments; 
+                    const metadata: DocumentMetadata = (data.data).metadata; 
+                    const tempDocument : Document = {
+                        document_title: document_title,
+                        comments: comments,
+                        score: compData,
+                        metadata: metadata
+                    };
+                    setDocument(tempDocument);
+                    // console.log("Document:" + currentDocument);
+                    setLoadState(true);
+                    console.log("Document Loaded");
+                });
+            }).catch((error) => {
+                // Getting the Error details.
+                const message = error.message;
+                console.log(`Error: ${message}`);
+                return;
+                // ...
+              });
+        }
+    }, [userTemp]);
+
   return (
     <AppShell
       header={{ height: 180 }}
@@ -519,8 +711,18 @@ export default function CompositionTool() {
           }}
         >
           <Space h="xl"></Space>
-          <Text>Score Name</Text>
-
+          <input 
+            type="text" 
+            value={currentDocument?.score?.title} 
+            onChange={handleScoreNameChange} 
+            placeholder={currentDocument?.score?.title} 
+        />
+        <input 
+            type="text" 
+            value={userTemp} 
+            onChange={handleUserIdChange} 
+            placeholder={userTemp} 
+        />
           <div>
             <div ref={notationRef}></div>
           </div>
