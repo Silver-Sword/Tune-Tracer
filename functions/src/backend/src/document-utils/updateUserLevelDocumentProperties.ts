@@ -1,4 +1,4 @@
-import { UserLevelDocumentProperties } from "@lib/src/documentProperties";
+import { UserLevelDocumentProperties } from "../../../lib/src/documentProperties";
 import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 
 export async function updateDocumentEmoji(

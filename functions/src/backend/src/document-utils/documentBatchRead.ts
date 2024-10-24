@@ -1,7 +1,7 @@
-import { DocumentPreview, UserLevelDocumentProperties } from "@lib/src/documentProperties";
+import { DocumentPreview, UserLevelDocumentProperties } from "../../../lib/src/documentProperties";
 
 import { getFirebase } from "../firebase-utils/FirebaseWrapper";
-import { AccessType } from "@lib/src/UserEntity";
+import { AccessType } from "../../../lib/src/UserEntity";
 import { getDocument } from "./documentOperations";
 
 // returns all documents created by the user associated with the userId
@@ -52,7 +52,7 @@ async function getDocumentPreviewsByUser(
   }
   const documentProperties = user?.preview_properties;
 
-  const documentList = [];
+  const documentList: DocumentPreview[] = [];
   for (const id of documentIdList) {
     try {
       const document = await createDocumentPreview(

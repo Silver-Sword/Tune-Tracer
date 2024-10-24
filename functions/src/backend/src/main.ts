@@ -1,4 +1,4 @@
-import { runTest } from './tests/testController'
+// import { runTest } from './tests/testController'
 
-console.log("Hello World!");
-runTest();
+// console.log("Hello World!");
+// runTest();

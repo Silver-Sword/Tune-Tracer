@@ -1,7 +1,7 @@
-import { Document } from "@lib/src/Document";
-import { OnlineEntity } from "@lib/src/realtimeUserTypes";
-import { UpdateType } from "@lib/src/UpdateType";
-import { UserEntity } from "@lib/src/UserEntity";
+import { Document } from "../../../lib/src/Document";
+import { OnlineEntity } from "../../../lib/src/realtimeUserTypes";
+import { UpdateType } from "../../../lib/src/UpdateType";
+import { UserEntity } from "../../../lib/src/UserEntity";
 
 import FirebaseWrapper, { getFirebase } from "../firebase-utils/FirebaseWrapper";
 import { subscribeUserToUserDocumentPool } from "./realtimeOnlineUsers";
