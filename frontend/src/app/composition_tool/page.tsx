@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Document } from '../lib/src/Document';
-import { CompositionData } from '../lib/src/CompToolData';
+import { ScoreData } from '../lib/src/ScoreData';
 import { Comment } from '../lib/src/Comment';
 import { DocumentMetadata } from '../lib/src/documentProperties';
 import { Score } from '../edit/Score';
@@ -35,7 +35,7 @@ import {
 import { IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconVolume } from "@tabler/icons-react"
 import { useDisclosure } from '@mantine/hooks';
 import * as d3 from 'd3';
-
+import { title } from 'process';
 
 const ToolbarHeader: React.FC<{
     modifyDurationInMeasure: (duration: string, noteId: number) => void;
@@ -60,7 +60,7 @@ const ToolbarHeader: React.FC<{
     
     return (
       <AppShell.Header p="md">
-        {/* First layer (top section) */}
+        {/* First layer (top section) PUT IF STATEMENT HERE IF READ ONLY*/}
         <Group align="center" style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
             {/* <Group align="left"> */}
                 <Text size="xl" component="a" href="/storage">Tune Tracer</Text>
@@ -240,33 +240,70 @@ const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
 const SUBSCRIBE_TO_DOC_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToDocument';
 const SUBSCRIBE_TO_COMMENTS_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToComments';
-const userInfo = {
-    documentId: 'n1SGSaHpWkkSUqpDxu9b',
-    userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
-    user_email: 'sophiad03@hotmail.com',
-    displayName: 'Sopa'
-};
-const requestOptions = {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(userInfo),
-}
+const CHECK_CHANGE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/checkDocumentChanges';
+
 
 export default function CompositionTool() {
     const notationRef = useRef<HTMLDivElement>(null);
     const score = useRef<Score | null>(null);
     const [selectedNoteId, setSelectedNoteId] = useState<number>(-1);
-    const [currentDocument, setDocument] = useState<Document>();
+    const [currentDocument, setDocument] = useState<Document>({
+        document_title: '',
+        comments: [],
+        score: {} as ScoreData,
+        metadata: {} as DocumentMetadata
+    });
+    const [loaded, setLoadState] = useState<boolean>(false);
+    const [scoreData, setScoreData] = useState<ScoreData | null>({});
+    const [changes, setChanges] = useState<Record<string, unknown>>({});
 
-    const handleChange = (event: { currentTarget: { value: string; }; }) => {
+    const handleScoreNameChange = (event: { currentTarget: { value: string; }; }) => {
         const value = event.currentTarget.value;
-        var documentTemp = currentDocument;
-        if (documentTemp && documentTemp.composition) {
-            documentTemp.composition.composition_title = value;
+
+        const changesTemp = 
+        {
+            documentChanges: { score: { title: value } }
         }
-        setDocument(documentTemp);
+        var recordTemp : Record<string, unknown> = changes;
+        if (!('score' in recordTemp)) 
+        {
+            recordTemp['score'] = {title: value};
+        }
+        else
+        {
+            (recordTemp['score'] as ScoreData).title = value;
+        }
+
+        setChanges(recordTemp);
+
+        const PUT_OPTION = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(changesTemp)
+        }
+        fetch(CHECK_CHANGE_URL, PUT_OPTION)
+            .then((res) => {
+                res.json().then((data) => {
+                    const compData : ScoreData = (data.data).score;
+                    const document_title : string = (data.data).document_title;
+                    const comments: Comment[] = (data.data).comments; 
+                    const metadata: DocumentMetadata = (data.data).metadata; 
+                    const tempDocument : Document = {
+                        document_title: document_title,
+                        comments: comments,
+                        score: compData,
+                        metadata: metadata
+                    };
+                    setDocument(tempDocument);
+                }).catch((error) => {
+                    // Getting the Error details.
+                    const message = error.message;
+                    console.log(`Error: ${message}`);
+                    return;
+                });;
+            });
     }
     
     // Wrapper function to call modifyDurationInMeasure with the score object
@@ -292,27 +329,66 @@ export default function CompositionTool() {
             }
         }
     }
+    const [userTemp, setUserTemp] = useState("");
 
+    const handleUserIdChange = (event: { currentTarget: { value: string; }; }) => {
+        const value = event.currentTarget.value;
+        setUserTemp(value);
+    };
+
+    // for networking
     useEffect(() => {
-        fetch(SUBSCRIBE_TO_DOC_URL, requestOptions)
+        if (!loaded && userTemp !== '') {
+            var userInfo;
+            if (userTemp === '1')
+            {
+                userInfo = {
+                    documentId: 'LbYvc1LonALQpleCAURt',
+                    userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
+                    user_email: 'sophiad03@hotmail.com',
+                    displayName: 'Sopa'
+                };
+            }
+            else if (userTemp === '2')
+            {
+                userInfo = {
+                    documentId: 'LbYvc1LonALQpleCAURt',
+                    userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
+                    user_email: 'test-user-1@tune-tracer.com',
+                    displayName: 'test_one'  
+                }
+
+            }
+            else
+            {
+                return;
+            }
+            const POST_OPTION = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userInfo),
+            }
+        fetch(SUBSCRIBE_TO_DOC_URL, POST_OPTION)
             .then((res) => {
                 // Read result of the Cloud Function.
                 res.json().then((data) => {
-                    // const temp = 
-                    console.log("Data:" + data.message);
-                    console.log("Data:" + JSON.stringify(data));
-                    const compData : CompositionData = (data.data).composition;
+                    const compData : ScoreData = (data.data).score;
                     const document_title : string = (data.data).document_title;
                     const comments: Comment[] = (data.data).comments; 
                     const metadata: DocumentMetadata = (data.data).metadata; 
                     const tempDocument : Document = {
                         document_title: document_title,
                         comments: comments,
-                        composition: compData,
+                        score: compData,
                         metadata: metadata
                     };
                     setDocument(tempDocument);
-                    console.log("Document:" + currentDocument);
+                    setScoreData(compData);
+                    // console.log("Document:" + currentDocument);
+                    setLoadState(true);
+                    console.log("Document Loaded");
                 });
             }).catch((error) => {
                 // Getting the Error details.
@@ -321,7 +397,8 @@ export default function CompositionTool() {
                 return;
                 // ...
               });
-    }, []);
+        }
+    }, [userTemp]);
 
     useEffect(() => {
         const clearSVG = () => {
@@ -461,9 +538,15 @@ export default function CompositionTool() {
                     <Space h="xl"></Space>
                     <input 
                         type="text" 
-                        value={currentDocument?.composition?.composition_title} 
-                        onChange={handleChange} 
-                        placeholder={currentDocument?.composition?.composition_title} 
+                        value={currentDocument?.score?.title} 
+                        onChange={handleScoreNameChange} 
+                        placeholder={currentDocument?.score?.title} 
+                    />
+                    <input 
+                        type="text" 
+                        value={userTemp} 
+                        onChange={handleUserIdChange} 
+                        placeholder={userTemp} 
                     />
                     <div>
                         <div ref={notationRef}></div>

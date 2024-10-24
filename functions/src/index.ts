@@ -18,7 +18,7 @@ const app = express();
 
 const { ShareStyle } = require('./lib/src/documentProperties');
 const { Document: LibDocument } = require('./lib/src/Document');
-const { getDefaultCompositionData } = require('./lib/src/CompToolData');
+const { getDefaultScoreData } = require('./lib/src/CompToolData');
 const { UpdateType } = require('./lib/src/UpdateType');
 const { UserEntity } = require('./lib/src/UserEntity');
 
@@ -26,9 +26,6 @@ const { UserEntity } = require('./lib/src/UserEntity');
 const { signUpAPI, login } = require('./backend/src/endpoints/loginEndpoints');
 const { createDocument } = require('./backend/src/document-utils/documentOperations');
 const { getAllDocuments, getUserDocuments, getSharedDocuments } = require('./backend/src/endpoints/readEndpoints');
-const { createWorkspace } = require('./backend/src/endpoints/createEndpoint');
-// const { deleteWorkspace } = require('./backend/src/endpoints/deleteEndpoint');
-const { updateDocumentParts } = require('./backend/src/endpoints/updateEndpoints');
 const { createShareCode, deleteShareCode, getDocumentIdFromShareCode } = require('./backend/src/document-utils/sharing/sharingUtils');
 const { getTrashedDocumentPreviews } = require('./backend/src/document-utils/documentBatchRead');
 const { updateDocumentEmoji, updateDocumentColor, updateDocumentFavoritedStatus } = require('./backend/src/document-utils/updateUserLevelDocumentProperties');
@@ -36,7 +33,7 @@ const { subscribeToDocument, OnlineEntity } = require('./backend/src/document-ut
 const { updateUserCursor } = require('./backend/src/document-utils/realtimeOnlineUsers');
 const { updateDocumentShareStyle, updateDocumentTrashedStatus } = require('./backend/src/document-utils/updateDocumentMetadata');
 const { shareDocumentWithUser, unshareDocumentWithUser } = require('./backend/src/document-utils/updateDocumentMetadata');
-const { updatePartialDocument, deleteDocument, getDocument } = require("./backend/src/document-utils/documentOperations");  
+const { updatePartialDocument, deleteDocument } = require("./backend/src/document-utils/documentOperations");  
 const {
   createComment,
   deleteComment,
@@ -185,7 +182,12 @@ exports.createShareCode = functions.https.onRequest(async (request: any, respons
   corsHandler(request, response, async () => {
     try {
         const documentId = request.body.documentId;
+        const sharing = request.body.sharing;
+        const writerId = request.body.writerId;
+
         const apiResult = await createShareCode(documentId);
+
+        await updateDocumentShareStyle(documentId, sharing, writerId);
     
         // Send a successful response back
         response.status(200).send({ message: 'Here is the share code', data: apiResult });
@@ -196,8 +198,6 @@ exports.createShareCode = functions.https.onRequest(async (request: any, respons
   });
 });
 
-// frontend doesnt need - make getDocumentFromShareCode instead
-// getDocumentIdFromShareCode return!!!!
 exports.getDocumentIdFromShareCode = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
@@ -287,7 +287,7 @@ exports.createDocument = functions.https.onRequest(async (request: any, response
 
       const currentDocument = await createDocument(userId);
 
-      response.status(200).send({ message: 'Successfully subscribed to document', data: currentDocument });
+      response.status(200).send({ message: 'Successfully created new document', data: currentDocument });
       
         // Send a successful response back
       } catch (error) {
@@ -303,9 +303,7 @@ exports.deleteDocument = functions.https.onRequest(async (request: any, response
         const documentId = request.body.documentId;
         const userId = request.body.userId;
 
-        const document = await getDocument(documentId, userId);
-
-        deleteDocument(document, userId);
+        deleteDocument(documentId, userId);
     
         // Send a successful response back
         response.status(200).send({ message: 'Delete document successful', data: true });
@@ -313,6 +311,70 @@ exports.deleteDocument = functions.https.onRequest(async (request: any, response
         // Send an error response if something goes wrong
         response.status(500).send({ message: 'Failed to delete document', data: error as Error });
       }
+  });
+});
+
+const DEFAULT_DOC: typeof LibDocument = {
+  score: getDefaultScoreData(),
+  comments: [
+      {
+          comment_id: "",
+          text: "",
+          author_id: "",
+          author_display_name: "",
+          is_reply: false,
+          time_created: 0,
+          last_edit_time: 0,
+      }
+  ],
+  metadata: {
+      document_id: "",
+      owner_id: "",
+      share_link_style: ShareStyle.NONE,
+      share_list: {},
+      time_created: 0,
+      last_edit_time: 0,
+      last_edit_user: "",
+      is_trashed: false,
+  },
+  document_title: "",
+};
+
+var currentDocument = DEFAULT_DOC;
+var userDoc = DEFAULT_DOC;
+
+exports.checkDocumentChanges = functions.https.onRequest(async (request: any, response: any) => {
+  corsHandler(request, response, async () => {
+    try 
+    {
+      const documentChanges = request.body.documentChanges;
+      
+      const documentObject: Record<string,unknown> = JSON.parse(JSON.stringify(documentChanges));
+      if (userDoc != currentDocument)
+      {
+        userDoc = currentDocument;
+      }
+      for (const [key, value] of Object.entries(documentObject)) 
+      {
+        if (key in userDoc)
+        {
+          if (typeof value === 'object')
+          {
+            userDoc[key] = { ...userDoc[key], ...value };
+          }
+        }
+        else
+        {
+          throw new Error('Invalid key');
+        }
+      }
+      currentDocument = userDoc;
+      response.status(200).send({ message: 'Successfully checked document changes', data: currentDocument });
+    }
+    catch (error)
+    {
+      response.status(500).send({ message: 'Failed to check Document Changes', data: error as Error });
+    }
   });
 });
 
@@ -337,34 +399,6 @@ exports.subscribeToDocument = functions.https.onRequest(async (request: any, res
         display_name: displayName as string
       };
 
-      const DEFAULT_DOC: typeof LibDocument = {
-        composition: getDefaultCompositionData(),
-        comments: [
-            {
-                comment_id: "",
-                text: "",
-                author_id: "",
-                author_display_name: "",
-                is_reply: false,
-                time_created: 0,
-                last_edit_time: 0,
-            }
-        ],
-        metadata: {
-            document_id: "",
-            owner_id: "",
-            share_link_style: ShareStyle.NONE,
-            share_list: {},
-            time_created: 0,
-            last_edit_time: 0,
-            last_edit_user: "",
-            is_trashed: false,
-        },
-        document_title: "",
-      };
-      
-      var currentDocument = DEFAULT_DOC;
-
       await subscribeToDocument(documentId, user, 
         (updatedDocument: typeof LibDocument) => {
           currentDocument = updatedDocument;
@@ -374,6 +408,7 @@ exports.subscribeToDocument = functions.https.onRequest(async (request: any, res
           console.log(`Update type ${updateType} with entity: ${JSON.stringify(onlineEntity)}`);
       }
       );
+      userDoc = currentDocument
 
       } catch (error) {
       response.status(500).send({ message: 'Failed to subscribe to document ', data: error as Error });
@@ -423,14 +458,16 @@ exports.updateUserCursor = functions.https.onRequest(async (request: any, respon
 exports.updateDocumentShareStyle = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
-      const {documentId, sharing, writerId} = request.body;
+      const documentId = request.body.documentId; 
+      const sharing = request.body.sharing;
+      const writerId = request.body.writerId;
       
       await updateDocumentShareStyle(documentId, sharing, writerId);
         // Send a successful response back
         response.status(200).send({ message: 'Successfully updated share style to ' + ShareStyle[sharing], data: true });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to update document sharing style. ' + error });
+        response.status(500).send({ message: 'Failed to update document sharing style. ', data: error as Error });
       }
   });
 });
@@ -438,14 +475,17 @@ exports.updateDocumentShareStyle = functions.https.onRequest(async (request: any
 exports.shareDocumentWithUser = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
-      const {documentId, userId, sharing, writerId} = request.body;
+      const documentId = request.body.documentId;
+      const userId = request.body.userId;
+      const sharing: typeof ShareStyle = request.body.sharing;
+      const writerId = request.body.writerId;
       
       await shareDocumentWithUser(documentId, userId, sharing, writerId);
         // Send a successful response back
-        response.status(200).send({ message: 'Successfully shared document with ' + userId + ' with ' + ShareStyle[sharing] + ' permissions.', data: true });
+      response.status(200).send({ message: 'Successfully shared document with ' + userId + ' with ' + ShareStyle[sharing] + ' permissions.', data: true });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to update document sharing style with user. ', data: error as Error });
+        response.status(500).send({ message: 'Failed to update document sharing style with user. ' + error, data: error as Error });
       }
   });
 });
