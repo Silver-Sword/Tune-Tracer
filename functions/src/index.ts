@@ -22,7 +22,6 @@ const { getDefaultScoreData } = require('./lib/src/CompToolData');
 const { UpdateType } = require('./lib/src/UpdateType');
 const { UserEntity } = require('./lib/src/UserEntity');
 
-// const adminApp = require('.backend/src/firebaseSecrets');
 const { signUpAPI, login } = require('./backend/src/endpoints/loginEndpoints');
 const { createDocument } = require('./backend/src/document-utils/documentOperations');
 const { getAllDocuments, getUserDocuments, getSharedDocuments } = require('./backend/src/endpoints/readEndpoints');
@@ -32,22 +31,25 @@ const { updateDocumentEmoji, updateDocumentColor, updateDocumentFavoritedStatus 
 const { subscribeToDocument, OnlineEntity } = require('./backend/src/document-utils/realtimeDocumentUpdates');
 const { updateUserCursor } = require('./backend/src/document-utils/realtimeOnlineUsers');
 const { updateDocumentShareStyle, updateDocumentTrashedStatus } = require('./backend/src/document-utils/updateDocumentMetadata');
-const { shareDocumentWithUser, unshareDocumentWithUser } = require('./backend/src/document-utils/updateDocumentMetadata');
-const { updatePartialDocument, deleteDocument } = require("./backend/src/document-utils/documentOperations");  
+const { 
+  shareDocumentWithUser, 
+  unshareDocumentWithUser,
+  updatePartialDocument, 
+  deleteDocument 
+} = require('./backend/src/document-utils/updateDocumentMetadata');
 const {
   createComment,
   deleteComment,
   editCommentText,
   subscribeToComments
 } = require('./backend/src/comment-utils/commentOperations');
+const { getUserIdFromEmail } = require('./backend/src/user-utils/getUserData');
 const { Comment : LibComment } = require('./lib/src/Comment');
 
 const cors = require('cors');
 const corsHandler = cors({ origin: true });
 
 var comments: Record<string, typeof LibComment> = {};
-
-// const { Request, Response } = require('express');
 
 exports.signUpUser = functions.https.onRequest( async (req, res) => {
   corsHandler(req, res, async() => {
@@ -476,11 +478,13 @@ exports.shareDocumentWithUser = functions.https.onRequest(async (request: any, r
   corsHandler(request, response, async () => {
     try {
       const documentId = request.body.documentId;
-      const userId = request.body.userId;
-      const sharing: typeof ShareStyle = request.body.sharing;
+      const invite_email = request.body.invite_email;
+      const sharing = request.body.sharing;
       const writerId = request.body.writerId;
-      
-      await shareDocumentWithUser(documentId, userId, sharing, writerId);
+
+      const userId = getUserIdFromEmail(invite_email);
+      console.log(ShareStyle[sharing]);
+      await shareDocumentWithUser(documentId, userId, ShareStyle[sharing], writerId);
         // Send a successful response back
       response.status(200).send({ message: 'Successfully shared document with ' + userId + ' with ' + ShareStyle[sharing] + ' permissions.', data: true });
       } catch (error) {

@@ -1,4 +1,4 @@
-'use client' // IMPORTANT as Vexflow only renders in the DOM
+"use client"; // IMPORTANT as Vexflow only renders in the DOM
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Document } from '../lib/src/Document';
@@ -7,30 +7,32 @@ import { Comment } from '../lib/src/Comment';
 import { DocumentMetadata } from '../lib/src/documentProperties';
 import { Score } from '../edit/Score';
 import {
-    AppShell, 
-    Container, 
-    Text,
-    Button,
-    Group,
-    Space,
-    Stack,
-    SimpleGrid,
-    Grid,
-    Flex,
-    Input,
-    TextInput,
-    Paper,
-    Avatar,
-    Divider,
-    ScrollArea,
-    Tooltip,
-    Tabs,
-    SegmentedControl,
-    ActionIcon,
-    Modal,
-    Slider,
-    rem,
-    Center,
+  AppShell,
+  Container,
+  Text,
+  Button,
+  Group,
+  Space,
+  Stack,
+  SimpleGrid,
+  Grid,
+  Flex,
+  Input,
+  TextInput,
+  Paper,
+  Avatar,
+  Divider,
+  ScrollArea,
+  Tooltip,
+  Tabs,
+  SegmentedControl,
+  ActionIcon,
+  Modal,
+  Slider,
+  rem,
+  Center,
+  CopyButton,
+  Select,
 } from "@mantine/core";
 import { IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconVolume } from "@tabler/icons-react"
 import { useDisclosure } from '@mantine/hooks';
@@ -45,7 +47,8 @@ const ToolbarHeader: React.FC<{
     
     // Need logic for swapping pause and play buttons, also if hitting stop it completely resets the time back to 0
 
-    const [volume, setVolume] = useState(50);
+  // State to toggle between edit and display modes
+  const [isChangingName, setIsChangingName] = useState(false);
 
     const handleVolumeChange = (value: React.SetStateAction<number>) => {
         setVolume(value);
@@ -164,76 +167,242 @@ const ToolbarHeader: React.FC<{
     );
   };
 
+  // Handle when the user clicks the text to switch to editing mode
+  const handleEdit = () => {
+    setIsChangingName(true);
+  };
+
+  // Toggle between editable and read-only states
+  const [ mode, setMode ] = useState("Editable");
+  const handleModeChange = (value) => {
+    setMode(value);
+  }
+
+  // Need logic for swapping pause and play buttons, also if hitting stop it completely resets the time back to 0
+
+  const [volume, setVolume] = useState(50);
+
+  const handleVolumeChange = (value: React.SetStateAction<number>) => {
+    setVolume(value);
+    console.log(`Volume value is: ${value}`);
+    // if (audioRef.current) {
+    //   audioRef.current.volume = value / 100; // Convert to a scale of 0 to 1 for audio API
+    // }
+  };
+
+  return (
+    <AppShell.Header p="md">
+      {/* First layer (top section) PUT IF STATEMENT HERE IF READ ONLY*/}
+      <Group
+        align="center"
+        style={{ borderBottom: "1px solid #eee", paddingBottom: "10px" }}
+      >
+        <Tooltip label="Back to Home">
+          <Text size="xl" component="a" href="/storage">
+            Tune Tracer
+          </Text>
+        </Tooltip>
+
+        {/* Editable Document Title */}
+        {isChangingName ? (
+          <TextInput
+            size="md"
+            value={inputValue}
+            onChange={(event) => setInputValue(event.currentTarget.value)} // Update input value
+            onBlur={handleSave} // Save on focus loss
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                handleSave(); // Save on Enter key press
+              }
+            }}
+            placeholder="Enter Document Name"
+            autoFocus // Auto-focus when entering edit mode
+          />
+        ) : (
+          <Text
+            onClick={handleEdit}
+            style={{
+              cursor: "text",
+              padding: "3px",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.outline =
+                "2px solid rgba(128, 128, 128, 0.6)"; // Slightly dimmed gray outline
+              e.currentTarget.style.outlineOffset = "3px"; // Space between outline and text
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.outline = "none"; // Remove outline on mouse leave
+            }}
+          >
+            {inputValue || "Untitled Score"}
+          </Text>
+        )}
+
+        {/* PlayBack UI */}
+        <Container fluid style={{ width: "20%" }}>
+          <Center>
+            <Group>
+              <ActionIcon>
+                <IconPlayerPlay />
+              </ActionIcon>
+              <ActionIcon>
+                <IconPlayerPause />
+              </ActionIcon>
+              <ActionIcon>
+                <IconPlayerStop />
+              </ActionIcon>
+            </Group>
+          </Center>
+          <Space h="xs"></Space>
+          <Slider
+            value={volume}
+            onChange={handleVolumeChange}
+            thumbChildren={<IconVolume />}
+            label={(value) => `${value}%`}
+            defaultValue={50}
+            thumbSize={26}
+            styles={{ thumb: { borderWidth: rem(2), padding: rem(3) } }}
+          />
+        </Container>
+
+        {/* I'd like to have everything left justified except the sharing button */}
+        {/* Sharing UI */}
+
+        {/* Select Dropdown should not be changable if not the owner */}
+        <Select
+          data={['Editable', 'Read-Only']}
+          value={mode}
+          onChange={handleModeChange}
+          placeholder="Select Sharing Mode"
+          allowDeselect={false}
+          withCheckIcon={false}
+          style={{ width: 125, marginLeft: '10px' }}
+        />
+        <SharingModal />
+      </Group>
+
+      {/* Second layer (middle section) */}
+      {/* <Group align="center" mt="xs" style={{ paddingBottom: "10px" }}> */}
+        <Tabs defaultValue="notes">
+          <Tabs.List>
+            <Tabs.Tab value="notes">Notes</Tabs.Tab>
+            <Tabs.Tab value="measure">Measure</Tabs.Tab>
+          </Tabs.List>
+
+          {/* Notes Tab */}
+          <Tabs.Panel value="notes">
+            <Space h="xs"></Space>
+            <Group>
+              <Button variant="outline">Natural</Button>
+              <Button variant="outline">Sharp</Button>
+              <Button variant="outline">Flat</Button>
+
+              <Divider size="sm" orientation="vertical" />
+
+              <Button variant="outline">Whole</Button>
+              <Button variant="outline">Half</Button>
+              <Button variant="outline">Quarter</Button>
+              <Button variant="outline">Eighth</Button>
+              <Button variant="outline">Sixteenth</Button>
+              <Button variant="outline">Thirty-Second</Button>
+              <Button variant="outline">Sixty-Fourth</Button>
+
+              <Divider size="sm" orientation="vertical" />
+
+              <Button variant="outline">Dot</Button>
+
+              <Divider size="sm" orientation="vertical" />
+
+              <Button>Help</Button>
+            </Group>
+          </Tabs.Panel>
+
+          <Tabs.Panel value="measure">
+            <Space h="xs"></Space>
+            <Group>
+              <Button variant="outline">Add Measure</Button>
+              <Button variant="outline">Delete Measure</Button>
+            </Group>
+          </Tabs.Panel>
+
+          <></>
+        </Tabs>
+      {/* </Group> */}
+    </AppShell.Header>
+  );
+};
+
 // CommentCard component only used for the comment sidebar
 const CommentCard: React.FC = () => {
-
-    return (
-        <Paper withBorder shadow="sm" p="md" radius="md">
-            <Group>
-                {/* Need user logic for avatars, names, and date*/}
-                <Avatar
-                radius="xl"/>
-                <div>
-                    <Text fz="sm">
-                        [name]
-                    </Text>
-                    <Text fz="xs" c="dimmed">
-                        [date/time]
-                    </Text>
-                </div>
-                </Group>
-                    <Text pl={54} pt="sm" size="sm">
-                        Lorem ipsum 
-                    </Text>
-        </Paper>
-    );
+  return (
+    <Paper withBorder shadow="sm" p="md" radius="md">
+      <Group>
+        {/* Need user logic for avatars, names, and date*/}
+        <Avatar radius="xl" />
+        <div>
+          <Text fz="sm">[name]</Text>
+          <Text fz="xs" c="dimmed">
+            [date/time]
+          </Text>
+        </div>
+      </Group>
+      <Text pl={54} pt="sm" size="sm">
+        Lorem ipsum
+      </Text>
+    </Paper>
+  );
 };
 
 // Right sidebar that contains all the comments in the document
 const CommentAside: React.FC = () => {
-    const [commentInput, setCommentInput] = useState("");
+  const [commentInput, setCommentInput] = useState("");
 
-    const handleComment = (event: { currentTarget: { value: any; }; }) => {
-        const value = event.currentTarget.value;
-        setCommentInput(value);
-        console.log(`Comment Published: ${value}`);
-        // Add more comment publishing logic here
-    };
+  const handleComment = (event: { currentTarget: { value: any } }) => {
+    const value = event.currentTarget.value;
+    setCommentInput(value);
+    console.log(`Comment Published: ${value}`);
+    // Add more comment publishing logic here
+  };
 
-    const handleClear = () => {
-        setCommentInput('');
-    };
+  const handleClear = () => {
+    setCommentInput("");
+  };
 
-    return (
-        <AppShell.Aside withBorder p="md">
-            <Paper withBorder shadow="sm" p="md" radius="md">
-                <Stack gap="xs">
-                    <TextInput value={commentInput} onChange={(event) => setCommentInput(event.currentTarget.value)}></TextInput>
-                    <Group>
-                        <Button color="red" onClick={handleClear}>Clear</Button>
-                        <Button onClick={handleComment}>Add Comment</Button>
-                    </Group>
-                </Stack>
-            </Paper>
-            <Space h="xs"></Space>
-            <Divider size="sm" />
-            <Space h="xs"></Space>
-            <ScrollArea scrollbarSize={4}>
-                <Stack gap="xs">
-                    <CommentCard />
-                    <CommentCard />
-                    <CommentCard />
-                    <CommentCard />
-                    <CommentCard />
-                    <CommentCard />
-                    <CommentCard />
-                    <CommentCard />
-                    <CommentCard />
-                </Stack>
-            </ScrollArea>
-            <Space h="xs"></Space>
-        </AppShell.Aside>
-    );
+  return (
+    <AppShell.Aside withBorder p="md">
+      <Paper withBorder shadow="sm" p="md" radius="md">
+        <Stack gap="xs">
+          <TextInput
+            value={commentInput}
+            onChange={(event) => setCommentInput(event.currentTarget.value)}
+          ></TextInput>
+          <Group>
+            <Button color="red" onClick={handleClear}>
+              Clear
+            </Button>
+            <Button onClick={handleComment}>Add Comment</Button>
+          </Group>
+        </Stack>
+      </Paper>
+      <Space h="xs"></Space>
+      <Divider size="sm" />
+      <Space h="xs"></Space>
+      <ScrollArea scrollbarSize={4}>
+        <Stack gap="xs">
+          <CommentCard />
+          <CommentCard />
+          <CommentCard />
+          <CommentCard />
+          <CommentCard />
+          <CommentCard />
+          <CommentCard />
+          <CommentCard />
+          <CommentCard />
+        </Stack>
+      </ScrollArea>
+      <Space h="xs"></Space>
+    </AppShell.Aside>
+  );
 };
 
 const DEFAULT_RENDERER_WIDTH = 1000;
@@ -407,20 +576,23 @@ export default function CompositionTool() {
             }
         };
 
-        const renderNotation = () => {
-            if (notationRef.current) {
-                score.current = new Score(
-                    notationRef.current,
-                    DEFAULT_RENDERER_HEIGHT,
-                    DEFAULT_RENDERER_WIDTH,
-                    undefined
-                );
-            }
-        };
+  useEffect(() => {
+    const clearSVG = () => {
+      if (notationRef.current) {
+        notationRef.current.innerHTML = "";
+      }
+    };
 
-        clearSVG();
-        renderNotation();
-    }, []);
+    const renderNotation = () => {
+      if (notationRef.current) {
+        score.current = new Score(
+          notationRef.current,
+          DEFAULT_RENDERER_HEIGHT,
+          DEFAULT_RENDERER_WIDTH,
+          undefined
+        );
+      }
+    };
 
     useEffect(() => {
         // Attach the note selection handler to the notationRef container
