@@ -10,3 +10,8 @@ html, body {
     fill: blue;
     stroke: blue;
 }
+
+.highlighted {
+    fill: red;
+    stroke: red;
+}

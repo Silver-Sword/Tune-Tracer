@@ -31,12 +31,16 @@ import {
 import { IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconVolume } from "@tabler/icons-react"
 import { useDisclosure } from '@mantine/hooks';
 import * as d3 from 'd3';
+import * as Tone from 'tone';
+
 
 
 const ToolbarHeader: React.FC<{
     modifyDurationInMeasure: (duration: string, noteId: number) => void;
     selectedNoteId: number;
-}> = ({ modifyDurationInMeasure, selectedNoteId }) => {
+    playbackComposition: () => void;
+    stopPlayback: () => void;
+}> = ({ modifyDurationInMeasure, selectedNoteId, playbackComposition, stopPlayback }) => {
     // Need logic for setting document name
     
     // Need logic for swapping pause and play buttons, also if hitting stop it completely resets the time back to 0
@@ -53,7 +57,7 @@ const ToolbarHeader: React.FC<{
 
     // Logic for Sharing
     const [ openShare, { open, close }] = useDisclosure(false);
-    
+
     return (
       <AppShell.Header p="md">
         {/* First layer (top section) */}
@@ -71,13 +75,13 @@ const ToolbarHeader: React.FC<{
                 <Container fluid style={{ width: '40%' }}>
                     <Center>
                         <Group> 
-                            <ActionIcon>
+                            <ActionIcon onClick={() => playbackComposition()}>
                                 <IconPlayerPlay />
                             </ActionIcon>
                             <ActionIcon>
                                 <IconPlayerPause />
                             </ActionIcon>
-                            <ActionIcon>
+                            <ActionIcon onClick={() => stopPlayback()}>
                                 <IconPlayerStop />
                             </ActionIcon>
                         </Group>
@@ -131,16 +135,36 @@ const ToolbarHeader: React.FC<{
                 >
                     Whole
                 </Button>
-                <Button variant="outline">Half</Button>
+                <Button
+                    variant="outline"
+                    onClick={() => modifyDurationInMeasure('h', selectedNoteId)}
+                >
+                    Half
+                </Button>
                 <Button
                     variant="outline"
                     onClick={() => modifyDurationInMeasure('q', selectedNoteId)}
                 >
                     Quarter
                 </Button>
-                <Button variant="outline">Eighth</Button>
-                <Button variant="outline">Sixteenth</Button>
-                <Button variant="outline">Thirty-Second</Button>
+                <Button 
+                    variant="outline"
+                    onClick={() => modifyDurationInMeasure('8', selectedNoteId)}
+                >
+                    Eighth
+                </Button>
+                <Button
+                    variant="outline"
+                    onClick={() => modifyDurationInMeasure('16', selectedNoteId)}
+                >
+                    Sixteenth
+                </Button>
+                <Button
+                    variant="outline"
+                    onClick={() => modifyDurationInMeasure('32', selectedNoteId)}
+                >
+                    Thirty-Second
+                </Button>
                 <Button variant="outline">Sixty-Fourth</Button>
 
                         <Divider size="sm" orientation="vertical" />
@@ -239,6 +263,8 @@ export default function CompositionTool() {
     const notationRef = useRef<HTMLDivElement>(null);
     const score = useRef<Score | null>(null);
     const [selectedNoteId, setSelectedNoteId] = useState<number>(-1);
+    let topPart: Tone.Part;
+    let bottomPart: Tone.Part;
     
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = (duration: string, noteId: number) => {
@@ -246,6 +272,171 @@ export default function CompositionTool() {
         {
             score.current.modifyDurationInMeasure(duration, noteId);
         }
+    }
+
+    const playbackAwaiter = async () => {
+        await Tone.start();
+        console.log('Context started');
+        playbackComposition();
+    }
+
+    const stopPlayback = () => {
+        // Kill any audio that is currently playing
+        Tone.getTransport().stop();
+        // Reset the position to the start
+        Tone.getTransport().position = 0;
+    }
+
+    // Function to play composition
+    const playbackComposition = () => {
+        stopPlayback();
+
+        const synth = new Tone.PolySynth().toDestination();
+
+        if (topPart)
+        {
+            topPart.dispose();
+        }
+        if (bottomPart)
+        {
+            bottomPart.dispose();
+        }
+
+        if (score && score.current)
+        {
+            const scoreData = score.current.exportScoreDataObj();
+            const topMeasureData = scoreData.topMeasures;
+            const bottomMeasureData = scoreData.bottomMeasures;
+            const topMeasures = score.current.getTopMeasures();
+            const bottomMeasures = score.current.getBottomMeasures();
+
+            // Map for durations since ToneJS and VexFlow use different
+            // representation strings for duration
+            const durationMap: { [duration: string]: string } = {
+                'q': '4n',
+                'w': '1n',
+                'h': '2n',
+                '8': '8n',
+                '16': '16n',
+                '32': '32n',
+                'qr': '4n',
+                'wr': '1n',
+                'hr': '2n',
+                '8r': '8n',
+                '16r': '16n',
+                '32r': '32n'
+            };
+
+            // Create two separate parts. One for treble clef, one for bass clef
+            topPart = new Tone.Part();
+            bottomPart = new Tone.Part();
+
+            // Keep track of the current time for each measure separately
+            let currentTimeTop = 0;
+            let currentTimeBottom = 0;
+
+            // Iterate over each measure
+            for (let i = 0; i < topMeasureData.length; i++)
+            {
+                const topNotes = topMeasureData[i].notes;
+                const bottomNotes = bottomMeasureData[i].notes;
+                const topStaveNotes = topMeasures[i].getNotes();
+                const bottomStaveNotes = bottomMeasures[i].getNotes();
+                
+
+                // 1. Remove the '/' from the note string
+                // 2. Map the duration to a string that ToneJs likes (q -> 4n, w -> 1n, 8 -> 8n, h -> 2n)
+
+                // Iterate over notes in treble clef
+                for (let j = 0; j < topNotes.length; j++)
+                {
+                    const sanitizedKeyTop = topNotes[j].keys[0].replace('/', '');
+                    const durationTop = durationMap[topNotes[j].duration];
+
+                    // Schedule the part to be played
+                    if (!topNotes[j].duration.includes('r'))
+                    {
+                        topPart.add({
+                            time: currentTimeTop,
+                            note: sanitizedKeyTop,
+                            duration: durationTop,
+                            noteId: topStaveNotes[j].getSVGElement()?.getAttribute('id')
+                        });
+                    }
+
+                    // Update currentTime
+                    currentTimeTop += Tone.Time(durationTop).toSeconds();
+                }
+
+                // Iterate over the notes in the bass clef
+                for (let j = 0; j < bottomNotes.length; j++)
+                {
+                    const sanitizedKeyBottom = bottomNotes[j].keys[0].replace('/', '');
+                    const durationBottom = durationMap[bottomNotes[j].duration];
+
+                    // Schedule the notes for the bass clef
+                    if (!bottomNotes[j].duration.includes('r'))
+                    {
+                        bottomPart.add({
+                            time: currentTimeBottom,
+                            note: sanitizedKeyBottom,
+                            duration: durationBottom,
+                            noteId: bottomStaveNotes[j].getSVGElement()?.getAttribute('id')
+                        });
+                    }
+
+                    // Update currentTime
+                    currentTimeBottom += Tone.Time(durationBottom).toSeconds();
+                }
+            }
+
+            // Configure the playback of the top and bottom parts
+            topPart.callback = (time, event) => {
+                synth.triggerAttackRelease(event.note, event.duration, time);
+
+                const durationInSeconds = Tone.Time(event.duration).toSeconds();
+
+                // Schedule the highlighting
+                Tone.getDraw().schedule(() => {
+                    highlightNoteStart(event.noteId);
+                }, time);
+
+                // Scheduleing de-highlighting
+                Tone.getDraw().schedule(() => {
+                    highlightNoteEnd(event.noteId);
+                }, time + durationInSeconds);
+            };
+
+            bottomPart.callback = (time, event) => {
+                synth.triggerAttackRelease(event.note, event.duration, time);
+
+                const durationInSeconds = Tone.Time(event.duration).toSeconds();
+
+                // Schedule highlighting
+                Tone.getDraw().schedule(() => {
+                    highlightNoteStart(event.noteId);
+                }, time);
+
+                Tone.getDraw().schedule(() => {
+                    highlightNoteEnd(event.noteId);
+                }, time + durationInSeconds);
+            };
+
+            // Start from the beginning
+            topPart.start(0);
+            bottomPart.start(0);
+
+            Tone.getTransport().start();
+        }
+    }
+
+    const highlightNoteStart = (noteId: string) => {
+        console.log(`Highlight note start running at note id: ${noteId}`);
+        d3.select(`[id="${noteId}"]`).classed('highlighted', true);
+    }
+
+    const highlightNoteEnd = (noteId: string) => {
+        d3.select(`[id="${noteId}"]`).classed('highlighted', false);
     }
 
     // Wrapper function to call addNoteInMeasure
@@ -262,6 +453,85 @@ export default function CompositionTool() {
                 noteElement.classList.add('selected-note');
             }
         }
+    }
+
+    // Wrapper function to call removeNote
+    const removeNoteHandler = (keys: string[], noteId: number) => {
+        if (score && score.current)
+        {
+            score.current.removeNote(keys, noteId);
+        }
+    }
+
+    const shiftNoteUp = (note: string) => {
+        const noteSequence = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
+        const [noteLetter, octave] = note.split('/');  // Example: 'C/4' -> 'C' and '4'
+        let noteIndex = noteSequence.indexOf(noteLetter);
+        let newOctave = parseInt(octave);
+    
+        // Move to the next note in the sequence
+        if (noteIndex < noteSequence.length - 1) {
+            noteIndex++;
+        } else {
+            // If the note is 'B', wrap around to 'C' and increase the octave
+            noteIndex = 0;
+            newOctave++;
+        }
+    
+        // Return the new note and octave
+        return `${noteSequence[noteIndex]}/${newOctave}`;
+    };
+
+    const shiftNoteDown = (note: string) => {
+        const noteSequence = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
+        const [noteLetter, octave] = note.split('/');
+        let noteIndex = noteSequence.indexOf(noteLetter);
+        let newOctave = parseInt(octave);
+    
+        // Move to the previous note in the sequence
+        if (noteIndex > 0) {
+            noteIndex--;
+        } else {
+            // If the note is 'C', wrap around to 'B' and decrease the octave
+            noteIndex = noteSequence.length - 1;
+            newOctave--;
+        }
+    
+        // Return the new note and octave
+        return `${noteSequence[noteIndex]}/${newOctave}`;
+    };
+
+    const increasePitch = () => {
+        // Get all the keys from the note passed in, raise all the pitches of them, return the new array
+        const newNotes: string[] = [];
+        if (score && score.current)
+        {
+            const staveNote = score.current.findNote(selectedNoteId);
+            if (staveNote)
+            {
+                for (let i = 0; i < staveNote.keys.length; i++)
+                {
+                    newNotes.push(shiftNoteUp(staveNote.keys[i]));
+                }
+            }
+        }
+        return newNotes;
+    }
+
+    const lowerPitch = () => {
+        const newNotes: string[] = [];
+        if (score && score.current)
+        {
+            const staveNote = score.current.findNote(selectedNoteId);
+            if (staveNote)
+            {
+                for (let i = 0; i < staveNote.keys.length; i++)
+                {
+                    newNotes.push(shiftNoteDown(staveNote.keys[i]))
+                }
+            }
+        }
+        return newNotes;
     }
 
     useEffect(() => {
@@ -324,7 +594,7 @@ export default function CompositionTool() {
         // Keyboard shortcuts for adding notes
         const handleKeyDown = (event: KeyboardEvent) => {
             // Mapping of keyboard letters to note string
-            const keyToNoteMap: { [key: string]: string } = {
+            const trebleKeyToNoteMap: { [key: string]: string } = {
                 'a': 'a/4',
                 'b': 'b/4',
                 'c': 'c/5',
@@ -333,8 +603,23 @@ export default function CompositionTool() {
                 'f': 'f/5',
                 'g': 'g/5',
             };
+            const bassKeyToNoteMap: { [key: string]: string } = {
+                'a': 'a/3',
+                'b': 'b/3',
+                'c': 'c/4',
+                'd': 'd/4',
+                'e': 'e/4',
+                'f': 'f/4',
+                'g': 'g/4',
+            }
 
-            const note = keyToNoteMap[event.key.toLowerCase()];
+            let isTopNote: boolean = false;
+            if (score && score.current)
+            {
+                isTopNote = score.current.isTopMeasure(selectedNoteId);
+            }
+            const key = event.key.toLowerCase();
+            const note = (isTopNote ? trebleKeyToNoteMap[key] : bassKeyToNoteMap[key]);
 
             // If a valid note was pressed and we have a note selected
             if (note && selectedNoteId !== -1) {
@@ -343,6 +628,30 @@ export default function CompositionTool() {
                 if (nextNote)
                 {
                     setSelectedNoteId(nextNote);
+                }
+            }
+
+            // If we press the up arrow, raise the pitch
+            if (key === 'w')
+            {
+                const newNotes = increasePitch();
+                const staveNote = score.current?.findNote(selectedNoteId);
+                if (staveNote)
+                {
+                    removeNoteHandler(staveNote.keys, selectedNoteId);
+                    addNoteHandler(newNotes, selectedNoteId);
+                }
+            }
+
+            // If we press the down arrow, lower the pitch
+            if (key === 's')
+            {
+                const newNotes = lowerPitch();
+                const staveNote = score.current?.findNote(selectedNoteId);
+                if (staveNote)
+                {
+                    removeNoteHandler(staveNote.keys, selectedNoteId);
+                    addNoteHandler(newNotes, selectedNoteId);
                 }
             }
         };
@@ -383,6 +692,8 @@ export default function CompositionTool() {
                 <ToolbarHeader
                     modifyDurationInMeasure={modifyDurationHandler}
                     selectedNoteId={selectedNoteId}
+                    playbackComposition={playbackAwaiter}
+                    stopPlayback={stopPlayback}
                 />
                 <CommentAside />
                 

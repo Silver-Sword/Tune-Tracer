@@ -85,6 +85,27 @@ export class Score {
         this.renderMeasures();
     }
 
+    findNote = (noteId: number): StaveNote | null => {
+        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
+        let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        if (measureIndex == undefined || noteIdStr == undefined || topMeasure == undefined) {  console.log('Something was null in Score.findNote()!'); return null;  }
+        if (topMeasure) {
+            return this.top_measures[measureIndex].findNote(noteIdStr);
+        }
+        else {
+            return this.bottom_measures[measureIndex].findNote(noteIdStr);
+        }
+    }
+
+    getTopMeasures = (): Measure[] => {
+        return this.top_measures;
+    }
+
+    getBottomMeasures = (): Measure[] => {
+        return this.bottom_measures;
+    }
+
     exportScoreDataObj = (): ScoreData => {
         let scoreData: ScoreData = getDefaultScoreData();
         scoreData.rendererHeight = this.renderer_height;
@@ -108,6 +129,17 @@ export class Score {
         console.log(printScoreData(scoreData));
         return scoreData;
 
+    }
+
+    isTopMeasure = (
+        noteId: number
+    ): boolean => {
+        let isInTopMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        if (isInTopMeasure)
+        {
+            return isInTopMeasure;
+        }
+        return false;
     }
 
     addNoteInMeasure = (
@@ -583,7 +615,7 @@ export class Score {
         let IDCounter = 0;
         for (let i = 0; i < this.top_measures.length; i++) {
             IDCounter = this.giveIDs(this.top_measures[i].getVoice1().getTickables(), i, IDCounter, true);
-            IDCounter = this.giveIDs(this.bottom_measures[i].getVoice1().getTickables(), i, IDCounter, true);
+            IDCounter = this.giveIDs(this.bottom_measures[i].getVoice1().getTickables(), i, IDCounter, false);
         }
         // From this point forward we render all elements that need voices to be drawn to be able to get placed
         // Render Ties/Slurs
