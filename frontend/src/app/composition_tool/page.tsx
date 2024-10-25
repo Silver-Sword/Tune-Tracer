@@ -232,8 +232,10 @@ const ToolbarHeader: React.FC = () => {
 
   // Toggle between editable and read-only states
   const [ mode, setMode ] = useState("Editable");
-  const handleModeChange = (value) => {
-    setMode(value);
+  const handleModeChange = (value: string | null) => {
+    if (value) {
+      setMode(value);
+    }
   }
 
   // Need logic for swapping pause and play buttons, also if hitting stop it completely resets the time back to 0
@@ -328,10 +330,8 @@ const ToolbarHeader: React.FC = () => {
 
         {/* Select Dropdown should not be changable if not the owner */}
         <Select
-          data={['Editable', 'Read-Only']}
-          value={mode}
-          onChange={handleModeChange}
           placeholder="Select Sharing Mode"
+          onChange={(value) => handleModeChange(value)}
           allowDeselect={false}
           withCheckIcon={false}
           style={{ width: 125, marginLeft: '10px' }}
@@ -562,61 +562,7 @@ export default function CompositionTool() {
     }
 
         // loads in background
-    useEffect(() => {
-        if (!loaded && userTemp !== '') {
-            var userInfo;
-            if (userTemp === '1')
-            {
-                userInfo = {
-                    documentId: 'aco5tXEzQt7dSeB1WSlV',
-                    userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
-                    user_email: 'sophiad03@hotmail.com',
-                    displayName: 'Sopa'
-                };
-            }
-            else if (userTemp === '2')
-            {
-                userInfo = {
-                    documentId: 'aco5tXEzQt7dSeB1WSlV',
-                    userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
-                    user_email: 'test-user-1@tune-tracer.com',
-                    displayName: 'test_one'  
-                }
-            }
-            else
-            {
-                return;
-            }
-            const GET_OPTION = {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            }
-            fetch(CHECK_CHANGE_URL, GET_OPTION)
-            .then((res) => {
-                res.json().then((data) => {
-                    const compData : ScoreData = (data.data).score;
-                    const document_title : string = (data.data).document_title;
-                    const comments: Comment[] = (data.data).comments; 
-                    const metadata: DocumentMetadata = (data.data).metadata; 
-                    const tempDocument : Document = {
-                        document_title: document_title,
-                        comments: comments,
-                        score: compData,
-                        metadata: metadata
-                    };
-                    setDocument(tempDocument);
-                }).catch((error) => {
-                    // Getting the Error details.
-                    const message = error.message;
-                    console.log(`Error: ${message}`);
-                    return;
-                });
-            });
-            console.log("Hello");
-        }
-    }, []);
+    
     // for networking
     useEffect(() => {
         if (!loaded && userTemp !== '') {
@@ -669,6 +615,10 @@ export default function CompositionTool() {
                     // console.log("Document:" + currentDocument);
                     setLoadState(true);
                     console.log("Document Loaded");
+                    console.log(userTemp);
+                    var temp = !loaded;
+                    setLoadState(current => true);
+                    console.log(loaded);
                 });
             }).catch((error) => {
                 // Getting the Error details.
@@ -679,6 +629,68 @@ export default function CompositionTool() {
               });
         }
     }, [userTemp]);
+
+    useEffect(() => {
+      const intervalID = setInterval(() =>  {
+        var userInfo;
+        if (userTemp === '1')
+        {
+            userInfo = {
+                documentId: 'aco5tXEzQt7dSeB1WSlV',
+                userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
+                user_email: 'sophiad03@hotmail.com',
+                displayName: 'Sopa'
+            };
+        }
+        else if (userTemp === '2')
+        {
+            userInfo = {
+                documentId: 'aco5tXEzQt7dSeB1WSlV',
+                userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
+                user_email: 'test-user-1@tune-tracer.com',
+                displayName: 'test_one'  
+            }
+        }
+        else
+        {
+          console.log("No User");
+            return;
+        }
+        const POST_OPTION = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: ""
+        }
+        fetch(CHECK_CHANGE_URL, POST_OPTION)
+        .then((res) => {
+            res.json().then((data) => {
+                const compData : ScoreData = (data.data).score;
+                const document_title : string = (data.data).document_title;
+                const comments: Comment[] = (data.data).comments; 
+                const metadata: DocumentMetadata = (data.data).metadata; 
+                const tempDocument : Document = {
+                    document_title: document_title,
+                    comments: comments,
+                    score: compData,
+                    metadata: metadata
+                };
+                setDocument(tempDocument);
+            }).catch((error) => {
+                // Getting the Error details.
+                const message = error.message;
+                console.log(`Error: ${message}`);
+                return;
+            });
+        });
+      }, 5000);
+
+      return function stopChecking() 
+      {
+          clearInterval(intervalID);
+      }
+  }, [userTemp]);
 
   return (
     <AppShell

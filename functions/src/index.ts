@@ -379,7 +379,7 @@ exports.checkDocumentChanges = functions.https.onRequest(async (request: any, re
     }
     catch (error)
     {
-      response.status(500).send({ message: 'Failed to check Document Changes', data: error as Error });
+      response.status(500).send({ message: 'Failed to check Document Changes' + error, data: error as Error });
     }
   });
 });
