@@ -32,6 +32,8 @@ export default function Editor() {
 
     const [selectedNoteId, setSelectedNoteId] = useState(-1);
 
+    const [keySig, setKeySig] = useState('');
+
     const setNumberValue = (value: string): number => {
         if (/^[0-9]+$/.test(value)) {
             return parseInt(value, 10);
@@ -44,6 +46,11 @@ export default function Editor() {
     const handleAddKeysChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setAddKeys(event.target.value);
     };
+
+    const handleSetKeySigChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setKeySig(event.target.value);
+    };
+
     const handleAddNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setAddNoteId(setNumberValue(event.target.value));
     };
@@ -124,6 +131,12 @@ export default function Editor() {
         }
     }
 
+    const setKeySignature = () =>{
+        if (score.current) {
+            score.current.setKeySignature(keySig);
+        }
+    }
+
     // Here for reference
     const loadMeasure = () => {
         if (score.current) {
@@ -181,6 +194,7 @@ export default function Editor() {
                     DEFAULT_RENDERER_HEIGHT,
                     DEFAULT_RENDERER_WIDTH,
                     "4/4",
+                    "Bb",
                     undefined
                 );
             }
@@ -313,6 +327,17 @@ export default function Editor() {
             </div>
             <button onClick={addTie}>Add Tie </button>
             <button onClick={removeTie}>Remove Tie </button>
+            <h2>Set Key Signature</h2>
+            <div>
+                <label htmlFor="keys">Insert Key Signature:</label>
+                <input
+                    type="text"
+                    id="keys"
+                    value={keySig}
+                    onChange={handleSetKeySigChange}
+                />
+            </div>
+            <button onClick={setKeySignature}>Set Key Sig </button>
             <button onClick={exportScore}>Export Score</button>
             <button onClick={loadMeasure}>Load Measure</button>
             <div ref={notationRef}></div>
