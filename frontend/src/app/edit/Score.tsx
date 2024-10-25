@@ -334,13 +334,6 @@ export class Score {
             const lineRight = new this.VF.StaveConnector(topStave, bottomStave);
             lineRight.setType(this.VF.StaveConnector.type.SINGLE_RIGHT);
             lineRight.setContext(this.context).draw();
-            // Vexflow can auto generate beams for us so we can render them here
-            this.generateBeams(topMeasure);
-            this.generateBeams(bottomMeasure);
-
-            // With Beams in place we can draw voices
-            // topMeasure.getVoice1().draw(this.context, topStave);
-            // bottomMeasure.getVoice1().draw(this.context, bottomStave);
         }
     }
 
@@ -425,6 +418,7 @@ export class Score {
             measures[i].getStave().setX(XCoordinate);
             measures[i].getStave().setY(YCoordinateForAllMeasuresInThisLine);
             XCoordinate += measures[i].getStave().getWidth();
+            this.generateBeams(measures[i]);
             measures[i].getStave().setContext(this.context).draw();
             measures[i].getVoice1().draw(this.context);
             
