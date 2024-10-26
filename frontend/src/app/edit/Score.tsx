@@ -1,5 +1,6 @@
 import { Vex, Formatter, StaveNote, StaveTie, Beam, Tickable } from 'vexflow';
 import { Measure } from './Measure';
+import * as d3 from 'd3';
 import { render } from '@testing-library/react';
 import { MeasureData } from '../../../../lib/src/MeasureData';
 import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
@@ -35,6 +36,7 @@ export class Score {
     private bottom_measures: Measure[] = [];  // both are equal in length
     private ties: Set<number> = new Set<number>();
     private context: RenderContext;
+    private notationRef: HTMLDivElement;
     private total_width: number = 0;
     private renderer_height = 0;
     private renderer_width = 0;
@@ -58,6 +60,7 @@ export class Score {
 
         this.renderer_height = rendererHeight;
         this.renderer_width = rendererWidth;
+        this.notationRef = notationRef;
         this.key_signature = keySignature;
 
         const renderer = new this.VF.Renderer(notationRef, this.VF.Renderer.Backends.SVG);
@@ -90,16 +93,12 @@ export class Score {
 
         this.renderMeasures();
     }
-    setTitle = (title: string) =>
-    {
-        this.title = title;
-    }
 
     findNote = (noteId: number): StaveNote | null => {
         let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
         let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
         let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
-        if (measureIndex == undefined || noteIdStr == undefined || topMeasure == undefined) return null;
+        if (measureIndex == undefined || noteIdStr == undefined || topMeasure == undefined) {  console.log('Something was null in Score.findNote()!'); return null;  }
         if (topMeasure) {
             return this.top_measures[measureIndex].findNote(noteIdStr);
         }
@@ -107,6 +106,19 @@ export class Score {
             return this.bottom_measures[measureIndex].findNote(noteIdStr);
         }
     }
+
+    getTopMeasures = (): Measure[] => {
+        return this.top_measures;
+    }
+
+    getBottomMeasures = (): Measure[] => {
+        return this.bottom_measures;
+    }
+    setTitle = (title: string) =>
+    {
+        this.title = title;
+    }
+
 
     setKeySignature = (keySignature: string): void => {
         this.key_signature = keySignature;
@@ -149,6 +161,17 @@ export class Score {
         console.log(printScoreData(scoreData));
         return scoreData;
 
+    }
+
+    isTopMeasure = (
+        noteId: number
+    ): boolean => {
+        let isInTopMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        if (isInTopMeasure)
+        {
+            return isInTopMeasure;
+        }
+        return false;
     }
 
     addNoteInMeasure = (
@@ -624,7 +647,7 @@ export class Score {
         let IDCounter = 0;
         for (let i = 0; i < this.top_measures.length; i++) {
             IDCounter = this.giveIDs(this.top_measures[i].getVoice1().getTickables(), i, IDCounter, true);
-            IDCounter = this.giveIDs(this.bottom_measures[i].getVoice1().getTickables(), i, IDCounter, true);
+            IDCounter = this.giveIDs(this.bottom_measures[i].getVoice1().getTickables(), i, IDCounter, false);
         }
         // From this point forward we render all elements that need voices to be drawn to be able to get placed
         // Render Ties/Slurs
