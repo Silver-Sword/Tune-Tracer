@@ -941,11 +941,11 @@ export default function CompositionTool() {
     >
       <AppShell.Main>
         <ToolbarHeader
-                    modifyDurationInMeasure={modifyDurationHandler}
-                    selectedNoteId={selectedNoteId}
-                    playbackComposition={playbackAwaiter}
-                    stopPlayback={stopPlayback}
-                />
+            modifyDurationInMeasure={modifyDurationHandler}
+            selectedNoteId={selectedNoteId}
+            playbackComposition={playbackAwaiter}
+            stopPlayback={stopPlayback}
+        />
         <CommentAside />
 
         {/* get rid of the background later, use it for formatting */}
