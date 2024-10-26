@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   AppShell,
   Container,
@@ -19,6 +19,7 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconSearch, IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
+import { getUserID, clearUserID } from "../cookie";
 
 // Define filter labels for the navbar
 const filterLabels = [
@@ -266,6 +267,7 @@ const DocCard: React.FC = () => {
 export default function Storage() {
   const handleLogout = () => {
     console.log(`Successfully logged out of: ACCOUNTNAME`);
+    clearUserID();
   }
 
   return (
