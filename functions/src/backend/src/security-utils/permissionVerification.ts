@@ -22,7 +22,7 @@ export function userHasWriteAccess(
   return highestPermissions(userId, document.metadata) >= ShareStyle.WRITE;
 }
 
-function highestPermissions(
+export function highestPermissions(
   userId: string,
   metadata: DocumentMetadata
 ): ShareStyle {

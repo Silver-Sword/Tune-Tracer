@@ -3,7 +3,7 @@ import { OnlineEntity } from "@lib/src/realtimeUserTypes";
 import { UpdateType } from "@lib/src/UpdateType";
 import { UserEntity } from "@lib/src/UserEntity";
 
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
+import FirebaseWrapper, { getFirebase } from "../firebase-utils/FirebaseWrapper";
 import { subscribeUserToUserDocumentPool } from "./realtimeOnlineUsers";
 import { userHasReadAccess } from "../security-utils/permissionVerification";
 
@@ -26,8 +26,7 @@ export async function subscribeToDocument(
   onUserPoolUpdateFn: (updateType: UpdateType, updatedUser: OnlineEntity) => void,
 ) {
   let firstAccess = true;
-  const firebase = new FirebaseWrapper();
-  firebase.initApp();
+  const firebase = getFirebase();
 
   await subscribeUserToUserDocumentPool(documentId, user, onUserPoolUpdateFn);
   

@@ -129,13 +129,23 @@ export class Measure {
 
     findNote = (noteId: string): StaveNote | null => {
         let tickables = this.voice1.getTickables();
-        for(let i = 0; i < tickables.length; i++){
-            let staveNote = tickables[0] as StaveNote;
+        for (let i = 0; i < tickables.length; i++) {
+            let staveNote = tickables[i] as StaveNote;
             if (staveNote.getAttributes().id === noteId) {
                 return staveNote;
             }
         }
         return null;
+    }
+
+    getNotes = (): StaveNote[] => {
+        let tickables = this.voice1.getTickables();
+        const notes: StaveNote[] = [];
+        for (let i = 0; i < tickables.length; i++) {
+            let staveNote = tickables[i] as StaveNote;
+            notes.push(staveNote);
+        }
+        return notes;
     }
 
     exportMeasureDataObj = (): MeasureData => {

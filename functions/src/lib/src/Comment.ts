@@ -2,8 +2,9 @@
 export type Comment = 
 {
     comment_id: string,
-    content: string,
+    text: string,
     author_id: string,
+    author_display_name: string,
     is_reply: boolean,
     reply_id?: string,
     time_created: number,

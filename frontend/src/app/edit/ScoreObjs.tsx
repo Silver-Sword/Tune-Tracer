@@ -3,6 +3,7 @@ import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/
 
 export function getScoreObj1(): ScoreData {
     return {
+        title: "TestScore1",
         ties: [0],
         totalWidth: 345,
         rendererHeight: 2000,

@@ -1,10 +1,63 @@
+'use client'
+
 import React, { useState } from "react";
-import { Title, Center, Group, Container, TextInput, PasswordInput, Button, Space, Stack, rem } from '@mantine/core';
+import { Title, Center, Group, Container, TextInput, PasswordInput, Button, Space, Stack, rem, Notification } from '@mantine/core';
 import { IconAt } from '@tabler/icons-react';
+import { useRouter } from "next/navigation";
+import { saveUserID, saveDisplayName, saveEmail } from "../cookie";
+
+const LOGIN_URL = "https://us-central1-l17-tune-tracer.cloudfunctions.net/logInUser";
 
 export default function Login() {
+    const [email, setEmail] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
+    const [error, setError] = useState<string>('');
+    const router = useRouter();
 
     const icon = <IconAt style={{ width: rem(16), height: rem(16) }} />;
+
+    const handleLogin = async () => {
+        try {
+            const loginInfo = 
+            {
+                email: email,
+                password: password
+            };
+            const requestOptions = 
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(loginInfo),
+            }
+
+            fetch(LOGIN_URL, requestOptions)
+                .then((res) => {
+                    if (res.status == 500)
+                    {
+                        setError('Incorrect username or password');
+                    }
+                    else if (res.status == 200)
+                    {
+                        const json = res.json()
+                            .then((value) => {
+                                // Save the userID as a cookie
+                                saveUserID(value['data'].user_id);
+                                saveDisplayName(value['data'].display_name);
+                                saveEmail(value['data'].user_email);
+                            });
+                        router.push('/storage');
+                    }
+                }).catch((error) => {
+                    console.log(`Error: ${error.message}`);
+                })
+
+        }
+        catch (error: any) {
+            console.log(`Error: ${error.message}`);
+        }
+    }
 
     return (
         <Group style={{
@@ -38,14 +91,23 @@ export default function Login() {
                         radius='md'
                         label='Email'
                         placeholder='email'
+                        value={email}
+                        onChange={(event) => setEmail(event.currentTarget.value)}
                     />
                     <PasswordInput
                         radius='md'
                         label='Password'
                         placeholder='password'
+                        value={password}
+                        onChange={(event) => setPassword(event.currentTarget.value)}
                     />
 
-                    <Button component='a' href='/storage'>Login</Button>
+                    <Button onClick={handleLogin}>Login</Button>
+                    {
+                        error !== '' ? <Notification color='red' withCloseButton={false} title='Error signing in'>
+                        Please check your username or password
+                    </Notification> : <></>
+                    }
                 </Stack>
             </Container>
         </Group>
