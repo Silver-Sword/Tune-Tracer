@@ -211,8 +211,6 @@ const SharingModal: React.FC = () => {
 import * as d3 from 'd3';
 import * as Tone from 'tone';
 
-
-
 const ToolbarHeader: React.FC<{
     modifyDurationInMeasure: (duration: string, noteId: number) => void;
     selectedNoteId: number;
@@ -236,8 +234,8 @@ const ToolbarHeader: React.FC<{
   };
 
   // Toggle between editable and read-only states
-  const [ mode, setMode ] = useState("Editable");
-  const handleModeChange = (value) => {
+  const [ mode, setMode ] = useState<string>("Editable");
+  const handleModeChange = (value: any) => {
     setMode(value);
   }
 
@@ -592,18 +590,21 @@ export default function CompositionTool() {
                 // Iterate over notes in treble clef
                 for (let j = 0; j < topNotes.length; j++)
                 {
-                    const sanitizedKeyTop = topNotes[j].keys[0].replace('/', '');
                     const durationTop = durationMap[topNotes[j].duration];
 
                     // Schedule the part to be played
                     if (!topNotes[j].duration.includes('r'))
                     {
-                        topPart.add({
-                            time: currentTimeTop,
-                            note: sanitizedKeyTop,
-                            duration: durationTop,
-                            noteId: topStaveNotes[j].getSVGElement()?.getAttribute('id')
-                        });
+                        for (let k = 0; k < topNotes[j].keys.length; k++)
+                        {
+                            const sanitizedKeyTop = topNotes[j].keys[k].replace('/', '');
+                            topPart.add({
+                                time: currentTimeTop,
+                                note: sanitizedKeyTop,
+                                duration: durationTop,
+                                noteId: topStaveNotes[j].getSVGElement()?.getAttribute('id')
+                            });
+                        }
                     }
 
                     // Update currentTime
@@ -613,18 +614,21 @@ export default function CompositionTool() {
                 // Iterate over the notes in the bass clef
                 for (let j = 0; j < bottomNotes.length; j++)
                 {
-                    const sanitizedKeyBottom = bottomNotes[j].keys[0].replace('/', '');
                     const durationBottom = durationMap[bottomNotes[j].duration];
 
                     // Schedule the notes for the bass clef
                     if (!bottomNotes[j].duration.includes('r'))
                     {
-                        bottomPart.add({
-                            time: currentTimeBottom,
-                            note: sanitizedKeyBottom,
-                            duration: durationBottom,
-                            noteId: bottomStaveNotes[j].getSVGElement()?.getAttribute('id')
-                        });
+                        for (let k = 0; k < bottomNotes[j].keys.length; k++)
+                        {
+                            const sanitizedKeyBottom = bottomNotes[j].keys[k].replace('/', '');
+                            bottomPart.add({
+                                time: currentTimeBottom,
+                                note: sanitizedKeyBottom,
+                                duration: durationBottom,
+                                noteId: bottomStaveNotes[j].getSVGElement()?.getAttribute('id')
+                            });
+                        }
                     }
 
                     // Update currentTime
@@ -783,16 +787,16 @@ export default function CompositionTool() {
             }
         };
 
-    const renderNotation = () => {
-      if (notationRef.current) {
-        score.current = new Score(
-          notationRef.current,
-          DEFAULT_RENDERER_HEIGHT,
-          DEFAULT_RENDERER_WIDTH,
-          undefined
-        );
-      }
-    };
+        const renderNotation = () => {
+            if (notationRef.current) {
+                score.current = new Score(
+                notationRef.current,
+                DEFAULT_RENDERER_HEIGHT,
+                DEFAULT_RENDERER_WIDTH,
+                undefined
+                );
+            }
+        };
 
         clearSVG();
         renderNotation();
@@ -895,6 +899,12 @@ export default function CompositionTool() {
                     removeNoteHandler(staveNote.keys, selectedNoteId);
                     addNoteHandler(newNotes, selectedNoteId);
                 }
+            }
+
+            // Remove a note if backspace if pressed
+            if (key === 'backspace')
+            {
+                removeNoteHandler([''], selectedNoteId);
             }
         };
 

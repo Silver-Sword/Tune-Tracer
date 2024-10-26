@@ -19,7 +19,7 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconSearch, IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
-import { getUserID, clearUserID } from "../cookie";
+import { getUserID, getDisplayName, getEmail, clearUserCookies } from "../cookie";
 
 // Define filter labels for the navbar
 const filterLabels = [
@@ -265,10 +265,19 @@ const DocCard: React.FC = () => {
 
 // Main storage component
 export default function Storage() {
+  const [displayName, setDisplayName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
   const handleLogout = () => {
     console.log(`Successfully logged out of: ACCOUNTNAME`);
-    clearUserID();
+    clearUserCookies();
   }
+
+  useEffect(() => {
+    let displayCookie = getDisplayName();
+    let emailCookie = getEmail();
+    setDisplayName(displayCookie);
+    setEmail(emailCookie);
+  }, [])
 
   return (
     <AppShell
@@ -294,11 +303,11 @@ export default function Storage() {
             {/* Profile Menu */}
             <Menu shadow="md" width={200}>
               <Menu.Target>
-                <Button>[NAME]</Button>                   
-              </Menu.Target> 
+                <Button>{displayName}</Button>
+              </Menu.Target>
 
               <Menu.Dropdown>
-                <Menu.Label>[USER EMAIL]</Menu.Label>
+                <Menu.Label>{email}</Menu.Label>
                 <Menu.Divider />
                 <Menu.Item
                   color="red"

@@ -1,16 +1,17 @@
 'use client'
 
 import React, { useState } from "react";
-import { Title, Center, Group, Container, TextInput, PasswordInput, Button, Space, Stack, rem } from '@mantine/core';
+import { Title, Center, Group, Container, TextInput, PasswordInput, Button, Space, Stack, rem, Notification } from '@mantine/core';
 import { IconAt } from '@tabler/icons-react';
 import { useRouter } from "next/navigation";
-import { saveUserID } from "../cookie";
+import { saveUserID, saveDisplayName, saveEmail } from "../cookie";
 
 const LOGIN_URL = "https://us-central1-l17-tune-tracer.cloudfunctions.net/logInUser";
 
 export default function Login() {
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
+    const [error, setError] = useState<string>('');
     const router = useRouter();
 
     const icon = <IconAt style={{ width: rem(16), height: rem(16) }} />;
@@ -33,16 +34,21 @@ export default function Login() {
 
             fetch(LOGIN_URL, requestOptions)
                 .then((res) => {
-                    const data = res;
-                    if (data && data.status == 200)
+                    if (res.status == 500)
                     {
-                        const json = data.json()
+                        setError('Incorrect username or password');
+                    }
+                    else if (res.status == 200)
+                    {
+                        const json = res.json()
                             .then((value) => {
                                 // Save the userID as a cookie
                                 saveUserID(value['data'].user_id);
-                            })
+                                saveDisplayName(value['data'].display_name);
+                                saveEmail(value['data'].user_email);
+                            });
+                        router.push('/storage');
                     }
-                    router.push('/storage');
                 }).catch((error) => {
                     console.log(`Error: ${error.message}`);
                 })
@@ -97,6 +103,11 @@ export default function Login() {
                     />
 
                     <Button onClick={handleLogin}>Login</Button>
+                    {
+                        error !== '' ? <Notification color='red' withCloseButton={false} title='Error signing in'>
+                        Please check your username or password
+                    </Notification> : <></>
+                    }
                 </Stack>
             </Container>
         </Group>
