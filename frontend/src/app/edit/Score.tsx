@@ -101,7 +101,7 @@ export class Score {
         let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
         let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
         let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
-        if (measureIndex == undefined || noteIdStr == undefined || topMeasure == undefined) {  console.log('Something was null in Score.findNote()!'); return null;  }
+        if (measureIndex == undefined || noteIdStr == undefined || topMeasure == undefined) { console.log('Something was null in Score.findNote()!'); return null; }
         if (topMeasure) {
             return this.top_measures[measureIndex].findNote(noteIdStr);
         }
@@ -117,8 +117,7 @@ export class Score {
     getBottomMeasures = (): Measure[] => {
         return this.bottom_measures;
     }
-    setTitle = (title: string) =>
-    {
+    setTitle = (title: string) => {
         this.title = title;
     }
 
@@ -166,12 +165,31 @@ export class Score {
 
     }
 
+    loadScoreDataObj = (scoreData: ScoreData) => {
+        this.renderer_height = scoreData.rendererHeight;
+        this.renderer_height = scoreData.rendererWidth;
+        this.total_width = scoreData.totalWidth;
+        this.ties = new Set<number>(scoreData.ties);
+        this.top_measures = [];
+        this.bottom_measures = [];
+        scoreData.topMeasures.forEach((topMeasure) => {
+            this.top_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, undefined, topMeasure));
+        });
+
+        scoreData.bottomMeasures.forEach((bottomMeasure) => {
+            this.bottom_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, undefined, bottomMeasure));
+        });
+        // Always renderTimeSig for first measures
+        this.top_measures[0].renderTimeSignature();
+        this.bottom_measures[0].renderTimeSignature();
+        this.renderMeasures();
+    }
+
     isTopMeasure = (
         noteId: number
     ): boolean => {
         let isInTopMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
-        if (isInTopMeasure)
-        {
+        if (isInTopMeasure) {
             return isInTopMeasure;
         }
         return false;
@@ -625,7 +643,7 @@ export class Score {
         for (let i = 1; i < this.top_measures.length; i++) {
             let currentTopMeasure = this.top_measures[i];
             let prevTopMeasure = this.top_measures[i - 1];
-            console.log("topStave Y  i: " +i+" :" + currentTopMeasure.getStave().getY());
+            console.log("topStave Y  i: " + i + " :" + currentTopMeasure.getStave().getY());
             // this means there was a line shift
             if (prevTopMeasure.getStave().getY() != currentTopMeasure.getStave().getY()) {
                 // console.log("I HERE is: " + i);

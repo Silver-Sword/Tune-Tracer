@@ -181,6 +181,12 @@ export default function Editor() {
         }
     }
 
+    const loadScore = () => {
+        if (notationRef.current) {
+            score.current?.loadScoreDataObj(getScoreObj1());
+        }
+    }
+
     useEffect(() => {
         const clearSVG = () => {
             if (notationRef.current) {
@@ -340,7 +346,7 @@ export default function Editor() {
             </div>
             <button onClick={setKeySignature}>Set Key Sig </button>
             <button onClick={exportScore}>Export Score</button>
-            <button onClick={loadMeasure}>Load Measure</button>
+            <button onClick={loadScore}>Load Score</button>
             <div ref={notationRef}></div>
         </div>
     );
