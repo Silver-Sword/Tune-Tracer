@@ -1,4 +1,4 @@
-import { Vex, Formatter, StaveNote, StaveTie, Beam, Tickable } from 'vexflow';
+import { Vex, Formatter, StaveNote, StaveTie, Beam, Tickable, BoundingBox } from 'vexflow';
 import { Measure } from './Measure';
 import { render } from '@testing-library/react';
 import { MeasureData } from '../../../../lib/src/MeasureData';
@@ -8,7 +8,7 @@ type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
 
 const DEFAULT_MEASURE_VERTICAL_SPACING = 100;
 const DEFAULT_NOTE_PADDING_FROM_TOP = 10;
-const DEFAULT_PADDING_IN_BETWEEN_MEASURES = 50;
+const DEFAULT_PADDING_IN_BETWEEN_MEASURES = 0;
 
 
 const DEFAULT_FIRST_MEASURES_X = 20;
@@ -81,7 +81,7 @@ export class Score {
             // X and Y don't matter here because bottom measure always adjusts based on top measure
             const firstBottomMeasure = new Measure(
                 DEFAULT_FIRST_MEASURES_X,
-                DEFAULT_FIRST_MEASURES_Y + DEFAULT_MEASURE_VERTICAL_SPACING,
+                DEFAULT_FIRST_MEASURES_Y,
                 DEFAULT_MEASURE_WIDTH, timeSignature, "bass", true, this.key_signature);
             this.top_measures.push(firstTopMeasure);
             this.bottom_measures.push(firstBottomMeasure);
@@ -342,9 +342,8 @@ export class Score {
         console.log("current ceiling: " + ceiling);
         // We want to know the largest bounding box in this line of measures
         // We'll use its coordinates to space all measures in the line
-        let largestBoundingBoxY: number = 0;
-        let largestBoundingBoxH: number = 0;
-        let indexOfLargestBox: number = 0;
+        let smallestY: number = Number.MAX_VALUE;
+        let largestY: number = Number.MIN_VALUE;
 
         for (let i = 0; i < measures.length; i++) {
             let measure = measures[i];
@@ -353,48 +352,56 @@ export class Score {
             else measure.renderSignatures(false);
 
             let stave = measure.getStave();
-            stave.setX(0);
-            stave.setY(0);
-
+            // This puts all measures on the same playing field
+            stave.setX(200);
+            stave.setY(200);
+            
             const Voice1 = measure.getVoice1();
-
             Voice1.setStave(stave);
-
             this.formatter.formatToStave([Voice1], stave);
+            // Here we manually recalculate the Voice Bounding box. We do this so that all bounding box
+            // computations, stave and voice, are calculated on the same spot
+            // This took like 8 hours that I had to do this
+            let voiceBoundingBox: BoundingBox | undefined = undefined;
+            let tickables: Tickable[] = Voice1.getTickables();
+            for (let i = 0; i < tickables.length; i++) {
+                let tickable = tickables[i];
+                tickable.setStave(stave);   // Rebind notes to the new stave
+                const bb = tickable.getBoundingBox();
+                if (bb) {
+                    voiceBoundingBox = voiceBoundingBox ? voiceBoundingBox.mergeWith(bb) : bb;
+                }
 
-            const BoundingBox = Voice1.getBoundingBox();
-
-            if (BoundingBox == null) {
-                console.error("BoundingBox is NULL");
-                return -1;
+                tickable.setContext(this.context);
             }
 
-            const BoundingBoxY: number = BoundingBox.getY();
-            const BoundingBoxH = BoundingBox.getH();
+            let staveBoundingBox = stave.getBoundingBox();
+            // Used for debugging
+            // if (voiceBoundingBox) {
+            //     this.context.setLineWidth(4);
+            //     this.context.rect(voiceBoundingBox.getX(), voiceBoundingBox.getY(),
+            //     voiceBoundingBox.getW(), voiceBoundingBox.getH());
+            //     this.context.stroke();
+            // }
 
-            if (i == 0) {
-                largestBoundingBoxY = BoundingBoxY;
-                largestBoundingBoxH = BoundingBox.getH();
-                indexOfLargestBox = i;
-            }
-            if (BoundingBoxH > largestBoundingBoxH) {
-                largestBoundingBoxY = BoundingBoxY;
-                largestBoundingBoxH = BoundingBox.getH();
-                indexOfLargestBox = i;
-            }
+            // if (staveBoundingBox) {
+            //     this.context.setLineWidth(4);
+            //     this.context.rect(staveBoundingBox.getX(), staveBoundingBox.getY(),
+            //     staveBoundingBox.getW(), staveBoundingBox.getH());
+            //     this.context.stroke();
+            // }
+
+ 
+            if(!voiceBoundingBox) continue;
+            console.log("loop smallestY: " + smallestY);
+            console.log("voiceBoundingBox.getY(): " + voiceBoundingBox.getY());
+            console.log("staveBoundingBox.getY():"  + staveBoundingBox.getY());
+            smallestY = Math.min(smallestY, Math.min(voiceBoundingBox.getY(), staveBoundingBox.getY()));
+            largestY = Math.max(largestY, Math.max(voiceBoundingBox.getY() + voiceBoundingBox.getH(), staveBoundingBox.getY() + staveBoundingBox.getH()));
+            
 
         }
         let firstStave = measures[0].getStave();
-        let firstStaveY = firstStave.getBoundingBox().getY();
-        // This means that the largest voice bounding box is SMALLER than the stave bounding box
-        if (largestBoundingBoxY > firstStaveY) {
-            console.log("Defaulting to stave bounding box before: "+ largestBoundingBoxY);
-            largestBoundingBoxY = firstStaveY;
-            largestBoundingBoxH = firstStave.getBoundingBox().getH();
-            console.log("Defaulting to stave bounding box after: "+ largestBoundingBoxY);
-        }
-        // The way the following logic works is by using relative spacing rather than actual coordinates
-        // This should produce more consistent and less buggy results
 
         // --------------------------------------------
 
@@ -402,56 +409,29 @@ export class Score {
         // Remember though, the larger the coordinate, the further down on the screen
         // The Y coordinate of the largestBoundingBox can even be negative! So subtracting will make the stave go down further
         // which is desired behavior
-        let pushDownStave = firstStave.getYForTopText() - largestBoundingBoxY;
+        let pushDownStave = firstStave.getYForTopText() - smallestY;
         console.log("firstStave.getYForTopText(): " + firstStave.getYForTopText());
+        console.log("smallestY: " + smallestY);
 
-        // If it was negative, then the voice bounding boxY was smaller than the stave Y
-        if (pushDownStave < 0) {
-            console.error("pushDownStave was negative! Not right: " + pushDownStave);
-        }
         let YCoordinateForAllMeasuresInThisLine = ceiling + pushDownStave;
         console.log("pushDownStave: " + pushDownStave);
         console.log("ceiling: " + ceiling);
-        // This should be the only place where coordinates are set
+        // This should be the only place where coordinates are set for final draw
         let XCoordinate = DEFAULT_FIRST_MEASURES_X;
         for (let i = 0; i < measures.length; i++) {
             measures[i].getStave().setX(XCoordinate);
             measures[i].getStave().setY(YCoordinateForAllMeasuresInThisLine);
+            this.formatter.formatToStave([measures[i].getVoice1()], measures[i].getStave());
             XCoordinate += measures[i].getStave().getWidth();
             this.generateBeams(measures[i]);
             measures[i].getStave().setContext(this.context).draw();
             measures[i].getVoice1().draw(this.context);
-            
+
             this.formatter.postFormat();
 
         }
 
-        let newBoundingBox = measures[indexOfLargestBox].getVoice1().getBoundingBox();
-        // Visualize the bounding box of the stave
-        const staveBoundingBox = measures[indexOfLargestBox].getStave().getBoundingBox();
-        if (staveBoundingBox) {
-            this.context.setLineWidth(4);
-            this.context.rect(staveBoundingBox.getX(), staveBoundingBox.getY(),
-                staveBoundingBox.getW(), staveBoundingBox.getH());
-            this.context.stroke();
-        }
-        const voiceBoundingBox = measures[indexOfLargestBox].getVoice1().getBoundingBox();
-        if (voiceBoundingBox) {
-            this.context.setLineWidth(4);
-            this.context.rect(voiceBoundingBox.getX(), voiceBoundingBox.getY(),
-                voiceBoundingBox.getW(), voiceBoundingBox.getH());
-            this.context.stroke();
-        }
-
-        if (newBoundingBox === undefined) {
-            console.error("Bounding Box undefined");
-            return 0;
-        }
-        console.log("largestBoundingBoxY: " + largestBoundingBoxY);
-        console.log("largestBoundingBoxH: " + largestBoundingBoxH);
-        console.log("firstStave.getBoundingBox().getH(): " + firstStave.getBoundingBox().getH());
-        // If the bottom of the stave bounding box is lower than the bottom of the voice bounding box, then count that
-        return ceiling + Math.max(largestBoundingBoxY + largestBoundingBoxH, largestBoundingBoxY + firstStave.getBoundingBox().getH()) + pushDownStave;
+        return ceiling + largestY - smallestY;
     }
 
     private calculateMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], ceiling: number, currentWidth: number): number => {
@@ -637,7 +617,6 @@ export class Score {
         }
 
     }
-
 
     // Figure out how many measures in a line, then put all this logic into a function to be called
     // for each line, pass in an array of top and bottom measures, as well as a ceiling value
