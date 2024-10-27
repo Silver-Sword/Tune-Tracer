@@ -32,6 +32,7 @@ class SortKeyObj {
 
 export class Score {
     private VF = Vex.Flow;
+    private formatter = new Formatter();
     private top_measures: Measure[] = [];
     private bottom_measures: Measure[] = [];  // both are equal in length
     private ties: Set<number> = new Set<number>();
@@ -89,7 +90,9 @@ export class Score {
             this.top_measures.push(firstTopMeasure);
             this.bottom_measures.push(firstBottomMeasure);
         }
-
+        // Always renderTimeSig for first measures
+        this.top_measures[0].renderTimeSignature();
+        this.bottom_measures[0].renderTimeSignature();
 
         this.renderMeasures();
     }
@@ -98,7 +101,7 @@ export class Score {
         let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
         let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
         let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
-        if (measureIndex == undefined || noteIdStr == undefined || topMeasure == undefined) {  console.log('Something was null in Score.findNote()!'); return null;  }
+        if (measureIndex == undefined || noteIdStr == undefined || topMeasure == undefined) { console.log('Something was null in Score.findNote()!'); return null; }
         if (topMeasure) {
             return this.top_measures[measureIndex].findNote(noteIdStr);
         }
@@ -114,8 +117,7 @@ export class Score {
     getBottomMeasures = (): Measure[] => {
         return this.bottom_measures;
     }
-    setTitle = (title: string) =>
-    {
+    setTitle = (title: string) => {
         this.title = title;
     }
 
@@ -163,12 +165,31 @@ export class Score {
 
     }
 
+    loadScoreDataObj = (scoreData: ScoreData) => {
+        this.renderer_height = scoreData.rendererHeight;
+        this.renderer_height = scoreData.rendererWidth;
+        this.total_width = scoreData.totalWidth;
+        this.ties = new Set<number>(scoreData.ties);
+        this.top_measures = [];
+        this.bottom_measures = [];
+        scoreData.topMeasures.forEach((topMeasure) => {
+            this.top_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, undefined, topMeasure));
+        });
+
+        scoreData.bottomMeasures.forEach((bottomMeasure) => {
+            this.bottom_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, undefined, bottomMeasure));
+        });
+        // Always renderTimeSig for first measures
+        this.top_measures[0].renderTimeSignature();
+        this.bottom_measures[0].renderTimeSignature();
+        this.renderMeasures();
+    }
+
     isTopMeasure = (
         noteId: number
     ): boolean => {
         let isInTopMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
-        if (isInTopMeasure)
-        {
+        if (isInTopMeasure) {
             return isInTopMeasure;
         }
         return false;
@@ -181,18 +202,12 @@ export class Score {
         let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
         let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
         if (measureIndex == undefined || noteIdStr == undefined) return;
-        // Return new ID of note instead of boolean
-        // Use that ID to record whether that staveNote has a Tie
-        // If we ever see the ID get a note added to it, update its ID
-        // Then add a Tie using the new ID
-        // Change tie logic to take only one note
-        // At render time, clean obselete ties
+
         let newNote: StaveNote | null = null;
         newNote = this.top_measures[measureIndex].addNote(keys, noteIdStr);
         if (newNote == null) {
             newNote = this.bottom_measures[measureIndex].addNote(keys, noteIdStr)
         }
-
         this.renderMeasures();
         newNote?.getSVGElement()?.setAttribute('id', "1420");
     }
@@ -215,7 +230,6 @@ export class Score {
         if (newNote.found === false) {
             newNote = this.bottom_measures[measureIndex].removeNote(keys, noteIdStr)
         }
-
         this.renderMeasures();
     }
 
@@ -296,20 +310,26 @@ export class Score {
     addMeasure = (): void => {
         // First get all the information from the previous measure as a baseline
         let topPrevMeasure: Measure = this.top_measures[this.top_measures.length - 1];
-        let topX = topPrevMeasure.getStave().getX() + DEFAULT_MEASURE_WIDTH;
-        let topY = topPrevMeasure.getStave().getY();
+        let topPrevStave = topPrevMeasure.getStave();
+        // Staves should always be the same width so this is declared once using top width
+        let width = topPrevStave.getWidth();
+        let topX = topPrevStave.getX() + width;
+        let topY = topPrevStave.getY();
         let topTimeSignature = topPrevMeasure.getTimeSignature();
+        let topKeySignature = topPrevMeasure.getKeySignature();
         let topClef = topPrevMeasure.getClef();
         let renderTopTimeSig = false;
 
         let bottomPrevMeasure: Measure = this.bottom_measures[this.bottom_measures.length - 1];
-        let bottomX = bottomPrevMeasure.getStave().getX() + DEFAULT_MEASURE_WIDTH;
-        let bottomY = bottomPrevMeasure.getStave().getY();
+        let bottomPrevStave = bottomPrevMeasure.getStave();
+        let bottomX = bottomPrevStave.getX() + width;
+        let bottomY = bottomPrevStave.getY();
         let bottomTimeSignature = bottomPrevMeasure.getTimeSignature();
+        let bottomKeySignature = bottomPrevMeasure.getKeySignature();
         let bottomClef = bottomPrevMeasure.getClef();
         let renderBottomTimeSig = false;
 
-        // If this next measure will go out of bounds...
+        // If this next new measure will go out of bounds...
         if (this.total_width + DEFAULT_MEASURE_WIDTH > this.renderer_width) {
             // Then put the next measures on the next 'measure line' 
 
@@ -329,8 +349,8 @@ export class Score {
 
         this.total_width += DEFAULT_MEASURE_WIDTH;
 
-        const newTopMeasure = new Measure(topX, topY, DEFAULT_MEASURE_WIDTH, topTimeSignature, topClef, renderTopTimeSig, this.key_signature);
-        const newBottomMeasure = new Measure(bottomX, bottomY, DEFAULT_MEASURE_WIDTH, bottomTimeSignature, bottomClef, renderBottomTimeSig, this.key_signature);
+        const newTopMeasure = new Measure(topX, topY, DEFAULT_MEASURE_WIDTH, topTimeSignature, topClef, renderTopTimeSig, topKeySignature);
+        const newBottomMeasure = new Measure(bottomX, bottomY, DEFAULT_MEASURE_WIDTH, bottomTimeSignature, bottomClef, renderBottomTimeSig, bottomKeySignature);
         this.top_measures.push(newTopMeasure);
         this.bottom_measures.push(newBottomMeasure);
         this.renderMeasures();
@@ -397,7 +417,7 @@ export class Score {
         }
     }
 
-    private calculateMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], formatter: Formatter, ceiling: number): number => {
+    private calculateMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], ceiling: number): number => {
         // We want to know the largest bounding box in this line of measures
         // We'll use its coordinates to space all measures in the line
         let largestTopMeasureBoundingBoxY: number = 0;
@@ -417,8 +437,8 @@ export class Score {
             topVoice1.setStave(topStave);
             bottomVoice1.setStave(bottomStave);
 
-            formatter.formatToStave([topVoice1], topStave);
-            formatter.formatToStave([bottomVoice1], bottomStave);
+            this.formatter.formatToStave([topVoice1], topStave);
+            this.formatter.formatToStave([bottomVoice1], bottomStave);
 
             const topBoundingBox = topVoice1.getBoundingBox();
             const bottomBoundingBox = bottomVoice1.getBoundingBox();
@@ -618,20 +638,20 @@ export class Score {
     private renderMeasures = (): void => {
         this.context.clear();
 
-        let formatter = new Formatter();
-        formatter.preFormat();
         let firstLineIndex = 0;
         let ceiling = 0;
         for (let i = 1; i < this.top_measures.length; i++) {
             let currentTopMeasure = this.top_measures[i];
             let prevTopMeasure = this.top_measures[i - 1];
-
+            console.log("topStave Y  i: " + i + " :" + currentTopMeasure.getStave().getY());
             // this means there was a line shift
             if (prevTopMeasure.getStave().getY() != currentTopMeasure.getStave().getY()) {
+                // console.log("I HERE is: " + i);
+                // console.log("prevTopMeasure.getStave().getY(): " + prevTopMeasure.getStave().getY());
+                // console.log("currentTopMeasure.getStave().getY(): " + currentTopMeasure.getStave().getY());
                 ceiling = this.calculateMeasureLine(
                     this.top_measures.slice(firstLineIndex, i),
-                    this.bottom_measures.slice(firstLineIndex, i),
-                    formatter, ceiling);
+                    this.bottom_measures.slice(firstLineIndex, i), ceiling);
                 firstLineIndex = i;
                 // padding for next measure lines
                 ceiling += DEFAULT_PADDING_IN_BETWEEN_MEASURES;
@@ -640,8 +660,7 @@ export class Score {
 
         this.calculateMeasureLine(
             this.top_measures.slice(firstLineIndex, this.top_measures.length),
-            this.bottom_measures.slice(firstLineIndex, this.bottom_measures.length),
-            formatter, ceiling);
+            this.bottom_measures.slice(firstLineIndex, this.bottom_measures.length), ceiling);
 
         // With all measures rendered, we can now give them unique IDs, and Render Ties
         let IDCounter = 0;
@@ -658,6 +677,6 @@ export class Score {
             }
         });
 
-        formatter.postFormat();
+        this.formatter.postFormat();
     }
 }
