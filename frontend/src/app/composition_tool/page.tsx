@@ -598,9 +598,6 @@ export default function CompositionTool() {
                 {
                     const durationTop = durationMap[topNotes[j].duration];
 
-                    console.log(`The duration of the topNote is: ${topNotes[j].duration}`);
-                    console.log(`TopNote is: ${topNotes[j].keys[0]}`);
-
                     // Schedule the part to be played
                     if (!topNotes[j].duration.includes('r'))
                     {
@@ -649,7 +646,6 @@ export default function CompositionTool() {
             topPart.callback = (time, event) => {
                 if (piano)
                 {
-                  console.log(`Playing back note ${event.note} with duration ${event.duration}`);
                   piano.triggerAttackRelease(event.note, event.duration, time);
                 }
 
