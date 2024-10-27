@@ -512,6 +512,15 @@ export default function CompositionTool() {
         if (score && score.current)
         {
             score.current.modifyDurationInMeasure(duration, noteId);
+
+            setTimeout(() => {
+              d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+              const noteElement = document.getElementById(noteId.toString());
+              if (noteElement) {
+                noteElement.classList.add('selected-note');
+              }
+            }, 0);
         }
     }
 
