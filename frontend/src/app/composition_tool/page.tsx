@@ -869,6 +869,19 @@ export default function CompositionTool() {
                 });;
             });
     }
+    
+    // THIS FETCHES CHANGES PERIODICALLY
+    // UNCOMMENT below to actually do it.
+    // useEffect(() => {
+    //   fetchChanges()
+  
+    //   // Set up the interval to call the API periodically
+    //   
+    //   const intervalId = setInterval(fetchChanges, 5000); // 5000 ms = 1 second
+  
+    //   // Cleanup function to clear the interval when component unmounts
+    //   return () => clearInterval(intervalId);
+    // }, []); // Empty dependency array means this runs once on mount
 
     const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
         const value = event.currentTarget.value;
