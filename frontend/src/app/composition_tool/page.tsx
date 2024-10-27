@@ -505,6 +505,7 @@ export default function CompositionTool() {
     const [selectedNoteId, setSelectedNoteId] = useState<number>(-1);
     let topPart: Tone.Part;
     let bottomPart: Tone.Part;
+    const [piano, setPiano] = useState<Tone.Sampler>();
     
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = (duration: string, noteId: number) => {
@@ -525,20 +526,25 @@ export default function CompositionTool() {
         Tone.getTransport().stop();
         // Reset the position to the start
         Tone.getTransport().position = 0;
+        Tone.getTransport().cancel();
     }
 
     // Function to play composition
-    const playbackComposition = () => {
+    const playbackComposition = async () => {
         stopPlayback();
 
-        const synth = new Tone.PolySynth().toDestination();
+        await Tone.loaded();
 
         if (topPart)
         {
+            topPart.stop();
+            topPart.clear();
             topPart.dispose();
         }
         if (bottomPart)
         {
+            bottomPart.stop();
+            bottomPart.clear();
             bottomPart.dispose();
         }
 
@@ -592,6 +598,9 @@ export default function CompositionTool() {
                 {
                     const durationTop = durationMap[topNotes[j].duration];
 
+                    console.log(`The duration of the topNote is: ${topNotes[j].duration}`);
+                    console.log(`TopNote is: ${topNotes[j].keys[0]}`);
+
                     // Schedule the part to be played
                     if (!topNotes[j].duration.includes('r'))
                     {
@@ -638,7 +647,11 @@ export default function CompositionTool() {
 
             // Configure the playback of the top and bottom parts
             topPart.callback = (time, event) => {
-                synth.triggerAttackRelease(event.note, event.duration, time);
+                if (piano)
+                {
+                  console.log(`Playing back note ${event.note} with duration ${event.duration}`);
+                  piano.triggerAttackRelease(event.note, event.duration, time);
+                }
 
                 const durationInSeconds = Tone.Time(event.duration).toSeconds();
 
@@ -654,7 +667,10 @@ export default function CompositionTool() {
             };
 
             bottomPart.callback = (time, event) => {
-                synth.triggerAttackRelease(event.note, event.duration, time);
+                if (piano)
+                {
+                  piano.triggerAttackRelease(event.note, event.duration, time);
+                }
 
                 const durationInSeconds = Tone.Time(event.duration).toSeconds();
 
@@ -677,7 +693,7 @@ export default function CompositionTool() {
     }
 
     const highlightNoteStart = (noteId: string) => {
-        console.log(`Highlight note start running at note id: ${noteId}`);
+        // console.log(`Highlight note start running at note id: ${noteId}`);
         d3.select(`[id="${noteId}"]`).classed('highlighted', true);
     }
 
@@ -781,6 +797,10 @@ export default function CompositionTool() {
     }
 
     useEffect(() => {
+        const loadSamples = async () => {
+          await Tone.loaded();
+        };
+
         const clearSVG = () => {
             if (notationRef.current) {
                 notationRef.current.innerHTML = '';
@@ -798,6 +818,37 @@ export default function CompositionTool() {
             }
         };
 
+        setPiano(
+          new Tone.Sampler({
+            urls: {
+                "A3": "A3.mp3",
+                "B3": "B3.mp3",
+                "C3": "C3.mp3",
+                "D3": "D3.mp3",
+                "E3": "E3.mp3",
+                "F3": "F3.mp3",
+                "G3": "G3.mp3",
+                "A4": "A4.mp3",
+                "B4": "B4.mp3",
+                "C4": "C4.mp3",
+                "D4": "D4.mp3",
+                "E4": "E4.mp3",
+                "F4": "F4.mp3",
+                "G4": "G4.mp3",
+                "A5": "A5.mp3",
+                "B5": "B5.mp3",
+                "C5": "C5.mp3",
+                "D5": "D5.mp3",
+                "E5": "E5.mp3",
+                "F5": "F5.mp3",
+                "G5": "G5.mp3",
+            },
+            release: 1,
+            baseUrl: "/piano/",
+          }).toDestination()
+        );
+
+        loadSamples();
         clearSVG();
         renderNotation();
     }, []);
