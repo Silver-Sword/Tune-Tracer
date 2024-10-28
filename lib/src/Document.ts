@@ -10,7 +10,6 @@ export type Document =
     comments: Comment[],                // comments; unusued
     score: ScoreData,                   // the contents of the composition
     metadata: DocumentMetadata,         // the document metadata; this should be treated as a CONST by the frontend
-    selectedNotes: SelectedNote[]       // array of selected notes by all users, if any
 };
 
 export function getDefaultDocument(): Document {
@@ -19,6 +18,5 @@ export function getDefaultDocument(): Document {
         comments: [],
         score: getDefaultScoreData(),
         metadata: getDefaultDocumentMetadata(),
-        selectedNotes: [],
     };
 }
