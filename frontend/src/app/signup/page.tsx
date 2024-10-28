@@ -13,18 +13,19 @@ export default function SignUp() {
     const [email, setEmail] = useState('');
     const [displayName, setDisplayName] = useState('');
     const [password, setPassword] = useState('');
-    const [message, setMessage] = useState('');
+    const [checkPassword, setCheckPassword] = useState('');
     const router = useRouter();
     
 
     const handleRegister = async () => {
+        setError('');
         setLoading(true);
+        if (password !== checkPassword) {
+            setError('Passwords do not match');
+            return;
+        }
 
-        // const email2 = email as string;
-        // const displayName2 = displayName as string;
-        // const password2 = password as string;
         try {
-            // const signUpUser = await httpsCallable(functions, 'signUpUser');
             const userInfo =
             {
                 email: email,
@@ -41,26 +42,30 @@ export default function SignUp() {
 
             fetch(SIGN_UP_URL, requestOptions)
                .then((res) => {
-                    console.log(res);
-                    // Read result of the Cloud Function.
-                    const data = res;
-                    console.log("Data:" + data);
-                    
+                    res.json().then((value) => {
+                        if (value['message'] !== "User signed up successfully")
+                        {
+                            setError(value['message']);
+                            return;
+                        }
+                        else
+                        {
+                            router.push('/login');
+                        }
+                    // Save the userID as a cookie
+                    });
                 }).catch((error) => {
                     // Getting the Error details.
                     const message = error.message;
                     console.log(`Error: ${message}`);
-                    setMessage(`Error: ${message}`);
+                    setError(`Error: ${message}`);
                     return;
                     // ...
                   });
-
-                  setMessage(`User registered successfully. Please check email to get verified`);
-                  router.push('/login');
         } catch (error: any) {
             console.log(`Error: ${error.message}`);
             // Handle any error and display the message
-            setMessage(`Error: ${error.message}`);
+            setError(`Error: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -113,6 +118,7 @@ export default function SignUp() {
                         radius='md'
                         label='Email'
                         placeholder='email'
+                        error={error}
                     value={email}
                     onChange={(event) => setEmail(event.currentTarget.value)}
                 />
@@ -122,6 +128,7 @@ export default function SignUp() {
                         label='Display Name'
                         placeholder='Name'
                         value={displayName}
+                        error={error}
                     onChange={(event) => setDisplayName(event.currentTarget.value)}
                     />
                     <PasswordInput
@@ -139,6 +146,7 @@ export default function SignUp() {
                         placeholder='password'
                         withAsterisk
                         error={error}
+                        onChange={(event) => setCheckPassword(event.currentTarget.value)}
                     />
                     <Button component='a' onClick={handleRegister}>Sign Up</Button>
                     <Text
