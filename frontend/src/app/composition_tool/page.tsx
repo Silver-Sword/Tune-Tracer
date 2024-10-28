@@ -45,7 +45,7 @@ import {
     IconCheck,
 } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
-import { getUserID } from "../cookie";
+import { getUserID, getDisplayName, getEmail } from "../cookie";
 import { SelectedNote } from "../lib/src/SelectedNote";
 
 
@@ -527,7 +527,9 @@ export default function CompositionTool() {
     let bottomPart: Tone.Part;
     const [piano, setPiano] = useState<Tone.Sampler>();
     const volumeNode = useRef<Tone.Volume>();
-    const selectedNotes: SelectedNote[] = [];
+    const email = useRef<string>();
+    const userId = useRef<string>();
+    const displayName = useRef<string>();
     
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = (duration: string, noteId: number) => {
@@ -876,6 +878,11 @@ export default function CompositionTool() {
           }).connect(volumeNode.current)
         );
 
+        // Save user info
+        email.current = getEmail();
+        displayName.current = getDisplayName();
+        userId.current = getUserID();
+
         loadSamples();
         clearSVG();
         renderNotation();
@@ -892,6 +899,7 @@ export default function CompositionTool() {
     const SUBSCRIBE_TO_DOC_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToDocument';
     const SUBSCRIBE_TO_COMMENTS_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToComments';
     const CHECK_CHANGE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/checkDocumentChanges';
+    const UPDATE_CURSOR_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updateUserCursor';
 
     const [currentDocument, setDocument] = useState<Document>({
         document_title: '',
@@ -959,6 +967,7 @@ export default function CompositionTool() {
                         metadata: metadata,
                         selectedNotes: []
                     };
+                    console.log(`Received user data: ${data.data.userEntities}`);
                     setDocument(tempDocument);
                     console.log("Recieved Score data: " + printScoreData(compData));
                     if (notationRef.current) {
@@ -1210,6 +1219,9 @@ export default function CompositionTool() {
             d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
         }
 
+        // Update the user cursor on the backend
+        updateUserCursor();
+
         // Keyboard shortcuts for adding notes
         const handleKeyDown = (event: KeyboardEvent) => {
             // Mapping of keyboard letters to note string
@@ -1314,6 +1326,35 @@ export default function CompositionTool() {
             d3.select(notationRef.current).on('click', null);
         }
     }, [notationRef.current])
+
+    const updateUserCursor = async () => {
+        if (selectedNoteId)
+        {
+            const userInfo = {
+                documentId: 'aco5tXEzQt7dSeB1WSlV',
+                userId: userId,
+                user_email: email,
+                displayName: displayName,
+                cursor: selectedNoteId
+            }
+
+            const POST_OPTION = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userInfo)
+            }
+
+            fetch(UPDATE_CURSOR_URL, POST_OPTION)
+                .then((res) => {
+                    res.json().then((data) => {
+                        console.log('Successfully called updateCursor endpoint');
+                        console.log(`User cursor data: ${data.data}`);
+                    })
+                })
+        }
+    };
 
     return (
         <AppShell
