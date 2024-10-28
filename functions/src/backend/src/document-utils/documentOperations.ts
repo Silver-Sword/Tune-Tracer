@@ -1,10 +1,10 @@
-import { DocumentMetadata, DocumentPreview, ShareStyle } from '@lib/src/documentProperties';
-import { Document } from '@lib/src/Document';
+import { DocumentMetadata, ShareStyle } from '../../../lib/src/documentProperties';
+import { Document } from '../../../lib/src/Document';
 
 import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';
 import { recordOnlineUserUpdatedDocument } from "./realtimeOnlineUsers";
-import { getDefaultScoreData } from '@lib/src/ScoreData';
+import { getDefaultScoreData } from '../../../lib/src/ScoreData';
 import { getUserAccessLevel } from '../security-utils/getUserAccessLevel';
 
 // NOTE: UPDATE functions MODIFY the document that is passed to it

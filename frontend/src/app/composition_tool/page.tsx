@@ -2,211 +2,217 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Score } from "../edit/Score";
+// We have two of these for some reason
+//import { printScoreData, ScoreData } from "../lib/src/ScoreData";
+import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
+import { Document } from "../lib/src/Document";
+import { DocumentMetadata } from "../lib/src/documentProperties";
+import { Comment } from "../lib/src/Comment";
 import {
-  AppShell,
-  Container,
-  Text,
-  Button,
-  Group,
-  Space,
-  Stack,
-  SimpleGrid,
-  Grid,
-  Flex,
-  Input,
-  TextInput,
-  Paper,
-  Avatar,
-  Divider,
-  ScrollArea,
-  Tooltip,
-  Tabs,
-  SegmentedControl,
-  ActionIcon,
-  Modal,
-  Slider,
-  rem,
-  Center,
-  CopyButton,
-  Select,
+    AppShell,
+    Container,
+    Text,
+    Button,
+    Group,
+    Space,
+    Stack,
+    SimpleGrid,
+    Grid,
+    Flex,
+    Input,
+    TextInput,
+    Paper,
+    Avatar,
+    Divider,
+    ScrollArea,
+    Tooltip,
+    Tabs,
+    SegmentedControl,
+    ActionIcon,
+    Modal,
+    Slider,
+    rem,
+    Center,
+    CopyButton,
+    Select,
 } from "@mantine/core";
 import {
-  IconPlayerPlay,
-  IconPlayerPause,
-  IconPlayerStop,
-  IconVolume,
-  IconCopy,
-  IconCheck,
+    IconPlayerPlay,
+    IconPlayerPause,
+    IconPlayerStop,
+    IconVolume,
+    IconCopy,
+    IconCheck,
 } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 
 
 // Define types for the collaborator
 interface Collaborator {
-  name: string;
-  email: string;
-  role: 'Viewer' | 'Commenter' | 'Editor';
+    name: string;
+    email: string;
+    role: 'Viewer' | 'Commenter' | 'Editor';
 }
 
 // CollaboratorCard component used in SharingModal to show who has access 
 const CollaboratorCard: React.FC<{
-  name: string;
-  email: string;
-  role: 'Viewer' | 'Commenter' | 'Editor';
-  onRoleChange: (newRole: 'Viewer' | 'Commenter' | 'Editor') => void;
-  onRemove: () => void;
+    name: string;
+    email: string;
+    role: 'Viewer' | 'Commenter' | 'Editor';
+    onRoleChange: (newRole: 'Viewer' | 'Commenter' | 'Editor') => void;
+    onRemove: () => void;
 }> = ({ name, email, role, onRoleChange, onRemove }) => {
-  const [currentRole, setCurrentRole] = useState<'Viewer' | 'Commenter' | 'Editor' | 'Remove access'>(role);
+    const [currentRole, setCurrentRole] = useState<'Viewer' | 'Commenter' | 'Editor' | 'Remove access'>(role);
 
-  const handleRoleChange = (newRole: 'Viewer' | 'Commenter' | 'Editor' | 'Remove access') => {
-    if (newRole === 'Remove access') {
-      onRemove(); // Call the remove function if "Remove access" is selected
-    } else {
-      setCurrentRole(newRole);
-      onRoleChange(newRole);
-    }
-  };
+    const handleRoleChange = (newRole: 'Viewer' | 'Commenter' | 'Editor' | 'Remove access') => {
+        if (newRole === 'Remove access') {
+            onRemove(); // Call the remove function if "Remove access" is selected
+        } else {
+            setCurrentRole(newRole);
+            onRoleChange(newRole);
+        }
+    };
 
-  return (
-    <Group
-      justify="space-between"
-      style={{
-        padding: '15px',
-        border: '1px solid #e0e0e0',
-        borderRadius: '8px',
-        marginBottom: '10px',
-        boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
-      }}
-    >
-      {/* Avatar and Collaborator Info */}
-      <Group>
-        <div>
-          <Text size="sm">{name}</Text>
-          <Text size="xs" c="dimmed">{email}</Text>
-        </div>
-      </Group>
+    return (
+        <Group
+            justify="space-between"
+            style={{
+                padding: '15px',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                marginBottom: '10px',
+                boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
+            }}
+        >
+            {/* Avatar and Collaborator Info */}
+            <Group>
+                <div>
+                    <Text size="sm">{name}</Text>
+                    <Text size="xs" c="dimmed">{email}</Text>
+                </div>
+            </Group>
 
-      {/* Role Selector */}
-      <Select
-        checkIconPosition="right"
-        value={currentRole}
-        onChange={(newRole) => handleRoleChange(newRole as 'Viewer' | 'Commenter' | 'Editor' | 'Remove access')}
-        data={[
-          { value: 'Viewer', label: 'Viewer' },
-          { value: 'Commenter', label: 'Commenter' },
-          { value: 'Editor', label: 'Editor' },
-          { value: 'Remove access', label: 'Remove access' }  // Red to differentiate remove
-        ]}
-        style={{ width: 150 }}
-      />
-    </Group>
-  );
+            {/* Role Selector */}
+            <Select
+                checkIconPosition="right"
+                value={currentRole}
+                onChange={(newRole) => handleRoleChange(newRole as 'Viewer' | 'Commenter' | 'Editor' | 'Remove access')}
+                data={[
+                    { value: 'Viewer', label: 'Viewer' },
+                    { value: 'Commenter', label: 'Commenter' },
+                    { value: 'Editor', label: 'Editor' },
+                    { value: 'Remove access', label: 'Remove access' }  // Red to differentiate remove
+                ]}
+                style={{ width: 150 }}
+            />
+        </Group>
+    );
 };
 
 // Sharing Modal Component
 const SharingModal: React.FC = () => {
-  // Sharing logic here
-  const [openShare, { open, close }] = useDisclosure(false);
+    // Sharing logic here
+    const [openShare, { open, close }] = useDisclosure(false);
 
-  // SAMPLE
-  const [collaborators, setCollaborators] = useState<Collaborator[]>([
-    { name: 'Jose Cuyugan', email: 'werhhh@gmail.com', role: 'Editor' },
-    { name: 'Chris Gittings', email: 'asdfadf.cg@gmail.com', role: 'Viewer' },
-    { name: 'Jordy Valois', email: 'dddddd@gmail.com', role: 'Commenter' },
-    { name: 'Sophia DeAngelo', email: 'ssss@hotmail.com', role: 'Editor' },
-  ]);
-  
-  const handleRoleChange = (newRole: 'Viewer' | 'Commenter' | 'Editor', index: number) => {
-    const updatedCollaborators = [...collaborators];
-    updatedCollaborators[index].role = newRole;
-    setCollaborators(updatedCollaborators);
-  };
+    // SAMPLE
+    const [collaborators, setCollaborators] = useState<Collaborator[]>([
+        { name: 'Jose Cuyugan', email: 'werhhh@gmail.com', role: 'Editor' },
+        { name: 'Chris Gittings', email: 'asdfadf.cg@gmail.com', role: 'Viewer' },
+        { name: 'Jordy Valois', email: 'dddddd@gmail.com', role: 'Commenter' },
+        { name: 'Sophia DeAngelo', email: 'ssss@hotmail.com', role: 'Editor' },
+    ]);
 
-  // Function to remove a collaborator
-  const handleRemove = (index: number) => {
-    const updatedCollaborators = collaborators.filter((_, i) => i !== index);
-    setCollaborators(updatedCollaborators);
-  };
+    const handleRoleChange = (newRole: 'Viewer' | 'Commenter' | 'Editor', index: number) => {
+        const updatedCollaborators = [...collaborators];
+        updatedCollaborators[index].role = newRole;
+        setCollaborators(updatedCollaborators);
+    };
 
-  return (
-    <>
-      <Modal
-        opened={openShare}
-        onClose={close}
-        title="Share: [Document Name]"
-        centered
-        size="lg"
-      >
-        {/* Modal content */}
-        <TextInput placeholder="Add collaborators by email here"></TextInput>
-        <Space h="sm" />
-        <Text>Collaborators</Text>
-        <ScrollArea h={250}>
-          {collaborators.map((collab, index) => (
-            <CollaboratorCard
-              key={index}
-              name={collab.name}
-              email={collab.email}
-              role={collab.role}
-              onRoleChange={(newRole) => handleRoleChange(newRole, index)}
-              onRemove={() => handleRemove(index)}
-            />
-          ))}
-        </ScrollArea>
-          
-        <Divider size="sm" my="sm"></Divider>
+    // Function to remove a collaborator
+    const handleRemove = (index: number) => {
+        const updatedCollaborators = collaborators.filter((_, i) => i !== index);
+        setCollaborators(updatedCollaborators);
+    };
 
-        <Text>Code Access</Text>
-        <Space h="sm"></Space>
-        <Group justify="space-between">
-          <Container>
-          {/* Code gets rendered here, it is limited to 6 numbers */}
-            <Text ta="center" c="blue" fw={700} style={{ letterSpacing: '0.5em'}}>
-              651172
-            </Text>
-          </Container>
+    return (
+        <>
+            <Modal
+                opened={openShare}
+                onClose={close}
+                title="Share: [Document Name]"
+                centered
+                size="lg"
+            >
+                {/* Modal content */}
+                <TextInput placeholder="Add collaborators by email here"></TextInput>
+                <Space h="sm" />
+                <Text>Collaborators</Text>
+                <ScrollArea h={250}>
+                    {collaborators.map((collab, index) => (
+                        <CollaboratorCard
+                            key={index}
+                            name={collab.name}
+                            email={collab.email}
+                            role={collab.role}
+                            onRoleChange={(newRole) => handleRoleChange(newRole, index)}
+                            onRemove={() => handleRemove(index)}
+                        />
+                    ))}
+                </ScrollArea>
 
-          <Group>
-          {/* Uncomment block if multiple codes are allowed to exist based on access level */}
-          <Select
-            checkIconPosition="right"
-            value={null}
-            placeholder="Access Level"
-            data={[
-              { value: 'Viewer', label: 'Viewer' },
-              { value: 'Commenter', label: 'Commenter' },
-              { value: 'Editor', label: 'Editor' },
-            ]}
-            style={{ width: 150 }}
-          />
+                <Divider size="sm" my="sm"></Divider>
 
-          <Button>Generate Code</Button>
-          </Group>
-        </Group>
-          
-        <Divider size="sm" my="sm"></Divider>
-          
-        <Text>Link Access</Text>
-        <Space h="sm"></Space>    
-          {/* Replace value with the document link */}
-          <Center>
-          <CopyButton value="null" timeout={10000}>
-            {({ copied, copy }) => (
-              <Button
-                rightSection={copied ? <IconCheck /> : <IconCopy />}
-                variant={copied ? "filled" : "outline"}
-                onClick={copy}
-              >
-                {copied ? "Copied" : "Copy Link"}
-              </Button>
-            )}
-          </CopyButton>
-          </Center>
-      </Modal>
-      <Button onClick={open}>Share</Button>
-      {/* Profile Icon */}
-    </>
-  );
+                <Text>Code Access</Text>
+                <Space h="sm"></Space>
+                <Group justify="space-between">
+                    <Container>
+                        {/* Code gets rendered here, it is limited to 6 numbers */}
+                        <Text ta="center" c="blue" fw={700} style={{ letterSpacing: '0.5em' }}>
+                            651172
+                        </Text>
+                    </Container>
+
+                    <Group>
+                        {/* Uncomment block if multiple codes are allowed to exist based on access level */}
+                        <Select
+                            checkIconPosition="right"
+                            value={null}
+                            placeholder="Access Level"
+                            data={[
+                                { value: 'Viewer', label: 'Viewer' },
+                                { value: 'Commenter', label: 'Commenter' },
+                                { value: 'Editor', label: 'Editor' },
+                            ]}
+                            style={{ width: 150 }}
+                        />
+
+                        <Button>Generate Code</Button>
+                    </Group>
+                </Group>
+
+                <Divider size="sm" my="sm"></Divider>
+
+                <Text>Link Access</Text>
+                <Space h="sm"></Space>
+                {/* Replace value with the document link */}
+                <Center>
+                    <CopyButton value="null" timeout={10000}>
+                        {({ copied, copy }) => (
+                            <Button
+                                rightSection={copied ? <IconCheck /> : <IconCopy />}
+                                variant={copied ? "filled" : "outline"}
+                                onClick={copy}
+                            >
+                                {copied ? "Copied" : "Copy Link"}
+                            </Button>
+                        )}
+                    </CopyButton>
+                </Center>
+            </Modal>
+            <Button onClick={open}>Share</Button>
+            {/* Profile Icon */}
+        </>
+    );
 };
 import * as d3 from 'd3';
 import * as Tone from 'tone';
@@ -217,283 +223,281 @@ const ToolbarHeader: React.FC<{
     playbackComposition: () => void;
     stopPlayback: () => void;
 }> = ({ modifyDurationInMeasure, selectedNoteId, playbackComposition, stopPlayback }) => {
-  // State to manage the input value
-  const [inputValue, setInputValue] = useState("Untitled Score");
+    // State to manage the input value
+    const [inputValue, setInputValue] = useState("Untitled Score");
 
-  // State to toggle between edit and display modes
-  const [isChangingName, setIsChangingName] = useState(false);
+    // State to toggle between edit and display modes
+    const [isChangingName, setIsChangingName] = useState(false);
 
-  // Handle the save action (when pressing Enter or clicking outside)
-  const handleSave = () => {
-    setIsChangingName(false); // Exit edit mode and save
-  };
+    // Handle the save action (when pressing Enter or clicking outside)
+    const handleSave = () => {
+        setIsChangingName(false); // Exit edit mode and save
+    };
 
-  // Handle when the user clicks the text to switch to editing mode
-  const handleEdit = () => {
-    setIsChangingName(true);
-  };
+    // Handle when the user clicks the text to switch to editing mode
+    const handleEdit = () => {
+        setIsChangingName(true);
+    };
 
-  // Toggle between editable and read-only states
-  const [ mode, setMode ] = useState<string>("Editable");
-  const handleModeChange = (value: any) => {
-    setMode(value);
-  }
+    // Toggle between editable and read-only states
+    const [mode, setMode] = useState<string>("Editable");
+    const handleModeChange = (value: any) => {
+        setMode(value);
+    }
 
-  // Need logic for swapping pause and play buttons, also if hitting stop it completely resets the time back to 0
+    // Need logic for swapping pause and play buttons, also if hitting stop it completely resets the time back to 0
 
-  const [volume, setVolume] = useState(50);
+    const [volume, setVolume] = useState(50);
 
-  const handleVolumeChange = (value: React.SetStateAction<number>) => {
-    setVolume(value);
-    console.log(`Volume value is: ${value}`);
-    // if (audioRef.current) {
-    //   audioRef.current.volume = value / 100; // Convert to a scale of 0 to 1 for audio API
-    // }
-  };
+    const handleVolumeChange = (value: React.SetStateAction<number>) => {
+        setVolume(value);
+        console.log(`Volume value is: ${value}`);
+        // if (audioRef.current) {
+        //   audioRef.current.volume = value / 100; // Convert to a scale of 0 to 1 for audio API
+        // }
+    };
 
-  return (
-    <AppShell.Header p="md">
-      {/* First layer (top section) PUT IF STATEMENT HERE IF READ ONLY*/}
-      <Group
-        align="center"
-        style={{ borderBottom: "1px solid #eee", paddingBottom: "10px" }}
-      >
-        <Tooltip label="Back to Home">
-          <Text size="xl" component="a" href="/storage">
-            Tune Tracer
-          </Text>
-        </Tooltip>
+    return (
+        <AppShell.Header p="md">
+            {/* First layer (top section) PUT IF STATEMENT HERE IF READ ONLY*/}
+            <Group
+                align="center"
+                style={{ borderBottom: "1px solid #eee", paddingBottom: "10px" }}
+            >
+                <Tooltip label="Back to Home">
+                    <Text size="xl" component="a" href="/storage">
+                        Tune Tracer
+                    </Text>
+                </Tooltip>
 
-        {/* Editable Document Title */}
-        {isChangingName ? (
-          <TextInput
-            size="md"
-            value={inputValue}
-            onChange={(event) => setInputValue(event.currentTarget.value)} // Update input value
-            onBlur={handleSave} // Save on focus loss
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                handleSave(); // Save on Enter key press
-              }
-            }}
-            placeholder="Enter Document Name"
-            autoFocus // Auto-focus when entering edit mode
-          />
-        ) : (
-          <Text
-            onClick={handleEdit}
-            style={{
-              cursor: "text",
-              padding: "3px",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.outline =
-                "2px solid rgba(128, 128, 128, 0.6)"; // Slightly dimmed gray outline
-              e.currentTarget.style.outlineOffset = "3px"; // Space between outline and text
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.outline = "none"; // Remove outline on mouse leave
-            }}
-          >
-            {inputValue || "Untitled Score"}
-          </Text>
-        )}
+                {/* Editable Document Title */}
+                {isChangingName ? (
+                    <TextInput
+                        size="md"
+                        value={inputValue}
+                        onChange={(event) => setInputValue(event.currentTarget.value)} // Update input value
+                        onBlur={handleSave} // Save on focus loss
+                        onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                                handleSave(); // Save on Enter key press
+                            }
+                        }}
+                        placeholder="Enter Document Name"
+                        autoFocus // Auto-focus when entering edit mode
+                    />
+                ) : (
+                    <Text
+                        onClick={handleEdit}
+                        style={{
+                            cursor: "text",
+                            padding: "3px",
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.outline =
+                                "2px solid rgba(128, 128, 128, 0.6)"; // Slightly dimmed gray outline
+                            e.currentTarget.style.outlineOffset = "3px"; // Space between outline and text
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.outline = "none"; // Remove outline on mouse leave
+                        }}
+                    >
+                        {inputValue || "Untitled Score"}
+                    </Text>
+                )}
 
-        {/* PlayBack UI */}
-        <Container fluid style={{ width: "20%" }}>
-          <Center>
-            <Group>
-              <ActionIcon onClick={() => playbackComposition()}>
-                <IconPlayerPlay />
-              </ActionIcon>
-              <ActionIcon>
-                <IconPlayerPause />
-              </ActionIcon>
-              <ActionIcon onClick={() => stopPlayback()}>
-                <IconPlayerStop />
-              </ActionIcon>
+                {/* PlayBack UI */}
+                <Container fluid style={{ width: "20%" }}>
+                    <Center>
+                        <Group>
+                            <ActionIcon onClick={() => playbackComposition()}>
+                                <IconPlayerPlay />
+                            </ActionIcon>
+                            <ActionIcon>
+                                <IconPlayerPause />
+                            </ActionIcon>
+                            <ActionIcon onClick={() => stopPlayback()}>
+                                <IconPlayerStop />
+                            </ActionIcon>
+                        </Group>
+                    </Center>
+                    <Space h="xs"></Space>
+                    <Slider
+                        value={volume}
+                        onChange={handleVolumeChange}
+                        thumbChildren={<IconVolume />}
+                        label={(value) => `${value}%`}
+                        defaultValue={50}
+                        thumbSize={26}
+                        styles={{ thumb: { borderWidth: rem(2), padding: rem(3) } }}
+                    />
+                </Container>
+
+                {/* I'd like to have everything left justified except the sharing button */}
+                {/* Sharing UI */}
+
+                {/* Select Dropdown should not be changable if not the owner */}
+                <Select
+                    placeholder="Select Sharing Mode"
+                    onChange={(value) => handleModeChange(value)}
+                    allowDeselect={false}
+                    withCheckIcon={false}
+                    style={{ width: 125, marginLeft: '10px' }}
+                />
+                <SharingModal />
             </Group>
-          </Center>
-          <Space h="xs"></Space>
-          <Slider
-            value={volume}
-            onChange={handleVolumeChange}
-            thumbChildren={<IconVolume />}
-            label={(value) => `${value}%`}
-            defaultValue={50}
-            thumbSize={26}
-            styles={{ thumb: { borderWidth: rem(2), padding: rem(3) } }}
-          />
-        </Container>
 
-        {/* I'd like to have everything left justified except the sharing button */}
-        {/* Sharing UI */}
+            {/* Second layer (middle section) */}
+            {/* <Group align="center" mt="xs" style={{ paddingBottom: "10px" }}> */}
+            <Tabs defaultValue="notes">
+                <Tabs.List>
+                    <Tabs.Tab value="notes">Notes</Tabs.Tab>
+                    <Tabs.Tab value="measure">Measure</Tabs.Tab>
+                </Tabs.List>
 
-        {/* Select Dropdown should not be changable if not the owner */}
-        <Select
-          data={['Editable', 'Read-Only']}
-          value={mode}
-          onChange={handleModeChange}
-          placeholder="Select Sharing Mode"
-          allowDeselect={false}
-          withCheckIcon={false}
-          style={{ width: 125, marginLeft: '10px' }}
-        />
-        <SharingModal />
-      </Group>
+                {/* Notes Tab */}
+                <Tabs.Panel value="notes">
+                    <Space h="xs"></Space>
+                    <Group>
+                        <Button variant="outline">Natural</Button>
+                        <Button variant="outline">Sharp</Button>
+                        <Button variant="outline">Flat</Button>
 
-      {/* Second layer (middle section) */}
-      {/* <Group align="center" mt="xs" style={{ paddingBottom: "10px" }}> */}
-        <Tabs defaultValue="notes">
-          <Tabs.List>
-            <Tabs.Tab value="notes">Notes</Tabs.Tab>
-            <Tabs.Tab value="measure">Measure</Tabs.Tab>
-          </Tabs.List>
+                        <Divider size="sm" orientation="vertical" />
 
-          {/* Notes Tab */}
-          <Tabs.Panel value="notes">
-            <Space h="xs"></Space>
-            <Group>
-              <Button variant="outline">Natural</Button>
-              <Button variant="outline">Sharp</Button>
-              <Button variant="outline">Flat</Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => modifyDurationInMeasure('w', selectedNoteId)}
+                        >
+                            Whole
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => modifyDurationInMeasure('h', selectedNoteId)}
+                        >
+                            Half
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => modifyDurationInMeasure('q', selectedNoteId)}
+                        >
+                            Quarter
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => modifyDurationInMeasure('8', selectedNoteId)}
+                        >
+                            Eighth
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => modifyDurationInMeasure('16', selectedNoteId)}
+                        >
+                            Sixteenth
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => modifyDurationInMeasure('32', selectedNoteId)}
+                        >
+                            Thirty-Second
+                        </Button>
+                        <Button variant="outline">Sixty-Fourth</Button>
 
-              <Divider size="sm" orientation="vertical" />
+                        <Divider size="sm" orientation="vertical" />
 
-                <Button
-                    variant="outline"
-                    onClick={() => modifyDurationInMeasure('w', selectedNoteId)}
-                >
-                    Whole
-                </Button>
-                <Button
-                    variant="outline"
-                    onClick={() => modifyDurationInMeasure('h', selectedNoteId)}
-                >
-                    Half
-                </Button>
-                <Button
-                    variant="outline"
-                    onClick={() => modifyDurationInMeasure('q', selectedNoteId)}
-                >
-                    Quarter
-                </Button>
-                <Button 
-                    variant="outline"
-                    onClick={() => modifyDurationInMeasure('8', selectedNoteId)}
-                >
-                    Eighth
-                </Button>
-                <Button
-                    variant="outline"
-                    onClick={() => modifyDurationInMeasure('16', selectedNoteId)}
-                >
-                    Sixteenth
-                </Button>
-                <Button
-                    variant="outline"
-                    onClick={() => modifyDurationInMeasure('32', selectedNoteId)}
-                >
-                    Thirty-Second
-                </Button>
-                <Button variant="outline">Sixty-Fourth</Button>
+                        <Button variant="outline">Dot</Button>
 
-              <Divider size="sm" orientation="vertical" />
+                        <Divider size="sm" orientation="vertical" />
 
-              <Button variant="outline">Dot</Button>
+                        <Button>Help</Button>
+                    </Group>
+                </Tabs.Panel>
 
-              <Divider size="sm" orientation="vertical" />
+                <Tabs.Panel value="measure">
+                    <Space h="xs"></Space>
+                    <Group>
+                        <Button variant="outline">Add Measure</Button>
+                        <Button variant="outline">Delete Measure</Button>
+                    </Group>
+                </Tabs.Panel>
 
-              <Button>Help</Button>
-            </Group>
-          </Tabs.Panel>
-
-          <Tabs.Panel value="measure">
-            <Space h="xs"></Space>
-            <Group>
-              <Button variant="outline">Add Measure</Button>
-              <Button variant="outline">Delete Measure</Button>
-            </Group>
-          </Tabs.Panel>
-
-          <></>
-        </Tabs>
-      {/* </Group> */}
-    </AppShell.Header>
-  );
+                <></>
+            </Tabs>
+            {/* </Group> */}
+        </AppShell.Header>
+    );
 };
 
 // CommentCard component only used for the comment sidebar
 const CommentCard: React.FC = () => {
-  return (
-    <Paper withBorder shadow="sm" p="md" radius="md">
-      <Group>
-        {/* Need user logic for avatars, names, and date*/}
-        <Avatar radius="xl" />
-        <div>
-          <Text fz="sm">[name]</Text>
-          <Text fz="xs" c="dimmed">
-            [date/time]
-          </Text>
-        </div>
-      </Group>
-      <Text pl={54} pt="sm" size="sm">
-        Lorem ipsum
-      </Text>
-    </Paper>
-  );
+    return (
+        <Paper withBorder shadow="sm" p="md" radius="md">
+            <Group>
+                {/* Need user logic for avatars, names, and date*/}
+                <Avatar radius="xl" />
+                <div>
+                    <Text fz="sm">[name]</Text>
+                    <Text fz="xs" c="dimmed">
+                        [date/time]
+                    </Text>
+                </div>
+            </Group>
+            <Text pl={54} pt="sm" size="sm">
+                Lorem ipsum
+            </Text>
+        </Paper>
+    );
 };
 
 // Right sidebar that contains all the comments in the document
 const CommentAside: React.FC = () => {
-  const [commentInput, setCommentInput] = useState("");
+    const [commentInput, setCommentInput] = useState("");
 
-  const handleComment = (event: { currentTarget: { value: any } }) => {
-    const value = event.currentTarget.value;
-    setCommentInput(value);
-    console.log(`Comment Published: ${value}`);
-    // Add more comment publishing logic here
-  };
+    const handleComment = (event: { currentTarget: { value: any } }) => {
+        const value = event.currentTarget.value;
+        setCommentInput(value);
+        console.log(`Comment Published: ${value}`);
+        // Add more comment publishing logic here
+    };
 
-  const handleClear = () => {
-    setCommentInput("");
-  };
+    const handleClear = () => {
+        setCommentInput("");
+    };
 
-  return (
-    <AppShell.Aside withBorder p="md">
-      <Paper withBorder shadow="sm" p="md" radius="md">
-        <Stack gap="xs">
-          <TextInput
-            value={commentInput}
-            onChange={(event) => setCommentInput(event.currentTarget.value)}
-          ></TextInput>
-          <Group>
-            <Button color="red" onClick={handleClear}>
-              Clear
-            </Button>
-            <Button onClick={handleComment}>Add Comment</Button>
-          </Group>
-        </Stack>
-      </Paper>
-      <Space h="xs"></Space>
-      <Divider size="sm" />
-      <Space h="xs"></Space>
-      <ScrollArea scrollbarSize={4}>
-        <Stack gap="xs">
-          <CommentCard />
-          <CommentCard />
-          <CommentCard />
-          <CommentCard />
-          <CommentCard />
-          <CommentCard />
-          <CommentCard />
-          <CommentCard />
-          <CommentCard />
-        </Stack>
-      </ScrollArea>
-      <Space h="xs"></Space>
-    </AppShell.Aside>
-  );
+    return (
+        <AppShell.Aside withBorder p="md">
+            <Paper withBorder shadow="sm" p="md" radius="md">
+                <Stack gap="xs">
+                    <TextInput
+                        value={commentInput}
+                        onChange={(event) => setCommentInput(event.currentTarget.value)}
+                    ></TextInput>
+                    <Group>
+                        <Button color="red" onClick={handleClear}>
+                            Clear
+                        </Button>
+                        <Button onClick={handleComment}>Add Comment</Button>
+                    </Group>
+                </Stack>
+            </Paper>
+            <Space h="xs"></Space>
+            <Divider size="sm" />
+            <Space h="xs"></Space>
+            <ScrollArea scrollbarSize={4}>
+                <Stack gap="xs">
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                    <CommentCard />
+                </Stack>
+            </ScrollArea>
+            <Space h="xs"></Space>
+        </AppShell.Aside>
+    );
 };
 
 const DEFAULT_RENDERER_WIDTH = 1000;
@@ -509,8 +513,7 @@ export default function CompositionTool() {
     
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = (duration: string, noteId: number) => {
-        if (score && score.current)
-        {
+        if (score && score.current) {
             score.current.modifyDurationInMeasure(duration, noteId);
 
             setTimeout(() => {
@@ -557,8 +560,7 @@ export default function CompositionTool() {
             bottomPart.dispose();
         }
 
-        if (score && score.current)
-        {
+        if (score && score.current) {
             const scoreData = score.current.exportScoreDataObj();
             const topMeasureData = scoreData.topMeasures;
             const bottomMeasureData = scoreData.bottomMeasures;
@@ -591,27 +593,23 @@ export default function CompositionTool() {
             let currentTimeBottom = 0;
 
             // Iterate over each measure
-            for (let i = 0; i < topMeasureData.length; i++)
-            {
+            for (let i = 0; i < topMeasureData.length; i++) {
                 const topNotes = topMeasureData[i].notes;
                 const bottomNotes = bottomMeasureData[i].notes;
                 const topStaveNotes = topMeasures[i].getNotes();
                 const bottomStaveNotes = bottomMeasures[i].getNotes();
-                
+
 
                 // 1. Remove the '/' from the note string
                 // 2. Map the duration to a string that ToneJs likes (q -> 4n, w -> 1n, 8 -> 8n, h -> 2n)
 
                 // Iterate over notes in treble clef
-                for (let j = 0; j < topNotes.length; j++)
-                {
+                for (let j = 0; j < topNotes.length; j++) {
                     const durationTop = durationMap[topNotes[j].duration];
 
                     // Schedule the part to be played
-                    if (!topNotes[j].duration.includes('r'))
-                    {
-                        for (let k = 0; k < topNotes[j].keys.length; k++)
-                        {
+                    if (!topNotes[j].duration.includes('r')) {
+                        for (let k = 0; k < topNotes[j].keys.length; k++) {
                             const sanitizedKeyTop = topNotes[j].keys[k].replace('/', '');
                             topPart.add({
                                 time: currentTimeTop,
@@ -627,15 +625,12 @@ export default function CompositionTool() {
                 }
 
                 // Iterate over the notes in the bass clef
-                for (let j = 0; j < bottomNotes.length; j++)
-                {
+                for (let j = 0; j < bottomNotes.length; j++) {
                     const durationBottom = durationMap[bottomNotes[j].duration];
 
                     // Schedule the notes for the bass clef
-                    if (!bottomNotes[j].duration.includes('r'))
-                    {
-                        for (let k = 0; k < bottomNotes[j].keys.length; k++)
-                        {
+                    if (!bottomNotes[j].duration.includes('r')) {
+                        for (let k = 0; k < bottomNotes[j].keys.length; k++) {
                             const sanitizedKeyBottom = bottomNotes[j].keys[k].replace('/', '');
                             bottomPart.add({
                                 time: currentTimeBottom,
@@ -708,15 +703,13 @@ export default function CompositionTool() {
 
     // Wrapper function to call addNoteInMeasure
     const addNoteHandler = (notes: string[], noteId: number) => {
-        if (score && score.current)
-        {
+        if (score && score.current) {
             score.current.addNoteInMeasure(notes, noteId);
             setSelectedNoteId(noteId);
 
             // Manually reapply the 'selected-note' class
             const noteElement = document.getElementById(noteId.toString());
-            if (noteElement)
-            {
+            if (noteElement) {
                 noteElement.classList.add('selected-note');
             }
         }
@@ -724,8 +717,7 @@ export default function CompositionTool() {
 
     // Wrapper function to call removeNote
     const removeNoteHandler = (keys: string[], noteId: number) => {
-        if (score && score.current)
-        {
+        if (score && score.current) {
             score.current.removeNote(keys, noteId);
         }
     }
@@ -735,7 +727,7 @@ export default function CompositionTool() {
         const [noteLetter, octave] = note.split('/');  // Example: 'C/4' -> 'C' and '4'
         let noteIndex = noteSequence.indexOf(noteLetter);
         let newOctave = parseInt(octave);
-    
+
         // Move to the next note in the sequence
         if (noteIndex < noteSequence.length - 1) {
             noteIndex++;
@@ -744,7 +736,7 @@ export default function CompositionTool() {
             noteIndex = 0;
             newOctave++;
         }
-    
+
         // Return the new note and octave
         return `${noteSequence[noteIndex]}/${newOctave}`;
     };
@@ -754,7 +746,7 @@ export default function CompositionTool() {
         const [noteLetter, octave] = note.split('/');
         let noteIndex = noteSequence.indexOf(noteLetter);
         let newOctave = parseInt(octave);
-    
+
         // Move to the previous note in the sequence
         if (noteIndex > 0) {
             noteIndex--;
@@ -763,7 +755,7 @@ export default function CompositionTool() {
             noteIndex = noteSequence.length - 1;
             newOctave--;
         }
-    
+
         // Return the new note and octave
         return `${noteSequence[noteIndex]}/${newOctave}`;
     };
@@ -771,13 +763,10 @@ export default function CompositionTool() {
     const increasePitch = () => {
         // Get all the keys from the note passed in, raise all the pitches of them, return the new array
         const newNotes: string[] = [];
-        if (score && score.current)
-        {
+        if (score && score.current) {
             const staveNote = score.current.findNote(selectedNoteId);
-            if (staveNote)
-            {
-                for (let i = 0; i < staveNote.keys.length; i++)
-                {
+            if (staveNote) {
+                for (let i = 0; i < staveNote.keys.length; i++) {
                     newNotes.push(shiftNoteUp(staveNote.keys[i]));
                 }
             }
@@ -787,13 +776,10 @@ export default function CompositionTool() {
 
     const lowerPitch = () => {
         const newNotes: string[] = [];
-        if (score && score.current)
-        {
+        if (score && score.current) {
             const staveNote = score.current.findNote(selectedNoteId);
-            if (staveNote)
-            {
-                for (let i = 0; i < staveNote.keys.length; i++)
-                {
+            if (staveNote) {
+                for (let i = 0; i < staveNote.keys.length; i++) {
                     newNotes.push(shiftNoteDown(staveNote.keys[i]))
                 }
             }
@@ -815,10 +801,10 @@ export default function CompositionTool() {
         const renderNotation = () => {
             if (notationRef.current) {
                 score.current = new Score(
-                notationRef.current,
-                DEFAULT_RENDERER_HEIGHT,
-                DEFAULT_RENDERER_WIDTH,
-                undefined
+                    notationRef.current,
+                    DEFAULT_RENDERER_HEIGHT,
+                    DEFAULT_RENDERER_WIDTH,
+                    undefined
                 );
             }
         };
@@ -858,10 +844,292 @@ export default function CompositionTool() {
         renderNotation();
     }, []);
 
+    const SUBSCRIBE_TO_DOC_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToDocument';
+    const SUBSCRIBE_TO_COMMENTS_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToComments';
+    const CHECK_CHANGE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/checkDocumentChanges';
+
+    const [currentDocument, setDocument] = useState<Document>({
+        document_title: '',
+        comments: [],
+        score: {} as ScoreData,
+        metadata: {} as DocumentMetadata
+    });
+    const [loaded, setLoadState] = useState<boolean>(false);
+    const [changes, setChanges] = useState<Record<string, unknown>>({});
+
+    const [userTemp, setUserTemp] = useState("");
+
+    const handleUserIdChange = (event: { currentTarget: { value: string; }; }) => {
+        const value = event.currentTarget.value;
+        setUserTemp(value);
+    };
+    const sendChanges = async () => {
+        if (score.current === null) return;
+        let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
+
+        const changesTemp =
+        {
+            documentChanges: { score: exportedScoreDataObj }
+        }
+        console.log("Exporting Score data: " + printScoreData(exportedScoreDataObj));
+        var recordTemp: Record<string, unknown> = changes;
+        if (!('score' in recordTemp)) {
+            recordTemp['score'] = exportedScoreDataObj;
+        }
+        else {
+            (recordTemp['score'] as ScoreData) = exportedScoreDataObj;
+        }
+
+        setChanges(recordTemp);
+
+        const PUT_OPTION = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(changesTemp)
+        }
+        await fetch(CHECK_CHANGE_URL, PUT_OPTION);
+    }
+
+    const fetchChanges = async () => {
+        const PUT_OPTION = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        }
+        await fetch(CHECK_CHANGE_URL, PUT_OPTION)
+            .then((res) => {
+                res.json().then((data) => {
+                    const compData: ScoreData = (data.data).score;
+                    const document_title: string = (data.data).document_title;
+                    const comments: Comment[] = (data.data).comments;
+                    const metadata: DocumentMetadata = (data.data).metadata;
+                    const tempDocument: Document = {
+                        document_title: document_title,
+                        comments: comments,
+                        score: compData,
+                        metadata: metadata
+                    };
+                    setDocument(tempDocument);
+                    console.log("Recieved Score data: " + printScoreData(compData));
+                    if (notationRef.current) {
+                        console.log("Reached this");
+                        
+                        score.current?.loadScoreDataObj(compData);
+                    }
+                }).catch((error) => {
+                    // Getting the Error details.
+                    const message = error.message;
+                    console.log(`Error: ${message}`);
+                    return;
+                });;
+            });
+    }
+    
+    // THIS FETCHES CHANGES PERIODICALLY
+    // UNCOMMENT below to actually do it.
+    // useEffect(() => {
+    //   fetchChanges()
+  
+    //   // Set up the interval to call the API periodically
+    //   
+    //   const intervalId = setInterval(fetchChanges, 5000); // 5000 ms = 1 second
+  
+    //   // Cleanup function to clear the interval when component unmounts
+    //   return () => clearInterval(intervalId);
+    // }, []); // Empty dependency array means this runs once on mount
+
+    const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
+        const value = event.currentTarget.value;
+        if (score.current === null) return;
+
+        score.current.setTitle(value);
+        let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
+
+        const changesTemp =
+        {
+            documentChanges: { score: exportedScoreDataObj }
+        }
+        //console.log("Exporting Score data: " + printScoreData(exportedScoreDataObj));
+        var recordTemp: Record<string, unknown> = changes;
+        if (!('score' in recordTemp)) {
+            recordTemp['score'] = exportedScoreDataObj;
+        }
+        else {
+            (recordTemp['score'] as ScoreData) = exportedScoreDataObj;
+        }
+
+        setChanges(recordTemp);
+
+        const PUT_OPTION = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(changesTemp)
+        }
+        await fetch(CHECK_CHANGE_URL, PUT_OPTION)
+            .then((res) => {
+                res.json().then((data) => {
+                    const compData: ScoreData = (data.data).score;
+                    const document_title: string = (data.data).document_title;
+                    const comments: Comment[] = (data.data).comments;
+                    const metadata: DocumentMetadata = (data.data).metadata;
+                    const tempDocument: Document = {
+                        document_title: document_title,
+                        comments: comments,
+                        score: compData,
+                        metadata: metadata
+                    };
+                    setDocument(tempDocument);
+                    // console.log("Recieved Score data: " + printScoreData(compData));
+                    // if (notationRef.current) {
+                    //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
+                    // }
+                }).catch((error) => {
+                    // Getting the Error details.
+                    const message = error.message;
+                    console.log(`Error: ${message}`);
+                    return;
+                });;
+            });
+    }
+
+
+    // loads in background
+
+    // for networking
+    useEffect(() => {
+        if (!loaded && userTemp !== '') {
+            var userInfo;
+            if (userTemp === '1') {
+                userInfo = {
+                    documentId: 'aco5tXEzQt7dSeB1WSlV',
+                    userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
+                    user_email: 'sophiad03@hotmail.com',
+                    displayName: 'Sopa'
+                };
+            }
+            else if (userTemp === '2') {
+                userInfo = {
+                    documentId: 'aco5tXEzQt7dSeB1WSlV',
+                    userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
+                    user_email: 'test-user-1@tune-tracer.com',
+                    displayName: 'test_one'
+                }
+
+            }
+            else {
+                return;
+            }
+            const POST_OPTION = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userInfo),
+            }
+            fetch(SUBSCRIBE_TO_DOC_URL, POST_OPTION)
+                .then((res) => {
+                    // Read result of the Cloud Function.
+                    res.json().then((data) => {
+                        const compData: ScoreData = (data.data).score;
+                        const document_title: string = (data.data).document_title;
+                        const comments: Comment[] = (data.data).comments;
+                        const metadata: DocumentMetadata = (data.data).metadata;
+                        const tempDocument: Document = {
+                            document_title: document_title,
+                            comments: comments,
+                            score: compData,
+                            metadata: metadata
+                        };
+                        setDocument(tempDocument);
+                        // console.log("Document:" + currentDocument);
+                        setLoadState(true);
+                        // console.log("Recieved Score data: " + printScoreData(compData));
+                        // if (notationRef.current) {
+                        //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
+                        // }
+
+                        console.log("Document Loaded");
+                        console.log(userTemp);
+                        var temp = !loaded;
+                        setLoadState(current => true);
+                        console.log(loaded);
+                    });
+                }).catch((error) => {
+                    // Getting the Error details.
+                    const message = error.message;
+                    console.log(`Error: ${message}`);
+                    return;
+                    // ...
+                });
+        }
+    }, [userTemp]);
+
+    useEffect(() => {
+        const intervalID = setInterval(() => {
+            var userInfo;
+            if (userTemp === '1') {
+                userInfo = {
+                    documentId: 'aco5tXEzQt7dSeB1WSlV',
+                    userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
+                    user_email: 'sophiad03@hotmail.com',
+                    displayName: 'Sopa'
+                };
+            }
+            else if (userTemp === '2') {
+                userInfo = {
+                    documentId: 'aco5tXEzQt7dSeB1WSlV',
+                    userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
+                    user_email: 'test-user-1@tune-tracer.com',
+                    displayName: 'test_one'
+                }
+            }
+            else {
+                console.log("No User");
+                return;
+            }
+            const POST_OPTION = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: ""
+            }
+            fetch(CHECK_CHANGE_URL, POST_OPTION)
+                .then((res) => {
+                    res.json().then((data) => {
+                        const compData: ScoreData = (data.data).score;
+                        const document_title: string = (data.data).document_title;
+                        const comments: Comment[] = (data.data).comments;
+                        const metadata: DocumentMetadata = (data.data).metadata;
+                        const tempDocument: Document = {
+                            document_title: document_title,
+                            comments: comments,
+                            score: compData,
+                            metadata: metadata
+                        };
+                        setDocument(tempDocument);
+                    }).catch((error) => {
+                        // Getting the Error details.
+                        const message = error.message;
+                        console.log(`Error: ${message}`);
+                        return;
+                    });
+                });
+        }, 5000);
+
+        return function stopChecking() {
+            clearInterval(intervalID);
+        }
+    }, [userTemp]);
     useEffect(() => {
         // Attach the note selection handler to the notationRef container
         d3.select(notationRef.current)
-            .on('click', function(event) {
+            .on('click', function (event) {
                 // Grab a reference to what we click on
                 let targetElement = event.target;
 
@@ -876,7 +1144,7 @@ export default function CompositionTool() {
                     setSelectedNoteId(parseInt(selectId));
                 }
             });
-        
+
         // Clean up the event listener when notationRef unmounts
         return () => {
             d3.select(notationRef.current).on('click', null);
@@ -888,8 +1156,7 @@ export default function CompositionTool() {
         d3.selectAll('.vf-stavenote').classed('selected-note', false);
 
         // Now add it to the currently selected note
-        if (selectedNoteId !== -1)
-        {
+        if (selectedNoteId !== -1) {
             d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
         }
 
@@ -916,8 +1183,7 @@ export default function CompositionTool() {
             }
 
             let isTopNote: boolean = false;
-            if (score && score.current)
-            {
+            if (score && score.current) {
                 isTopNote = score.current.isTopMeasure(selectedNoteId);
             }
             const key = event.key.toLowerCase();
@@ -927,47 +1193,40 @@ export default function CompositionTool() {
             if (note && selectedNoteId !== -1) {
                 addNoteHandler([note], selectedNoteId);
                 const nextNote = score.current?.getAdjacentNote(selectedNoteId);
-                if (nextNote)
-                {
+                if (nextNote) {
                     setSelectedNoteId(nextNote);
                 }
             }
 
             // If we press the up arrow, raise the pitch
-            if (key === 'w')
-            {
+            if (key === 'w') {
                 const newNotes = increasePitch();
                 const staveNote = score.current?.findNote(selectedNoteId);
-                if (staveNote)
-                {
+                if (staveNote) {
                     removeNoteHandler(staveNote.keys, selectedNoteId);
                     addNoteHandler(newNotes, selectedNoteId);
                 }
             }
 
             // If we press the down arrow, lower the pitch
-            if (key === 's')
-            {
+            if (key === 's') {
                 const newNotes = lowerPitch();
                 const staveNote = score.current?.findNote(selectedNoteId);
-                if (staveNote)
-                {
+                if (staveNote) {
                     removeNoteHandler(staveNote.keys, selectedNoteId);
                     addNoteHandler(newNotes, selectedNoteId);
                 }
             }
 
             // Remove a note if backspace if pressed
-            if (key === 'backspace')
-            {
+            if (key === 'backspace') {
                 removeNoteHandler([''], selectedNoteId);
             }
         };
 
         // Attach the keydown event listener
         const notationDiv = notationRef.current;
-        if (notationDiv)
-        {
+        if (notationDiv) {
             notationDiv.addEventListener('keydown', handleKeyDown);
             // Make the div focusable to capture keyboard input
             notationDiv.setAttribute('tabindex', '0');
@@ -975,56 +1234,181 @@ export default function CompositionTool() {
 
         // Clean up listener on ummount
         return () => {
-            if (notationDiv)
-            {
+            if (notationDiv) {
                 notationDiv.removeEventListener('keydown', handleKeyDown);
             }
         }
     }, [selectedNoteId]);
 
-  return (
-    <AppShell
-      header={{ height: 180 }}
-      navbar={{
-        width: 150,
-        breakpoint: "sm",
-      }}
-      aside={{
-        width: 300,
-        breakpoint: "sm",
-      }}
-      padding="md"
-    >
-      <AppShell.Main>
-        <ToolbarHeader
-            modifyDurationInMeasure={modifyDurationHandler}
-            selectedNoteId={selectedNoteId}
-            playbackComposition={playbackAwaiter}
-            stopPlayback={stopPlayback}
-        />
-        <CommentAside />
+    useEffect(() => {
+        // Attach the note selection handler to the notationRef container
+        d3.select(notationRef.current)
+            .on('click', function (event) {
+                // Grab a reference to what we click on
+                let targetElement = event.target;
 
-        {/* get rid of the background later, use it for formatting */}
-        <Container
-          fluid
-          size="responsive"
-          style={{
-            justifyContent: "center",
-            display: "flex",
-            flexDirection: "column",
-            textAlign: "center",
-            background:
-              "linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)",
-          }}
+                // Keep going up the DOM to look for an element that has the VF note class
+                while (targetElement && !targetElement.classList.contains('vf-stavenote')) {
+                    targetElement = targetElement.parentElement;
+                }
+
+                // Check to see if we've found an element in the DOM with the class we're looking for
+                if (targetElement && targetElement.classList.contains('vf-stavenote')) {
+                    const selectId = d3.select(targetElement).attr('id');
+                    setSelectedNoteId(parseInt(selectId));
+                }
+            });
+
+        // Clean up the event listener when notationRef unmounts
+        return () => {
+            d3.select(notationRef.current).on('click', null);
+        }
+    }, [notationRef.current])
+
+    useEffect(() => {
+        // First remove the selectd note class from previously selected note
+        d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+        // Now add it to the currently selected note
+        if (selectedNoteId !== -1) {
+            d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
+        }
+
+        // Keyboard shortcuts for adding notes
+        const handleKeyDown = (event: KeyboardEvent) => {
+            // Mapping of keyboard letters to note string
+            const trebleKeyToNoteMap: { [key: string]: string } = {
+                'a': 'a/4',
+                'b': 'b/4',
+                'c': 'c/5',
+                'd': 'd/5',
+                'e': 'e/5',
+                'f': 'f/5',
+                'g': 'g/5',
+            };
+            const bassKeyToNoteMap: { [key: string]: string } = {
+                'a': 'a/3',
+                'b': 'b/3',
+                'c': 'c/4',
+                'd': 'd/4',
+                'e': 'e/4',
+                'f': 'f/4',
+                'g': 'g/4',
+            }
+
+            let isTopNote: boolean = false;
+            if (score && score.current) {
+                isTopNote = score.current.isTopMeasure(selectedNoteId);
+            }
+            const key = event.key.toLowerCase();
+            const note = (isTopNote ? trebleKeyToNoteMap[key] : bassKeyToNoteMap[key]);
+
+            // If a valid note was pressed and we have a note selected
+            if (note && selectedNoteId !== -1) {
+                addNoteHandler([note], selectedNoteId);
+                const nextNote = score.current?.getAdjacentNote(selectedNoteId);
+                if (nextNote) {
+                    setSelectedNoteId(nextNote);
+                }
+            }
+
+            // If we press the up arrow, raise the pitch
+            if (key === 'w') {
+                const newNotes = increasePitch();
+                const staveNote = score.current?.findNote(selectedNoteId);
+                if (staveNote) {
+                    removeNoteHandler(staveNote.keys, selectedNoteId);
+                    addNoteHandler(newNotes, selectedNoteId);
+                }
+            }
+
+            // If we press the down arrow, lower the pitch
+            if (key === 's') {
+                const newNotes = lowerPitch();
+                const staveNote = score.current?.findNote(selectedNoteId);
+                if (staveNote) {
+                    removeNoteHandler(staveNote.keys, selectedNoteId);
+                    addNoteHandler(newNotes, selectedNoteId);
+                }
+            }
+
+            // Remove a note if backspace if pressed
+            if (key === 'backspace') {
+                removeNoteHandler([''], selectedNoteId);
+            }
+        };
+
+        // Attach the keydown event listener
+        const notationDiv = notationRef.current;
+        if (notationDiv) {
+            notationDiv.addEventListener('keydown', handleKeyDown);
+            // Make the div focusable to capture keyboard input
+            notationDiv.setAttribute('tabindex', '0');
+        }
+
+        // Clean up listener on ummount
+        return () => {
+            if (notationDiv) {
+                notationDiv.removeEventListener('keydown', handleKeyDown);
+            }
+        }
+    }, [selectedNoteId]);
+
+    return (
+        <AppShell
+            header={{ height: 180 }}
+            navbar={{
+                width: 150,
+                breakpoint: "sm",
+            }}
+            aside={{
+                width: 300,
+                breakpoint: "sm",
+            }}
+            padding="md"
         >
-          <Space h="xl"></Space>
-          <Text>Score Name</Text>
+            <AppShell.Main>
+                <ToolbarHeader
+                    modifyDurationInMeasure={modifyDurationHandler}
+                    selectedNoteId={selectedNoteId}
+                    playbackComposition={playbackAwaiter}
+                    stopPlayback={stopPlayback}
+                />
+                <CommentAside />
 
-          <div>
-            <div ref={notationRef}></div>
-          </div>
-        </Container>
-      </AppShell.Main>
-    </AppShell>
-  );
+                {/* get rid of the background later, use it for formatting */}
+                <Container
+                    fluid
+                    size="responsive"
+                    style={{
+                        justifyContent: "center",
+                        display: "flex",
+                        flexDirection: "column",
+                        textAlign: "center",
+                        background:
+                            "linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)",
+                    }}
+                >
+                    <Space h="xl"></Space>
+                    <input
+                        type="text"
+                        value={currentDocument?.score?.title}
+                        onChange={handleScoreNameChange}
+                        placeholder={currentDocument?.score?.title}
+                    />
+                    <input
+                        type="text"
+                        value={userTemp}
+                        onChange={handleUserIdChange}
+                        placeholder={userTemp}
+                    />
+                    <Button onClick={sendChanges}>Send Score change</Button>
+                    <Button onClick={fetchChanges}>fetch Score change</Button>
+                    <div>
+                        <div ref={notationRef}></div>
+                    </div>
+                </Container>
+            </AppShell.Main>
+        </AppShell>
+    );
 }

@@ -16,30 +16,40 @@ const functions = require('firebase-functions/v1');
 const express = require('express');
 const app = express();
 
-// const adminApp = require('.backend/src/firebaseSecrets');
-// const express = require('express');
-// const {logger} = require("firebase-functions");
-const { signUpAPI, login } = require('./backend/src/endpoints/loginEndpoints');
-const { getAllDocuments, getUserDocuments, getSharedDocuments } = require('./backend/src/endpoints/readEndpoints');
-const { createShareCode, deleteShareCode } = require('./backend/src/document-utils/sharing/sharingUtils');
-const { getTrashedDocumentPreviews } = require('./backend/src/document-utils/documentBatchRead');
-const {updateDocumentEmoji, updateDocumentColor, updateDocumentFavoritedStatus} = require('./backend/src/document-utils/updateUserLevelDocumentProperties');
-const { createWorkspace } = require('./backend/src/endpoints/createEndpoint');
-const { deleteWorkspace } = require('./backend/src/endpoints/deleteEndpoint');
-// const { subscribeToDocument } = require('./backend/src/document-utils/realtimeDocumentUpdates');
-const { updateUserCursor } = require('./backend/src/document-utils/realtimeOnlineUsers');
-// const { updatePartialDocument } = require('./backend/src/endpoints/updateEndpoints');
-const { updateDocumentShareStyle, updateDocumentTrashedStatus } = require('./backend/src/document-utils/updateDocumentMetadata');
-const { shareDocumentWithUser, unshareDocumentWithUser } = require('./backend/src/document-utils/updateDocumentMetadata');
 const { ShareStyle } = require('./lib/src/documentProperties');
-// const { Document } = require('./lib/documentTypes');
+const { Document: LibDocument } = require('./lib/src/Document');
+const { getDefaultScoreData } = require('./lib/src/CompToolData');
+const { UpdateType } = require('./lib/src/UpdateType');
+const { UserEntity } = require('./lib/src/UserEntity');
+
+const { signUpAPI, login } = require('./backend/src/endpoints/loginEndpoints');
+const { createDocument } = require('./backend/src/document-utils/documentOperations');
+const { getAllDocuments, getUserDocuments, getSharedDocuments } = require('./backend/src/endpoints/readEndpoints');
+const { createShareCode, deleteShareCode, getDocumentIdFromShareCode } = require('./backend/src/document-utils/sharing/sharingUtils');
+const { getTrashedDocumentPreviews } = require('./backend/src/document-utils/documentBatchRead');
+const { updateDocumentEmoji, updateDocumentColor, updateDocumentFavoritedStatus } = require('./backend/src/document-utils/updateUserLevelDocumentProperties');
+const { subscribeToDocument, OnlineEntity } = require('./backend/src/document-utils/realtimeDocumentUpdates');
+const { updateUserCursor } = require('./backend/src/document-utils/realtimeOnlineUsers');
+const { updateDocumentShareStyle, updateDocumentTrashedStatus } = require('./backend/src/document-utils/updateDocumentMetadata');
+const { 
+  shareDocumentWithUser, 
+  unshareDocumentWithUser,
+  updatePartialDocument, 
+  deleteDocument 
+} = require('./backend/src/document-utils/updateDocumentMetadata');
+const {
+  createComment,
+  deleteComment,
+  editCommentText,
+  subscribeToComments
+} = require('./backend/src/comment-utils/commentOperations');
+const { getUserIdFromEmail } = require('./backend/src/user-utils/getUserData');
+const { Comment : LibComment } = require('./lib/src/Comment');
+
 const cors = require('cors');
 const corsHandler = cors({ origin: true });
-// const adminApp = require('./backend/src/firebaseSecrets');
-const { FIREBASE_CONFIG } = require('./backend/src/firebaseSecrets');
-const firebase = require('firebase/compat/app');
 
-// const { Request, Response } = require('express');
+var comments: Record<string, typeof LibComment> = {};
 
 exports.signUpUser = functions.https.onRequest( async (req, res) => {
   corsHandler(req, res, async() => {
@@ -76,10 +86,11 @@ exports.signUpUser = functions.https.onRequest( async (req, res) => {
 });
 
 exports.logInUser = functions.https.onRequest(async (request: any, response: any) => {
-  cors(request, response, async () => {
+  corsHandler(request, response, async () => {
   try {
       // Parse user input from the request body
-      const { email, password } = request.data;
+      const email = request.body.email; 
+      const password  = request.body.password;
   
       // Call the signUpAPI and await the result
       const apiResult = await login(email, password);
@@ -88,9 +99,16 @@ exports.logInUser = functions.https.onRequest(async (request: any, response: any
       {
         throw new Error("Could not identify user");
       }
+
+      const user: typeof UserEntity = {
+        user_id: apiResult.uid,
+        user_email: apiResult.email,
+        display_name: apiResult.displayName,
+        account_creation_time: apiResult.createdAt
+      };
   
       // Send a successful response back
-      response.status(200).send({ message: 'User signed in successfully', data: apiResult });
+      response.status(200).send({ message: 'User signed in successfully', data: user });
     } catch (error) {
       // Send an error response if something goes wrong
       response.status(500).send({ message: 'Failed to log in user:' + error });
@@ -166,10 +184,15 @@ exports.createShareCode = functions.https.onRequest(async (request: any, respons
   corsHandler(request, response, async () => {
     try {
         const documentId = request.body.documentId;
+        const sharing = request.body.sharing;
+        const writerId = request.body.writerId;
+
         const apiResult = await createShareCode(documentId);
+
+        await updateDocumentShareStyle(documentId, sharing, writerId);
     
         // Send a successful response back
-        response.status(200).send({ message: 'Here are all the documents', data: apiResult });
+        response.status(200).send({ message: 'Here is the share code', data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
         response.status(500).send({ message: 'Failed to get documents' + error });
@@ -177,20 +200,33 @@ exports.createShareCode = functions.https.onRequest(async (request: any, respons
   });
 });
 
-// frontend doesnt need - make getDocumentFromShareCode instead
-// getDocumentIdFromShareCode return!!!!
+exports.getDocumentIdFromShareCode = functions.https.onRequest(async (request: any, response: any) => {
+  corsHandler(request, response, async () => {
+    try {
+        const shareCode = request.body.shareCode;
+        const apiResult = await getDocumentIdFromShareCode(shareCode);
+    
+        // Send a successful response back
+        response.status(200).send({ message: 'Here is the document id', data: apiResult });
+      } catch (error) {
+        // Send an error response if something goes wrong
+        response.status(500).send({ message: 'Failed to get documents' + error });
+      }
+  });
+});
 
 exports.deleteShareCode = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
-        const {documentId, shareCode} = request.body;
-        const apiResult = await deleteShareCode(documentId, shareCode);
-    
+        const documentId = request.body.documentId; 
+        const shareCode = request.body.shareCode;
+        await deleteShareCode(documentId, shareCode);
+
         // Send a successful response back
-        response.status(200).send({ message: 'Here are all the documents', data: apiResult });
+        response.status(200).send({ message: 'Share Code Deleted', data: true });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to get documents' + error });
+        response.status(500).send({ message: 'Failed to delete share code ' + error, data: error as Error });
       }
   });
 });
@@ -201,28 +237,29 @@ exports.updateDocumentEmoji = functions.https.onRequest(async (request: any, res
   corsHandler(request, response, async () => {
     try {
         const {documentId, newEmoji, writerId} = request.body;
-        const apiResult = await updateDocumentEmoji(documentId, newEmoji, writerId);
+        await updateDocumentEmoji(documentId, newEmoji, writerId);
     
         // Send a successful response back
-        response.status(200).send({ message: 'Here are all the documents', data: apiResult });
+        response.status(200).send({ message: 'Updated document emoji', data: true });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to get documents' + error });
+        response.status(500).send({ message: 'Failed to update document emoji' + error, data: error as Error });
       }
   });
 });
+
 exports.updateDocumentColor = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
 
       const {documentId, newColor, writerId} = request.body;
-      const apiResult = await updateDocumentColor(documentId, newColor, writerId);
+      await updateDocumentColor(documentId, newColor, writerId);
     
         // Send a successful response back
-        response.status(200).send({ message: 'Here are all the documents', data: apiResult });
+        response.status(200).send({ message: 'Updated document color', data: true });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to get documents' + error });
+        response.status(500).send({ message: 'Failed to update document color' + error });
       }
   });
 });
@@ -232,13 +269,13 @@ exports.updateDocumentFavoritedStatus = functions.https.onRequest(async (request
     try {
       const {documentId, isFavorited, writerId} = request.body;
       
-      const apiResult = await updateDocumentFavoritedStatus(documentId, isFavorited as boolean, writerId);
+      await updateDocumentFavoritedStatus(documentId, isFavorited as boolean, writerId);
     
         // Send a successful response back
-        response.status(200).send({ message: 'Here are all the documents', data: apiResult });
+        response.status(200).send({ message: 'Updated document favorited status', data: true });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to get documents' + error });
+        response.status(500).send({ message: 'Failed to update document favorite status', data: error as Error});
       }
   });
 });
@@ -249,14 +286,15 @@ exports.createDocument = functions.https.onRequest(async (request: any, response
   corsHandler(request, response, async () => {
     try {
       const userId = request.body.userId;
+
+      const currentDocument = await createDocument(userId);
+
+      response.status(200).send({ message: 'Successfully created new document', data: currentDocument });
       
-      const apiResult = await createWorkspace(userId);
-    
         // Send a successful response back
-        response.status(200).send({ message: 'Here are all the documents', data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to get documents' + error });
+        response.status(500).send({ message: 'Failed to get documents.', data: error as Error });
       }
   });
 });
@@ -264,76 +302,144 @@ exports.createDocument = functions.https.onRequest(async (request: any, response
 exports.deleteDocument = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
+        const documentId = request.body.documentId;
+        const userId = request.body.userId;
+
+        deleteDocument(documentId, userId);
+    
+        // Send a successful response back
+        response.status(200).send({ message: 'Delete document successful', data: true });
+      } catch (error) {
+        // Send an error response if something goes wrong
+        response.status(500).send({ message: 'Failed to delete document', data: error as Error });
+      }
+  });
+});
+
+const DEFAULT_DOC: typeof LibDocument = {
+  score: getDefaultScoreData(),
+  comments: [
+      {
+          comment_id: "",
+          text: "",
+          author_id: "",
+          author_display_name: "",
+          is_reply: false,
+          time_created: 0,
+          last_edit_time: 0,
+      }
+  ],
+  metadata: {
+      document_id: "",
+      owner_id: "",
+      share_link_style: ShareStyle.NONE,
+      share_list: {},
+      time_created: 0,
+      last_edit_time: 0,
+      last_edit_user: "",
+      is_trashed: false,
+  },
+  document_title: "",
+};
+
+var currentDocument = DEFAULT_DOC;
+var userDoc = DEFAULT_DOC;
+
+exports.checkDocumentChanges = functions.https.onRequest(async (request: any, response: any) => {
+  corsHandler(request, response, async () => {
+    try 
+    {
+      const documentChanges = request.body.documentChanges;
+      
+      if (userDoc != currentDocument)
+      {
+        userDoc = currentDocument;
+      }
+      if (documentChanges)
+      {
+        const documentObject: Record<string,unknown> = JSON.parse(JSON.stringify(documentChanges));
+        for (const [key, value] of Object.entries(documentObject)) 
+          {
+            if (key in userDoc)
+            {
+              if (typeof value === 'object')
+              {
+                userDoc[key] = { ...userDoc[key], ...value };
+              }
+            }
+            else
+            {
+              throw new Error('Invalid key');
+            }
+          }
+      }
+
+      currentDocument = userDoc;
+      response.status(200).send({ message: 'Successfully checked document changes', data: currentDocument });
+    }
+    catch (error)
+    {
+      response.status(500).send({ message: 'Failed to check Document Changes' + error, data: error as Error });
+    }
+  });
+});
+
+exports.subscribeToDocument = functions.https.onRequest(async (request: any, response: any) => {
+  corsHandler(request, response, async () => {
+    try {
+      // var currentDocument = request.body.currentDocument as typeof LibDocument;
+      const documentId = request.body.documentId;
       const userId = request.body.userId;
-      
-      const apiResult = await deleteWorkspace(userId);
-    
-        // Send a successful response back
-        response.status(200).send({ message: 'Here are all the documents', data: apiResult });
-      } catch (error) {
-        // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to get documents' + error });
-      }
-  });
-});
+      const user_email = request.body.user_email;
+      const displayName = request.body.displayName;
 
-exports.deleteDocument = functions.https.onRequest(async (request: any, response: any) => {
+      if (!documentId || !userId) 
+      {
+        throw new Error('Missing required fields');
+      }
+      // const email = request.body.email;
+
+      const user = {
+        user_email: user_email as string,
+        user_id: userId as string,
+        display_name: displayName as string
+      };
+
+      await subscribeToDocument(documentId, user, 
+        (updatedDocument: typeof LibDocument) => {
+          currentDocument = updatedDocument;
+          response.status(200).send({ message: 'Successfully subscribed to document', data: currentDocument });
+      }, 
+      (updateType: typeof UpdateType, onlineEntity: typeof OnlineEntity) => {
+          console.log(`Update type ${updateType} with entity: ${JSON.stringify(onlineEntity)}`);
+      }
+      );
+      userDoc = currentDocument
+
+      } catch (error) {
+      response.status(500).send({ message: 'Failed to subscribe to document ', data: error as Error });
+    }
+  });
+}); // return!!!
+
+exports.updatePartialDocument = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
-      const {documentId, userId} = request.body;
-      
-      const apiResult = await deleteWorkspace(documentId, userId);
+      const documentId = request.body.documentId;
+      const documentChanges = request.body.documentChanges;
+      const writerId = request.body.writerId;
+      const documentObject: Record<string,unknown> = JSON.parse(JSON.stringify(documentChanges));
+
+      const apiResult = await updatePartialDocument(documentObject, documentId, writerId);
     
         // Send a successful response back
-        response.status(200).send({ message: 'Here are all the documents', data: apiResult });
+        response.status(200).send({ message: 'Document has been updated', data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to get documents' + error });
+        response.status(500).send({ message: 'Failed to update document ', data: error as Error });
       }
   });
-});
-
-// exports.subscribeToDocument = functions.https.onRequest(async (request: any, response: any) => {
-//   corsHandler(request, response, async () => {
-//     try {
-//       var currentDocument = request.body.currentDocument as Document;
-//       const {documentId, userId} = request.body;
-      
-//       const apiResult = await subscribeToDocument(documentId, userId, 
-//         (updatedDocument: Document) => {
-//           console.log(`Detected changes in document ${id}`);
-//           console.log(`Updated Document: ${JSON.stringify(updatedDocument)}`);
-//           currentDocument = updatedDocument;
-//       }, 
-//       (updateType: UpdateType, onlineEntity: OnlineEntity) => {
-//           console.log(`Update type ${updateType} with entity: ${JSON.stringify(onlineEntity)}`);
-//       }
-//       );
-    
-//         // Send a successful response back
-//         response.status(200).send({ message: 'Here are all the documents', data: apiResult });
-//       } catch (error) {
-//         // Send an error response if something goes wrong
-//         response.status(500).send({ message: 'Failed to get documents' + error });
-//       }
-//   });
-// }); // return!!!
-
-// exports.updatePartialDocument = functions.https.onRequest(async (request: any, response: any) => {
-//   corsHandler(request, response, async () => {
-//     try {
-//       const {documentId, documentChanges} = request.body;
-      
-//       const apiResult = await updatePartialDocument(documentId, documentChanges);
-    
-//         // Send a successful response back
-//         response.status(200).send({ message: 'Here are all the documents', data: apiResult });
-//       } catch (error) {
-//         // Send an error response if something goes wrong
-//         response.status(500).send({ message: 'Failed to get documents' + error });
-//       }
-//   });
-// }); // return!!!
+}); // return!!!
 
 // cursor endpoint 
 
@@ -342,13 +448,13 @@ exports.updateUserCursor = functions.https.onRequest(async (request: any, respon
     try {
       const {documentId, userId, cursor} = request.body;
       
-      const apiResult = await updateUserCursor(documentId, {userId, cursor});
+      await updateUserCursor(documentId, {userId, cursor});
     
         // Send a successful response back
-        response.status(200).send({ message: 'Here are all the documents', data: apiResult });
+        response.status(200).send({ message: 'Updated user cursor', data: true });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to get documents' + error });
+        response.status(500).send({ message: 'Failed to update cursor', data: error as Error });
       }
   });
 });
@@ -358,14 +464,16 @@ exports.updateUserCursor = functions.https.onRequest(async (request: any, respon
 exports.updateDocumentShareStyle = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
-      const {documentId, sharing, writerId} = request.body;
+      const documentId = request.body.documentId; 
+      const sharing = request.body.sharing;
+      const writerId = request.body.writerId;
       
-      const apiResult = await updateDocumentShareStyle(documentId, sharing, writerId);
+      await updateDocumentShareStyle(documentId, sharing, writerId);
         // Send a successful response back
-        response.status(200).send({ message: 'Successfully updated share style to ' + ShareStyle[sharing], data: apiResult });
+        response.status(200).send({ message: 'Successfully updated share style to ' + ShareStyle[sharing], data: true });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to update document sharing style. ' + error });
+        response.status(500).send({ message: 'Failed to update document sharing style. ', data: error as Error });
       }
   });
 });
@@ -373,14 +481,19 @@ exports.updateDocumentShareStyle = functions.https.onRequest(async (request: any
 exports.shareDocumentWithUser = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
-      const {documentId, userId, sharing, writerId} = request.body;
-      
-      const apiResult = await shareDocumentWithUser(documentId, userId, sharing, writerId);
+      const documentId = request.body.documentId;
+      const invite_email = request.body.invite_email;
+      const sharing = request.body.sharing;
+      const writerId = request.body.writerId;
+
+      const userId = getUserIdFromEmail(invite_email);
+
+      await shareDocumentWithUser(documentId, userId, ShareStyle[sharing], writerId);
         // Send a successful response back
-        response.status(200).send({ message: 'Successfully shared document with ' + ShareStyle[sharing] + ' permissions.', data: apiResult });
+      response.status(200).send({ message: 'Successfully shared document with ' + userId + ' with ' + ShareStyle[sharing] + ' permissions.', data: true });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to update document sharing style. ' + error });
+        response.status(500).send({ message: 'Failed to update document sharing style with user. ' + error, data: error as Error });
       }
   });
 });
@@ -390,12 +503,12 @@ exports.unshareDocumentWithUser = functions.https.onRequest(async (request: any,
     try {
       const {documentId, userId, writerId} = request.body;
       
-      const apiResult = await unshareDocumentWithUser(documentId, userId, writerId);
+      await unshareDocumentWithUser(documentId, userId, writerId);
         // Send a successful response back
-        response.status(200).send({ message: 'Successfully removed user access to document.', data: apiResult });
+        response.status(200).send({ message: 'Successfully removed user ' + userId + ' access to document.', data: true });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to update document sharing style. ' + error });
+        response.status(500).send({ message: 'Failed to update document sharing style with user. ', data: error as Error});
       }
   });
 });
@@ -405,12 +518,97 @@ exports.updateDocumentTrashedStatus = functions.https.onRequest(async (request: 
     try {
       const {documentId, is_trashed, writerId} = request.body;
       
-      const apiResult = await updateDocumentTrashedStatus(documentId, is_trashed, writerId);
+      await updateDocumentTrashedStatus(documentId, is_trashed, writerId);
         // Send a successful response back
-        response.status(200).send({ message: 'Successfully updated trashed status to ' + is_trashed, data: apiResult });
+        response.status(200).send({ message: 'Successfully updated trashed status to ' + is_trashed, data: true });
+      } catch (error) {
+        // Send an error response if something goes wrong
+        response.status(500).send({ message: 'Failed to update document trashed status. ', data: error as Error});
+      }
+  });
+});
+
+exports.createComment = functions.https.onRequest(async (request: any, response: any) => {
+  corsHandler(request, response, async () => {
+    try {
+      const commentText = request.body.commentText;
+      const replyId = request.body.replyId;
+      const userId = request.body.userId;
+      const displayName = request.body.displayName;
+      const documentId = request.body.documentId;
+
+      const user = {
+        user_id: userId,
+        display_name: displayName
+      };
+
+      const commentId = await createComment(commentText, replyId, user, documentId);
+      
+      comments[commentId];
+        // Send a successful response back
+        response.status(200).send({ message: 'Successfully created new comment.', data: commentId });
+      } catch (error) {
+        // Send an error response if something goes wrong
+        response.status(500).send({ message: 'Could not create new comment ' + error, data: error as Error});
+      }
+  });
+});
+
+exports.deleteComment = functions.https.onRequest(async (request: any, response: any) => {
+  corsHandler(request, response, async () => {
+    try {
+      const commentId = request.body.commentText;
+      const documentId = request.body.documentId;
+      const userId = request.body.userId;
+      
+      const apiResult = await deleteComment(commentId, documentId, userId);
+        // Send a successful response back
+        response.status(200).send({ message: 'Successfully deleted comment.', data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
         response.status(500).send({ message: 'Failed to update document sharing style. ' + error });
+      }
+  });
+});
+
+exports.editCommentText = functions.https.onRequest(async (request: any, response: any) => {
+  corsHandler(request, response, async () => {
+    try {
+      const newText = request.body.newText;
+      const commentId = request.body.commentId;
+      const documentId = request.body.documentId;
+      const userId = request.body.userId;
+            
+      await editCommentText(newText, commentId, documentId, userId);
+        // Send a successful response back
+        response.status(200).send({ message: 'Updated comment to '+ newText, data: true });
+      } catch (error) {
+        // Send an error response if something goes wrong
+        response.status(500).send({ message: 'Failed to update comment', data: error as Error});
+      }
+  });
+});
+
+exports.subscribeToComments = functions.https.onRequest(async (request: any, response: any) => {
+  corsHandler(request, response, async () => {
+    try {
+      const documentId = request.body.documentId;
+      const userId = request.body.userId;  
+
+      await subscribeToComments(documentId, userId, 
+        (updateType: typeof UpdateType, comment: typeof LibComment) =>
+        { 
+          if(updateType === UpdateType.ADD || updateType === UpdateType.CHANGE) {
+            comments[comment.comment_id] = comment;
+            response.status(200).send({ message: 'Successfully subscribed to comments.', data: comments });
+        } else {
+            delete comments[comment.comment_id];
+        }
+        });
+        // Send a successful response back
+      } catch (error) {
+        // Send an error response if something goes wrong
+        response.status(500).send({ message: 'Failed to subscribe to comments.' + error });
       }
   });
 });

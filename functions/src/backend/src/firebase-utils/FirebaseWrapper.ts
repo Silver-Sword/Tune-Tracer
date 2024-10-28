@@ -3,12 +3,12 @@ import 'firebase/compat/auth';
 import "firebase/compat/database";
 import 'firebase/compat/firestore';
 
-import { Comment } from '@lib/src/Comment';
-import { DocumentMetadata } from '@lib/src/documentProperties';
-import { Document } from '@lib/src/Document';
-import { OnlineEntity } from "@lib/src/realtimeUserTypes";
-import { UpdateType } from "@lib/src/UpdateType";
-import { AccessType, getDefaultUser, UserEntity } from '@lib/src/UserEntity';
+import { Comment } from '../../../lib/src/Comment';
+import { DocumentMetadata } from '../../../lib/src/documentProperties';
+import { Document } from '../../../lib/src/Document';
+import { OnlineEntity } from "../../../lib/src/realtimeUserTypes";
+import { UpdateType } from "../../../lib/src/UpdateType";
+import { AccessType, getDefaultUser, UserEntity } from '../../../lib/src/UserEntity';
 
 import { 
     DOCUMENT_DATABASE_NAME, 
@@ -19,7 +19,7 @@ import {
 } from '../firebaseSecrets'
 import { ShareCodeEntity } from '../document-utils/sharing/ShareCodeEntity';
 
-type PartialWithRequired<T, K extends keyof T> = Partial<T> & Required<Pick<T, K>>;
+// type PartialWithRequired<T, K extends keyof T> = Partial<T> & Required<Pick<T, K>>;
 type PartialWithRequiredAndWithout<T, K extends keyof T, U extends keyof T> = Partial<T> & Required<Omit<Pick<T, K>, U>>;
 
 const COMMENT_DATABASE_NAME = "Comments_Collection";
@@ -401,7 +401,7 @@ export default class FirebaseWrapper
                             .collection(COMMENT_DATABASE_NAME)
                             .doc();
                             
-        const doc = await docRef.set({
+        await docRef.set({
                                 ...comment,
                                 time_created: Date.now(),
                                 last_edit_time: Date.now(),

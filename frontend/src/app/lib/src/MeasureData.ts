@@ -7,7 +7,6 @@ export function getDefaultMeasureData(): MeasureData
         y: 0,
         width: 325,
         timeSignature: "4/4",
-        keySignature: "C",
         clef: "treble",
         renderTimeSignature: false,
         notes: [getDefaultStaveNoteData(), getDefaultStaveNoteData(), getDefaultStaveNoteData(), getDefaultStaveNoteData()]
@@ -23,7 +22,6 @@ export function printMeasureData(measureData: MeasureData): string
         y: ${measureData.y}
         width: ${measureData.width}
         timeSignature: ${measureData.timeSignature},
-        keySignature: ${measureData.keySignature},
         clef: ${measureData.clef},
         renderTimeSignature: ${measureData.renderTimeSignature},
         notes:
@@ -40,7 +38,6 @@ export type MeasureData = {
     y: number,
     width: number,
     timeSignature: string,
-    keySignature: string,
     clef: string,
     renderTimeSignature: boolean,
     notes: StaveNoteData[]

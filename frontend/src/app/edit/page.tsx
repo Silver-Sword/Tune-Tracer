@@ -145,6 +145,7 @@ export default function Editor() {
                 y: 0,
                 width: 325,
                 timeSignature: "4/4",
+                keySignature: "G",
                 clef: "treble",
                 renderTimeSignature: true,
                 notes: [
@@ -177,6 +178,12 @@ export default function Editor() {
 
             }
             //score.current.loadScore(measureData);
+        }
+    }
+
+    const loadScore = () => {
+        if (notationRef.current) {
+            score.current?.loadScoreDataObj(getScoreObj1());
         }
     }
 
@@ -339,7 +346,7 @@ export default function Editor() {
             </div>
             <button onClick={setKeySignature}>Set Key Sig </button>
             <button onClick={exportScore}>Export Score</button>
-            <button onClick={loadMeasure}>Load Measure</button>
+            <button onClick={loadScore}>Load Score</button>
             <div ref={notationRef}></div>
         </div>
     );
