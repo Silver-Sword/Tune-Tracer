@@ -77,8 +77,8 @@ exports.signUpUser = functions.https.onRequest( async (req, res) => {
     });
     } catch (error) {
       // Send an error response if something goes wrong
-      console.log('Failed to sign up user:' + (error as Error).message);
-      res.send({ message: 'Failed to sign up user:' + (error as Error).message, 
+      console.log('Failed to sign up user: ' + (error as Error).message);
+      res.send({ message: 'Failed to sign up user: ' + (error as Error).message, 
       data: (error as Error).message
     });
   }
@@ -486,7 +486,7 @@ exports.shareDocumentWithUser = functions.https.onRequest(async (request: any, r
 
       const userId = getUserIdFromEmail(invite_email);
 
-      await shareDocumentWithUser(documentId, userId, ShareStyle[sharing], writerId);
+      await shareDocumentWithUser(documentId, userId, sharing, writerId);
         // Send a successful response back
       response.status(200).send({ message: 'Successfully shared document with ' + userId + ' with ' + ShareStyle[sharing] + ' permissions.', data: true });
       } catch (error) {
