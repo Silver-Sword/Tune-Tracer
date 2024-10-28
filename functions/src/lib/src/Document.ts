@@ -1,6 +1,6 @@
 import { getDefaultScoreData, ScoreData } from "./ScoreData";
 import { Comment } from "./Comment";
-import { DocumentMetadata } from "./documentProperties";
+import { DocumentMetadata, getDefaultDocumentMetadata } from "./documentProperties";
 import { SelectedNote } from "./SelectedNote";
 
 // purpose: for storing and representing a Composition Document
@@ -18,7 +18,7 @@ export function getDefaultDocument(): Document {
         document_title: "",
         comments: [],
         score: getDefaultScoreData(),
-        metadata: getDefaultMetadata(),
+        metadata: getDefaultDocumentMetadata(),
         selectedNotes: [],
     };
 }
