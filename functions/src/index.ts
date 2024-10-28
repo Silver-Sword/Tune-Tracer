@@ -17,10 +17,10 @@ const express = require('express');
 const app = express();
 
 const { ShareStyle } = require('./lib/src/documentProperties');
-const { Document: LibDocument } = require('./lib/src/Document');
+const { Document: LibDocument, getDefaultDocument } = require('./lib/src/Document');
 const { getDefaultScoreData } = require('./lib/src/CompToolData');
 const { UpdateType } = require('./lib/src/UpdateType');
-const { UserEntity } = require('./lib/src/UserEntity');
+const { UserEntity, getDefaultUser } = require('./lib/src/UserEntity');
 
 const { signUpAPI, login } = require('./backend/src/endpoints/loginEndpoints');
 const { createDocument } = require('./backend/src/document-utils/documentOperations');
@@ -316,34 +316,10 @@ exports.deleteDocument = functions.https.onRequest(async (request: any, response
   });
 });
 
-const DEFAULT_DOC: typeof LibDocument = {
-  score: getDefaultScoreData(),
-  comments: [
-      {
-          comment_id: "",
-          text: "",
-          author_id: "",
-          author_display_name: "",
-          is_reply: false,
-          time_created: 0,
-          last_edit_time: 0,
-      }
-  ],
-  metadata: {
-      document_id: "",
-      owner_id: "",
-      share_link_style: ShareStyle.NONE,
-      share_list: {},
-      time_created: 0,
-      last_edit_time: 0,
-      last_edit_user: "",
-      is_trashed: false,
-  },
-  document_title: "",
-};
-
-var currentDocument = DEFAULT_DOC;
-var userDoc = DEFAULT_DOC;
+var currentDocument = getDefaultDocument();
+var userDoc = getDefaultDocument();
+var userMap = new Map<string, typeof OnlineEntity>();
+var userCursor = getDefaultUser();
 
 exports.checkDocumentChanges = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
@@ -359,23 +335,26 @@ exports.checkDocumentChanges = functions.https.onRequest(async (request: any, re
       {
         const documentObject: Record<string,unknown> = JSON.parse(JSON.stringify(documentChanges));
         for (const [key, value] of Object.entries(documentObject)) 
+        {
+          if (key in userDoc)
           {
-            if (key in userDoc)
+            if (typeof value === 'object')
             {
-              if (typeof value === 'object')
-              {
-                userDoc[key] = { ...userDoc[key], ...value };
-              }
-            }
-            else
-            {
-              throw new Error('Invalid key');
+              userDoc[key] = { ...userDoc[key], ...value };
             }
           }
+          else
+          {
+            throw new Error('Invalid key');
+          }
+        }
       }
-
+      
+      // for (se)
       currentDocument = userDoc;
-      response.status(200).send({ message: 'Successfully checked document changes', data: currentDocument });
+      response.status(200).send({ message: 'Successfully checked document changes', data: {
+                                                                                        document: currentDocument,
+                                                                                        onlineUsers: Array.from(userMap.values()) }});
     }
     catch (error)
     {
@@ -404,18 +383,35 @@ exports.subscribeToDocument = functions.https.onRequest(async (request: any, res
         user_id: userId as string,
         display_name: displayName as string
       };
+      userMap.set(userId, userCursor);
 
       await subscribeToDocument(documentId, user, 
         (updatedDocument: typeof LibDocument) => {
           currentDocument = updatedDocument;
-          response.status(200).send({ message: 'Successfully subscribed to document', data: currentDocument });
-      }, 
+          response.status(200).send({ message: 'Successfully subscribed to document', data: {
+            document: currentDocument,
+            onlineUsers: Array.from(userMap.values())         
+      }});
+        }, 
       (updateType: typeof UpdateType, onlineEntity: typeof OnlineEntity) => {
-          console.log(`Update type ${updateType} with entity: ${JSON.stringify(onlineEntity)}`);
+        userCursor = onlineEntity;
+        switch (updateType) {
+          case UpdateType.ADD:
+            userMap.set(onlineEntity.user_id, onlineEntity);
+            break;
+          case UpdateType.CHANGE:
+            userMap.set(onlineEntity.user_id, onlineEntity);
+            break;
+          case UpdateType.REMOVE:
+            userMap.delete(onlineEntity.user_id);
+            break;
+          default:
+            break;
+        }
       }
       );
-      userDoc = currentDocument
-
+      userDoc = currentDocument;
+      
       } catch (error) {
       response.status(500).send({ message: 'Failed to subscribe to document ', data: error as Error });
     }
@@ -446,16 +442,18 @@ exports.updatePartialDocument = functions.https.onRequest(async (request: any, r
 exports.updateUserCursor = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try {
-      const {documentId, userId, cursor} = request.body;
+      const documentId = request.body.documentId; 
+      const userId = request.body.userId;
+      const cursor = request.body.cursor;
       
       await updateUserCursor(documentId, {userId, cursor});
     
-        // Send a successful response back
-        response.status(200).send({ message: 'Updated user cursor', data: true });
-      } catch (error) {
+      // Send a successful response back
+      response.status(200).send({ message: 'Updated user cursor', data: Array.from(userMap.values()) });
+    } catch (error) {
         // Send an error response if something goes wrong
         response.status(500).send({ message: 'Failed to update cursor', data: error as Error });
-      }
+    }
   });
 });
 
