@@ -1,7 +1,6 @@
 import { getDefaultScoreData, ScoreData } from "./ScoreData";
 import { Comment } from "./Comment";
 import { DocumentMetadata, getDefaultDocumentMetadata } from "./documentProperties";
-import { SelectedNote } from "./SelectedNote";
 
 // purpose: for storing and representing a Composition Document
 export type Document =

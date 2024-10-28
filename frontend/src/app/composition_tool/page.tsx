@@ -1170,7 +1170,7 @@ export default function CompositionTool() {
                         return;
                     });
                 });
-        }, 5000);
+        }, 1000);
 
         return function stopChecking() {
             clearInterval(intervalID);
