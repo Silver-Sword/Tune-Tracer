@@ -1,13 +1,12 @@
 import { getDocumentPreviewsOwnedByUser, getDocumentPreviewsSharedWithUser } from '../document-utils/documentBatchRead';
 import { DocumentPreview } from '../../../lib/src/documentProperties';
-import firebase from 'firebase/compat/app';
 
-export async function getAllDocuments () : Promise<DocumentPreview[]>
+export async function getAllDocuments (userId: string) : Promise<DocumentPreview[]>
 {
     try
     {
-        const ownedPreviews = await getUserDocuments();
-        const sharedPreviews = await getSharedDocuments();
+        const ownedPreviews = await getUserDocuments(userId);
+        const sharedPreviews = await getSharedDocuments(userId);
         const docPreviews = [...ownedPreviews, ...sharedPreviews];
         return docPreviews;
     }
@@ -17,18 +16,14 @@ export async function getAllDocuments () : Promise<DocumentPreview[]>
     }
 }
 
-export async function getUserDocuments () : Promise<DocumentPreview[]>
+export async function getUserDocuments (userId: string) : Promise<DocumentPreview[]>
 {
-    const user = await firebase.auth().currentUser;
-    const userID = user?.uid;
-    const ownedPreviews = await getDocumentPreviewsOwnedByUser(userID as string);
+    const ownedPreviews = await getDocumentPreviewsOwnedByUser(userId);
     return ownedPreviews;
 }
 
-export async function getSharedDocuments () : Promise<DocumentPreview[]>
+export async function getSharedDocuments (userId: string) : Promise<DocumentPreview[]>
 {
-    const user = await firebase.auth().currentUser;
-    const userID = user?.uid;
-    const ownedPreviews = await getDocumentPreviewsSharedWithUser(userID as string);
+    const ownedPreviews = await getDocumentPreviewsSharedWithUser(userId);
     return ownedPreviews;
 }
