@@ -34,6 +34,8 @@ export default function Editor() {
 
     const [keySig, setKeySig] = useState('');
 
+    const [removeMeasureIndex, setRemoveMeasureIndex] = useState<number>(0);
+
     const setNumberValue = (value: string): number => {
         if (/^[0-9]+$/.test(value)) {
             return parseInt(value, 10);
@@ -71,6 +73,10 @@ export default function Editor() {
         setDurationNoteId(setNumberValue(event.target.value));
     };
 
+    const handleRemoveMeasureIndexChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setRemoveMeasureIndex(setNumberValue(event.target.value));
+    };
+
     // Adding a Tie
     const handleTieNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setTieNoteId(setNumberValue(event.target.value));
@@ -97,6 +103,12 @@ export default function Editor() {
     const addMeasureToEnd = () => {
         if (score.current) {
             score.current.addMeasure();
+        }
+    };
+
+    const removeMeasureAtIndex = () => {
+        if (score.current) {
+            score.current.removeMeasure(removeMeasureIndex);
         }
     };
 
@@ -321,7 +333,18 @@ export default function Editor() {
                 />
             </div>
             <button onClick={modifyDuration}>Change duration of specified element</button>
+            <h2>Measure Operations</h2>
             <button onClick={addMeasureToEnd}>Add a measure to the end</button>
+            <div>
+                <label htmlFor="measureIndex">Insert measure index to remove:</label>
+                <input
+                    type="text"
+                    id="measureIndex"
+                    value={removeMeasureIndex}
+                    onChange={handleRemoveMeasureIndexChange}
+                />
+            </div>
+            <button onClick={removeMeasureAtIndex}>Remove measure</button>
             <h2>Adding a Tie</h2>
             <div>
                 <label htmlFor="noteId">Insert note id:</label>

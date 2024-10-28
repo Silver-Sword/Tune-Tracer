@@ -126,7 +126,6 @@ export class Score {
         this.key_signature = keySignature;
         this.top_measures.forEach((measure) => {
             measure.setKeySignature(keySignature);
-
         });
         this.bottom_measures.forEach((measure) => {
             measure.setKeySignature(keySignature);
@@ -157,7 +156,6 @@ export class Score {
 
         console.log(printScoreData(scoreData));
         return scoreData;
-
     }
 
     loadScoreDataObj = (scoreData: ScoreData) => {
@@ -332,6 +330,20 @@ export class Score {
         this.renderMeasures();
     }
 
+    removeMeasure = (index: number): void => {
+        if (this.top_measures.length > 1) {
+            if (index > -1 && index < this.top_measures.length) {
+                this.top_measures.splice(index, 1);
+                this.bottom_measures.splice(index, 1);
+                // Always renderTimeSig for first measures
+                this.top_measures[0].renderTimeSignature();
+                this.bottom_measures[0].renderTimeSignature();
+                this.renderMeasures();
+
+            }
+        }
+    }
+
     private generateBeams = (measure: Measure) => {
         const beams = Beam.generateBeams(measure.getVoice1().getTickables() as StaveNote[]);
         beams.forEach((b) => {
@@ -397,7 +409,7 @@ export class Score {
             // This puts all measures on the same playing field
             stave.setX(200);
             stave.setY(200);
-            
+
             const Voice1 = measure.getVoice1();
             Voice1.setStave(stave);
             this.formatter.formatToStave([Voice1], stave);
@@ -433,14 +445,14 @@ export class Score {
             //     this.context.stroke();
             // }
 
- 
-            if(!voiceBoundingBox) continue;
+
+            if (!voiceBoundingBox) continue;
             console.log("loop smallestY: " + smallestY);
             console.log("voiceBoundingBox.getY(): " + voiceBoundingBox.getY());
-            console.log("staveBoundingBox.getY():"  + staveBoundingBox.getY());
+            console.log("staveBoundingBox.getY():" + staveBoundingBox.getY());
             smallestY = Math.min(smallestY, Math.min(voiceBoundingBox.getY(), staveBoundingBox.getY()));
             largestY = Math.max(largestY, Math.max(voiceBoundingBox.getY() + voiceBoundingBox.getH(), staveBoundingBox.getY() + staveBoundingBox.getH()));
-            
+
 
         }
         let firstStave = measures[0].getStave();
