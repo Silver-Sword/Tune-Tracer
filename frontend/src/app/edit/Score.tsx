@@ -160,7 +160,7 @@ export class Score {
         scoreData.bottomMeasures = bottomMeasures;
         scoreData.title = this.title;
 
-        console.log(printScoreData(scoreData));
+        //console.log(printScoreData(scoreData));
         return scoreData;
 
     }

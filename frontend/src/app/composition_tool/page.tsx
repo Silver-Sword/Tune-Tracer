@@ -522,11 +522,14 @@ const CommentAside: React.FC = () => {
 
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
+let selectedNoteID = 0;
 
 export default function CompositionTool() {
     const notationRef = useRef<HTMLDivElement>(null);
     const score = useRef<Score | null>(null);
     const [selectedNoteId, setSelectedNoteId] = useState<number>(-1);
+
+    console.log("THIS IS RUNNNING? ?? Reached selectedNoteId: " + selectedNoteId);
     const [volume, setVolume] = useState<number>(50);
     let topPart: Tone.Part;
     let bottomPart: Tone.Part;
@@ -541,7 +544,7 @@ export default function CompositionTool() {
     const modifyDurationHandler = (duration: string, noteId: number) => {
         if (score && score.current) {
             score.current.modifyDurationInMeasure(duration, noteId);
-
+            sendChanges();
             setTimeout(() => {
                 d3.selectAll('.vf-stavenote').classed('selected-note', false);
 
@@ -557,6 +560,7 @@ export default function CompositionTool() {
     const addMeasureHandler = () => {
         if (score && score.current) {
             score.current.addMeasure();
+            sendChanges();
         }
     }
 
@@ -735,6 +739,8 @@ export default function CompositionTool() {
         if (score && score.current) {
             score.current.addNoteInMeasure(notes, noteId);
             setSelectedNoteId(noteId);
+            selectedNoteID = noteId;
+            sendChanges();
 
             // Manually reapply the 'selected-note' class
             const noteElement = document.getElementById(noteId.toString());
@@ -748,6 +754,7 @@ export default function CompositionTool() {
     const removeNoteHandler = (keys: string[], noteId: number) => {
         if (score && score.current) {
             score.current.removeNote(keys, noteId);
+            sendChanges();
 
             setTimeout(() => {
                 d3.selectAll('.vf-stavenote').classed('selected-note', false);
@@ -969,11 +976,16 @@ export default function CompositionTool() {
                         metadata: metadata,
                     };
                     setDocument(tempDocument);
-                    console.log("Recieved Score data: " + printScoreData(compData));
+                    //console.log("Recieved Score data: " + printScoreData(compData));
                     if (notationRef.current) {
-                        console.log("Reached this");
-
                         score.current?.loadScoreDataObj(compData);
+                        console.log("LOADED SCORE DATA");
+                        console.log("asd selectedNoteId: " + selectedNoteID);
+                        // Now add it to the currently selected note
+                        if (selectedNoteId !== -1) {
+                            console.log("Reached selectedNoteId: " + selectedNoteID);
+                            d3.select(`[id="${selectedNoteID}"]`).classed('selected-note', true);
+                        }
                     }
                 }).catch((error) => {
                     // Getting the Error details.
@@ -982,6 +994,7 @@ export default function CompositionTool() {
                     return;
                 });;
             });
+
     }
 
     // check if the user has edit access and update tools accordingly
@@ -1012,12 +1025,13 @@ export default function CompositionTool() {
     // THIS FETCHES CHANGES PERIODICALLY
     // UNCOMMENT below to actually do it.
     // useEffect(() => {
-    //   fetchChanges()
+    //   //fetchChanges()
 
     //   // Set up the interval to call the API periodically
       
     //   const intervalId = setInterval(fetchChanges, 5000); // 5000 ms = 1 second
 
+    //   const intervalId = setInterval(fetchChanges, 3000); // 1000 ms = .5 seconds
     //   // Cleanup function to clear the interval when component unmounts
     //   return () => clearInterval(intervalId);
     // }, []); // Empty dependency array means this runs once on mount
@@ -1155,66 +1169,67 @@ export default function CompositionTool() {
                     return;
                     // ...
                 });
+            fetchChanges();
         }
     }, [userTemp]);
 
-    useEffect(() => {
-        const intervalID = setInterval(() => {
-            var userInfo;
-            if (userTemp === '1') {
-                userInfo = {
-                    documentId: 'aco5tXEzQt7dSeB1WSlV',
-                    userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
-                    user_email: 'sophiad03@hotmail.com',
-                    displayName: 'Sopa'
-                };
-            }
-            else if (userTemp === '2') {
-                userInfo = {
-                    documentId: 'aco5tXEzQt7dSeB1WSlV',
-                    userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
-                    user_email: 'test-user-1@tune-tracer.com',
-                    displayName: 'test_one'
-                }
-            }
-            else {
-                console.log("No User");
-                return;
-            }
-            const POST_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: ""
-            }
-            fetch(CHECK_CHANGE_URL, POST_OPTION)
-                .then((res) => {
-                    res.json().then((data) => {
-                        const compData: ScoreData = (data.data.document).score;
-                        const document_title: string = (data.data.document).document_title;
-                        const comments: Comment[] = (data.data.document).comments;
-                        const metadata: DocumentMetadata = (data.data.document).metadata;
-                        const tempDocument: Document = {
-                            document_title: document_title,
-                            comments: comments,
-                            score: compData,
-                            metadata: metadata,
-                        };
-                        setDocument(tempDocument);
-                    }).catch((error) => {
-                        // Getting the Error details.
-                        const message = error.message;
-                        console.log(`Error: ${message}`);
-                        return;
-                    });
-                });
-        }, 1000);
+    // useEffect(() => {
+    //     const intervalID = setInterval(() => {
+    //         var userInfo;
+    //         if (userTemp === '1') {
+    //             userInfo = {
+    //                 documentId: 'aco5tXEzQt7dSeB1WSlV',
+    //                 userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
+    //                 user_email: 'sophiad03@hotmail.com',
+    //                 displayName: 'Sopa'
+    //             };
+    //         }
+    //         else if (userTemp === '2') {
+    //             userInfo = {
+    //                 documentId: 'aco5tXEzQt7dSeB1WSlV',
+    //                 userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
+    //                 user_email: 'test-user-1@tune-tracer.com',
+    //                 displayName: 'test_one'
+    //             }
+    //         }
+    //         else {
+    //             console.log("No User");
+    //             return;
+    //         }
+    //         const POST_OPTION = {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //             },
+    //             body: ""
+    //         }
+    //         fetch(CHECK_CHANGE_URL, POST_OPTION)
+    //             .then((res) => {
+    //                 res.json().then((data) => {
+    //                     const compData: ScoreData = (data.data.document).score;
+    //                     const document_title: string = (data.data.document).document_title;
+    //                     const comments: Comment[] = (data.data.document).comments;
+    //                     const metadata: DocumentMetadata = (data.data.document).metadata;
+    //                     const tempDocument: Document = {
+    //                         document_title: document_title,
+    //                         comments: comments,
+    //                         score: compData,
+    //                         metadata: metadata,
+    //                     };
+    //                     setDocument(tempDocument);
+    //                 }).catch((error) => {
+    //                     // Getting the Error details.
+    //                     const message = error.message;
+    //                     console.log(`Error: ${message}`);
+    //                     return;
+    //                 });
+    //             });
+    //     }, 1000);
 
-        return function stopChecking() {
-            clearInterval(intervalID);
-        }
-    }, [userTemp]);
+    //     return function stopChecking() {
+    //         clearInterval(intervalID);
+    //     }
+    // }, [userTemp]);
     useEffect(() => {
         // Attach the note selection handler to the notationRef container
         d3.select(notationRef.current)
@@ -1231,6 +1246,7 @@ export default function CompositionTool() {
                 if (targetElement && targetElement.classList.contains('vf-stavenote')) {
                     const selectId = d3.select(targetElement).attr('id');
                     setSelectedNoteId(parseInt(selectId));
+                    selectedNoteID = parseInt(selectId);
                 }
             });
 
@@ -1287,6 +1303,7 @@ export default function CompositionTool() {
                 const nextNote = score.current?.getAdjacentNote(selectedNoteId);
                 if (nextNote) {
                     setSelectedNoteId(nextNote);
+                    selectedNoteID = nextNote;
                 }
             }
 
@@ -1348,6 +1365,7 @@ export default function CompositionTool() {
                 if (targetElement && targetElement.classList.contains('vf-stavenote')) {
                     const selectId = d3.select(targetElement).attr('id');
                     setSelectedNoteId(parseInt(selectId));
+                    selectedNoteID = parseInt(selectId);
                 }
             });
 
@@ -1425,7 +1443,7 @@ export default function CompositionTool() {
                     }}
                 >
                     <Space h="xl"></Space>
-                    <input
+                    {/* <input
                         type="text"
                         value={currentDocument?.score?.title}
                         onChange={handleScoreNameChange}
@@ -1437,8 +1455,8 @@ export default function CompositionTool() {
                         onChange={handleUserIdChange}
                         placeholder={userTemp}
                     />
-                    <Button onClick={sendChanges}>Send Score change</Button>
-                    <Button onClick={fetchChanges}>fetch Score change</Button>
+                    <Button onClick={sendChanges}>Send Score change</Button>*/}
+                    <Button onClick={fetchChanges}>fetch Score change</Button> 
                     <div>
                         <div ref={notationRef}></div>
                     </div>

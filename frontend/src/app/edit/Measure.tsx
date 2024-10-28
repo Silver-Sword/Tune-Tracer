@@ -89,7 +89,6 @@ export class Measure {
                 if (note.dots > 0) {
                     this.createAnyDots(newNote, note.dots);
                 }
-                console.log("New Note Ticks: " + newNote.getTicks().value());
             });
         }
         else {
