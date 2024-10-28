@@ -224,7 +224,10 @@ const ToolbarHeader: React.FC<{
     selectedNoteId: number;
     playbackComposition: () => void;
     stopPlayback: () => void;
-}> = ({ modifyDurationInMeasure, selectedNoteId, playbackComposition, stopPlayback }) => {
+    volume: number;
+    onVolumeChange: (value: number) => void;
+    addMeasure: () => void;
+}> = ({ modifyDurationInMeasure, selectedNoteId, playbackComposition, stopPlayback, volume, onVolumeChange, addMeasure }) => {
     // State to manage the input value
     const [inputValue, setInputValue] = useState("Untitled Score");
 
@@ -249,15 +252,15 @@ const ToolbarHeader: React.FC<{
 
     // Need logic for swapping pause and play buttons, also if hitting stop it completely resets the time back to 0
 
-    const [volume, setVolume] = useState(50);
+    // const [volume, setVolume] = useState(50);
 
-    const handleVolumeChange = (value: React.SetStateAction<number>) => {
-        setVolume(value);
-        console.log(`Volume value is: ${value}`);
-        // if (audioRef.current) {
-        //   audioRef.current.volume = value / 100; // Convert to a scale of 0 to 1 for audio API
-        // }
-    };
+    // const handleVolumeChange = (value: React.SetStateAction<number>) => {
+    //     setVolume(value);
+    //     console.log(`Volume value is: ${value}`);
+    //     // if (audioRef.current) {
+    //     //   audioRef.current.volume = value / 100; // Convert to a scale of 0 to 1 for audio API
+    //     // }
+    // };
 
     return (
         <AppShell.Header p="md">
@@ -325,7 +328,7 @@ const ToolbarHeader: React.FC<{
                     <Space h="xs"></Space>
                     <Slider
                         value={volume}
-                        onChange={handleVolumeChange}
+                        onChange={onVolumeChange}
                         thumbChildren={<IconVolume />}
                         label={(value) => `${value}%`}
                         defaultValue={50}
@@ -402,7 +405,12 @@ const ToolbarHeader: React.FC<{
                         >
                             Thirty-Second
                         </Button>
-                        <Button variant="outline">Sixty-Fourth</Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => modifyDurationInMeasure('64', selectedNoteId)}
+                        >
+                            Sixty-Fourth
+                        </Button>
 
                         <Divider size="sm" orientation="vertical" />
 
@@ -417,7 +425,12 @@ const ToolbarHeader: React.FC<{
                 <Tabs.Panel value="measure">
                     <Space h="xs"></Space>
                     <Group>
-                        <Button variant="outline">Add Measure</Button>
+                        <Button
+                            variant="outline"
+                            onClick={addMeasure}
+                        >
+                            Add Measure
+                        </Button>
                         <Button variant="outline">Delete Measure</Button>
                     </Group>
                 </Tabs.Panel>
@@ -509,9 +522,11 @@ export default function CompositionTool() {
     const notationRef = useRef<HTMLDivElement>(null);
     const score = useRef<Score | null>(null);
     const [selectedNoteId, setSelectedNoteId] = useState<number>(-1);
+    const [volume, setVolume] = useState<number>(50);
     let topPart: Tone.Part;
     let bottomPart: Tone.Part;
     const [piano, setPiano] = useState<Tone.Sampler>();
+    const volumeNode = useRef<Tone.Volume>();
     const selectedNotes: SelectedNote[] = [];
     
     // Wrapper function to call modifyDurationInMeasure with the score object
@@ -527,6 +542,14 @@ export default function CompositionTool() {
                 noteElement.classList.add('selected-note');
               }
             }, 0);
+        }
+    }
+
+    // Wrapper function to add a measure
+    const addMeasureHandler = () => {
+        if (score && score.current)
+        {
+            score.current.addMeasure();
         }
     }
 
@@ -821,6 +844,8 @@ export default function CompositionTool() {
             }
         };
 
+        volumeNode.current = new Tone.Volume(0).toDestination();
+
         setPiano(
           new Tone.Sampler({
             urls: {
@@ -848,13 +873,21 @@ export default function CompositionTool() {
             },
             release: 1,
             baseUrl: "/piano/",
-          }).toDestination()
+          }).connect(volumeNode.current)
         );
 
         loadSamples();
         clearSVG();
         renderNotation();
     }, []);
+
+    // Update volume every time the slider is moved
+    useEffect(() => {
+        if (volumeNode.current)
+        {
+            volumeNode.current.volume.value = Tone.gainToDb(volume / 100);
+        }
+    }, [volume]);
 
     const SUBSCRIBE_TO_DOC_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToDocument';
     const SUBSCRIBE_TO_COMMENTS_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToComments';
@@ -1282,95 +1315,6 @@ export default function CompositionTool() {
         }
     }, [notationRef.current])
 
-    useEffect(() => {
-        // First remove the selectd note class from previously selected note
-        d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-        // Now add it to the currently selected note
-        if (selectedNoteId !== -1) {
-            d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
-        }
-
-        // Keyboard shortcuts for adding notes
-        const handleKeyDown = (event: KeyboardEvent) => {
-            // Mapping of keyboard letters to note string
-            const trebleKeyToNoteMap: { [key: string]: string } = {
-                'a': 'a/4',
-                'b': 'b/4',
-                'c': 'c/5',
-                'd': 'd/5',
-                'e': 'e/5',
-                'f': 'f/5',
-                'g': 'g/5',
-            };
-            const bassKeyToNoteMap: { [key: string]: string } = {
-                'a': 'a/3',
-                'b': 'b/3',
-                'c': 'c/4',
-                'd': 'd/4',
-                'e': 'e/4',
-                'f': 'f/4',
-                'g': 'g/4',
-            }
-
-            let isTopNote: boolean = false;
-            if (score && score.current) {
-                isTopNote = score.current.isTopMeasure(selectedNoteId);
-            }
-            const key = event.key.toLowerCase();
-            const note = (isTopNote ? trebleKeyToNoteMap[key] : bassKeyToNoteMap[key]);
-
-            // If a valid note was pressed and we have a note selected
-            if (note && selectedNoteId !== -1) {
-                addNoteHandler([note], selectedNoteId);
-                const nextNote = score.current?.getAdjacentNote(selectedNoteId);
-                if (nextNote) {
-                    setSelectedNoteId(nextNote);
-                }
-            }
-
-            // If we press the up arrow, raise the pitch
-            if (key === 'w') {
-                const newNotes = increasePitch();
-                const staveNote = score.current?.findNote(selectedNoteId);
-                if (staveNote) {
-                    removeNoteHandler(staveNote.keys, selectedNoteId);
-                    addNoteHandler(newNotes, selectedNoteId);
-                }
-            }
-
-            // If we press the down arrow, lower the pitch
-            if (key === 's') {
-                const newNotes = lowerPitch();
-                const staveNote = score.current?.findNote(selectedNoteId);
-                if (staveNote) {
-                    removeNoteHandler(staveNote.keys, selectedNoteId);
-                    addNoteHandler(newNotes, selectedNoteId);
-                }
-            }
-
-            // Remove a note if backspace if pressed
-            if (key === 'backspace') {
-                removeNoteHandler([''], selectedNoteId);
-            }
-        };
-
-        // Attach the keydown event listener
-        const notationDiv = notationRef.current;
-        if (notationDiv) {
-            notationDiv.addEventListener('keydown', handleKeyDown);
-            // Make the div focusable to capture keyboard input
-            notationDiv.setAttribute('tabindex', '0');
-        }
-
-        // Clean up listener on ummount
-        return () => {
-            if (notationDiv) {
-                notationDiv.removeEventListener('keydown', handleKeyDown);
-            }
-        }
-    }, [selectedNoteId]);
-
     return (
         <AppShell
             header={{ height: 180 }}
@@ -1390,6 +1334,9 @@ export default function CompositionTool() {
                     selectedNoteId={selectedNoteId}
                     playbackComposition={playbackAwaiter}
                     stopPlayback={stopPlayback}
+                    volume={volume}
+                    onVolumeChange={setVolume}
+                    addMeasure={addMeasureHandler}
                 />
                 <CommentAside />
 
