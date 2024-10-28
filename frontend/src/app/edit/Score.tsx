@@ -391,8 +391,7 @@ export class Score {
     }
 
     private calculateALineOfMeasures = (measures: Measure[], ceiling: number): number => {
-        console.log("---------calculateALineOfMeasures--------");
-        console.log("current ceiling: " + ceiling);
+
         // We want to know the largest bounding box in this line of measures
         // We'll use its coordinates to space all measures in the line
         let smallestY: number = Number.MAX_VALUE;
@@ -446,9 +445,6 @@ export class Score {
 
  
             if(!voiceBoundingBox) continue;
-            console.log("loop smallestY: " + smallestY);
-            console.log("voiceBoundingBox.getY(): " + voiceBoundingBox.getY());
-            console.log("staveBoundingBox.getY():"  + staveBoundingBox.getY());
             smallestY = Math.min(smallestY, Math.min(voiceBoundingBox.getY(), staveBoundingBox.getY()));
             largestY = Math.max(largestY, Math.max(voiceBoundingBox.getY() + voiceBoundingBox.getH(), staveBoundingBox.getY() + staveBoundingBox.getH()));
             
@@ -463,12 +459,10 @@ export class Score {
         // The Y coordinate of the largestBoundingBox can even be negative! So subtracting will make the stave go down further
         // which is desired behavior
         let pushDownStave = firstStave.getYForTopText() - smallestY;
-        console.log("firstStave.getYForTopText(): " + firstStave.getYForTopText());
-        console.log("smallestY: " + smallestY);
+
 
         let YCoordinateForAllMeasuresInThisLine = ceiling + pushDownStave;
-        console.log("pushDownStave: " + pushDownStave);
-        console.log("ceiling: " + ceiling);
+
         // This should be the only place where coordinates are set for final draw
         let XCoordinate = DEFAULT_FIRST_MEASURES_X;
         for (let i = 0; i < measures.length; i++) {
@@ -490,9 +484,8 @@ export class Score {
     private calculateMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], ceiling: number, currentWidth: number): number => {
 
         let ceilingForBottomMeasures: number = this.calculateALineOfMeasures(topMeasures, ceiling);
-        console.log("ceilingForBottomMeasures: " + ceilingForBottomMeasures);
         let returnCeiling: number = this.calculateALineOfMeasures(bottomMeasures, ceilingForBottomMeasures);
-        console.log("returnCeiling: " + returnCeiling);
+  
         this.renderMeasureLine(topMeasures, bottomMeasures);
 
         return returnCeiling;
@@ -692,7 +685,6 @@ export class Score {
                 firstLineIndex = i;
                 // padding for next measure lines
                 ceiling += DEFAULT_PADDING_IN_BETWEEN_MEASURES;
-                console.log
                 currentWidth = DEFAULT_FIRST_MEASURES_X;
             }
             currentWidth += topMeasure.getStave().getWidth();

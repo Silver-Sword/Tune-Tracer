@@ -530,27 +530,26 @@ export default function CompositionTool() {
     const userId = useRef<string>();
     const displayName = useRef<string>();
     const documentID = useRef<string>();
-    
+
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = (duration: string, noteId: number) => {
         if (score && score.current) {
             score.current.modifyDurationInMeasure(duration, noteId);
 
             setTimeout(() => {
-              d3.selectAll('.vf-stavenote').classed('selected-note', false);
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
 
-              const noteElement = document.getElementById(noteId.toString());
-              if (noteElement) {
-                noteElement.classList.add('selected-note');
-              }
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                    noteElement.classList.add('selected-note');
+                }
             }, 0);
         }
     }
 
     // Wrapper function to add a measure
     const addMeasureHandler = () => {
-        if (score && score.current)
-        {
+        if (score && score.current) {
             score.current.addMeasure();
         }
     }
@@ -575,14 +574,12 @@ export default function CompositionTool() {
 
         await Tone.loaded();
 
-        if (topPart)
-        {
+        if (topPart) {
             topPart.stop();
             topPart.clear();
             topPart.dispose();
         }
-        if (bottomPart)
-        {
+        if (bottomPart) {
             bottomPart.stop();
             bottomPart.clear();
             bottomPart.dispose();
@@ -676,9 +673,8 @@ export default function CompositionTool() {
 
             // Configure the playback of the top and bottom parts
             topPart.callback = (time, event) => {
-                if (piano)
-                {
-                  piano.triggerAttackRelease(event.note, event.duration, time);
+                if (piano) {
+                    piano.triggerAttackRelease(event.note, event.duration, time);
                 }
 
                 const durationInSeconds = Tone.Time(event.duration).toSeconds();
@@ -695,9 +691,8 @@ export default function CompositionTool() {
             };
 
             bottomPart.callback = (time, event) => {
-                if (piano)
-                {
-                  piano.triggerAttackRelease(event.note, event.duration, time);
+                if (piano) {
+                    piano.triggerAttackRelease(event.note, event.duration, time);
                 }
 
                 const durationInSeconds = Tone.Time(event.duration).toSeconds();
@@ -750,12 +745,12 @@ export default function CompositionTool() {
 
             setTimeout(() => {
                 d3.selectAll('.vf-stavenote').classed('selected-note', false);
-  
+
                 const noteElement = document.getElementById(noteId.toString());
                 if (noteElement) {
-                  noteElement.classList.add('selected-note');
+                    noteElement.classList.add('selected-note');
                 }
-              }, 0);
+            }, 0);
         }
     }
 
@@ -826,7 +821,7 @@ export default function CompositionTool() {
 
     useEffect(() => {
         const loadSamples = async () => {
-          await Tone.loaded();
+            await Tone.loaded();
         };
 
         const clearSVG = () => {
@@ -849,33 +844,33 @@ export default function CompositionTool() {
         volumeNode.current = new Tone.Volume(0).toDestination();
 
         setPiano(
-          new Tone.Sampler({
-            urls: {
-                "A3": "A3.mp3",
-                "B3": "B3.mp3",
-                "C3": "C3.mp3",
-                "D3": "D3.mp3",
-                "E3": "E3.mp3",
-                "F3": "F3.mp3",
-                "G3": "G3.mp3",
-                "A4": "A4.mp3",
-                "B4": "B4.mp3",
-                "C4": "C4.mp3",
-                "D4": "D4.mp3",
-                "E4": "E4.mp3",
-                "F4": "F4.mp3",
-                "G4": "G4.mp3",
-                "A5": "A5.mp3",
-                "B5": "B5.mp3",
-                "C5": "C5.mp3",
-                "D5": "D5.mp3",
-                "E5": "E5.mp3",
-                "F5": "F5.mp3",
-                "G5": "G5.mp3",
-            },
-            release: 1,
-            baseUrl: "/piano/",
-          }).connect(volumeNode.current)
+            new Tone.Sampler({
+                urls: {
+                    "A3": "A3.mp3",
+                    "B3": "B3.mp3",
+                    "C3": "C3.mp3",
+                    "D3": "D3.mp3",
+                    "E3": "E3.mp3",
+                    "F3": "F3.mp3",
+                    "G3": "G3.mp3",
+                    "A4": "A4.mp3",
+                    "B4": "B4.mp3",
+                    "C4": "C4.mp3",
+                    "D4": "D4.mp3",
+                    "E4": "E4.mp3",
+                    "F4": "F4.mp3",
+                    "G4": "G4.mp3",
+                    "A5": "A5.mp3",
+                    "B5": "B5.mp3",
+                    "C5": "C5.mp3",
+                    "D5": "D5.mp3",
+                    "E5": "E5.mp3",
+                    "F5": "F5.mp3",
+                    "G5": "G5.mp3",
+                },
+                release: 1,
+                baseUrl: "/piano/",
+            }).connect(volumeNode.current)
         );
 
         // Save user info
@@ -892,8 +887,7 @@ export default function CompositionTool() {
 
     // Update volume every time the slider is moved
     useEffect(() => {
-        if (volumeNode.current)
-        {
+        if (volumeNode.current) {
             volumeNode.current.volume.value = Tone.gainToDb(volume / 100);
         }
     }, [volume]);
@@ -971,7 +965,7 @@ export default function CompositionTool() {
                     console.log("Recieved Score data: " + printScoreData(compData));
                     if (notationRef.current) {
                         console.log("Reached this");
-                        
+
                         score.current?.loadScoreDataObj(compData);
                     }
                 }).catch((error) => {
@@ -982,16 +976,16 @@ export default function CompositionTool() {
                 });;
             });
     }
-    
+
     // THIS FETCHES CHANGES PERIODICALLY
     // UNCOMMENT below to actually do it.
     // useEffect(() => {
     //   fetchChanges()
-  
+
     //   // Set up the interval to call the API periodically
     //   
     //   const intervalId = setInterval(fetchChanges, 5000); // 5000 ms = 1 second
-  
+
     //   // Cleanup function to clear the interval when component unmounts
     //   return () => clearInterval(intervalId);
     // }, []); // Empty dependency array means this runs once on mount
@@ -1057,28 +1051,36 @@ export default function CompositionTool() {
 
     // for networking
     useEffect(() => {
-        if (!loaded && userTemp !== '') {
-            var userInfo;
-            if (userTemp === '1') {
-                userInfo = {
-                    documentId: 'aco5tXEzQt7dSeB1WSlV',
-                    userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
-                    user_email: 'sophiad03@hotmail.com',
-                    displayName: 'Sopa'
-                };
-            }
-            else if (userTemp === '2') {
-                userInfo = {
-                    documentId: 'aco5tXEzQt7dSeB1WSlV',
-                    userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
-                    user_email: 'test-user-1@tune-tracer.com',
-                    displayName: 'test_one'
-                }
+        if (!loaded && userId.current !== '') {
+            var userInfo = {
+                documentId: documentID.current,
+                userId: userId.current,
+                user_email: email.current,
+                displayName: displayName.current
+            };
+            console.log("document ID: " + documentID.current);
 
-            }
-            else {
-                return;
-            }
+            // if (userTemp === '1') {
+            //     userInfo = {
+            //         documentId: 'aco5tXEzQt7dSeB1WSlV',
+            //         userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
+            //         user_email: 'sophiad03@hotmail.com',
+            //         displayName: 'Sopa'
+            //     };
+            // }
+            // else if (userTemp === '2') {
+            //     userInfo = {
+            //         documentId: 'aco5tXEzQt7dSeB1WSlV',
+            //         userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
+            //         user_email: 'test-user-1@tune-tracer.com',
+            //         displayName: 'test_one'
+            //     }
+
+            // }
+            // else {
+            //     return;
+            // }
+
             const POST_OPTION = {
                 method: 'POST',
                 headers: {
@@ -1324,8 +1326,7 @@ export default function CompositionTool() {
     }, [notationRef.current])
 
     const updateUserCursor = async () => {
-        if (selectedNoteId)
-        {
+        if (selectedNoteId) {
             const userInfo = {
                 documentId: documentID.current,
                 userId: userId,
