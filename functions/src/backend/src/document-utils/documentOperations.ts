@@ -1,10 +1,9 @@
 import { DocumentMetadata, ShareStyle } from '../../../lib/src/documentProperties';
-import { Document } from '../../../lib/src/Document';
+import { Document, getDefaultDocument } from '../../../lib/src/Document';
 
 import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';
 import { recordOnlineUserUpdatedDocument } from "./realtimeOnlineUsers";
-import { getDefaultScoreData } from '../../../lib/src/ScoreData';
 import { getUserAccessLevel } from '../security-utils/getUserAccessLevel';
 
 // NOTE: UPDATE functions MODIFY the document that is passed to it
@@ -27,12 +26,8 @@ export async function createDocument(writerId: string): Promise<Document>
         is_trashed: false,
         share_list: {},
     };
-    const document : Document = {
-        document_title: "",
-        score: getDefaultScoreData(),
-        comments: [],
-        metadata: metadata
-    };
+    const document : Document = getDefaultDocument();
+    document.metadata = metadata;
 
     await firebase.updateDocument(documentId, document);
     await firebase.insertUserDocument(writerId, documentId, "owned");
