@@ -948,10 +948,10 @@ export default function CompositionTool() {
         await fetch(CHECK_CHANGE_URL, PUT_OPTION)
             .then((res) => {
                 res.json().then((data) => {
-                    const compData: ScoreData = (data.data).score;
-                    const document_title: string = (data.data).document_title;
-                    const comments: Comment[] = (data.data).comments;
-                    const metadata: DocumentMetadata = (data.data).metadata;
+                    const compData: ScoreData = (data.data.document).score;
+                    const document_title: string = (data.data.document).document_title;
+                    const comments: Comment[] = (data.data.document).comments;
+                    const metadata: DocumentMetadata = (data.data.document).metadata;
                     const tempDocument: Document = {
                         document_title: document_title,
                         comments: comments,
@@ -1020,10 +1020,10 @@ export default function CompositionTool() {
         await fetch(CHECK_CHANGE_URL, PUT_OPTION)
             .then((res) => {
                 res.json().then((data) => {
-                    const compData: ScoreData = (data.data).score;
-                    const document_title: string = (data.data).document_title;
-                    const comments: Comment[] = (data.data).comments;
-                    const metadata: DocumentMetadata = (data.data).metadata;
+                    const compData: ScoreData = (data.data.document).score;
+                    const document_title: string = (data.data.document).document_title;
+                    const comments: Comment[] = (data.data.document).comments;
+                    const metadata: DocumentMetadata = (data.data.document).metadata;
                     const tempDocument: Document = {
                         document_title: document_title,
                         comments: comments,
@@ -1083,10 +1083,10 @@ export default function CompositionTool() {
                 .then((res) => {
                     // Read result of the Cloud Function.
                     res.json().then((data) => {
-                        const compData: ScoreData = (data.data).score;
-                        const document_title: string = (data.data).document_title;
-                        const comments: Comment[] = (data.data).comments;
-                        const metadata: DocumentMetadata = (data.data).metadata;
+                        const compData: ScoreData = (data.data.document).score;
+                        const document_title: string = (data.data.document).document_title;
+                        const comments: Comment[] = (data.data.document).comments;
+                        const metadata: DocumentMetadata = (data.data.document).metadata;
                         const tempDocument: Document = {
                             document_title: document_title,
                             comments: comments,
@@ -1151,10 +1151,10 @@ export default function CompositionTool() {
             fetch(CHECK_CHANGE_URL, POST_OPTION)
                 .then((res) => {
                     res.json().then((data) => {
-                        const compData: ScoreData = (data.data).score;
-                        const document_title: string = (data.data).document_title;
-                        const comments: Comment[] = (data.data).comments;
-                        const metadata: DocumentMetadata = (data.data).metadata;
+                        const compData: ScoreData = (data.data.document).score;
+                        const document_title: string = (data.data.document).document_title;
+                        const comments: Comment[] = (data.data.document).comments;
+                        const metadata: DocumentMetadata = (data.data.document).metadata;
                         const tempDocument: Document = {
                             document_title: document_title,
                             comments: comments,
