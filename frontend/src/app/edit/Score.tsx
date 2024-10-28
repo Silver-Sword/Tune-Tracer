@@ -278,16 +278,22 @@ export class Score {
         let measureIndex2 = this.ID_to_MeasureIndexID.get(noteId + 1)?.measureIndex;
         if (measureIndex2 == null) return noteId;
 
-        if (measureIndex1 !== measureIndex2) {
-            if (topMeasure) {
-                return noteId + this.bottom_measures[measureIndex1].getVoice1().getTickables().length;
-            }
-            else {
-                // We know measureIndex1 + 1 
-                return noteId + this.top_measures[measureIndex1 + 1].getVoice1().getTickables().length;
-            }
+        // if (measureIndex1 !== measureIndex2) {
+        //     if (topMeasure) {
+        //         return noteId + this.bottom_measures[measureIndex1].getVoice1().getTickables().length;
+        //     }
+        //     else {
+        //         // We know measureIndex1 + 1 
+        //         return noteId + this.top_measures[measureIndex1 + 1].getVoice1().getTickables().length;
+        //     }
+        // }
+        // return noteId + 1;
+        const nextNoteId = noteId + 1;
+        if (this.ID_to_MeasureIndexID.has(nextNoteId)) {
+            return nextNoteId;
+        } else {
+            return noteId;
         }
-        return noteId + 1;
     }
 
 
