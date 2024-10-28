@@ -219,6 +219,7 @@ import * as d3 from 'd3';
 import * as Tone from 'tone';
 
 const ToolbarHeader: React.FC<{
+    documentName: string,
     modifyDurationInMeasure: (duration: string, noteId: number) => void;
     selectedNoteId: number;
     playbackComposition: () => void;
@@ -226,7 +227,7 @@ const ToolbarHeader: React.FC<{
     volume: number;
     onVolumeChange: (value: number) => void;
     addMeasure: () => void;
-}> = ({ modifyDurationInMeasure, selectedNoteId, playbackComposition, stopPlayback, volume, onVolumeChange, addMeasure }) => {
+}> = ({ documentName, modifyDurationInMeasure, selectedNoteId, playbackComposition, stopPlayback, volume, onVolumeChange, addMeasure }) => {
     // State to manage the input value
     const [inputValue, setInputValue] = useState("Untitled Score");
 
@@ -237,6 +238,10 @@ const ToolbarHeader: React.FC<{
     const handleSave = () => {
         setIsChangingName(false); // Exit edit mode and save
     };
+
+    useEffect(() => {
+        setInputValue(documentName);
+    }, [documentName]);
 
     // Handle when the user clicks the text to switch to editing mode
     const handleEdit = () => {
@@ -1367,6 +1372,7 @@ export default function CompositionTool() {
         >
             <AppShell.Main>
                 <ToolbarHeader
+                    documentName={currentDocument.document_title}
                     modifyDurationInMeasure={modifyDurationHandler}
                     selectedNoteId={selectedNoteId}
                     playbackComposition={playbackAwaiter}
