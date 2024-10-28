@@ -45,6 +45,7 @@ const {
 } = require('./backend/src/comment-utils/commentOperations');
 const { getUserIdFromEmail } = require('./backend/src/user-utils/getUserData');
 const { Comment : LibComment } = require('./lib/src/Comment');
+const { getUserAccessLevel } = require('./backend/src/security-utils/getUserAccessLevel');
 
 const cors = require('cors');
 const corsHandler = cors({ origin: true });
@@ -607,6 +608,27 @@ exports.subscribeToComments = functions.https.onRequest(async (request: any, res
       } catch (error) {
         // Send an error response if something goes wrong
         response.status(500).send({ message: 'Failed to subscribe to comments.' + error });
+      }
+  });
+});
+
+exports.getUserAccessLevel = functions.https.onRequest(async (request: any, response: any) => {
+  corsHandler(request, response, async () => {
+    try {
+      const userId = request.body.userId; 
+      const documentId = request.body.documentId;
+
+      if (!userId || !documentId)
+      {
+        throw new Error('Missing required fields');
+      }
+
+      const apiResult = await getUserAccessLevel(userId, documentId);
+      response.status(200).send({ message: 'The highest user access level is ' + apiResult, data: apiResult });
+        // Send a successful response back
+      } catch (error) {
+        // Send an error response if something goes wrong
+        response.status(500).send({ message: 'Failed to get highest user access level.' + error });
       }
   });
 });
