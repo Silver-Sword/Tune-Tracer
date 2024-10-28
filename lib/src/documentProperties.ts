@@ -11,6 +11,20 @@ export type DocumentMetadata =
     share_list: Record<string, ShareStyle>,      // the users that have access to the document and the permissions given to them
 };
 
+export function getDefaultDocumentMetadata(): DocumentMetadata
+{
+    return {
+        document_id: "",
+        owner_id: "",
+        time_created: Date.now(),
+        last_edit_time: Date.now(),
+        last_edit_user: "",
+        is_trashed: false,
+        share_link_style: ShareStyle.NONE,
+        share_list: {},
+    } as DocumentMetadata;
+}
+
 // purpose: for defining how a document has been shared
 export enum ShareStyle
 {
