@@ -76,6 +76,7 @@ export class Measure {
         // We don't want to render the clef if its none
         if (renderTimeSignature) {
             this.setClef(clef);
+            console.log("set keySignature: " + keySignature);
             this.stave.setKeySignature(keySignature);
         }
         this.clef = clef;
@@ -124,6 +125,10 @@ export class Measure {
         {
             this.stave = new this.VF.Stave(this.x, this.y, this.width);
         }
+    }
+
+    setKeySignature = (keySignature: string) => {
+        this.key_signature = keySignature;
     }
 
     findNote = (noteId: string): StaveNote | null => {
