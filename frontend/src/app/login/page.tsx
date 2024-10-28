@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from "react";
-import { Title, Center, Group, Container, TextInput, PasswordInput, Button, Space, Stack, rem, Notification } from '@mantine/core';
+import { Title, Center, Group, Container, TextInput, PasswordInput, Button, Space, Stack, rem, Notification, Text } from '@mantine/core';
 import { IconAt } from '@tabler/icons-react';
 import { useRouter } from "next/navigation";
 import { saveUserID, saveDisplayName, saveEmail } from "../cookie";
@@ -108,6 +108,14 @@ export default function Login() {
                         Please check your username or password
                     </Notification> : <></>
                     }
+                    <Text
+                        c="dimmed"
+                        size="sm"
+                        component="a"
+                        href="/signup"
+                    >
+                        Don't have an account?
+                    </Text>
                 </Stack>
             </Container>
         </Group>
