@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState } from 'react';
-import { Container, Center, Title, TextInput, PasswordInput, Stack, Space, Button, rem, Group } from '@mantine/core';
+import { Container, Center, Title, TextInput, PasswordInput, Stack, Space, Button, rem, Group, Text } from '@mantine/core';
 import { IconAt } from '@tabler/icons-react';
+import { useRouter } from "next/navigation";
 
 const SIGN_UP_URL = "https://us-central1-l17-tune-tracer.cloudfunctions.net/signUpUser";
 
@@ -13,6 +14,8 @@ export default function SignUp() {
     const [displayName, setDisplayName] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
+    const router = useRouter();
+    
 
     const handleRegister = async () => {
         setLoading(true);
@@ -53,6 +56,7 @@ export default function SignUp() {
                   });
 
                   setMessage(`User registered successfully. Please check email to get verified`);
+                  router.push('/login');
         } catch (error: any) {
             console.log(`Error: ${error.message}`);
             // Handle any error and display the message
@@ -137,6 +141,14 @@ export default function SignUp() {
                         error={error}
                     />
                     <Button component='a' onClick={handleRegister}>Sign Up</Button>
+                    <Text
+                        c="dimmed"
+                        size="sm"
+                        component="a"
+                        href="/login"
+                    >
+                        Already have an account? Login here.
+                    </Text>
                 </Stack>
             </Container>
         </Group>
