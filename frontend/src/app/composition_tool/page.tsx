@@ -45,6 +45,8 @@ import {
     IconCheck,
 } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
+import { getUserID } from "../cookie";
+import { SelectedNote } from "../lib/src/SelectedNote";
 
 
 // Define types for the collaborator
@@ -510,6 +512,7 @@ export default function CompositionTool() {
     let topPart: Tone.Part;
     let bottomPart: Tone.Part;
     const [piano, setPiano] = useState<Tone.Sampler>();
+    const selectedNotes: SelectedNote[] = [];
     
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = (duration: string, noteId: number) => {
@@ -719,6 +722,15 @@ export default function CompositionTool() {
     const removeNoteHandler = (keys: string[], noteId: number) => {
         if (score && score.current) {
             score.current.removeNote(keys, noteId);
+
+            setTimeout(() => {
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
+  
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                  noteElement.classList.add('selected-note');
+                }
+              }, 0);
         }
     }
 
@@ -852,7 +864,8 @@ export default function CompositionTool() {
         document_title: '',
         comments: [],
         score: {} as ScoreData,
-        metadata: {} as DocumentMetadata
+        metadata: {} as DocumentMetadata,
+        selectedNotes: []
     });
     const [loaded, setLoadState] = useState<boolean>(false);
     const [changes, setChanges] = useState<Record<string, unknown>>({});
@@ -910,7 +923,8 @@ export default function CompositionTool() {
                         document_title: document_title,
                         comments: comments,
                         score: compData,
-                        metadata: metadata
+                        metadata: metadata,
+                        selectedNotes: []
                     };
                     setDocument(tempDocument);
                     console.log("Recieved Score data: " + printScoreData(compData));
@@ -981,7 +995,8 @@ export default function CompositionTool() {
                         document_title: document_title,
                         comments: comments,
                         score: compData,
-                        metadata: metadata
+                        metadata: metadata,
+                        selectedNotes: []
                     };
                     setDocument(tempDocument);
                     // console.log("Recieved Score data: " + printScoreData(compData));
@@ -1043,7 +1058,8 @@ export default function CompositionTool() {
                             document_title: document_title,
                             comments: comments,
                             score: compData,
-                            metadata: metadata
+                            metadata: metadata,
+                            selectedNotes: []
                         };
                         setDocument(tempDocument);
                         // console.log("Document:" + currentDocument);
@@ -1110,7 +1126,8 @@ export default function CompositionTool() {
                             document_title: document_title,
                             comments: comments,
                             score: compData,
-                            metadata: metadata
+                            metadata: metadata,
+                            selectedNotes: []
                         };
                         setDocument(tempDocument);
                     }).catch((error) => {
