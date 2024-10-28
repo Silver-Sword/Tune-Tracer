@@ -6,7 +6,7 @@ import { Score } from "../edit/Score";
 //import { printScoreData, ScoreData } from "../lib/src/ScoreData";
 import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
 import { Document } from "../lib/src/Document";
-import { DocumentMetadata } from "../lib/src/documentProperties";
+import { DocumentMetadata, ShareStyle } from "../lib/src/documentProperties";
 import { Comment } from "../lib/src/Comment";
 import {
     AppShell,
@@ -217,6 +217,7 @@ const SharingModal: React.FC = () => {
 };
 import * as d3 from 'd3';
 import * as Tone from 'tone';
+import { access } from "fs";
 
 const ToolbarHeader: React.FC<{
     documentName: string,
@@ -901,6 +902,7 @@ export default function CompositionTool() {
     const SUBSCRIBE_TO_COMMENTS_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToComments';
     const CHECK_CHANGE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/checkDocumentChanges';
     const UPDATE_CURSOR_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updateUserCursor';
+    const CHECK_ACCESS_LEVEL_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/getUserAccessLevel';
 
     const [currentDocument, setDocument] = useState<Document>({
         document_title: '',
@@ -982,13 +984,38 @@ export default function CompositionTool() {
             });
     }
 
+    // check if the user has edit access and update tools accordingly
+    useEffect(() => {
+        doesUserHaveEditAccess();
+    }, []);
+
+    const doesUserHaveEditAccess = async () => {
+        // NOTE: documentId and userId are assumed to be set (but are probably not in reality) (move this code to somewhere where they are)
+        const data = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId: userId.current,
+                documentId: documentID.current,
+            })
+        };
+
+        const accessLevel = await fetch(CHECK_ACCESS_LEVEL_URL, data)
+        .then((res) => res.json().then((data) => {
+            console.log(`Access Level Response: ${data.data}`); 
+            const hasWriteAcces: boolean = data.data >= ShareStyle.WRITE;
+        }));
+    };
+
     // THIS FETCHES CHANGES PERIODICALLY
     // UNCOMMENT below to actually do it.
     // useEffect(() => {
     //   fetchChanges()
 
     //   // Set up the interval to call the API periodically
-    //   
+      
     //   const intervalId = setInterval(fetchChanges, 5000); // 5000 ms = 1 second
 
     //   // Cleanup function to clear the interval when component unmounts
