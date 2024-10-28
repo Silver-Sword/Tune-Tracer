@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   AppShell,
   Container,
@@ -19,7 +19,7 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconSearch, IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
-import { getUserID, getDisplayName, getEmail, clearUserCookies } from "../cookie";
+import { getUserID, getDisplayName, getEmail, clearUserCookies, saveDocID } from "../cookie";
 import { useRouter } from "next/navigation";
 
 // Define filter labels for the navbar
@@ -85,13 +85,52 @@ const SearchBar: React.FC = () => {
 // CreateCard component
 
 // TODO: make the join w code button responsive if invalid code apart from no code is entered
-const CreateCard: React.FC = () => {
+const CreateCard: React.FC<{userId: string}> = (userId) => {
   const [inviteCode, setInviteCode] = useState("");
   const [opened, { toggle }] = useDisclosure(false);
   const router = useRouter();
 
+  const CREATE_DOCUMENT_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/createDocument';
+
   const handleCreateDocument = () => {
     console.log("Create document clicked");
+    try {
+      // const userInfo = {
+      //   userId: userId
+      // }
+      const requestOptions =
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userId),
+      }
+
+      fetch(CREATE_DOCUMENT_URL, requestOptions)
+        .then((res) => {
+          if (res.status == 200)
+          {
+            let documentId;
+            res.json().then((value) => {
+              // document.metadata.document_id
+              documentId = value['data'].metadata.document_id;
+              saveDocID(documentId);
+              console.log(`DocumentId: ${documentId}`);
+              router.push('/composition_tool');
+            })
+          }
+          else if (res.status == 500)
+          {
+            res.json().then((value) => {
+              console.log(value['message']);
+            })
+          }
+        })
+    }
+    catch (error: any) {
+      console.log(`Error: ${error.message}`);
+    }
   };
 
   const handleInviteCodeChange = (event: { target: { value: React.SetStateAction<string> } }) => {
@@ -119,7 +158,7 @@ const CreateCard: React.FC = () => {
       <Stack>
         {/* THE HREF IS TEMPORARY FOR DEMO */}
         {/* Probably needs a handleDocumentCreation to push a new document into the user that creates this */}
-        <Button component="a" href="/composition_tool" fullWidth onClick={handleCreateDocument}>
+        <Button fullWidth onClick={handleCreateDocument}>
           New Document
         </Button>
 
@@ -283,7 +322,32 @@ export default function Storage() {
     setDisplayName(displayCookie);
     setEmail(emailCookie);
     setUID(userIdCookie);
+    getOwnPreviews();
   }, [])
+
+  const GET_OWN_PREV = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/getOwnedPreviews';
+
+  const getOwnPreviews = async () => {
+    const userInfo = {
+      userId: userId,
+    }
+    const reqOptions = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userInfo)
+    }
+    fetch(GET_OWN_PREV, reqOptions)
+      .then((res) => {
+        if (res.status == 200)
+        {
+          res.json().then((val) => {
+            console.log(`Document data: ${val['data']}`);
+          })
+        }
+      })
+  }
 
   return (
     <AppShell
@@ -345,7 +409,7 @@ export default function Storage() {
             cols={{ base: 1, sm: 2, md: 3, lg: 5}}
             spacing={{ base: "xl"}}
           >
-            <CreateCard />
+            <CreateCard userId={userId} />
 
             <DocCard />
             <DocCard />

@@ -45,8 +45,7 @@ import {
     IconCheck,
 } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
-import { getUserID } from "../cookie";
-import { SelectedNote } from "../lib/src/SelectedNote";
+import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
 
 
 // Define types for the collaborator
@@ -527,7 +526,10 @@ export default function CompositionTool() {
     let bottomPart: Tone.Part;
     const [piano, setPiano] = useState<Tone.Sampler>();
     const volumeNode = useRef<Tone.Volume>();
-    const selectedNotes: SelectedNote[] = [];
+    const email = useRef<string>();
+    const userId = useRef<string>();
+    const displayName = useRef<string>();
+    const documentID = useRef<string>();
     
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = (duration: string, noteId: number) => {
@@ -876,6 +878,13 @@ export default function CompositionTool() {
           }).connect(volumeNode.current)
         );
 
+        // Save user info
+        email.current = getEmail();
+        displayName.current = getDisplayName();
+        userId.current = getUserID();
+        documentID.current = getDocumentID();
+        console.log(`Document ID: ${documentID.current}`);
+
         loadSamples();
         clearSVG();
         renderNotation();
@@ -892,13 +901,13 @@ export default function CompositionTool() {
     const SUBSCRIBE_TO_DOC_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToDocument';
     const SUBSCRIBE_TO_COMMENTS_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToComments';
     const CHECK_CHANGE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/checkDocumentChanges';
+    const UPDATE_CURSOR_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updateUserCursor';
 
     const [currentDocument, setDocument] = useState<Document>({
         document_title: '',
         comments: [],
         score: {} as ScoreData,
         metadata: {} as DocumentMetadata,
-        selectedNotes: []
     });
     const [loaded, setLoadState] = useState<boolean>(false);
     const [changes, setChanges] = useState<Record<string, unknown>>({});
@@ -957,7 +966,6 @@ export default function CompositionTool() {
                         comments: comments,
                         score: compData,
                         metadata: metadata,
-                        selectedNotes: []
                     };
                     setDocument(tempDocument);
                     console.log("Recieved Score data: " + printScoreData(compData));
@@ -1029,7 +1037,6 @@ export default function CompositionTool() {
                         comments: comments,
                         score: compData,
                         metadata: metadata,
-                        selectedNotes: []
                     };
                     setDocument(tempDocument);
                     // console.log("Recieved Score data: " + printScoreData(compData));
@@ -1092,7 +1099,6 @@ export default function CompositionTool() {
                             comments: comments,
                             score: compData,
                             metadata: metadata,
-                            selectedNotes: []
                         };
                         setDocument(tempDocument);
                         // console.log("Document:" + currentDocument);
@@ -1160,7 +1166,6 @@ export default function CompositionTool() {
                             comments: comments,
                             score: compData,
                             metadata: metadata,
-                            selectedNotes: []
                         };
                         setDocument(tempDocument);
                     }).catch((error) => {
@@ -1209,6 +1214,9 @@ export default function CompositionTool() {
         if (selectedNoteId !== -1) {
             d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
         }
+
+        // Update the user cursor on the backend
+        updateUserCursor();
 
         // Keyboard shortcuts for adding notes
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -1314,6 +1322,35 @@ export default function CompositionTool() {
             d3.select(notationRef.current).on('click', null);
         }
     }, [notationRef.current])
+
+    const updateUserCursor = async () => {
+        if (selectedNoteId)
+        {
+            const userInfo = {
+                documentId: documentID.current,
+                userId: userId,
+                user_email: email,
+                displayName: displayName,
+                cursor: selectedNoteId
+            }
+
+            const POST_OPTION = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userInfo)
+            }
+
+            fetch(UPDATE_CURSOR_URL, POST_OPTION)
+                .then((res) => {
+                    res.json().then((data) => {
+                        console.log('Successfully called updateCursor endpoint');
+                        console.log(`User cursor data: ${data.data}`);
+                    })
+                })
+        }
+    };
 
     return (
         <AppShell

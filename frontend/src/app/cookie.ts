@@ -14,6 +14,11 @@ export function saveEmail( email: string ) {
     setCookie('email', email, { maxAge: 7 * 24 * 60 * 60, sameSite: 'strict' });
 }
 
+export function saveDocID( documentID: string )
+{
+    setCookie('documentId', documentID, { maxAge: 7 * 24 * 60 * 60, sameSite: 'strict' });
+}
+
 export function getUserID() {
     const id = getCookie('userID');
     if (id) { return id.valueOf(); }
@@ -30,6 +35,12 @@ export function getEmail() {
     const email = getCookie('email');
     if (email) { return email.valueOf(); }
     return 'email@email.com';
+}
+
+export function getDocumentID() {
+    const docID = getCookie('documentId');
+    if (docID) { return docID.valueOf(); }
+    return '-1';
 }
 
 export function clearUserID() {
