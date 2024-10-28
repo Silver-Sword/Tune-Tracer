@@ -45,8 +45,7 @@ import {
     IconCheck,
 } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
-import { getUserID, getDisplayName, getEmail } from "../cookie";
-import { SelectedNote } from "../lib/src/SelectedNote";
+import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
 
 
 // Define types for the collaborator
@@ -530,6 +529,7 @@ export default function CompositionTool() {
     const email = useRef<string>();
     const userId = useRef<string>();
     const displayName = useRef<string>();
+    const documentID = useRef<string>();
     
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = (duration: string, noteId: number) => {
@@ -882,6 +882,8 @@ export default function CompositionTool() {
         email.current = getEmail();
         displayName.current = getDisplayName();
         userId.current = getUserID();
+        documentID.current = getDocumentID();
+        console.log(`Document ID: ${documentID.current}`);
 
         loadSamples();
         clearSVG();
@@ -906,7 +908,6 @@ export default function CompositionTool() {
         comments: [],
         score: {} as ScoreData,
         metadata: {} as DocumentMetadata,
-        selectedNotes: []
     });
     const [loaded, setLoadState] = useState<boolean>(false);
     const [changes, setChanges] = useState<Record<string, unknown>>({});
@@ -965,9 +966,7 @@ export default function CompositionTool() {
                         comments: comments,
                         score: compData,
                         metadata: metadata,
-                        selectedNotes: []
                     };
-                    console.log(`Received user data: ${data.data.userEntities}`);
                     setDocument(tempDocument);
                     console.log("Recieved Score data: " + printScoreData(compData));
                     if (notationRef.current) {
@@ -1038,7 +1037,6 @@ export default function CompositionTool() {
                         comments: comments,
                         score: compData,
                         metadata: metadata,
-                        selectedNotes: []
                     };
                     setDocument(tempDocument);
                     // console.log("Recieved Score data: " + printScoreData(compData));
@@ -1101,7 +1099,6 @@ export default function CompositionTool() {
                             comments: comments,
                             score: compData,
                             metadata: metadata,
-                            selectedNotes: []
                         };
                         setDocument(tempDocument);
                         // console.log("Document:" + currentDocument);
@@ -1169,7 +1166,6 @@ export default function CompositionTool() {
                             comments: comments,
                             score: compData,
                             metadata: metadata,
-                            selectedNotes: []
                         };
                         setDocument(tempDocument);
                     }).catch((error) => {
@@ -1331,7 +1327,7 @@ export default function CompositionTool() {
         if (selectedNoteId)
         {
             const userInfo = {
-                documentId: 'aco5tXEzQt7dSeB1WSlV',
+                documentId: documentID.current,
                 userId: userId,
                 user_email: email,
                 displayName: displayName,

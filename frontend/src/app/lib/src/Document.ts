@@ -1,7 +1,6 @@
 import { ScoreData } from "./ScoreData";
 import { Comment } from "./Comment";
 import { DocumentMetadata } from "./documentProperties";
-import { SelectedNote } from "./SelectedNote";
 
 // purpose: for storing and representing a Composition Document
 export type Document =
@@ -10,5 +9,4 @@ export type Document =
     comments: Comment[],                // comments; unusued
     score: ScoreData,                   // the contents of the composition
     metadata: DocumentMetadata,         // the document metadata; this should be treated as a CONST by the frontend
-    selectedNotes: SelectedNote[]       // array of selected notes by all users, if any
 };
