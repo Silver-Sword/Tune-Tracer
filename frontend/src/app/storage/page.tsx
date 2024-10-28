@@ -21,10 +21,19 @@ import { useDisclosure } from "@mantine/hooks";
 import { IconSearch, IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
 import { getUserID, getDisplayName, getEmail, clearUserCookies, saveDocID } from "../cookie";
 import { useRouter } from "next/navigation";
+import { updateDo } from "typescript";
+
+interface DocumentData {
+  last_edit_time: number;
+  owner_id: string;
+  last_edit_user: string;
+  document_id: string;
+  document_title: string;
+}
 
 // Define filter labels for the navbar
 const filterLabels = [
-  { link: "", label: "All" },
+  { link: "", label: "Owned by you" },
   { link: "", label: "Shared with you" },
   { link: "", label: "Favorites" },
   { link: "", label: "Recents" },
@@ -32,11 +41,19 @@ const filterLabels = [
 ];
 
 // FiltersNavbar component
-const FiltersNavbar: React.FC = () => {
+const FiltersNavbar: React.FC<{getOwnPreviews: () => void, getSharedPreviews: () => void}> = ({getOwnPreviews, getSharedPreviews}) => {
   const [activeFilter, setActiveFilter] = useState<string>("All");
 
   const handleFilterClick = (label: string) => {
     setActiveFilter(label);
+    if (label == "Owned by you")
+    {
+      getOwnPreviews();
+    }
+    else if (label == "Shared with you")
+    {
+      getSharedPreviews();
+    }
     console.log(`Filter selected: ${label}`);
     // Add more filtering logic here
   };
@@ -91,6 +108,7 @@ const CreateCard: React.FC<{userId: string}> = (userId) => {
   const router = useRouter();
 
   const CREATE_DOCUMENT_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/createDocument';
+  const UPDATE_SHARE_STYLE = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updateDocumentShareStyle';
 
   const handleCreateDocument = () => {
     console.log("Create document clicked");
@@ -117,8 +135,47 @@ const CreateCard: React.FC<{userId: string}> = (userId) => {
               documentId = value['data'].metadata.document_id;
               saveDocID(documentId);
               console.log(`DocumentId: ${documentId}`);
+              updateDocumentShareStyle(documentId);
+
               router.push('/composition_tool');
             })
+          }
+          else if (res.status == 500)
+          {
+            res.json().then((value) => {
+              console.log(value['message']);
+            })
+          }
+        })
+    }
+    catch (error: any) {
+      console.log(`Error: ${error.message}`);
+    }
+  };
+
+  const updateDocumentShareStyle = (document_id: string) => {
+    console.log("Create document clicked");
+    try {
+      const userInfo = {
+        writerId: userId.userId,
+        documentId: document_id,
+        sharing: 4,
+        // ShareStyle.WRITE
+      }
+      const requestOptions =
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userInfo),
+      }
+
+      fetch(UPDATE_SHARE_STYLE, requestOptions)
+        .then((res) => {
+          if (res.status == 200)
+          {
+            // We are good
           }
           else if (res.status == 500)
           {
@@ -139,6 +196,8 @@ const CreateCard: React.FC<{userId: string}> = (userId) => {
 
   const handleJoinWithCode = () => {
     console.log("Join with invite code:", inviteCode);
+    saveDocID(inviteCode);
+    router.push('/composition_tool');
   };
 
   return (
@@ -182,7 +241,7 @@ const CreateCard: React.FC<{userId: string}> = (userId) => {
 };
 
 // DocCard Component
-const DocCard: React.FC = () => {
+const DocCard: React.FC<DocumentData> = ({document_id, document_title, owner_id, last_edit_time}) => {
   const [isFavorited, setIsFavorited] = useState(false); // State to track if the card is favorited
   const [deleteModalOpened, setDeleteModalOpened] = useState(false); // State for the delete confirmation modal
   const router = useRouter();
@@ -209,11 +268,14 @@ const DocCard: React.FC = () => {
   };
 
   const handleDocumentOpen = () => {
-    console.log('Document opened'); 
+    saveDocID(document_id);
+    console.log(`Document opened: ${document_id}`);
+    router.push('/composition_tool');
+
     // Navigates to /document/{documentId}
   };
 
-  const documentTitle = "[DOCUMENT NAME] OVERFLOW TEST TEXT: This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum."
+  // const documentTitle = "[DOCUMENT NAME] OVERFLOW TEST TEXT: This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum."
 
   return (
     <>
@@ -224,7 +286,7 @@ const DocCard: React.FC = () => {
         title="Confirm Deletion"
         centered
       >
-        <Text>Are you sure you want to delete {documentTitle}?</Text>
+        <Text>Are you sure you want to delete {document_title}?</Text>
         <Group 
           justify="flex-end" 
           mt="md"
@@ -249,8 +311,10 @@ const DocCard: React.FC = () => {
           minHeight: 200, // Ensures consistent height with CreateCard
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between", 
+          justifyContent: "space-between",
+          cursor: 'pointer',
         }}
+        onClick={handleDocumentOpen}
       >
         <Stack 
           style={{ paddingTop: '25px' /* Add padding to avoid button overlap */ }}
@@ -288,17 +352,17 @@ const DocCard: React.FC = () => {
 
           {/* Truncate title text to prevent overflow */}
           {/* Tooltip for the title to show full text on hover */}
-          <Tooltip label={`Open: ${documentTitle}`} withArrow>
+          <Tooltip label={`Open: ${document_title}`} withArrow>
             <Text 
               lineClamp={2}
               style={{ cursor: 'pointer'}}
               onClick={handleDocumentOpen}
               >
-              {documentTitle}
+              {document_title}
             </Text>
           </Tooltip>
-          <Text size="md">Created by: {}</Text>
-          <Text size="sm" c="dimmed">Date Last Edited: {}</Text>
+          <Text size="md">Created by: {owner_id}</Text>
+          <Text size="sm" c="dimmed">Date Last Edited: {last_edit_time}</Text>
         </Stack>
       </Card>
     </>
@@ -310,6 +374,7 @@ export default function Storage() {
   const [displayName, setDisplayName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [userId, setUID] = useState<string>('');
+  const [documents, setDocuments] = useState<DocumentData[]>([]);
   const handleLogout = () => {
     console.log(`Successfully logged out of: ${email}`);
     clearUserCookies();
@@ -319,16 +384,21 @@ export default function Storage() {
     let displayCookie = getDisplayName();
     let emailCookie = getEmail();
     let userIdCookie = getUserID();
+    console.log(`userIdCookie: ${userIdCookie}`);
     setDisplayName(displayCookie);
     setEmail(emailCookie);
     setUID(userIdCookie);
-    getOwnPreviews();
-  }, [])
+    setTimeout(() => {
+      getOwnPreviews2(userIdCookie);
+    }, 0)
+    // getOwnPreviews();
+  }, []);
 
   const GET_OWN_PREV = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/getOwnedPreviews';
+  const GET_SHARE_PREV = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/getSharedPreviews';
 
   const getOwnPreviews = async () => {
-    const userInfo = {
+    const userInfo2 = {
       userId: userId,
     }
     const reqOptions = {
@@ -336,14 +406,61 @@ export default function Storage() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(userInfo)
+      body: JSON.stringify(userInfo2)
     }
     fetch(GET_OWN_PREV, reqOptions)
       .then((res) => {
         if (res.status == 200)
         {
           res.json().then((val) => {
-            console.log(`Document data: ${val['data']}`);
+            console.log(val['data']);
+            setDocuments(val['data']);
+          })
+        }
+      })
+  }
+
+  const getOwnPreviews2 = async (userId: string) => {
+    const userInfo2 = {
+      userId: userId,
+    }
+    const reqOptions = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userInfo2)
+    }
+    fetch(GET_OWN_PREV, reqOptions)
+      .then((res) => {
+        if (res.status == 200)
+        {
+          res.json().then((val) => {
+            console.log(val['data']);
+            setDocuments(val['data']);
+          })
+        }
+      })
+  }
+
+  const getSharedPreviews = async () => {
+    const userInfo2 = {
+      userId: userId,
+    }
+    const reqOptions = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userInfo2)
+    }
+    fetch(GET_SHARE_PREV, reqOptions)
+      .then((res) => {
+        if (res.status == 200)
+        {
+          res.json().then((val) => {
+            console.log(val['data']);
+            setDocuments(val['data']);
           })
         }
       })
@@ -390,7 +507,7 @@ export default function Storage() {
 
           </Group>
         </AppShell.Header>
-        <FiltersNavbar />
+        <FiltersNavbar getOwnPreviews={getOwnPreviews} getSharedPreviews={getSharedPreviews}/>
 
         <Container
           fluid
@@ -411,25 +528,9 @@ export default function Storage() {
           >
             <CreateCard userId={userId} />
 
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
+            {documents.map((doc) => (
+              <DocCard  last_edit_user={doc.last_edit_user} document_id={doc.document_id} document_title={doc.document_title} owner_id={doc.owner_id} last_edit_time={doc.last_edit_time}/>
+            ))}
             {/* Uncomment to see card behaviors for storage page */}
             {/* {documents.map((document) =>(
               <DocCard key={document.id} document={document} toggleFavorite={toggleFavorite} />
