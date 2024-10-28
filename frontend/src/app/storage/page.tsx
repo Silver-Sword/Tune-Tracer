@@ -22,6 +22,14 @@ import { IconSearch, IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons
 import { getUserID, getDisplayName, getEmail, clearUserCookies, saveDocID } from "../cookie";
 import { useRouter } from "next/navigation";
 
+interface DocumentData {
+  last_edit_time: number;
+  owner_id: string;
+  last_edit_user: string;
+  document_id: string;
+  document_title: string;
+}
+
 // Define filter labels for the navbar
 const filterLabels = [
   { link: "", label: "All" },
@@ -139,6 +147,8 @@ const CreateCard: React.FC<{userId: string}> = (userId) => {
 
   const handleJoinWithCode = () => {
     console.log("Join with invite code:", inviteCode);
+    saveDocID(inviteCode);
+    router.push('/composition_tool');
   };
 
   return (
@@ -182,7 +192,7 @@ const CreateCard: React.FC<{userId: string}> = (userId) => {
 };
 
 // DocCard Component
-const DocCard: React.FC = () => {
+const DocCard: React.FC<DocumentData> = ({document_id, document_title, owner_id, last_edit_time}) => {
   const [isFavorited, setIsFavorited] = useState(false); // State to track if the card is favorited
   const [deleteModalOpened, setDeleteModalOpened] = useState(false); // State for the delete confirmation modal
   const router = useRouter();
@@ -209,11 +219,14 @@ const DocCard: React.FC = () => {
   };
 
   const handleDocumentOpen = () => {
-    console.log('Document opened'); 
+    saveDocID(document_id);
+    console.log(`Document opened: ${document_id}`);
+    router.push('/composition_tool');
+
     // Navigates to /document/{documentId}
   };
 
-  const documentTitle = "[DOCUMENT NAME] OVERFLOW TEST TEXT: This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum."
+  // const documentTitle = "[DOCUMENT NAME] OVERFLOW TEST TEXT: This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum."
 
   return (
     <>
@@ -224,7 +237,7 @@ const DocCard: React.FC = () => {
         title="Confirm Deletion"
         centered
       >
-        <Text>Are you sure you want to delete {documentTitle}?</Text>
+        <Text>Are you sure you want to delete {document_title}?</Text>
         <Group 
           justify="flex-end" 
           mt="md"
@@ -249,8 +262,10 @@ const DocCard: React.FC = () => {
           minHeight: 200, // Ensures consistent height with CreateCard
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between", 
+          justifyContent: "space-between",
+          cursor: 'pointer',
         }}
+        onClick={handleDocumentOpen}
       >
         <Stack 
           style={{ paddingTop: '25px' /* Add padding to avoid button overlap */ }}
@@ -288,17 +303,17 @@ const DocCard: React.FC = () => {
 
           {/* Truncate title text to prevent overflow */}
           {/* Tooltip for the title to show full text on hover */}
-          <Tooltip label={`Open: ${documentTitle}`} withArrow>
+          <Tooltip label={`Open: ${document_title}`} withArrow>
             <Text 
               lineClamp={2}
               style={{ cursor: 'pointer'}}
               onClick={handleDocumentOpen}
               >
-              {documentTitle}
+              {document_title}
             </Text>
           </Tooltip>
-          <Text size="md">Created by: {}</Text>
-          <Text size="sm" c="dimmed">Date Last Edited: {}</Text>
+          <Text size="md">Created by: {owner_id}</Text>
+          <Text size="sm" c="dimmed">Date Last Edited: {last_edit_time}</Text>
         </Stack>
       </Card>
     </>
@@ -310,6 +325,7 @@ export default function Storage() {
   const [displayName, setDisplayName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [userId, setUID] = useState<string>('');
+  const [documents, setDocuments] = useState<DocumentData[]>([]);
   const handleLogout = () => {
     console.log(`Successfully logged out of: ${email}`);
     clearUserCookies();
@@ -322,14 +338,14 @@ export default function Storage() {
     setDisplayName(displayCookie);
     setEmail(emailCookie);
     setUID(userIdCookie);
-    getOwnPreviews();
+    getOwnPreviews(userIdCookie);
   }, [])
 
   const GET_OWN_PREV = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/getOwnedPreviews';
 
-  const getOwnPreviews = async () => {
+  const getOwnPreviews = async (id: string) => {
     const userInfo = {
-      userId: userId,
+      userId: id,
     }
     const reqOptions = {
       method: 'POST',
@@ -343,7 +359,8 @@ export default function Storage() {
         if (res.status == 200)
         {
           res.json().then((val) => {
-            console.log(`Document data: ${val['data']}`);
+            console.log(val['data']);
+            setDocuments(val['data']);
           })
         }
       })
@@ -411,25 +428,9 @@ export default function Storage() {
           >
             <CreateCard userId={userId} />
 
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
-            <DocCard />
+            {documents.map((doc) => (
+              <DocCard  last_edit_user={doc.last_edit_user} document_id={doc.document_id} document_title={doc.document_title} owner_id={doc.owner_id} last_edit_time={doc.last_edit_time}/>
+            ))}
             {/* Uncomment to see card behaviors for storage page */}
             {/* {documents.map((document) =>(
               <DocCard key={document.id} document={document} toggleFavorite={toggleFavorite} />
