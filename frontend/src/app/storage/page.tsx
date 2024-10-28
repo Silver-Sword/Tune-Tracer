@@ -20,6 +20,7 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import { IconSearch, IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
 import { getUserID, getDisplayName, getEmail, clearUserCookies } from "../cookie";
+import { useRouter } from "next/navigation";
 
 // Define filter labels for the navbar
 const filterLabels = [
@@ -87,6 +88,7 @@ const SearchBar: React.FC = () => {
 const CreateCard: React.FC = () => {
   const [inviteCode, setInviteCode] = useState("");
   const [opened, { toggle }] = useDisclosure(false);
+  const router = useRouter();
 
   const handleCreateDocument = () => {
     console.log("Create document clicked");
@@ -144,6 +146,7 @@ const CreateCard: React.FC = () => {
 const DocCard: React.FC = () => {
   const [isFavorited, setIsFavorited] = useState(false); // State to track if the card is favorited
   const [deleteModalOpened, setDeleteModalOpened] = useState(false); // State for the delete confirmation modal
+  const router = useRouter();
 
   // Toggle favorite state
   const toggleFavorite = () => {
@@ -255,8 +258,8 @@ const DocCard: React.FC = () => {
               {documentTitle}
             </Text>
           </Tooltip>
-          <Text size="md">[Original Author Name]</Text>
-          <Text size="sm" c="dimmed">[Date Last Edited: ]</Text>
+          <Text size="md">Created by: {}</Text>
+          <Text size="sm" c="dimmed">Date Last Edited: {}</Text>
         </Stack>
       </Card>
     </>
@@ -267,16 +270,19 @@ const DocCard: React.FC = () => {
 export default function Storage() {
   const [displayName, setDisplayName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
+  const [userId, setUID] = useState<string>('');
   const handleLogout = () => {
-    console.log(`Successfully logged out of: ACCOUNTNAME`);
+    console.log(`Successfully logged out of: ${email}`);
     clearUserCookies();
   }
 
   useEffect(() => {
     let displayCookie = getDisplayName();
     let emailCookie = getEmail();
+    let userIdCookie = getUserID();
     setDisplayName(displayCookie);
     setEmail(emailCookie);
+    setUID(userIdCookie);
   }, [])
 
   return (
