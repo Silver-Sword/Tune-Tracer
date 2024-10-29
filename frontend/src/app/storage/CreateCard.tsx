@@ -165,10 +165,10 @@ export const CreateCard: React.FC<{userId: string}> = (userId) => {
         {/* THE HREF IS TEMPORARY FOR DEMO */}
         {/* Probably needs a handleDocumentCreation to push a new document into the user that creates this */}
         <Button fullWidth onClick={handleCreateDocument}>
-          New Document
+          New Score
         </Button>
 
-        <Text size="sm" color="dimmed">
+        <Text size="sm" color="dimmed" style={{ textAlign: 'center', fontWeight: 'bold' }}>
           or
         </Text>
 
