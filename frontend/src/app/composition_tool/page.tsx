@@ -46,6 +46,7 @@ import {
 } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
+import { increasePitch, lowerPitch } from './pitch'
 
 
 // Define types for the collaborator
@@ -759,71 +760,6 @@ export default function CompositionTool() {
         }
     }
 
-    const shiftNoteUp = (note: string) => {
-        const noteSequence = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
-        const [noteLetter, octave] = note.split('/');  // Example: 'C/4' -> 'C' and '4'
-        let noteIndex = noteSequence.indexOf(noteLetter);
-        let newOctave = parseInt(octave);
-
-        // Move to the next note in the sequence
-        if (noteIndex < noteSequence.length - 1) {
-            noteIndex++;
-        } else {
-            // If the note is 'B', wrap around to 'C' and increase the octave
-            noteIndex = 0;
-            newOctave++;
-        }
-
-        // Return the new note and octave
-        return `${noteSequence[noteIndex]}/${newOctave}`;
-    };
-
-    const shiftNoteDown = (note: string) => {
-        const noteSequence = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
-        const [noteLetter, octave] = note.split('/');
-        let noteIndex = noteSequence.indexOf(noteLetter);
-        let newOctave = parseInt(octave);
-
-        // Move to the previous note in the sequence
-        if (noteIndex > 0) {
-            noteIndex--;
-        } else {
-            // If the note is 'C', wrap around to 'B' and decrease the octave
-            noteIndex = noteSequence.length - 1;
-            newOctave--;
-        }
-
-        // Return the new note and octave
-        return `${noteSequence[noteIndex]}/${newOctave}`;
-    };
-
-    const increasePitch = () => {
-        // Get all the keys from the note passed in, raise all the pitches of them, return the new array
-        const newNotes: string[] = [];
-        if (score && score.current) {
-            const staveNote = score.current.findNote(selectedNoteId);
-            if (staveNote) {
-                for (let i = 0; i < staveNote.keys.length; i++) {
-                    newNotes.push(shiftNoteUp(staveNote.keys[i]));
-                }
-            }
-        }
-        return newNotes;
-    }
-
-    const lowerPitch = () => {
-        const newNotes: string[] = [];
-        if (score && score.current) {
-            const staveNote = score.current.findNote(selectedNoteId);
-            if (staveNote) {
-                for (let i = 0; i < staveNote.keys.length; i++) {
-                    newNotes.push(shiftNoteDown(staveNote.keys[i]))
-                }
-            }
-        }
-        return newNotes;
-    }
-
     useEffect(() => {
         const loadSamples = async () => {
           await Tone.loaded();
@@ -1258,7 +1194,7 @@ export default function CompositionTool() {
 
             // If we press the up arrow, raise the pitch
             if (key === 'w') {
-                const newNotes = increasePitch();
+                const newNotes = increasePitch(score, selectedNoteId);
                 const staveNote = score.current?.findNote(selectedNoteId);
                 if (staveNote) {
                     removeNoteHandler(staveNote.keys, selectedNoteId);
@@ -1268,7 +1204,7 @@ export default function CompositionTool() {
 
             // If we press the down arrow, lower the pitch
             if (key === 's') {
-                const newNotes = lowerPitch();
+                const newNotes = lowerPitch(score, selectedNoteId);
                 const staveNote = score.current?.findNote(selectedNoteId);
                 if (staveNote) {
                     removeNoteHandler(staveNote.keys, selectedNoteId);
