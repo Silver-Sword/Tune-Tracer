@@ -194,10 +194,38 @@ const CreateCard: React.FC<{userId: string}> = (userId) => {
     setInviteCode(event.target.value);
   };
 
-  const handleJoinWithCode = () => {
-    console.log("Join with invite code:", inviteCode);
-    saveDocID(inviteCode);
-    router.push('/composition_tool');
+  const [error, setError] = useState('');
+
+  const handleJoinWithCode = async () => {
+    const shareCode = {shareCode: inviteCode};
+    const USE_SHARE_CODE = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/getDocumentIdFromShareCode';
+    // console.log(JSON.stringify("shareCode": shareCode));
+    const PUT_OPTION = {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(shareCode),
+    }
+    fetch(USE_SHARE_CODE, PUT_OPTION).then((res) => {
+      res.json().then((value) => {
+        if (res.status == 200)
+          {
+            console.log("Successfully joined with invite code:", value['data']);
+            console.log("Join with invite code:", inviteCode);
+            saveDocID(value['data']);
+            router.push('/composition_tool');
+          }
+          else if (res.status == 500)
+          {
+            setError(`Error: ${value['message']}`);
+            console.log(error);
+            throw new Error(`Error: ${value['message']}`);
+          }
+      }).catch((error) => {
+        setError(`${error.message}`);
+      });
+    });
   };
 
   return (

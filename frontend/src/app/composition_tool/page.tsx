@@ -135,6 +135,55 @@ const SharingModal: React.FC = () => {
         setCollaborators(updatedCollaborators);
     };
 
+    const [shareCode, setShareCode] = useState<number>(0);
+    const [accessLevel, setAccessLevel] = useState<'Viewer' | 'Commenter' | 'Editor'>('Viewer');
+
+    const handleCreateCode = async () => {
+        const CREATE_CODE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/createShareCode';
+        var sharing = 1;
+        switch (accessLevel) {     
+            case 'Viewer':
+                sharing = 2;
+                break;
+            case 'Commenter':
+                sharing = 3;
+                break;
+            case 'Editor':
+                sharing = 4;
+                break;
+            default:
+                return;
+        }
+        
+        const param = {
+            documentId: getDocumentID(),
+            sharing: sharing,
+            writerId: getUserID()
+        }
+        console.log(param);
+        const PUT_OPTION = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(param)
+        }
+
+        fetch(CREATE_CODE_URL, PUT_OPTION).then((res) => {
+            res.json().then((value) => {
+                if (res.status === 200) {
+                    setShareCode(value['data']);
+                }
+                else if (res.status === 500) {
+                    console.log(`Error: ${value['message']}`);
+                    throw new Error(value['message']);
+                }
+            });
+        }).catch((error) => {
+            console.error('Error:', error);
+        });
+    };
+
     return (
         <>
             <Modal
@@ -168,8 +217,8 @@ const SharingModal: React.FC = () => {
                 <Group justify="space-between">
                     <Container>
                         {/* Code gets rendered here, it is limited to 6 numbers */}
-                        <Text ta="center" c="blue" fw={700} style={{ letterSpacing: '0.5em' }}>
-                            651172
+                        <Text ta="center" c="blue" fw={700} style={{ letterSpacing: '0.5em' }} >
+                            {shareCode}
                         </Text>
                     </Container>
 
@@ -177,8 +226,9 @@ const SharingModal: React.FC = () => {
                         {/* Uncomment block if multiple codes are allowed to exist based on access level */}
                         <Select
                             checkIconPosition="right"
-                            value={null}
+                            value={accessLevel}
                             placeholder="Access Level"
+                            onChange={(value) => setAccessLevel(value as 'Viewer' | 'Commenter' | 'Editor')}
                             data={[
                                 { value: 'Viewer', label: 'Viewer' },
                                 { value: 'Commenter', label: 'Commenter' },
@@ -187,7 +237,7 @@ const SharingModal: React.FC = () => {
                             style={{ width: 150 }}
                         />
 
-                        <Button>Generate Code</Button>
+                        <Button onClick={handleCreateCode}>Generate Code</Button>
                     </Group>
                 </Group>
 
@@ -217,7 +267,7 @@ const SharingModal: React.FC = () => {
 };
 import * as d3 from 'd3';
 import * as Tone from 'tone';
-import { access } from "fs";
+import { access, write } from "fs";
 
 const ToolbarHeader: React.FC<{
     documentName: string,
@@ -244,6 +294,24 @@ const ToolbarHeader: React.FC<{
         setInputValue(documentName);
     }, [documentName]);
 
+    const handleDocumentNameChange = (event: { currentTarget: { value: any; }; }) => {
+        setInputValue(event.currentTarget.value);
+        const UPDATE_DOCUMENT_NAME_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updatePartialDocument';
+
+        const new_title = {
+            documentId: getDocumentID(),
+            documentChanges: {document_title: event.currentTarget.value},
+            writerId: getUserID()
+        };
+        const PUT_OPTION = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(new_title)
+        }
+        fetch(UPDATE_DOCUMENT_NAME_URL, PUT_OPTION);
+    };
     // Handle when the user clicks the text to switch to editing mode
     const handleEdit = () => {
         setIsChangingName(true);
@@ -285,7 +353,7 @@ const ToolbarHeader: React.FC<{
                     <TextInput
                         size="md"
                         value={inputValue}
-                        onChange={(event) => setInputValue(event.currentTarget.value)} // Update input value
+                        onChange={handleDocumentNameChange} // Update input value
                         onBlur={handleSave} // Save on focus loss
                         onKeyDown={(event) => {
                             if (event.key === "Enter") {
@@ -922,28 +990,27 @@ export default function CompositionTool() {
 
     const [userTemp, setUserTemp] = useState("");
 
-    const handleUserIdChange = (event: { currentTarget: { value: string; }; }) => {
-        const value = event.currentTarget.value;
-        setUserTemp(value);
-    };
     const sendChanges = async () => {
         if (score.current === null) return;
         let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
+        const UPDATE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updatePartialDocument';
 
         const changesTemp =
         {
-            documentChanges: { score: exportedScoreDataObj }
+            documentChanges: { score: exportedScoreDataObj },
+            documentId: documentID.current,
+            writerId: userId.current,
         }
         console.log("Exporting Score data: " + printScoreData(exportedScoreDataObj));
-        var recordTemp: Record<string, unknown> = changes;
-        if (!('score' in recordTemp)) {
-            recordTemp['score'] = exportedScoreDataObj;
-        }
-        else {
-            (recordTemp['score'] as ScoreData) = exportedScoreDataObj;
-        }
+        // var recordTemp: Record<string, unknown> = changes;
+        // if (!('score' in recordTemp)) {
+        //     recordTemp['score'] = exportedScoreDataObj;
+        // }
+        // else {
+        //     (recordTemp['score'] as ScoreData) = exportedScoreDataObj;
+        // }
 
-        setChanges(recordTemp);
+        // setChanges(recordTemp);
 
         const PUT_OPTION = {
             method: 'POST',
@@ -953,6 +1020,7 @@ export default function CompositionTool() {
             body: JSON.stringify(changesTemp)
         }
         await fetch(CHECK_CHANGE_URL, PUT_OPTION);
+        await fetch(UPDATE_URL, PUT_OPTION);
     }
 
     const fetchChanges = async () => {
@@ -965,6 +1033,7 @@ export default function CompositionTool() {
         await fetch(CHECK_CHANGE_URL, PUT_OPTION)
             .then((res) => {
                 res.json().then((data) => {
+                    console.log("Recieved Score data: " + JSON.stringify(data));
                     const compData: ScoreData = (data.data.document).score;
                     const document_title: string = (data.data.document).document_title;
                     const comments: Comment[] = (data.data.document).comments;
@@ -976,7 +1045,6 @@ export default function CompositionTool() {
                         metadata: metadata,
                     };
                     setDocument(tempDocument);
-                    //console.log("Recieved Score data: " + printScoreData(compData));
                     if (notationRef.current) {
                         score.current?.loadScoreDataObj(compData);
                         console.log("LOADED SCORE DATA");
@@ -994,7 +1062,6 @@ export default function CompositionTool() {
                     return;
                 });;
             });
-
     }
 
     // check if the user has edit access and update tools accordingly
@@ -1045,7 +1112,9 @@ export default function CompositionTool() {
 
         const changesTemp =
         {
-            documentChanges: { score: exportedScoreDataObj }
+            documentChanges: { score: exportedScoreDataObj },
+            documentId: documentID.current,
+            userId: userId.current
         }
         //console.log("Exporting Score data: " + printScoreData(exportedScoreDataObj));
         var recordTemp: Record<string, unknown> = changes;
@@ -1157,10 +1226,8 @@ export default function CompositionTool() {
                         // }
 
                         console.log("Document Loaded");
-                        console.log(userTemp);
                         var temp = !loaded;
-                        setLoadState(current => true);
-                        console.log(loaded);
+                        setLoadState(temp);
                     });
                 }).catch((error) => {
                     // Getting the Error details.
@@ -1171,7 +1238,7 @@ export default function CompositionTool() {
                 });
             fetchChanges();
         }
-    }, [userTemp]);
+    }, []);
 
     // useEffect(() => {
     //     const intervalID = setInterval(() => {

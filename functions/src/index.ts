@@ -33,10 +33,10 @@ const { updateUserCursor } = require('./backend/src/document-utils/realtimeOnlin
 const { updateDocumentShareStyle, updateDocumentTrashedStatus } = require('./backend/src/document-utils/updateDocumentMetadata');
 const { 
   shareDocumentWithUser, 
-  unshareDocumentWithUser,
-  updatePartialDocument, 
+  unshareDocumentWithUser, 
   deleteDocument 
 } = require('./backend/src/document-utils/updateDocumentMetadata');
+const { updatePartialDocument } = require('./backend/src/document-utils/documentOperations');
 const {
   createComment,
   deleteComment,
@@ -196,7 +196,7 @@ exports.createShareCode = functions.https.onRequest(async (request: any, respons
         response.status(200).send({ message: 'Here is the share code', data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to get documents' + error });
+        response.status(500).send({ message: 'Failed to get share code ' + error });
       }
   });
 });
@@ -317,20 +317,39 @@ exports.deleteDocument = functions.https.onRequest(async (request: any, response
   });
 });
 
-var currentDocument = getDefaultDocument();
+var documentMap = new Map<string, typeof LibDocument>();
+var currentDocument: typeof LibDocument = getDefaultDocument();
 var userDoc = getDefaultDocument();
 var userMap = new Map<string, typeof OnlineEntity>();
 var userCursor = getDefaultUser();
+var currentDocumentId = "";
 
+// assumes that subscribeToDocument is called first
 exports.checkDocumentChanges = functions.https.onRequest(async (request: any, response: any) => {
   corsHandler(request, response, async () => {
     try 
     {
+      const documentId = request.body.documentId;
+      const writerId = request.body.userId;
       const documentChanges = request.body.documentChanges;
-      
+
+      // var changed = false;
+      // if (currentDocument.metadata.document_id !== documentId)
+      // {
+      //   currentDocument = documentMap.get(documentId);
+      // }
+      // else if (userDoc.metadata.document_id !== documentId)
+      // {
+      //   userDoc = currentDocument;
+      // }
+      if (!documentId || !writerId)
+      {
+        console.log("hello");
+      }
       if (userDoc != currentDocument)
       {
         userDoc = currentDocument;
+        // changed = true;
       }
       if (documentChanges)
       {
@@ -342,24 +361,34 @@ exports.checkDocumentChanges = functions.https.onRequest(async (request: any, re
             if (typeof value === 'object')
             {
               userDoc[key] = { ...userDoc[key], ...value };
+              // await updatePartialDocument(userDoc[key], documentId, writerId);
+            }
+            else if (key === 'document_title')
+            {
+              userDoc[key] = value;
+              // await updatePartialDocument(userDoc[key], documentId, writerId);
+            }
+            else
+            {
+              throw new Error('Invalid key');
             }
           }
-          else
-          {
-            throw new Error('Invalid key');
-          }
         }
+            // const documentObject: Record<string,unknown> = currentDocument as Record<string,unknown>;
+        // await updatePartialDocument(documentObject, documentId, writerId);
+          
       }
       
       // for (se)
       currentDocument = userDoc;
+      documentMap.set(documentId, currentDocument);
       response.status(200).send({ message: 'Successfully checked document changes', data: {
                                                                                         document: currentDocument,
                                                                                         onlineUsers: Array.from(userMap.values()) }});
     }
     catch (error)
     {
-      response.status(500).send({ message: 'Failed to check Document Changes' + error, data: error as Error });
+      response.status(500).send({ message: 'Failed to check Document Changes ' + error, data: error as Error });
     }
   });
 });
@@ -368,10 +397,15 @@ exports.subscribeToDocument = functions.https.onRequest(async (request: any, res
   corsHandler(request, response, async () => {
     try {
       // var currentDocument = request.body.currentDocument as typeof LibDocument;
+      currentDocument = getDefaultDocument();
+      userDoc = getDefaultDocument();
+
       const documentId = request.body.documentId;
       const userId = request.body.userId;
       const user_email = request.body.user_email;
       const displayName = request.body.displayName;
+
+      documentMap.set(documentId, currentDocument);
 
       if (!documentId || !userId) 
       {
@@ -388,7 +422,12 @@ exports.subscribeToDocument = functions.https.onRequest(async (request: any, res
 
       await subscribeToDocument(documentId, user, 
         (updatedDocument: typeof LibDocument) => {
+          if (currentDocument.metadata.document_id !== documentId) 
+          {
+            currentDocument = userMap.get(documentId);
+          }
           currentDocument = updatedDocument;
+          documentMap.set(documentId, currentDocument);
           response.status(200).send({ message: 'Successfully subscribed to document', data: {
             document: currentDocument,
             onlineUsers: Array.from(userMap.values())         
@@ -428,12 +467,39 @@ exports.updatePartialDocument = functions.https.onRequest(async (request: any, r
       const documentObject: Record<string,unknown> = JSON.parse(JSON.stringify(documentChanges));
 
       const apiResult = await updatePartialDocument(documentObject, documentId, writerId);
-    
+
+      if (apiResult)
+      {
+        if (currentDocument.metadata.document_id !== documentId)
+        {
+          currentDocument = documentMap.get(documentId);
+        }
+        for (const [key, value] of Object.entries(documentObject)) 
+        {
+          if (key in currentDocument)
+          {
+            if (typeof value === 'object')
+            {
+              currentDocument[key] = { ...currentDocument[key], ...value };
+            }
+            else
+            {
+              currentDocument[key] = value;
+            }
+          }
+          else
+          {
+            throw new Error('Invalid key');
+          }
+        }
+        userDoc = currentDocument;
+        documentMap.set(documentId, currentDocument);
+      }
         // Send a successful response back
         response.status(200).send({ message: 'Document has been updated', data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(500).send({ message: 'Failed to update document ', data: error as Error });
+        response.status(500).send({ message: 'Failed to update document '+ error, data: error as Error });
       }
   });
 }); // return!!!
