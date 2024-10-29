@@ -119,7 +119,7 @@ export default function Editor() {
 
     const removeMeasureAtIndex = () => {
         if (score.current) {
-            score.current.removeMeasure(removeMeasureIndex);
+            score.current.removeMeasure();
         }
     };
 
@@ -368,16 +368,8 @@ export default function Editor() {
             <button onClick={removeAccidentals}>Remove Accidentals</button>
             <h2>Measure Operations</h2>
             <button onClick={addMeasureToEnd}>Add a measure to the end</button>
-            <div>
-                <label htmlFor="measureIndex">Insert measure index to remove:</label>
-                <input
-                    type="text"
-                    id="measureIndex"
-                    value={removeMeasureIndex}
-                    onChange={handleRemoveMeasureIndexChange}
-                />
-            </div>
-            <button onClick={removeMeasureAtIndex}>Remove measure</button>
+  
+            <button onClick={removeMeasureAtIndex}>Remove last measure</button>
             <h2>Adding a Tie</h2>
             <div>
                 <label htmlFor="noteId">Insert note id:</label>
