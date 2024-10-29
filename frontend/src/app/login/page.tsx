@@ -128,13 +128,13 @@ export default function Login() {
                             }}
                         />
                         <Text size="sm" style={{ textAlign: 'right' }}>
-                            Forgot your{' '}
+                            Forgot {' '}
                             <Text
                                 component="a"
                                 href="/signup"
                                 className="forgot-link"
                             >
-                                username/password
+                                Username / Password
                             </Text>
                             ?
                         </Text>
