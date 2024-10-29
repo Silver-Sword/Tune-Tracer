@@ -1439,7 +1439,7 @@ export default function CompositionTool() {
                         flexDirection: "column",
                         textAlign: "center",
                         background:
-                            "linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)",
+                            "#eee",
                     }}
                 >
                     <Space h="xl"></Space>
