@@ -136,10 +136,12 @@ const SharingModal: React.FC = () => {
     };
 
     const [shareCode, setShareCode] = useState<number>(0);
+    const [shareCodeIsLoading, setShareCodeIsLoading] = useState<string>("Generate Code");
     const [accessLevel, setAccessLevel] = useState<'Viewer' | 'Commenter' | 'Editor'>('Viewer');
 
     const handleCreateCode = async () => {
         const CREATE_CODE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/createShareCode';
+        setShareCodeIsLoading("Loading...");
         var sharing = 1;
         switch (accessLevel) {     
             case 'Viewer':
@@ -169,7 +171,7 @@ const SharingModal: React.FC = () => {
             body: JSON.stringify(param)
         }
 
-        fetch(CREATE_CODE_URL, PUT_OPTION).then((res) => {
+        await fetch(CREATE_CODE_URL, PUT_OPTION).then((res) => {
             res.json().then((value) => {
                 if (res.status === 200) {
                     setShareCode(value['data']);
@@ -182,6 +184,7 @@ const SharingModal: React.FC = () => {
         }).catch((error) => {
             console.error('Error:', error);
         });
+        setShareCodeIsLoading("Generate Code");
     };
 
     return (
@@ -237,7 +240,7 @@ const SharingModal: React.FC = () => {
                             style={{ width: 150 }}
                         />
 
-                        <Button onClick={handleCreateCode}>Generate Code</Button>
+                        <Button onClick={handleCreateCode}>{shareCodeIsLoading}</Button>
                     </Group>
                 </Group>
 
