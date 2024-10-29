@@ -47,6 +47,23 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
 
+// All button SVG imports
+
+    // Accidentals
+    import NaturalIcon from './icons/natural.svg';
+    import FlatIcon from './icons/flat.svg';
+
+    import EighthNoteIcon from './icons/8thNote.svg';
+    import SixteenthNoteIcon from './icons/16thNote.svg';
+    import ThirtySecondNoteIcon from './icons/32ndNote.svg';
+    import HalfNoteIcon from './icons/halfNote.svg';
+    import WholeNoteIcon from './icons/wholeNote.svg';
+    
+    import DottedWholeNoteIcon from './icons/Dotted_whole_note.svg';
+    import DoubleDottedWholeNoteIcon from './icons/Double_dotted_whole_note.svg';
+
+
+
 
 // Define types for the collaborator
 interface Collaborator {
