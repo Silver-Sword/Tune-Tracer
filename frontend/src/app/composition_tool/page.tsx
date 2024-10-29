@@ -11,587 +11,19 @@ import { Comment } from "../lib/src/Comment";
 import {
     AppShell,
     Container,
-    Text,
     Button,
-    Group,
     Space,
-    Stack,
-    SimpleGrid,
-    Grid,
-    Flex,
-    Input,
-    TextInput,
-    Paper,
-    Avatar,
-    Divider,
-    ScrollArea,
-    Tooltip,
-    Tabs,
-    SegmentedControl,
-    ActionIcon,
-    Modal,
-    Slider,
-    rem,
-    Center,
-    CopyButton,
-    Select,
 } from "@mantine/core";
-import {
-    IconPlayerPlay,
-    IconPlayerPause,
-    IconPlayerStop,
-    IconVolume,
-    IconCopy,
-    IconCheck,
-} from "@tabler/icons-react";
-import { useDisclosure } from "@mantine/hooks";
+
 import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
 import { increasePitch, lowerPitch } from './pitch'
+import { ToolbarHeader } from './ToolbarHeader'
 import { useSearchParams } from "next/navigation";
 
-// Define types for the collaborator
-interface Collaborator {
-    name: string;
-    email: string;
-    role: 'Viewer' | 'Commenter' | 'Editor';
-}
-
-// CollaboratorCard component used in SharingModal to show who has access 
-const CollaboratorCard: React.FC<{
-    name: string;
-    email: string;
-    role: 'Viewer' | 'Commenter' | 'Editor';
-    onRoleChange: (newRole: 'Viewer' | 'Commenter' | 'Editor') => void;
-    onRemove: () => void;
-}> = ({ name, email, role, onRoleChange, onRemove }) => {
-    const [currentRole, setCurrentRole] = useState<'Viewer' | 'Commenter' | 'Editor' | 'Remove access'>(role);
-
-    const handleRoleChange = (newRole: 'Viewer' | 'Commenter' | 'Editor' | 'Remove access') => {
-        if (newRole === 'Remove access') {
-            onRemove(); // Call the remove function if "Remove access" is selected
-        } else {
-            setCurrentRole(newRole);
-            onRoleChange(newRole);
-        }
-    };
-
-    return (
-        <Group
-            justify="space-between"
-            style={{
-                padding: '15px',
-                border: '1px solid #e0e0e0',
-                borderRadius: '8px',
-                marginBottom: '10px',
-                boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
-            }}
-        >
-            {/* Avatar and Collaborator Info */}
-            <Group>
-                <div>
-                    <Text size="sm">{name}</Text>
-                    <Text size="xs" c="dimmed">{email}</Text>
-                </div>
-            </Group>
-
-            {/* Role Selector */}
-            <Select
-                checkIconPosition="right"
-                value={currentRole}
-                onChange={(newRole) => handleRoleChange(newRole as 'Viewer' | 'Commenter' | 'Editor' | 'Remove access')}
-                data={[
-                    { value: 'Viewer', label: 'Viewer' },
-                    { value: 'Commenter', label: 'Commenter' },
-                    { value: 'Editor', label: 'Editor' },
-                    { value: 'Remove access', label: 'Remove access' }  // Red to differentiate remove
-                ]}
-                style={{ width: 150 }}
-            />
-        </Group>
-    );
-};
-
-// Sharing Modal Component
-const SharingModal: React.FC = () => {
-    // Sharing logic here
-    const [openShare, { open, close }] = useDisclosure(false);
-
-    // SAMPLE
-    const [collaborators, setCollaborators] = useState<Collaborator[]>([
-        { name: 'Jose Cuyugan', email: 'werhhh@gmail.com', role: 'Editor' },
-        { name: 'Chris Gittings', email: 'asdfadf.cg@gmail.com', role: 'Viewer' },
-        { name: 'Jordy Valois', email: 'dddddd@gmail.com', role: 'Commenter' },
-        { name: 'Sophia DeAngelo', email: 'ssss@hotmail.com', role: 'Editor' },
-    ]);
-
-    const handleRoleChange = (newRole: 'Viewer' | 'Commenter' | 'Editor', index: number) => {
-        const updatedCollaborators = [...collaborators];
-        updatedCollaborators[index].role = newRole;
-        setCollaborators(updatedCollaborators);
-    };
-
-    // Function to remove a collaborator
-    const handleRemove = (index: number) => {
-        const updatedCollaborators = collaborators.filter((_, i) => i !== index);
-        setCollaborators(updatedCollaborators);
-    };
-
-    const [shareCode, setShareCode] = useState<number>(0);
-    const [shareCodeIsLoading, setShareCodeIsLoading] = useState<string>("Generate Code");
-    const [accessLevel, setAccessLevel] = useState<'Viewer' | 'Commenter' | 'Editor'>('Viewer');
-
-    const handleCreateCode = async () => {
-        const CREATE_CODE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/createShareCode';
-        setShareCodeIsLoading("Loading...");
-        var sharing = 1;
-        switch (accessLevel) {     
-            case 'Viewer':
-                sharing = 2;
-                break;
-            case 'Commenter':
-                sharing = 3;
-                break;
-            case 'Editor':
-                sharing = 4;
-                break;
-            default:
-                return;
-        }
-        
-        const param = {
-            documentId: getDocumentID(),
-            sharing: sharing,
-            writerId: getUserID()
-        }
-        console.log(param);
-        const PUT_OPTION = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(param)
-        }
-
-        await fetch(CREATE_CODE_URL, PUT_OPTION).then((res) => {
-            res.json().then((value) => {
-                if (res.status === 200) {
-                    setShareCode(value['data']);
-                }
-                else if (res.status === 500) {
-                    console.log(`Error: ${value['message']}`);
-                    throw new Error(value['message']);
-                }
-            });
-        }).catch((error) => {
-            console.error('Error:', error);
-        });
-        setShareCodeIsLoading("Generate Code");
-    };
-
-    return (
-        <>
-            <Modal
-                opened={openShare}
-                onClose={close}
-                title="Share: [Document Name]"
-                centered
-                size="lg"
-            >
-                {/* Modal content */}
-                <TextInput placeholder="Add collaborators by email here"></TextInput>
-                <Space h="sm" />
-                <Text>Collaborators</Text>
-                <ScrollArea h={250}>
-                    {collaborators.map((collab, index) => (
-                        <CollaboratorCard
-                            key={index}
-                            name={collab.name}
-                            email={collab.email}
-                            role={collab.role}
-                            onRoleChange={(newRole) => handleRoleChange(newRole, index)}
-                            onRemove={() => handleRemove(index)}
-                        />
-                    ))}
-                </ScrollArea>
-
-                <Divider size="sm" my="sm"></Divider>
-
-                <Text>Code Access</Text>
-                <Space h="sm"></Space>
-                <Group justify="space-between">
-                    <Container>
-                        {/* Code gets rendered here, it is limited to 6 numbers */}
-                        <Text ta="center" c="blue" fw={700} style={{ letterSpacing: '0.5em' }} >
-                            {shareCode}
-                        </Text>
-                    </Container>
-
-                    <Group>
-                        {/* Uncomment block if multiple codes are allowed to exist based on access level */}
-                        <Select
-                            checkIconPosition="right"
-                            value={accessLevel}
-                            placeholder="Access Level"
-                            onChange={(value) => setAccessLevel(value as 'Viewer' | 'Commenter' | 'Editor')}
-                            data={[
-                                { value: 'Viewer', label: 'Viewer' },
-                                { value: 'Commenter', label: 'Commenter' },
-                                { value: 'Editor', label: 'Editor' },
-                            ]}
-                            style={{ width: 150 }}
-                        />
-
-                        <Button onClick={handleCreateCode}>{shareCodeIsLoading}</Button>
-                    </Group>
-                </Group>
-
-                <Divider size="sm" my="sm"></Divider>
-
-                <Text>Link Access</Text>
-                <Space h="sm"></Space>
-                {/* Replace value with the document link */}
-                <Center>
-                    <CopyButton value="null" timeout={10000}>
-                        {({ copied, copy }) => (
-                            <Button
-                                rightSection={copied ? <IconCheck /> : <IconCopy />}
-                                variant={copied ? "filled" : "outline"}
-                                onClick={copy}
-                            >
-                                {copied ? "Copied" : "Copy Link"}
-                            </Button>
-                        )}
-                    </CopyButton>
-                </Center>
-            </Modal>
-            <Button onClick={open}>Share</Button>
-            {/* Profile Icon */}
-        </>
-    );
-};
 import * as d3 from 'd3';
 import * as Tone from 'tone';
 import { access, write } from "fs";
 import { HookCallbacks } from "async_hooks";
-
-const ToolbarHeader: React.FC<{
-    documentName: string,
-    modifyDurationInMeasure: (duration: string, noteId: number) => void;
-    selectedNoteId: number;
-    playbackComposition: () => void;
-    stopPlayback: () => void;
-    volume: number;
-    onVolumeChange: (value: number) => void;
-    addMeasure: () => void;
-}> = ({ documentName, modifyDurationInMeasure, selectedNoteId, playbackComposition, stopPlayback, volume, onVolumeChange, addMeasure }) => {
-    // State to manage the input value
-    const [inputValue, setInputValue] = useState("Untitled Score");
-
-    // State to toggle between edit and display modes
-    const [isChangingName, setIsChangingName] = useState(false);
-
-    // Handle the save action (when pressing Enter or clicking outside)
-    const handleSave = () => {
-        setIsChangingName(false); // Exit edit mode and save
-    };
-
-    useEffect(() => {
-        setInputValue(documentName);
-    }, [documentName]);
-
-    const handleDocumentNameChange = (event: { currentTarget: { value: any; }; }) => {
-        setInputValue(event.currentTarget.value);
-        const UPDATE_DOCUMENT_NAME_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updatePartialDocument';
-
-        const new_title = {
-            documentId: getDocumentID(),
-            documentChanges: {document_title: event.currentTarget.value},
-            writerId: getUserID()
-        };
-        const PUT_OPTION = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(new_title)
-        }
-        fetch(UPDATE_DOCUMENT_NAME_URL, PUT_OPTION);
-    };
-    // Handle when the user clicks the text to switch to editing mode
-    const handleEdit = () => {
-        setIsChangingName(true);
-    };
-
-    // Toggle between editable and read-only states
-    const [mode, setMode] = useState<string>("Editable");
-    const handleModeChange = (value: any) => {
-        setMode(value);
-    }
-
-    // Need logic for swapping pause and play buttons, also if hitting stop it completely resets the time back to 0
-
-    // const [volume, setVolume] = useState(50);
-
-    // const handleVolumeChange = (value: React.SetStateAction<number>) => {
-    //     setVolume(value);
-    //     console.log(`Volume value is: ${value}`);
-    //     // if (audioRef.current) {
-    //     //   audioRef.current.volume = value / 100; // Convert to a scale of 0 to 1 for audio API
-    //     // }
-    // };
-
-    return (
-        <AppShell.Header p="md">
-            {/* First layer (top section) PUT IF STATEMENT HERE IF READ ONLY*/}
-            <Group
-                align="center"
-                style={{ borderBottom: "1px solid #eee", paddingBottom: "10px" }}
-            >
-                <Tooltip label="Back to Home">
-                    <Text size="xl" component="a" href="/storage">
-                        Tune Tracer
-                    </Text>
-                </Tooltip>
-
-                {/* Editable Document Title */}
-                {isChangingName ? (
-                    <TextInput
-                        size="md"
-                        value={inputValue}
-                        onChange={handleDocumentNameChange} // Update input value
-                        onBlur={handleSave} // Save on focus loss
-                        onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                                handleSave(); // Save on Enter key press
-                            }
-                        }}
-                        placeholder="Enter Document Name"
-                        autoFocus // Auto-focus when entering edit mode
-                    />
-                ) : (
-                    <Text
-                        onClick={handleEdit}
-                        style={{
-                            cursor: "text",
-                            padding: "3px",
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.outline =
-                                "2px solid rgba(128, 128, 128, 0.6)"; // Slightly dimmed gray outline
-                            e.currentTarget.style.outlineOffset = "3px"; // Space between outline and text
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.outline = "none"; // Remove outline on mouse leave
-                        }}
-                    >
-                        {inputValue || "Untitled Score"}
-                    </Text>
-                )}
-
-                {/* PlayBack UI */}
-                <Container fluid style={{ width: "20%" }}>
-                    <Center>
-                        <Group>
-                            <ActionIcon onClick={() => playbackComposition()}>
-                                <IconPlayerPlay />
-                            </ActionIcon>
-                            <ActionIcon>
-                                <IconPlayerPause />
-                            </ActionIcon>
-                            <ActionIcon onClick={() => stopPlayback()}>
-                                <IconPlayerStop />
-                            </ActionIcon>
-                        </Group>
-                    </Center>
-                    <Space h="xs"></Space>
-                    <Slider
-                        value={volume}
-                        onChange={onVolumeChange}
-                        thumbChildren={<IconVolume />}
-                        label={(value) => `${value}%`}
-                        defaultValue={50}
-                        thumbSize={26}
-                        styles={{ thumb: { borderWidth: rem(2), padding: rem(3) } }}
-                    />
-                </Container>
-
-                {/* I'd like to have everything left justified except the sharing button */}
-                {/* Sharing UI */}
-
-                {/* Select Dropdown should not be changable if not the owner */}
-                <Select
-                    placeholder="Select Sharing Mode"
-                    onChange={(value) => handleModeChange(value)}
-                    allowDeselect={false}
-                    withCheckIcon={false}
-                    style={{ width: 125, marginLeft: '10px' }}
-                />
-                <SharingModal />
-            </Group>
-
-            {/* Second layer (middle section) */}
-            {/* <Group align="center" mt="xs" style={{ paddingBottom: "10px" }}> */}
-            <Tabs defaultValue="notes">
-                <Tabs.List>
-                    <Tabs.Tab value="notes">Notes</Tabs.Tab>
-                    <Tabs.Tab value="measure">Measure</Tabs.Tab>
-                </Tabs.List>
-
-                {/* Notes Tab */}
-                <Tabs.Panel value="notes">
-                    <Space h="xs"></Space>
-                    <Group>
-                        <Button variant="outline">Natural</Button>
-                        <Button variant="outline">Sharp</Button>
-                        <Button variant="outline">Flat</Button>
-
-                        <Divider size="sm" orientation="vertical" />
-
-                        <Button
-                            variant="outline"
-                            onClick={() => modifyDurationInMeasure('w', selectedNoteId)}
-                        >
-                            Whole
-                        </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => modifyDurationInMeasure('h', selectedNoteId)}
-                        >
-                            Half
-                        </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => modifyDurationInMeasure('q', selectedNoteId)}
-                        >
-                            Quarter
-                        </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => modifyDurationInMeasure('8', selectedNoteId)}
-                        >
-                            Eighth
-                        </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => modifyDurationInMeasure('16', selectedNoteId)}
-                        >
-                            Sixteenth
-                        </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => modifyDurationInMeasure('32', selectedNoteId)}
-                        >
-                            Thirty-Second
-                        </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => modifyDurationInMeasure('64', selectedNoteId)}
-                        >
-                            Sixty-Fourth
-                        </Button>
-
-                        <Divider size="sm" orientation="vertical" />
-
-                        <Button variant="outline">Dot</Button>
-
-                        <Divider size="sm" orientation="vertical" />
-
-                        <Button>Help</Button>
-                    </Group>
-                </Tabs.Panel>
-
-                <Tabs.Panel value="measure">
-                    <Space h="xs"></Space>
-                    <Group>
-                        <Button
-                            variant="outline"
-                            onClick={addMeasure}
-                        >
-                            Add Measure
-                        </Button>
-                        <Button variant="outline">Delete Measure</Button>
-                    </Group>
-                </Tabs.Panel>
-
-                <></>
-            </Tabs>
-            {/* </Group> */}
-        </AppShell.Header>
-    );
-};
-
-// CommentCard component only used for the comment sidebar
-const CommentCard: React.FC = () => {
-    return (
-        <Paper withBorder shadow="sm" p="md" radius="md">
-            <Group>
-                {/* Need user logic for avatars, names, and date*/}
-                <Avatar radius="xl" />
-                <div>
-                    <Text fz="sm">[name]</Text>
-                    <Text fz="xs" c="dimmed">
-                        [date/time]
-                    </Text>
-                </div>
-            </Group>
-            <Text pl={54} pt="sm" size="sm">
-                Lorem ipsum
-            </Text>
-        </Paper>
-    );
-};
-
-// Right sidebar that contains all the comments in the document
-const CommentAside: React.FC = () => {
-    const [commentInput, setCommentInput] = useState("");
-
-    const handleComment = (event: { currentTarget: { value: any } }) => {
-        const value = event.currentTarget.value;
-        setCommentInput(value);
-        console.log(`Comment Published: ${value}`);
-        // Add more comment publishing logic here
-    };
-
-    const handleClear = () => {
-        setCommentInput("");
-    };
-
-    return (
-        <AppShell.Aside withBorder p="md">
-            <Paper withBorder shadow="sm" p="md" radius="md">
-                <Stack gap="xs">
-                    <TextInput
-                        value={commentInput}
-                        onChange={(event) => setCommentInput(event.currentTarget.value)}
-                    ></TextInput>
-                    <Group>
-                        <Button color="red" onClick={handleClear}>
-                            Clear
-                        </Button>
-                        <Button onClick={handleComment}>Add Comment</Button>
-                    </Group>
-                </Stack>
-            </Paper>
-            <Space h="xs"></Space>
-            <Divider size="sm" />
-            <Space h="xs"></Space>
-            <ScrollArea scrollbarSize={4}>
-                <Stack gap="xs">
-                    <CommentCard />
-                    <CommentCard />
-                    <CommentCard />
-                    <CommentCard />
-                    <CommentCard />
-                    <CommentCard />
-                    <CommentCard />
-                    <CommentCard />
-                    <CommentCard />
-                </Stack>
-            </ScrollArea>
-            <Space h="xs"></Space>
-        </AppShell.Aside>
-    );
-};
 
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
@@ -1280,63 +712,63 @@ export default function CompositionTool() {
         }
     }, []);
 
-    // useEffect(() => {
-    //     const intervalID = setInterval(() => {
-    //         var userInfo;
-    //         if (userTemp === '1') {
-    //             userInfo = {
-    //                 documentId: 'aco5tXEzQt7dSeB1WSlV',
-    //                 userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
-    //                 user_email: 'sophiad03@hotmail.com',
-    //                 displayName: 'Sopa'
-    //             };
-    //         }
-    //         else if (userTemp === '2') {
-    //             userInfo = {
-    //                 documentId: 'aco5tXEzQt7dSeB1WSlV',
-    //                 userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
-    //                 user_email: 'test-user-1@tune-tracer.com',
-    //                 displayName: 'test_one'
-    //             }
-    //         }
-    //         else {
-    //             console.log("No User");
-    //             return;
-    //         }
-    //         const POST_OPTION = {
-    //             method: 'POST',
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //             },
-    //             body: ""
-    //         }
-    //         fetch(CHECK_CHANGE_URL, POST_OPTION)
-    //             .then((res) => {
-    //                 res.json().then((data) => {
-    //                     const compData: ScoreData = (data.data.document).score;
-    //                     const document_title: string = (data.data.document).document_title;
-    //                     const comments: Comment[] = (data.data.document).comments;
-    //                     const metadata: DocumentMetadata = (data.data.document).metadata;
-    //                     const tempDocument: Document = {
-    //                         document_title: document_title,
-    //                         comments: comments,
-    //                         score: compData,
-    //                         metadata: metadata,
-    //                     };
-    //                     setDocument(tempDocument);
-    //                 }).catch((error) => {
-    //                     // Getting the Error details.
-    //                     const message = error.message;
-    //                     console.log(`Error: ${message}`);
-    //                     return;
-    //                 });
-    //             });
-    //     }, 1000);
+    useEffect(() => {
+        const intervalID = setInterval(() => {
+            var userInfo;
+            if (userTemp === '1') {
+                userInfo = {
+                    documentId: 'aco5tXEzQt7dSeB1WSlV',
+                    userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
+                    user_email: 'sophiad03@hotmail.com',
+                    displayName: 'Sopa'
+                };
+            }
+            else if (userTemp === '2') {
+                userInfo = {
+                    documentId: 'aco5tXEzQt7dSeB1WSlV',
+                    userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
+                    user_email: 'test-user-1@tune-tracer.com',
+                    displayName: 'test_one'
+                }
+            }
+            else {
+                console.log("No User");
+                return;
+            }
+            const POST_OPTION = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: ""
+            }
+            fetch(CHECK_CHANGE_URL, POST_OPTION)
+                .then((res) => {
+                    res.json().then((data) => {
+                        const compData: ScoreData = (data.data.document).score;
+                        const document_title: string = (data.data.document).document_title;
+                        const comments: Comment[] = (data.data.document).comments;
+                        const metadata: DocumentMetadata = (data.data.document).metadata;
+                        const tempDocument: Document = {
+                            document_title: document_title,
+                            comments: comments,
+                            score: compData,
+                            metadata: metadata,
+                        };
+                        setDocument(tempDocument);
+                    }).catch((error) => {
+                        // Getting the Error details.
+                        const message = error.message;
+                        console.log(`Error: ${message}`);
+                        return;
+                    });
+                });
+        }, 1000);
 
-    //     return function stopChecking() {
-    //         clearInterval(intervalID);
-    //     }
-    // }, [userTemp]);
+        return function stopChecking() {
+            clearInterval(intervalID);
+        }
+    }, [userTemp]);
     useEffect(() => {
         // Attach the note selection handler to the notationRef container
         d3.select(notationRef.current)
@@ -1531,7 +963,7 @@ export default function CompositionTool() {
                     onVolumeChange={setVolume}
                     addMeasure={addMeasureHandler}
                 />
-                <CommentAside />
+                {/* <CommentAside /> */}
 
                 {/* get rid of the background later, use it for formatting */}
                 <Container
