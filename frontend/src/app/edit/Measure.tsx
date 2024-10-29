@@ -28,7 +28,6 @@ export class Measure {
     private x: number;
     private y: number;
     private width: number;
-    private stave_note_data_array: StaveNoteData[] = [];
 
     constructor(
         x: number = 0,
@@ -61,7 +60,7 @@ export class Measure {
         if (timeSignature !== "none") {
             this.processTimeSignature(timeSignature);
         }
-
+        this.clef = clef;
         if (clef === "none" || clef === "treble") {
             clef = "treble";
             this.rest_location = TREBLE_REST_LOC;
@@ -79,7 +78,7 @@ export class Measure {
             this.setClef(clef);
             this.stave.setKeySignature(keySignature);
         }
-        this.clef = clef;
+        
 
 
         let notes: StaveNote[] = [];
@@ -625,7 +624,6 @@ export class Measure {
 
     private modifyAccidentalToKeysInNote = (keys: string[], noteId: string, modifier: string) => {
         if (!this.voice1) return { staveNote: null, found: false };
-        this.stave_note_data_array = [];
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
             let staveNoteData = getDefaultStaveNoteData();
