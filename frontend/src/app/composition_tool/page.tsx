@@ -268,6 +268,7 @@ const SharingModal: React.FC = () => {
 import * as d3 from 'd3';
 import * as Tone from 'tone';
 import { access, write } from "fs";
+import { HookCallbacks } from "async_hooks";
 
 const ToolbarHeader: React.FC<{
     documentName: string,
@@ -590,14 +591,13 @@ const CommentAside: React.FC = () => {
 
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
-let selectedNoteID = 0;
 
 export default function CompositionTool() {
     const notationRef = useRef<HTMLDivElement>(null);
     const score = useRef<Score | null>(null);
+    const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
     const [selectedNoteId, setSelectedNoteId] = useState<number>(-1);
 
-    console.log("THIS IS RUNNNING? ?? Reached selectedNoteId: " + selectedNoteId);
     const [volume, setVolume] = useState<number>(50);
     let topPart: Tone.Part;
     let bottomPart: Tone.Part;
@@ -807,7 +807,6 @@ export default function CompositionTool() {
         if (score && score.current) {
             score.current.addNoteInMeasure(notes, noteId);
             setSelectedNoteId(noteId);
-            selectedNoteID = noteId;
             sendChanges();
 
             // Manually reapply the 'selected-note' class
@@ -1048,11 +1047,11 @@ export default function CompositionTool() {
                     if (notationRef.current) {
                         score.current?.loadScoreDataObj(compData);
                         console.log("LOADED SCORE DATA");
-                        console.log("asd selectedNoteId: " + selectedNoteID);
+                        console.log("asd selectedNoteId: " + selectedNoteId);
                         // Now add it to the currently selected note
                         if (selectedNoteId !== -1) {
-                            console.log("Reached selectedNoteId: " + selectedNoteID);
-                            d3.select(`[id="${selectedNoteID}"]`).classed('selected-note', true);
+                            console.log("Reached selectedNoteId: " + selectedNoteId);
+                            d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
                         }
                     }
                 }).catch((error) => {
@@ -1089,19 +1088,36 @@ export default function CompositionTool() {
         }));
     };
 
+    function useInterval(callback: () => void, delay: number | null) {
+      const savedCallback = useRef<() => void>();
+    
+      // Remember the latest callback.
+      useEffect(() => {
+        savedCallback.current = callback;
+      }, [callback]);
+    
+      // Set up the interval.
+      useEffect(() => {
+        function tick() {
+          if (savedCallback.current) {
+            savedCallback.current();
+          }
+        }
+        if (delay !== null) {
+          const id = setInterval(tick, delay);
+          return () => clearInterval(id);
+        }
+      }, [delay]);
+    }
+    
+    
+
     // THIS FETCHES CHANGES PERIODICALLY
     // UNCOMMENT below to actually do it.
-    // useEffect(() => {
-    //   //fetchChanges()
-
-    //   // Set up the interval to call the API periodically
-      
-    //   const intervalId = setInterval(fetchChanges, 5000); // 5000 ms = 1 second
-
-    //   const intervalId = setInterval(fetchChanges, 3000); // 1000 ms = .5 seconds
-    //   // Cleanup function to clear the interval when component unmounts
-    //   return () => clearInterval(intervalId);
-    // }, []); // Empty dependency array means this runs once on mount
+    // useInterval(() => {
+    //     // Your custom logic here
+    //     fetchChanges();
+    //   }, 500); // .5 seconds
 
     const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
         const value = event.currentTarget.value;
@@ -1313,7 +1329,6 @@ export default function CompositionTool() {
                 if (targetElement && targetElement.classList.contains('vf-stavenote')) {
                     const selectId = d3.select(targetElement).attr('id');
                     setSelectedNoteId(parseInt(selectId));
-                    selectedNoteID = parseInt(selectId);
                 }
             });
 
@@ -1370,7 +1385,6 @@ export default function CompositionTool() {
                 const nextNote = score.current?.getAdjacentNote(selectedNoteId);
                 if (nextNote) {
                     setSelectedNoteId(nextNote);
-                    selectedNoteID = nextNote;
                 }
             }
 
@@ -1432,7 +1446,6 @@ export default function CompositionTool() {
                 if (targetElement && targetElement.classList.contains('vf-stavenote')) {
                     const selectId = d3.select(targetElement).attr('id');
                     setSelectedNoteId(parseInt(selectId));
-                    selectedNoteID = parseInt(selectId);
                 }
             });
 

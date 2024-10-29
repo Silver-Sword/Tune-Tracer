@@ -29,13 +29,13 @@ function getTopMeasuresObj1(): MeasureData[] {
         renderTimeSignature: true,
         notes: [
             {
-                keys: ["b/4"],
-                duration: "q",
-                dots: 0, modifiers: [modifier1natural]
+                keys: ["b/4", "d/4"],
+                duration: "qd",
+                dots: 1, modifiers: [modifier1natural]
             },
             {
                 keys: ["b/4"],
-                duration: "q",
+                duration: "8r",
                 dots: 0, modifiers: []
             },
             {
@@ -158,23 +158,13 @@ function getBottomMeasuresObj1(): MeasureData[] {
         renderTimeSignature: true,
         notes: [
             {
-                keys: ["d/3"],
-                duration: "qr",
+                keys: ["d/3", "b/4"],
+                duration: "h",
                 dots: 0, modifiers: []
             },
             {
                 keys: ["d/3"],
-                duration: "qr",
-                dots: 0, modifiers: []
-            },
-            {
-                keys: ["d/3"],
-                duration: "qr",
-                dots: 0, modifiers: []
-            },
-            {
-                keys: ["d/3"],
-                duration: "qr",
+                duration: "hr",
                 dots: 0, modifiers: []
             }
         ]

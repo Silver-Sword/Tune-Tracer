@@ -61,7 +61,7 @@ export class Measure {
         if (timeSignature !== "none") {
             this.processTimeSignature(timeSignature);
         }
-
+        this.clef = clef;
         if (clef === "none" || clef === "treble") {
             clef = "treble";
             this.rest_location = TREBLE_REST_LOC;
@@ -79,7 +79,7 @@ export class Measure {
             this.setClef(clef);
             this.stave.setKeySignature(keySignature);
         }
-        this.clef = clef;
+        
 
 
         let notes: StaveNote[] = [];
