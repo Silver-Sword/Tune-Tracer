@@ -44,6 +44,10 @@ export class Score {
     private ID_to_MeasureIndexID: Map<number, { measureIndex: number, noteId: string, topMeasure: boolean }> = new Map();
     private key_signature = "C";
     private title: string = "Untitled";
+
+    private systems: { y: number, height: number }[] = [];
+    private measureToIndexSystemIndex: Map<number, number> = new Map();
+
     constructor(
         notationRef: HTMLDivElement,
         rendererHeight: number,
@@ -270,18 +274,31 @@ export class Score {
         let measureIndex2 = this.ID_to_MeasureIndexID.get(noteId + 1)?.measureIndex;
         if (measureIndex2 == null) return noteId;
 
-        if (measureIndex1 !== measureIndex2) {
-            if (topMeasure) {
-                return noteId + this.bottom_measures[measureIndex1].getVoice1().getTickables().length;
-            }
-            else {
-                // We know measureIndex1 + 1 
-                return noteId + this.top_measures[measureIndex1 + 1].getVoice1().getTickables().length;
-            }
+        // if (measureIndex1 !== measureIndex2) {
+        //     if (topMeasure) {
+        //         return noteId + this.bottom_measures[measureIndex1].getVoice1().getTickables().length;
+        //     }
+        //     else {
+        //         // We know measureIndex1 + 1 
+        //         return noteId + this.top_measures[measureIndex1 + 1].getVoice1().getTickables().length;
+        //     }
+        // }
+        // return noteId + 1;
+        const nextNoteID = noteId + 1;
+        if (this.ID_to_MeasureIndexID.has(nextNoteID)) {
+            return nextNoteID;
+        } else {
+            return noteId;
         }
-        return noteId + 1;
     }
 
+    getSystemIndexForMeasure = (measureIndex: number): number => {
+        return this.measureToIndexSystemIndex.get(measureIndex) || 0;
+    }
+
+    getSystems = (): { y: number; height: number }[] => {
+        return this.systems;
+    }
 
     modifyDurationInMeasure = (
         duration: string,
@@ -450,7 +467,7 @@ export class Score {
         }
     }
 
-    private calculateALineOfMeasures = (measures: Measure[], ceiling: number): number => {
+    private calculateALineOfMeasures = (measures: Measure[], ceiling: number): { bottomY: number; topY: number } => {
         // We want to know the largest bounding box in this line of measures
         // We'll use its coordinates to space all measures in the line
         let smallestY: number = Number.MAX_VALUE;
@@ -536,16 +553,31 @@ export class Score {
 
         }
 
-        return ceiling + largestY - smallestY;
+        // return ceiling + largestY - smallestY;
+        return {
+            topY: YCoordinateForAllMeasuresInThisLine,
+            bottomY: YCoordinateForAllMeasuresInThisLine + (largestY - smallestY),
+        }
     }
 
-    private calculateMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], ceiling: number, currentWidth: number): number => {
+    private calculateMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], ceiling: number): number => {
+        const topResult = this.calculateALineOfMeasures(topMeasures, ceiling);
+        const bottomResult = this.calculateALineOfMeasures(bottomMeasures, topResult.bottomY);
 
-        let ceilingForBottomMeasures: number = this.calculateALineOfMeasures(topMeasures, ceiling);
-        let returnCeiling: number = this.calculateALineOfMeasures(bottomMeasures, ceilingForBottomMeasures);
+        // Render the stave connectors
         this.renderMeasureLine(topMeasures, bottomMeasures);
 
-        return returnCeiling;
+        // Calculate system position and height
+        const systemY = topResult.topY;
+        const systemHeight = bottomResult.bottomY - topResult.topY;
+
+        // Store the system info
+        this.systems.push({
+            y: systemY,
+            height: systemHeight,
+        });
+
+        return bottomResult.bottomY;
     }
 
     // If you want to connect a tie to the end of the measure, repeat the indices for which the notes match: 
@@ -724,9 +756,14 @@ export class Score {
     private renderMeasures = (): void => {
         this.context.clear();
 
+        this.systems = [];
+        this.measureToIndexSystemIndex = new Map();
+
         let firstLineIndex = 0;
         let ceiling = 0;
         let currentWidth = DEFAULT_FIRST_MEASURES_X;
+        let systemIndex = 0;
+
         for (let i = 0; i < this.top_measures.length; i++) {
             let topMeasure = this.top_measures[i];
             let topStave = topMeasure.getStave();
@@ -734,21 +771,41 @@ export class Score {
 
             // there needs to be a line shift
             if (currentWidth + width > this.renderer_width) {
-                ceiling = this.calculateMeasureLine(
+                const newCeiling = this.calculateMeasureLine(
                     this.top_measures.slice(firstLineIndex, i),
-                    this.bottom_measures.slice(firstLineIndex, i), ceiling, currentWidth);
+                    this.bottom_measures.slice(firstLineIndex, i),
+                    ceiling
+                );
+
+                // Map measures to system index
+                for (let j = firstLineIndex; j < i; j++)
+                {
+                    this.measureToIndexSystemIndex.set(j, systemIndex);
+                }
+                systemIndex++;
+
                 firstLineIndex = i;
                 // padding for next measure lines
-                ceiling += DEFAULT_PADDING_IN_BETWEEN_MEASURES;
+                ceiling = newCeiling;
 
                 currentWidth = DEFAULT_FIRST_MEASURES_X;
             }
             currentWidth += topMeasure.getStave().getWidth();
         }
 
-        this.calculateMeasureLine(
+        // Process the last line of measures
+        const newCeiling = this.calculateMeasureLine(
             this.top_measures.slice(firstLineIndex, this.top_measures.length),
-            this.bottom_measures.slice(firstLineIndex, this.bottom_measures.length), ceiling, currentWidth);
+            this.bottom_measures.slice(firstLineIndex, this.bottom_measures.length),
+            ceiling
+        );
+
+        // Map remaining measures to system index
+        for (let j = firstLineIndex; j < this.top_measures.length; j++)
+        {
+            this.measureToIndexSystemIndex.set(j, systemIndex);
+        }
+        systemIndex++;
 
         // With all measures rendered, we can now give them unique IDs, and Render Ties
         let IDCounter = 0;
