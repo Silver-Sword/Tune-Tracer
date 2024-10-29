@@ -46,7 +46,8 @@ import {
 } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
-
+import { increasePitch, lowerPitch } from './pitch'
+import { useSearchParams } from "next/navigation";
 
 // Define types for the collaborator
 interface Collaborator {
@@ -136,10 +137,12 @@ const SharingModal: React.FC = () => {
     };
 
     const [shareCode, setShareCode] = useState<number>(0);
+    const [shareCodeIsLoading, setShareCodeIsLoading] = useState<string>("Generate Code");
     const [accessLevel, setAccessLevel] = useState<'Viewer' | 'Commenter' | 'Editor'>('Viewer');
 
     const handleCreateCode = async () => {
         const CREATE_CODE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/createShareCode';
+        setShareCodeIsLoading("Loading...");
         var sharing = 1;
         switch (accessLevel) {     
             case 'Viewer':
@@ -169,7 +172,7 @@ const SharingModal: React.FC = () => {
             body: JSON.stringify(param)
         }
 
-        fetch(CREATE_CODE_URL, PUT_OPTION).then((res) => {
+        await fetch(CREATE_CODE_URL, PUT_OPTION).then((res) => {
             res.json().then((value) => {
                 if (res.status === 200) {
                     setShareCode(value['data']);
@@ -182,6 +185,7 @@ const SharingModal: React.FC = () => {
         }).catch((error) => {
             console.error('Error:', error);
         });
+        setShareCodeIsLoading("Generate Code");
     };
 
     return (
@@ -237,7 +241,7 @@ const SharingModal: React.FC = () => {
                             style={{ width: 150 }}
                         />
 
-                        <Button onClick={handleCreateCode}>Generate Code</Button>
+                        <Button onClick={handleCreateCode}>{shareCodeIsLoading}</Button>
                     </Group>
                 </Group>
 
@@ -603,6 +607,7 @@ export default function CompositionTool() {
     let bottomPart: Tone.Part;
     const [piano, setPiano] = useState<Tone.Sampler>();
     const volumeNode = useRef<Tone.Volume>();
+    const searchParams = useSearchParams();
     const email = useRef<string>();
     const userId = useRef<string>();
     const displayName = useRef<string>();
@@ -834,71 +839,6 @@ export default function CompositionTool() {
         }
     }
 
-    const shiftNoteUp = (note: string) => {
-        const noteSequence = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
-        const [noteLetter, octave] = note.split('/');  // Example: 'C/4' -> 'C' and '4'
-        let noteIndex = noteSequence.indexOf(noteLetter);
-        let newOctave = parseInt(octave);
-
-        // Move to the next note in the sequence
-        if (noteIndex < noteSequence.length - 1) {
-            noteIndex++;
-        } else {
-            // If the note is 'B', wrap around to 'C' and increase the octave
-            noteIndex = 0;
-            newOctave++;
-        }
-
-        // Return the new note and octave
-        return `${noteSequence[noteIndex]}/${newOctave}`;
-    };
-
-    const shiftNoteDown = (note: string) => {
-        const noteSequence = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
-        const [noteLetter, octave] = note.split('/');
-        let noteIndex = noteSequence.indexOf(noteLetter);
-        let newOctave = parseInt(octave);
-
-        // Move to the previous note in the sequence
-        if (noteIndex > 0) {
-            noteIndex--;
-        } else {
-            // If the note is 'C', wrap around to 'B' and decrease the octave
-            noteIndex = noteSequence.length - 1;
-            newOctave--;
-        }
-
-        // Return the new note and octave
-        return `${noteSequence[noteIndex]}/${newOctave}`;
-    };
-
-    const increasePitch = () => {
-        // Get all the keys from the note passed in, raise all the pitches of them, return the new array
-        const newNotes: string[] = [];
-        if (score && score.current) {
-            const staveNote = score.current.findNote(selectedNoteId);
-            if (staveNote) {
-                for (let i = 0; i < staveNote.keys.length; i++) {
-                    newNotes.push(shiftNoteUp(staveNote.keys[i]));
-                }
-            }
-        }
-        return newNotes;
-    }
-
-    const lowerPitch = () => {
-        const newNotes: string[] = [];
-        if (score && score.current) {
-            const staveNote = score.current.findNote(selectedNoteId);
-            if (staveNote) {
-                for (let i = 0; i < staveNote.keys.length; i++) {
-                    newNotes.push(shiftNoteDown(staveNote.keys[i]))
-                }
-            }
-        }
-        return newNotes;
-    }
-
     useEffect(() => {
         const loadSamples = async () => {
             await Tone.loaded();
@@ -957,7 +897,7 @@ export default function CompositionTool() {
         email.current = getEmail();
         displayName.current = getDisplayName();
         userId.current = getUserID();
-        documentID.current = getDocumentID();
+        documentID.current = searchParams.get('id') || 'null';
         console.log(`Document ID: ${documentID.current}`);
 
         loadSamples();
@@ -1390,7 +1330,7 @@ export default function CompositionTool() {
 
             // If we press the up arrow, raise the pitch
             if (key === 'w') {
-                const newNotes = increasePitch();
+                const newNotes = increasePitch(score, selectedNoteId);
                 const staveNote = score.current?.findNote(selectedNoteId);
                 if (staveNote) {
                     removeNoteHandler(staveNote.keys, selectedNoteId);
@@ -1400,7 +1340,7 @@ export default function CompositionTool() {
 
             // If we press the down arrow, lower the pitch
             if (key === 's') {
-                const newNotes = lowerPitch();
+                const newNotes = lowerPitch(score, selectedNoteId);
                 const staveNote = score.current?.findNote(selectedNoteId);
                 if (staveNote) {
                     removeNoteHandler(staveNote.keys, selectedNoteId);
