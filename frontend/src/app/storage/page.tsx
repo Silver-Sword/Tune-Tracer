@@ -33,7 +33,7 @@ interface DocumentData {
 
 // Define filter labels for the navbar
 const filterLabels = [
-  { link: "", label: "Owned by you" },
+  { link: "", label: "All" },
   { link: "", label: "Shared with you" },
   { link: "", label: "Favorites" },
   { link: "", label: "Recents" },
@@ -46,7 +46,7 @@ const FiltersNavbar: React.FC<{getOwnPreviews: () => void, getSharedPreviews: ()
 
   const handleFilterClick = (label: string) => {
     setActiveFilter(label);
-    if (label == "Owned by you")
+    if (label == "All")
     {
       getOwnPreviews();
     }
@@ -137,7 +137,7 @@ const CreateCard: React.FC<{userId: string}> = (userId) => {
               console.log(`DocumentId: ${documentId}`);
               updateDocumentShareStyle(documentId);
 
-              router.push('/composition_tool');
+              router.push(`/composition_tool?id=${documentId}`);
             })
           }
           else if (res.status == 500)
@@ -298,7 +298,7 @@ const DocCard: React.FC<DocumentData> = ({document_id, document_title, owner_id,
   const handleDocumentOpen = () => {
     saveDocID(document_id);
     console.log(`Document opened: ${document_id}`);
-    router.push('/composition_tool');
+    router.push(`/composition_tool?id=${document_id}`);
 
     // Navigates to /document/{documentId}
   };
@@ -557,7 +557,7 @@ export default function Storage() {
             <CreateCard userId={userId} />
 
             {documents.map((doc) => (
-              <DocCard  last_edit_user={doc.last_edit_user} document_id={doc.document_id} document_title={doc.document_title} owner_id={doc.owner_id} last_edit_time={doc.last_edit_time}/>
+              <DocCard key={doc.document_id} last_edit_user={doc.last_edit_user} document_id={doc.document_id} document_title={doc.document_title} owner_id={doc.owner_id} last_edit_time={doc.last_edit_time}/>
             ))}
             {/* Uncomment to see card behaviors for storage page */}
             {/* {documents.map((document) =>(
