@@ -392,17 +392,14 @@ export class Score {
         this.renderMeasures();
     }
 
-    removeMeasure = (index: number): void => {
+    removeMeasure = (): void => {
         if (this.top_measures.length > 1) {
-            if (index > -1 && index < this.top_measures.length) {
-                this.top_measures.splice(index, 1);
-                this.bottom_measures.splice(index, 1);
-                // Always renderTimeSig for first measures
-                this.top_measures[0].renderTimeSignature();
-                this.bottom_measures[0].renderTimeSignature();
-                this.renderMeasures();
-
-            }
+            this.top_measures.pop()
+            this.bottom_measures.pop()
+            // Always renderTimeSig for first measures
+            this.top_measures[0].renderTimeSignature();
+            this.bottom_measures[0].renderTimeSignature();
+            this.renderMeasures();
         }
     }
 
