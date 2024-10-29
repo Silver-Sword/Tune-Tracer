@@ -117,6 +117,18 @@ export class Score {
     getTopMeasures = (): Measure[] => {
         return this.top_measures;
     }
+    
+    getMeasureFromNoteId = (noteId: number): Measure  | null=> {
+        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        if (measureIndex == undefined || topMeasure == undefined) { console.log('Something was null in Score.getMeasureFromNoteId()!'); return null; }
+        if (topMeasure) {
+            return this.top_measures[measureIndex];
+        }
+        else {
+            return this.bottom_measures[measureIndex];
+        }
+    }
 
     getBottomMeasures = (): Measure[] => {
         return this.bottom_measures;
