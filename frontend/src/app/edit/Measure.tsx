@@ -28,7 +28,6 @@ export class Measure {
     private x: number;
     private y: number;
     private width: number;
-    private stave_note_data_array: StaveNoteData[] = [];
 
     constructor(
         x: number = 0,
@@ -625,7 +624,6 @@ export class Measure {
 
     private modifyAccidentalToKeysInNote = (keys: string[], noteId: string, modifier: string) => {
         if (!this.voice1) return { staveNote: null, found: false };
-        this.stave_note_data_array = [];
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
             let staveNoteData = getDefaultStaveNoteData();

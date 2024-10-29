@@ -1196,63 +1196,63 @@ export default function CompositionTool() {
         }
     }, []);
 
-    // useEffect(() => {
-    //     const intervalID = setInterval(() => {
-    //         var userInfo;
-    //         if (userTemp === '1') {
-    //             userInfo = {
-    //                 documentId: 'aco5tXEzQt7dSeB1WSlV',
-    //                 userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
-    //                 user_email: 'sophiad03@hotmail.com',
-    //                 displayName: 'Sopa'
-    //             };
-    //         }
-    //         else if (userTemp === '2') {
-    //             userInfo = {
-    //                 documentId: 'aco5tXEzQt7dSeB1WSlV',
-    //                 userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
-    //                 user_email: 'test-user-1@tune-tracer.com',
-    //                 displayName: 'test_one'
-    //             }
-    //         }
-    //         else {
-    //             console.log("No User");
-    //             return;
-    //         }
-    //         const POST_OPTION = {
-    //             method: 'POST',
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //             },
-    //             body: ""
-    //         }
-    //         fetch(CHECK_CHANGE_URL, POST_OPTION)
-    //             .then((res) => {
-    //                 res.json().then((data) => {
-    //                     const compData: ScoreData = (data.data.document).score;
-    //                     const document_title: string = (data.data.document).document_title;
-    //                     const comments: Comment[] = (data.data.document).comments;
-    //                     const metadata: DocumentMetadata = (data.data.document).metadata;
-    //                     const tempDocument: Document = {
-    //                         document_title: document_title,
-    //                         comments: comments,
-    //                         score: compData,
-    //                         metadata: metadata,
-    //                     };
-    //                     setDocument(tempDocument);
-    //                 }).catch((error) => {
-    //                     // Getting the Error details.
-    //                     const message = error.message;
-    //                     console.log(`Error: ${message}`);
-    //                     return;
-    //                 });
-    //             });
-    //     }, 1000);
+    useEffect(() => {
+        const intervalID = setInterval(() => {
+            var userInfo;
+            if (userTemp === '1') {
+                userInfo = {
+                    documentId: 'aco5tXEzQt7dSeB1WSlV',
+                    userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
+                    user_email: 'sophiad03@hotmail.com',
+                    displayName: 'Sopa'
+                };
+            }
+            else if (userTemp === '2') {
+                userInfo = {
+                    documentId: 'aco5tXEzQt7dSeB1WSlV',
+                    userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
+                    user_email: 'test-user-1@tune-tracer.com',
+                    displayName: 'test_one'
+                }
+            }
+            else {
+                console.log("No User");
+                return;
+            }
+            const POST_OPTION = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: ""
+            }
+            fetch(CHECK_CHANGE_URL, POST_OPTION)
+                .then((res) => {
+                    res.json().then((data) => {
+                        const compData: ScoreData = (data.data.document).score;
+                        const document_title: string = (data.data.document).document_title;
+                        const comments: Comment[] = (data.data.document).comments;
+                        const metadata: DocumentMetadata = (data.data.document).metadata;
+                        const tempDocument: Document = {
+                            document_title: document_title,
+                            comments: comments,
+                            score: compData,
+                            metadata: metadata,
+                        };
+                        setDocument(tempDocument);
+                    }).catch((error) => {
+                        // Getting the Error details.
+                        const message = error.message;
+                        console.log(`Error: ${message}`);
+                        return;
+                    });
+                });
+        }, 1000);
 
-    //     return function stopChecking() {
-    //         clearInterval(intervalID);
-    //     }
-    // }, [userTemp]);
+        return function stopChecking() {
+            clearInterval(intervalID);
+        }
+    }, [userTemp]);
     useEffect(() => {
         // Attach the note selection handler to the notationRef container
         d3.select(notationRef.current)
