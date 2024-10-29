@@ -1,10 +1,11 @@
 'use client'
 
 import React, { useState } from "react";
-import { Title, Center, Container, TextInput, PasswordInput, Button, Stack, rem, Text, Box } from '@mantine/core';
+import { Title, Center, Container, Button, Stack, rem, Text, Box } from '@mantine/core';
 import { useRouter } from "next/navigation";
 import { saveUserID, saveDisplayName, saveEmail } from "../cookie";
-
+import { AuthInput } from "../../components/AuthInput";
+import { authStyles } from '../../styles/auth-styles';
 import { callAPI } from "../../utils/callAPI";
 
 export default function Login() {
@@ -46,8 +47,7 @@ export default function Login() {
                 }).catch((error) => {
                     console.log(`Error: ${error.message}`);
                     triggerError('An error occurred. Please try again.');
-                })
-
+                });
         } catch (error: any) {
             console.log(`Error: ${error.message}`);
             triggerError('An error occurred. Please try again.');
@@ -55,12 +55,7 @@ export default function Login() {
     }
 
     return (
-        <Container fluid style={{
-            height: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-        }}>
+        <Container fluid style={authStyles.container}>
             <Box
                 style={{
                     width: '100%',
@@ -89,32 +84,21 @@ export default function Login() {
                         justify='center'
                         gap='md'
                     >
-                        <TextInput
+                        <AuthInput
+                            type='text'
                             label='Email'
                             placeholder='email'
                             value={email}
-                            maxLength={100}
-                            leftSectionPointerEvents='none'
-                            radius='xl'
                             onChange={(event) => setEmail(event.currentTarget.value)}
-                            styles={{
-                                label: {
-                                    animation: 'none',
-                                },
-                            }}
+                            isShaking={isShaking}
                         />
-                        <PasswordInput
+                        <AuthInput
+                            type='password'
                             label='Password'
                             placeholder='password'
                             value={password}
-                            maxLength={100}
-                            radius='xl'
                             onChange={(event) => setPassword(event.currentTarget.value)}
-                            styles={{
-                                label: {
-                                    animation: 'none',
-                                },
-                            }}
+                            isShaking={isShaking}
                         />
                         <Text size="sm" style={{ textAlign: 'right' }}>
                             Forgot {' '}
