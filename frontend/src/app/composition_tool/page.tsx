@@ -76,6 +76,18 @@ export default function CompositionTool() {
     }
 
     const stopPlayback = () => {
+        // Dispose of parts
+        if (topPart) {
+            topPart.stop();
+            topPart.clear();
+            topPart.dispose();
+        }
+        if (bottomPart) {
+            bottomPart.stop();
+            bottomPart.clear();
+            bottomPart.dispose();
+        }
+
         // Kill any audio that is currently playing
         Tone.getTransport().stop();
         // Reset the position to the start
@@ -141,17 +153,6 @@ export default function CompositionTool() {
 
         await Tone.loaded();
 
-        if (topPart) {
-            topPart.stop();
-            topPart.clear();
-            topPart.dispose();
-        }
-        if (bottomPart) {
-            bottomPart.stop();
-            bottomPart.clear();
-            bottomPart.dispose();
-        }
-
         if (score && score.current) {
             const scoreData = score.current.exportScoreDataObj();
             const topMeasureData = scoreData.topMeasures;
@@ -212,37 +213,37 @@ export default function CompositionTool() {
                 // Iterate over notes in treble clef
                 for (let j = 0; j < topNotes.length; j++) {
                     const durationTop = durationMap[topNotes[j].duration];
+                    const isRest = topNotes[j].duration.includes('r');
 
                     // Since noteIds are deterministic we can keep track of how many notes
                     // have been iterated over and use that as the noteId
                     const noteId = noteIdTracker++;
 
                     // Schedule the part to be played
-                    if (!topNotes[j].duration.includes('r')) {
-                        for (let k = 0; k < topNotes[j].keys.length; k++) {
-                            const sanitizedKeyTop = topNotes[j].keys[k].replace('/', '');
-                            const noteElement = document.getElementById(noteId.toString());
-                            // let noteX = noteElement ? noteElement.getBoundingClientRect().left : 0;
+                    for (let k = 0; k < topNotes[j].keys.length; k++) {
+                        const sanitizedKeyTop = topNotes[j].keys[k].replace('/', '');
+                        const noteElement = document.getElementById(noteId.toString());
+                        // let noteX = noteElement ? noteElement.getBoundingClientRect().left : 0;
 
-                            // Since these coordinates are viewport based at first,
-                            // we have to make them relative to the SVG container 
-                            let noteX = 0;
-                            if (noteElement && svgRect?.left)
-                            {
-                                const noteRect = noteElement.getBoundingClientRect();
-                                noteX = noteRect.left - svgRect?.left;
-                            }
-
-                            topPart.add({
-                                time: currentTimeTop,
-                                note: sanitizedKeyTop,
-                                duration: durationTop,
-                                noteId: noteId,
-                                noteX: noteX,
-                                systemY: systemInfo.y,
-                                systemHeight: systemInfo.height,
-                            });
+                        // Since these coordinates are viewport based at first,
+                        // we have to make them relative to the SVG container 
+                        let noteX = 0;
+                        if (noteElement && svgRect?.left)
+                        {
+                            const noteRect = noteElement.getBoundingClientRect();
+                            noteX = noteRect.left - svgRect?.left;
                         }
+
+                        topPart.add({
+                            time: currentTimeTop,
+                            note: sanitizedKeyTop,
+                            duration: durationTop,
+                            noteId: noteId,
+                            noteX: noteX,
+                            systemY: systemInfo.y,
+                            systemHeight: systemInfo.height,
+                            isRest: isRest,
+                        });
                     }
 
                     // Update currentTime
@@ -252,30 +253,30 @@ export default function CompositionTool() {
                 // Iterate over the notes in the bass clef
                 for (let j = 0; j < bottomNotes.length; j++) {
                     const durationBottom = durationMap[bottomNotes[j].duration];
+                    const isRest = bottomNotes[j].duration.includes('r');
 
                     const noteId = noteIdTracker++;
 
                     // Schedule the notes for the bass clef
-                    if (!bottomNotes[j].duration.includes('r')) {
-                        for (let k = 0; k < bottomNotes[j].keys.length; k++) {
-                            const sanitizedKeyBottom = bottomNotes[j].keys[k].replace('/', '');
-                            const noteElement = document.getElementById(noteId.toString());
-                            // const noteX = noteElement ? noteElement.getBoundingClientRect().left : 0;
+                    for (let k = 0; k < bottomNotes[j].keys.length; k++) {
+                        const sanitizedKeyBottom = bottomNotes[j].keys[k].replace('/', '');
+                        const noteElement = document.getElementById(noteId.toString());
+                        // const noteX = noteElement ? noteElement.getBoundingClientRect().left : 0;
 
-                            let noteX = 0;
-                            if (noteElement && svgRect?.left)
-                            {
-                                const noteRect = noteElement.getBoundingClientRect();
-                                noteX = noteRect.left - svgRect.left;
-                            }
-                            bottomPart.add({
-                                time: currentTimeBottom,
-                                note: sanitizedKeyBottom,
-                                duration: durationBottom,
-                                noteId: noteId,
-                                noteX: noteX,
-                            });
+                        let noteX = 0;
+                        if (noteElement && svgRect?.left)
+                        {
+                            const noteRect = noteElement.getBoundingClientRect();
+                            noteX = noteRect.left - svgRect.left;
                         }
+                        bottomPart.add({
+                            time: currentTimeBottom,
+                            note: sanitizedKeyBottom,
+                            duration: durationBottom,
+                            noteId: noteId,
+                            noteX: noteX,
+                            isRest: isRest,
+                        });
                     }
 
                     // Update currentTime
@@ -285,7 +286,7 @@ export default function CompositionTool() {
 
             // Configure the playback of the top and bottom parts
             topPart.callback = (time, event) => {
-                if (piano) {
+                if (piano && !event.isRest) {
                     piano.triggerAttackRelease(event.note, event.duration, time);
                 }
 
@@ -304,7 +305,7 @@ export default function CompositionTool() {
             };
 
             bottomPart.callback = (time, event) => {
-                if (piano) {
+                if (piano && !event.isRest) {
                     piano.triggerAttackRelease(event.note, event.duration, time);
                 }
 
