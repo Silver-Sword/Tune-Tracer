@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from "react";
-import { Title, Center, Group, Container, TextInput, PasswordInput, Button, Space, Stack, rem, Notification, Text } from '@mantine/core';
+import { Title, Center, Container, TextInput, PasswordInput, Button, Stack, rem, Text, Box } from '@mantine/core';
 import { IconAt } from '@tabler/icons-react';
 import { useRouter } from "next/navigation";
 import { saveUserID, saveDisplayName, saveEmail } from "../cookie";
@@ -12,19 +12,23 @@ export default function Login() {
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [error, setError] = useState<string>('');
+    const [isShaking, setIsShaking] = useState(false);
     const router = useRouter();
 
     const icon = <IconAt style={{ width: rem(16), height: rem(16) }} />;
 
+    const triggerError = async (errorMessage: string) => {
+        setError(errorMessage);
+        setIsShaking(true);
+        setTimeout(() => setIsShaking(false), 500);
+    }
     const handleLogin = async () => {
         try {
-            const loginInfo = 
-            {
+            const loginInfo = {
                 email: email,
                 password: password
             };
-            const requestOptions = 
-            {
+            const requestOptions = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -32,14 +36,17 @@ export default function Login() {
                 body: JSON.stringify(loginInfo),
             }
 
-            fetch(LOGIN_URL, requestOptions)
+            if(email === '' || password === '') 
+            {
+                triggerError(`${email === '' ? "Email" : "Password"} is a required field`);
+                return;
+            }
+
+            await fetch(LOGIN_URL, requestOptions)
                 .then((res) => {
-                    if (res.status == 500)
-                    {
-                        setError('Incorrect username or password');
-                    }
-                    else if (res.status == 200)
-                    {
+                    if (res.status == 500) {
+                        triggerError('Incorrect username or password');
+                    } else if (res.status == 200) {
                         const json = res.json()
                             .then((value) => {
                                 // Save the userID as a cookie
@@ -51,73 +58,119 @@ export default function Login() {
                     }
                 }).catch((error) => {
                     console.log(`Error: ${error.message}`);
+                    triggerError('An error occurred. Please try again.');
                 })
 
-        }
-        catch (error: any) {
+        } catch (error: any) {
             console.log(`Error: ${error.message}`);
+            triggerError('An error occurred. Please try again.');
         }
     }
 
     return (
-        <Group style={{
+        <Container fluid style={{
             height: '100vh',
-            width: '100vw'
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
         }}>
-            <Container style={{
-                height: '100vh',
-                width: '50vw',
-                margin: 0,
-                background: 'linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)'
-            }}
+            <Box
+                style={{
+                    width: '100%',
+                    maxWidth: '450px',
+                    minHeight: '550px',
+                    backgroundColor: 'white',
+                    borderRadius: '1rem',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    overflow: 'hidden',
+                }}
             >
-            </Container>
-            <Container style={{
-                width: '45vw'
-            }}
-            >
-                <Center>
-                    <Title>Welcome back</Title>
-                </Center>
-                <Space h='md'></Space>
-                <Stack
-                    align='stretch'
-                    justify='center'
-                    gap='md'
+                <Box
+                    style={{
+                        background: '#228be6',
+                        padding: '3rem 2rem',
+                        marginBottom: '2rem',
+                    }}
                 >
-                    <TextInput
-                        leftSection={icon}
-                        leftSectionPointerEvents='none'
-                        radius='md'
-                        label='Email'
-                        placeholder='email'
-                        value={email}
-                        onChange={(event) => setEmail(event.currentTarget.value)}
-                    />
-                    <PasswordInput
-                        radius='md'
-                        label='Password'
-                        placeholder='password'
-                        value={password}
-                        onChange={(event) => setPassword(event.currentTarget.value)}
-                    />
-
-                    <Button onClick={handleLogin}>Login</Button>
-                    {
-                        error !== '' ? <Notification color='red' withCloseButton={false} title='Error signing in'>
-                        Please check your username or password
-                    </Notification> : <></>
-                    }
-                    <Text
-                        c="dimmed"
-                        size="sm"
-                        component="a"
-                        href="/signup"
+                    <Center>
+                        <Title style={{ color: 'white' }}>Welcome Back</Title>
+                    </Center>
+                </Box>
+                <Container style={{ padding: '0 2rem 2rem' }}>
+                    <Stack
+                        align='stretch'
+                        justify='center'
+                        gap='md'
                     >
-                        Don't have an account?
-                    </Text>
-                </Stack>
-            </Container>
-        </Group>
+                        <TextInput
+                            leftSectionPointerEvents='none'
+                            radius='xl'
+                            label='Email'
+                            placeholder='email'
+                            value={email}
+                            onChange={(event) => setEmail(event.currentTarget.value)}
+                            styles={{
+                                label: {
+                                    animation: 'none',
+                                },
+                            }}
+                        />
+                        <PasswordInput
+                            radius='xl'
+                            label='Password'
+                            placeholder='password'
+                            value={password}
+                            onChange={(event) => setPassword(event.currentTarget.value)}
+                            styles={{
+                                label: {
+                                    animation: 'none',
+                                },
+                            }}
+                        />
+                        <Text size="sm" style={{ textAlign: 'right' }}>
+                            Forgot your{' '}
+                            <Text
+                                component="a"
+                                href="/signup"
+                                className="forgot-link"
+                            >
+                                username/password
+                            </Text>
+                            ?
+                        </Text>
+                        <Button 
+                            onClick={handleLogin} 
+                            radius="xl" 
+                            style={{ marginTop: '1rem' }}
+                            className={`${isShaking ? 'shake-input' : ''} login-button`}
+                        >
+                            Login
+                        </Button>
+                        {
+                            error !== '' && (
+                                <Text color="red" size="sm" style={{ marginTop: '0.25rem' }}>
+                                    {error}
+                                </Text>
+                            )
+                        }
+                        <Text
+                            c="dimmed"
+                            size="sm"
+                            style={{ textAlign: 'center', marginTop: '2rem' }}
+                        >
+                            Don't have an account?
+                            <br />
+                            <Text
+                                component="a"
+                                href="/signup"
+                                className="signup-link"
+                            >
+                                SIGN UP NOW
+                            </Text>
+                        </Text>
+                    </Stack>
+                </Container>
+            </Box>
+        </Container>
     );
 }
