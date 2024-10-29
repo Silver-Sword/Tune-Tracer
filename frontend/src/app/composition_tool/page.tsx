@@ -47,7 +47,7 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
 import { increasePitch, lowerPitch } from './pitch'
-
+import { useSearchParams } from "next/navigation";
 
 // Define types for the collaborator
 interface Collaborator {
@@ -527,6 +527,7 @@ export default function CompositionTool() {
     let bottomPart: Tone.Part;
     const [piano, setPiano] = useState<Tone.Sampler>();
     const volumeNode = useRef<Tone.Volume>();
+    const searchParams = useSearchParams();
     const email = useRef<string>();
     const userId = useRef<string>();
     const displayName = useRef<string>();
@@ -818,7 +819,7 @@ export default function CompositionTool() {
         email.current = getEmail();
         displayName.current = getDisplayName();
         userId.current = getUserID();
-        documentID.current = getDocumentID();
+        documentID.current = searchParams.get('id') || 'null';
         console.log(`Document ID: ${documentID.current}`);
 
         loadSamples();
