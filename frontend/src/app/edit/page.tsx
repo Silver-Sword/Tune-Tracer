@@ -25,6 +25,9 @@ export default function Editor() {
     const [duration, setDuration] = useState('');
     const [durationNoteId, setDurationNoteId] = useState<number>(0);
 
+    const [accidentalKeys, setAccidentalKeys] = useState('');
+    const [accidentalNoteId, setAccidentalNoteId] = useState<number>(0);
+
     const [removeKeys, setRemoveKeys] = useState('');
     const [removeNoteId, setRemoveNoteId] = useState<number>(0);
 
@@ -67,6 +70,14 @@ export default function Editor() {
 
     const handleDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setDuration(event.target.value);
+    };
+
+    const handleAccidentalKeysChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setAccidentalKeys(event.target.value);
+    };
+
+    const handleAccidentalNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setAccidentalNoteId(setNumberValue(event.target.value));
     };
 
     const handleDurationNoteIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,6 +131,42 @@ export default function Editor() {
             );
         }
     };
+
+    const addSharp = () => {
+        if (score.current) {
+            score.current.addSharp(
+                /*duration*/ accidentalKeys.split(','),
+                /*noteId*/ accidentalNoteId
+            );
+        }
+    }
+
+    const addFlat = () => {
+        if (score.current) {
+            score.current.addFlat(
+                /*duration*/ accidentalKeys.split(','),
+                /*noteId*/ accidentalNoteId
+            );
+        }
+    }
+
+    const addNatural = () => {
+        if (score.current) {
+            score.current.addNatural(
+                /*duration*/ accidentalKeys.split(','),
+                /*noteId*/ accidentalNoteId
+            );
+        }
+    }
+
+    const removeAccidentals = () => {
+        if (score.current) {
+            score.current.removeAccidentals(
+                /*duration*/ accidentalKeys.split(','),
+                /*noteId*/ accidentalNoteId
+            );
+        }
+    }
 
     const addTie = () => {
         if (score.current) {
@@ -224,48 +271,6 @@ export default function Editor() {
         }
     }, []);
 
-    useEffect(() => {
-        // Attach the note selection handler to the notationRef container
-        d3.select(notationRef.current)
-            .on('click', function(event) {
-                // Grab a reference to what we click on
-                let targetElement = event.target;
-
-                // Keep going up the DOM to look for an element that has the VF note class
-                while (targetElement && !targetElement.classList.contains('vf-stavenote')) {
-                    targetElement = targetElement.parentElement;
-                }
-
-                // Check to see if we've found an element in the DOM with the class we're looking for
-                if (targetElement && targetElement.classList.contains('vf-stavenote')) {
-                    const selectId = d3.select(targetElement).attr('id');
-                    handleNoteClick(parseInt(selectId));
-                }
-            });
-        
-        // Clean up the event listener when notationRef unmounts
-        return () => {
-            d3.select(notationRef.current).on('click', null);
-        }
-    }, [notationRef.current])
-
-    useEffect(() => {
-        // First remove the selectd note class from previously selected note
-        d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-        // Now add it to the currently selected note
-        if (selectedNoteId !== -1)
-        {
-            d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
-        }
-    }, [selectedNoteId]);
-
-    // Handle clicking on notes
-    const handleNoteClick = (index: number) => {
-        setSelectedNoteId(index);
-        console.log(`Selected index is: ${index}`);
-    }
-
     return (
         <div>
             <h1> Tune Tracer Composition Tool Demo</h1>
@@ -333,6 +338,29 @@ export default function Editor() {
                 />
             </div>
             <button onClick={modifyDuration}>Change duration of specified element</button>
+            <h2>Accidentals</h2>
+            <div>
+                <label htmlFor="accidentals">Insert keys for accidental (comma-separated):</label>
+                <input
+                    type="text"
+                    id="accidentals"
+                    value={accidentalKeys}
+                    onChange={handleAccidentalKeysChange}
+                />
+            </div>
+            <div>
+                <label htmlFor="accidentalNoteId">Insert note id:</label>
+                <input
+                    type="text"
+                    id="accidentalNoteId"
+                    value={accidentalNoteId}
+                    onChange={handleAccidentalNoteIdChange}
+                />
+            </div>
+            <button onClick={addSharp}>Add Sharp to keys</button>
+            <button onClick={addFlat}>Add Flat to keys</button>
+            <button onClick={addNatural}>Add Natural to keys</button>
+            <button onClick={removeAccidentals}>Remove Accidentals</button>
             <h2>Measure Operations</h2>
             <button onClick={addMeasureToEnd}>Add a measure to the end</button>
             <div>

@@ -121,7 +121,6 @@ export class Score {
         this.title = title;
     }
 
-
     setKeySignature = (keySignature: string): void => {
         this.key_signature = keySignature;
         this.top_measures.forEach((measure) => {
@@ -154,7 +153,7 @@ export class Score {
         scoreData.bottomMeasures = bottomMeasures;
         scoreData.title = this.title;
 
-        console.log(printScoreData(scoreData));
+        //console.log(printScoreData(scoreData));
         return scoreData;
     }
 
@@ -297,11 +296,74 @@ export class Score {
             found = this.bottom_measures[measureIndex].modifyDuration(duration, noteIdStr)
         }
         if (found) {
-            console.log(this.ties);
             // Remove ties associated with noteId
             if (this.ties.has(noteId)) this.ties.delete(noteId);
         }
         // Voice changes so recalculate widths
+        this.calculateWidths();
+        this.renderMeasures();
+    }
+
+    addSharp = (
+        keys: string[],
+        noteId: number
+    ): void => {
+        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
+        let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        if (measureIndex == undefined || noteIdStr == undefined) return;
+
+        if (topMeasure) this.top_measures[measureIndex].addSharpToKeysInNote(keys, noteIdStr);
+        else this.bottom_measures[measureIndex].addSharpToKeysInNote(keys, noteIdStr);
+        // Voice changes, so widths need to be recalculated
+        this.calculateWidths();
+        this.renderMeasures();
+    }
+
+    addFlat = (
+        keys: string[],
+        noteId: number
+    ): void => {
+        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
+        let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        if (measureIndex == undefined || noteIdStr == undefined) return;
+
+        if (topMeasure) this.top_measures[measureIndex].addFlatToKeysInNote(keys, noteIdStr);
+        else this.bottom_measures[measureIndex].addFlatToKeysInNote(keys, noteIdStr);
+        // Voice changes, so widths need to be recalculated
+        this.calculateWidths();
+        this.renderMeasures();
+    }
+
+    addNatural = (
+        keys: string[],
+        noteId: number
+    ): void => {
+        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
+        let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        if (measureIndex == undefined || noteIdStr == undefined) return;
+
+        if (topMeasure) this.top_measures[measureIndex].addNaturalToKeysInNote(keys, noteIdStr);
+        else this.bottom_measures[measureIndex].addNaturalToKeysInNote(keys, noteIdStr);
+        // Voice changes, so widths need to be recalculated
+        this.calculateWidths();
+        this.renderMeasures();
+    }
+
+    removeAccidentals = (
+        keys: string[],
+        noteId: number
+    ): void => {
+        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
+        let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        if (measureIndex == undefined || noteIdStr == undefined) return;
+
+        if (topMeasure) this.top_measures[measureIndex].removeAccidentalsOnKeysInNote(keys, noteIdStr);
+        else this.bottom_measures[measureIndex].removeAccidentalsOnKeysInNote(keys, noteIdStr);
+        // Voice changes, so widths need to be recalculated
         this.calculateWidths();
         this.renderMeasures();
     }
@@ -392,8 +454,6 @@ export class Score {
     }
 
     private calculateALineOfMeasures = (measures: Measure[], ceiling: number): number => {
-        console.log("---------calculateALineOfMeasures--------");
-        console.log("current ceiling: " + ceiling);
         // We want to know the largest bounding box in this line of measures
         // We'll use its coordinates to space all measures in the line
         let smallestY: number = Number.MAX_VALUE;
@@ -447,9 +507,6 @@ export class Score {
 
 
             if (!voiceBoundingBox) continue;
-            console.log("loop smallestY: " + smallestY);
-            console.log("voiceBoundingBox.getY(): " + voiceBoundingBox.getY());
-            console.log("staveBoundingBox.getY():" + staveBoundingBox.getY());
             smallestY = Math.min(smallestY, Math.min(voiceBoundingBox.getY(), staveBoundingBox.getY()));
             largestY = Math.max(largestY, Math.max(voiceBoundingBox.getY() + voiceBoundingBox.getH(), staveBoundingBox.getY() + staveBoundingBox.getH()));
 
@@ -464,12 +521,9 @@ export class Score {
         // The Y coordinate of the largestBoundingBox can even be negative! So subtracting will make the stave go down further
         // which is desired behavior
         let pushDownStave = firstStave.getYForTopText() - smallestY;
-        console.log("firstStave.getYForTopText(): " + firstStave.getYForTopText());
-        console.log("smallestY: " + smallestY);
 
         let YCoordinateForAllMeasuresInThisLine = ceiling + pushDownStave;
-        console.log("pushDownStave: " + pushDownStave);
-        console.log("ceiling: " + ceiling);
+
         // This should be the only place where coordinates are set for final draw
         let XCoordinate = DEFAULT_FIRST_MEASURES_X;
         for (let i = 0; i < measures.length; i++) {
@@ -491,9 +545,7 @@ export class Score {
     private calculateMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], ceiling: number, currentWidth: number): number => {
 
         let ceilingForBottomMeasures: number = this.calculateALineOfMeasures(topMeasures, ceiling);
-        console.log("ceilingForBottomMeasures: " + ceilingForBottomMeasures);
         let returnCeiling: number = this.calculateALineOfMeasures(bottomMeasures, ceilingForBottomMeasures);
-        console.log("returnCeiling: " + returnCeiling);
         this.renderMeasureLine(topMeasures, bottomMeasures);
 
         return returnCeiling;
@@ -614,7 +666,6 @@ export class Score {
         }
         // If notePair is null, then it couldn't find first note
         if (notePair == null) return false;
-        console.log("Found first!");
 
         // Found first, but second was not in the measure
         if (notePair.secondNote == null) {
@@ -626,7 +677,6 @@ export class Score {
         // now should just be invalid
         // Later, we can add a note, alongside a new measure
         if (notePair.secondNote == null) return false;
-        console.log("Found second!");
 
         return this.createTies(notePair.firstNote, notePair.secondNote);
     }
@@ -693,7 +743,7 @@ export class Score {
                 firstLineIndex = i;
                 // padding for next measure lines
                 ceiling += DEFAULT_PADDING_IN_BETWEEN_MEASURES;
-                console.log
+
                 currentWidth = DEFAULT_FIRST_MEASURES_X;
             }
             currentWidth += topMeasure.getStave().getWidth();

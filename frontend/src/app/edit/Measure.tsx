@@ -1,4 +1,4 @@
-import { Vex, Stave, StaveNote, Voice, Tickable } from 'vexflow';
+import { Vex, Stave, StaveNote, Voice, Tickable, Accidental, Modifier, ModifierContext, Category } from 'vexflow';
 import { getDefaultMeasureData, MeasureData, printMeasureData } from '../../../../lib/src/MeasureData'; // edit the tsconfig file to include this import
 import { getDefaultStaveNoteData, StaveNoteData } from '../../../../lib/src/StaveNoteData';
 
@@ -76,7 +76,6 @@ export class Measure {
         // We don't want to render the clef if its none
         if (renderTimeSignature) {
             this.setClef(clef);
-            console.log("set keySignature: " + keySignature);
             this.stave.setKeySignature(keySignature);
         }
         this.clef = clef;
@@ -87,9 +86,10 @@ export class Measure {
             measureData.notes.forEach((note) => {
                 let newNote: StaveNote = new this.VF.StaveNote({ clef: this.clef, keys: note.keys, duration: note.duration });
                 notes.push(newNote);
-                if (note.dots > 0) {
-                    this.createAnyDots(newNote, note.dots);
-                }
+                if (note.dots > 0) newNote.addModifier(new this.VF.Dot());
+                if (note.dots > 1) newNote.addModifier(new this.VF.Dot());
+                // need to network sharps and flats
+                this.addModifiers(newNote, [], new ModifierContext());
             });
         }
         else {
@@ -108,21 +108,18 @@ export class Measure {
         this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
     }
 
-    renderTimeSignature()
-    {
-        if(this.timeSignature === "none") return;
+    renderTimeSignature() {
+        if (this.timeSignature === "none") return;
         this.stave.setTimeSignature(this.timeSignature);
     }
 
     renderSignatures = (render: boolean) => {
-        this.render_time_sig = render; 
-        if(render)
-        {
+        this.render_time_sig = render;
+        if (render) {
             this.setClef(this.clef);
             this.stave.setKeySignature(this.key_signature);
         }
-        else
-        {
+        else {
             this.stave = new this.VF.Stave(this.x, this.y, this.width);
         }
     }
@@ -257,26 +254,15 @@ export class Measure {
         }
     }
 
-    createAnyDots = (newNote: StaveNote, countDots: number) => {
-        if (countDots > 0) {
-            // Create a Dot
-            const dot1 = new Vex.Flow.Dot();
-            newNote.addModifier(dot1); // Attach the dot to the note
-            const dot2 = new Vex.Flow.Dot();
-            if (countDots > 1) {
-                newNote.addModifier(dot2); // Attach another dot;
-            }
-
-            // Create ModifierContext and add the dot
-            const modifierContext = new Vex.Flow.ModifierContext();
-            modifierContext.addModifier(dot1);
-            if (countDots > 1) {
-                modifierContext.addModifier(dot2); // Attach another dot;
-            }
-            // Associate the ModifierContext with the note
-            newNote.setModifierContext(modifierContext);
-        }
+    addModifiers = (newNote: StaveNote, modifiers: Modifier[], modifierContext: ModifierContext | undefined) => {
+        modifiers.forEach((modifier) => {
+            newNote?.addModifier(modifier);
+        });
+        // Associate the ModifierContext with the note
+        newNote.setModifierContext(modifierContext);
     }
+
+
 
     addNote = (keys: string[], noteId: string): StaveNote | null => {
         if (!this.voice1) return null;
@@ -291,7 +277,8 @@ export class Measure {
             if (staveNote.getAttributes().id === noteId) {
                 let countDots = staveNote.getModifiersByType('Dot').length;
                 let duration = staveNote.getDuration();
-
+                let modifiers = staveNote.getModifiers();
+                let modiferContext = staveNote.getModifierContext();
                 if (countDots > 0) duration += "d";
                 if (countDots > 1) duration += "d";
 
@@ -307,7 +294,7 @@ export class Measure {
                 else {
                     newNote = new VF.StaveNote({ clef: this.clef, keys, duration });
                 }
-                this.createAnyDots(newNote, countDots);
+                this.addModifiers(newNote, modifiers, modiferContext);
                 notes.push(newNote);
             } else {
                 // We just add the note that existed here previously (not changing anything on this beat)
@@ -317,6 +304,7 @@ export class Measure {
             // if (svgNote) svgNote.remove();
         });
         this.voice1 = new VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
+
         return newNote;
         // When adding a note you never want to override another note
         // However, if the StaveNote you are overriding is at REST, then override
@@ -454,6 +442,8 @@ export class Measure {
             if (staveNote.getAttributes().id === noteId) {
                 found = true;
                 const currentNoteTicks = staveNote.getTicks().value();
+                let modifiersNoDots = staveNote.getModifiers().filter(modifier => !(modifier instanceof this.VF.Dot));
+                let modifierContext = staveNote.getModifierContext();
                 // if we want each note duration to be less, then we'll need to pad with rests
                 if (newDesiredTicks < currentNoteTicks) {
                     // Calculates how many rests we can fit based on the old rest
@@ -488,7 +478,10 @@ export class Measure {
                     // First we'll replace our current note with the new duration
                     console.log("staveNote.isRest(): " + staveNote.isRest());
                     let newNote = this.createNote(this.clef, staveNote.getKeys(), duration, staveNote.isRest());
-                    this.createAnyDots(newNote, countDots);
+                    if (countDots > 0) newNote.addModifier(new Vex.Flow.Dot());
+                    if (countDots > 1) newNote.addModifier(new Vex.Flow.Dot());
+
+                    this.addModifiers(newNote, modifiersNoDots, modifierContext);
                     notes.push(newNote);
                     // Our new duration is bigger, we'll need to eat Ticks
                     let returnFromEating: { replaceNotes: StaveNote[], index: number } = this.eatTicks(i, newDesiredTicks, tickables);
@@ -557,6 +550,7 @@ export class Measure {
                         // getDuration doesn't include dots, so we have to manually do it ourselves, yay!
                         let newDuration = staveNote.getDuration();
                         const modifiers = staveNote.getModifiers();
+                        let modifierContext = staveNote.getModifierContext();
 
                         // Filter the modifiers to count how many are dots
                         const dotCount = modifiers.filter(modifier => modifier.getCategory() === 'Dot').length;
@@ -564,7 +558,7 @@ export class Measure {
                         if (dotCount > 1) newDuration += "d";
 
                         returnNote = new this.VF.StaveNote({ clef: this.clef, keys: newKeys, duration: newDuration });
-                        this.createAnyDots(returnNote, dotCount);
+                        this.addModifiers(returnNote, modifiers, modifierContext)
                         notes.push(returnNote);
                     }
 
@@ -582,6 +576,69 @@ export class Measure {
         }
         this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
         return { staveNote: returnNote, found };
+    }
+
+    addSharpToKeysInNote = (keys: string[], noteId: string) => {
+        this.modifyAccidentalToKeysInNote(keys, noteId, "#");
+    }
+
+    addFlatToKeysInNote = (keys: string[], noteId: string) => {
+        this.modifyAccidentalToKeysInNote(keys, noteId, "b");
+    }
+
+    addNaturalToKeysInNote = (keys: string[], noteId: string) => {
+        this.modifyAccidentalToKeysInNote(keys, noteId, "n");
+    }
+
+    removeAccidentalsOnKeysInNote = (keys: string[], noteId: string) => {
+        this.modifyAccidentalToKeysInNote(keys, noteId, "");
+    }
+
+    // Function to get all keys with accidentals
+    private getIndicesWithAccidentalsNoDots = (staveNote: StaveNote): Map<number, number> => {
+        const indsWithAccidentals: Map<number, number> = new Map();
+        let modifiers = staveNote.getModifiers();
+        for (let i = 0; i < modifiers.length; i++) {
+            let modifier = modifiers[i];
+            if (!(modifier instanceof this.VF.Dot)) indsWithAccidentals.set(modifier.checkIndex(), i);
+        }
+
+        return indsWithAccidentals;
+    }
+
+    private modifyAccidentalToKeysInNote = (keys: string[], noteId: string, modifier: string) => {
+        if (!this.voice1) return { staveNote: null, found: false };
+        this.voice1.getTickables().forEach(tickable => {
+            let staveNote = tickable as StaveNote;
+
+
+            if (staveNote.getAttributes().id === noteId) {
+
+                let notekeys = staveNote.getKeys();
+                let inputKeySet = new Set(keys);
+                let indsWithAccidentals = this.getIndicesWithAccidentalsNoDots(staveNote);
+                for (let i = 0; i < notekeys.length; i++) {
+                    if (inputKeySet.has(notekeys[i])) {
+                        if (indsWithAccidentals.has(i)) {
+                            let locationInModifierArray = indsWithAccidentals.get(i);
+                            if (locationInModifierArray !== undefined) {
+                                staveNote.getModifiers().splice(locationInModifierArray, 1); // Modify the array directly
+                            }
+
+                        }
+                        if(modifier === "") continue;
+                        // Create Accidental
+                        const accidental = new Accidental(modifier);
+                        staveNote.addModifier(accidental, i);
+
+                    }
+                }
+
+            }
+
+        });
+
+
     }
 
 
