@@ -649,11 +649,58 @@ export default function CompositionTool() {
         // Reset the position to the start
         Tone.getTransport().position = 0;
         Tone.getTransport().cancel();
+
+        // Hide the cursor
+        const svg = d3.select(notationRef.current).select('svg');
+        svg.select('#playback-cursor').attr('opacity', 0);
+    }
+
+    // Create a cursor to follow notes during playback
+    const createCursor = () => {
+        const svg = d3.select(notationRef.current).select('svg');
+    
+        // Remove existing cursor if any
+        svg.select('#playback-cursor').remove();
+    
+        // Get the dimensions of the SVG to set the cursor height
+        const svgHeight = parseFloat(svg.attr('height'));
+        const svgWidth = parseFloat(svg.attr('width'));
+    
+        // Create the cursor line
+        // Start the opacity as 0 to hide it
+        svg.append('line')
+            .attr('id', 'playback-cursor')
+            .attr('x1', 0)
+            .attr('y1', 0)
+            .attr('x2', 0)
+            .attr('y2', 280)
+            .attr('stroke', 'red')
+            .attr('stroke-width', 4)
+            .attr('opacity', 0);
+    };
+    
+    const moveCursorToPosition = (xPosition: number, duration: number) => {
+        const svg = d3.select(notationRef.current).select('svg');
+        const cursor = svg.select('#playback-cursor');
+
+        // Set cursor opacity to 100 to make it visible
+        cursor.attr('opacity', 100);
+
+        // cursor.attr('x1', xPosition)
+        //     .attr('x2', xPosition);
+
+        cursor.transition()
+            .duration(duration * 1000)
+            .ease(d3.easeLinear)
+            .attr('x1', xPosition)
+            .attr('x2', xPosition);
     }
 
     // Function to play composition
     const playbackComposition = async () => {
         stopPlayback();
+
+        createCursor();
 
         await Tone.loaded();
 
@@ -700,6 +747,13 @@ export default function CompositionTool() {
             let currentTimeTop = 0;
             let currentTimeBottom = 0;
 
+            // Grab references to svg elements for their coordinates
+            const svgElement = notationRef.current?.querySelector('svg');
+            const svgRect = svgElement?.getBoundingClientRect();
+
+            // Keep a track of our noteID
+            let noteIdTracker: number = 0;
+
             // Iterate over each measure
             for (let i = 0; i < topMeasureData.length; i++) {
                 const topNotes = topMeasureData[i].notes;
@@ -707,6 +761,7 @@ export default function CompositionTool() {
                 const topStaveNotes = topMeasures[i].getNotes();
                 const bottomStaveNotes = bottomMeasures[i].getNotes();
 
+                console.log(`The length of topNotes is: ${topNotes.length}`);
 
                 // 1. Remove the '/' from the note string
                 // 2. Map the duration to a string that ToneJs likes (q -> 4n, w -> 1n, 8 -> 8n, h -> 2n)
@@ -715,15 +770,30 @@ export default function CompositionTool() {
                 for (let j = 0; j < topNotes.length; j++) {
                     const durationTop = durationMap[topNotes[j].duration];
 
+                    // Since noteIds are deterministic we can keep track of how many notes
+                    // have been iterated over and use that as the noteId
+                    const noteId = noteIdTracker++;
+
                     // Schedule the part to be played
                     if (!topNotes[j].duration.includes('r')) {
                         for (let k = 0; k < topNotes[j].keys.length; k++) {
                             const sanitizedKeyTop = topNotes[j].keys[k].replace('/', '');
+                            const noteElement = document.getElementById(noteId.toString());
+                            // let noteX = noteElement ? noteElement.getBoundingClientRect().left : 0;
+
+                            let noteX = 0;
+                            if (noteElement && svgRect?.left)
+                            {
+                                const noteRect = noteElement.getBoundingClientRect();
+                                noteX = noteRect.left - svgRect?.left;
+                            }
+
                             topPart.add({
                                 time: currentTimeTop,
                                 note: sanitizedKeyTop,
                                 duration: durationTop,
-                                noteId: topStaveNotes[j].getSVGElement()?.getAttribute('id')
+                                noteId: noteId,
+                                noteX: noteX,
                             });
                         }
                     }
@@ -736,15 +806,27 @@ export default function CompositionTool() {
                 for (let j = 0; j < bottomNotes.length; j++) {
                     const durationBottom = durationMap[bottomNotes[j].duration];
 
+                    const noteId = noteIdTracker++;
+
                     // Schedule the notes for the bass clef
                     if (!bottomNotes[j].duration.includes('r')) {
                         for (let k = 0; k < bottomNotes[j].keys.length; k++) {
                             const sanitizedKeyBottom = bottomNotes[j].keys[k].replace('/', '');
+                            const noteElement = document.getElementById(noteId.toString());
+                            // const noteX = noteElement ? noteElement.getBoundingClientRect().left : 0;
+
+                            let noteX = 0;
+                            if (noteElement && svgRect?.left)
+                            {
+                                const noteRect = noteElement.getBoundingClientRect();
+                                noteX = noteRect.left - svgRect.left;
+                            }
                             bottomPart.add({
                                 time: currentTimeBottom,
                                 note: sanitizedKeyBottom,
                                 duration: durationBottom,
-                                noteId: bottomStaveNotes[j].getSVGElement()?.getAttribute('id')
+                                noteId: noteId,
+                                noteX: noteX,
                             });
                         }
                     }
@@ -765,6 +847,7 @@ export default function CompositionTool() {
                 // Schedule the highlighting
                 Tone.getDraw().schedule(() => {
                     highlightNoteStart(event.noteId);
+                    moveCursorToPosition(event.noteX, event.duration);
                 }, time);
 
                 // Scheduleing de-highlighting
@@ -783,6 +866,7 @@ export default function CompositionTool() {
                 // Schedule highlighting
                 Tone.getDraw().schedule(() => {
                     highlightNoteStart(event.noteId);
+                    // moveCursorToPosition(event.noteX);
                 }, time);
 
                 Tone.getDraw().schedule(() => {
