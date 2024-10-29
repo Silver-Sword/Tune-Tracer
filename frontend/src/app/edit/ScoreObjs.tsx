@@ -1,3 +1,4 @@
+import { ModifierData } from '../../../../lib/src/StaveNoteData';
 import { MeasureData } from '../../../../lib/src/MeasureData';
 import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
 
@@ -14,6 +15,10 @@ export function getScoreObj1(): ScoreData {
 }
 
 function getTopMeasuresObj1(): MeasureData[] {
+    let modifier1natural: ModifierData ={
+        index: 0,
+        modifier: 'n'
+    }
     let measure1: MeasureData = {
         x: 20,
         y: 0,
@@ -26,22 +31,22 @@ function getTopMeasuresObj1(): MeasureData[] {
             {
                 keys: ["b/4"],
                 duration: "q",
-                dots: 0
+                dots: 0, modifiers: [modifier1natural]
             },
             {
                 keys: ["b/4"],
                 duration: "q",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["b/4"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["b/4"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             }
         ]
     }
@@ -56,23 +61,23 @@ function getTopMeasuresObj1(): MeasureData[] {
         notes: [
             {
                 keys: ["b/4"],
-                duration: "qr",
-                dots: 0
+                duration: "q",
+                dots: 0, modifiers: []
             },
             {
                 keys: ["b/4"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["b/4"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["b/4"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             }
         ]
     }
@@ -88,22 +93,22 @@ function getTopMeasuresObj1(): MeasureData[] {
             {
                 keys: ["b/4"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["b/4"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["b/4"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["b/4"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             }
         ]
     }
@@ -119,22 +124,22 @@ function getTopMeasuresObj1(): MeasureData[] {
             {
                 keys: ["b/4"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["b/4"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["b/4"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["b/4"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             }
         ]
     }
@@ -155,22 +160,22 @@ function getBottomMeasuresObj1(): MeasureData[] {
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             }
         ]
     }
@@ -186,22 +191,22 @@ function getBottomMeasuresObj1(): MeasureData[] {
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             }
         ]
     }
@@ -217,22 +222,22 @@ function getBottomMeasuresObj1(): MeasureData[] {
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             },
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0, modifiers: []
             }
         ]
     }
@@ -248,22 +253,26 @@ function getBottomMeasuresObj1(): MeasureData[] {
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0,
+                modifiers: []
             },
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0,
+                modifiers: []
             },
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0,
+                modifiers: []
             },
             {
                 keys: ["d/3"],
                 duration: "qr",
-                dots: 0
+                dots: 0,
+                modifiers: []
             }
         ]
     }

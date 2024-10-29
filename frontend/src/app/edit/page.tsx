@@ -211,27 +211,32 @@ export default function Editor() {
                     {
                         keys: ["c/4"], 
                         duration: "q", 
-                        dots: 0
+                        dots: 0,
+                        modifiers: []
                     },
                     {
                         keys: ["c/4"], 
                         duration: "q", 
-                        dots: 0
+                        dots: 0,
+                        modifiers: []
                     },
                     {
                         keys: ["c/4,e/4,g/4"], 
                         duration: "qdd", 
-                        dots: 2
+                        dots: 2,
+                        modifiers: []
                     },
                     {
                         keys: ["c/4,e/4,g/4"], 
                         duration: "32", 
-                        dots: 0
+                        dots: 0,
+                        modifiers: []
                     },
                     {
                         keys: ["c/4,e/4,g/4"], 
                         duration: "32", 
-                        dots: 0
+                        dots: 0,
+                        modifiers: []
                     }
                 ]
 

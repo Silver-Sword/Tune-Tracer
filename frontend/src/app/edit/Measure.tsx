@@ -1,6 +1,6 @@
 import { Vex, Stave, StaveNote, Voice, Tickable, Accidental, Modifier, ModifierContext, Category } from 'vexflow';
 import { getDefaultMeasureData, MeasureData, printMeasureData } from '../../../../lib/src/MeasureData'; // edit the tsconfig file to include this import
-import { getDefaultStaveNoteData, StaveNoteData } from '../../../../lib/src/StaveNoteData';
+import { getDefaultStaveNoteData, ModifierData, StaveNoteData } from '../../../../lib/src/StaveNoteData';
 
 const NOTE_PADDING = 50;
 const MEASURE_PADDING = 90;
@@ -28,6 +28,7 @@ export class Measure {
     private x: number;
     private y: number;
     private width: number;
+    private stave_note_data_array: StaveNoteData[] = [];
 
     constructor(
         x: number = 0,
@@ -88,8 +89,11 @@ export class Measure {
                 notes.push(newNote);
                 if (note.dots > 0) newNote.addModifier(new this.VF.Dot());
                 if (note.dots > 1) newNote.addModifier(new this.VF.Dot());
-                // need to network sharps and flats
-                this.addModifiers(newNote, [], new ModifierContext());
+                note.modifiers.forEach((modifier) => {
+                    const accidental = new Accidental(modifier.modifier);
+                    newNote.addModifier(accidental, modifier.index);
+                });
+                newNote.setModifierContext(new ModifierContext());
             });
         }
         else {
@@ -168,6 +172,7 @@ export class Measure {
             // getDuration doesn't include dots, so we have to manually do it ourselves, yay!
             let newDuration = staveNote.getDuration();
             const modifiers = staveNote.getModifiers();
+            
 
             // Filter the modifiers to count how many are dots
             const dotCount = modifiers.filter(modifier => modifier.getCategory() === 'Dot').length;
@@ -175,6 +180,18 @@ export class Measure {
             if (dotCount > 1) newDuration += "d";
             if (staveNote.isRest()) newDuration += "r";
 
+            let modifierDataArray: ModifierData[] = [];
+            
+            console.log("staveNote keys: " + staveNote.keys);
+            modifiers.forEach((modifier) => {
+               let modifierData: ModifierData = {
+                index: modifier.checkIndex(),
+                modifier: modifier.getAttribute("type")
+               }
+               modifierDataArray.push(modifierData);
+            });
+
+            staveNoteData.modifiers = modifierDataArray;
             staveNoteData.dots = dotCount;
             staveNoteData.duration = newDuration;
             staveNoteData.keys = staveNote.getKeys();
@@ -608,12 +625,13 @@ export class Measure {
 
     private modifyAccidentalToKeysInNote = (keys: string[], noteId: string, modifier: string) => {
         if (!this.voice1) return { staveNote: null, found: false };
+        this.stave_note_data_array = [];
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
-
+            let staveNoteData = getDefaultStaveNoteData();
 
             if (staveNote.getAttributes().id === noteId) {
-
+                if(staveNote.isRest()) return;
                 let notekeys = staveNote.getKeys();
                 let inputKeySet = new Set(keys);
                 let indsWithAccidentals = this.getIndicesWithAccidentalsNoDots(staveNote);
@@ -629,8 +647,9 @@ export class Measure {
                         if(modifier === "") continue;
                         // Create Accidental
                         const accidental = new Accidental(modifier);
+                        
                         staveNote.addModifier(accidental, i);
-
+                        staveNote.getModifiers()[staveNote.getModifiers().length - 1].setAttribute("type",modifier);
                     }
                 }
 
