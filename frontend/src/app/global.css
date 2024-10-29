@@ -44,3 +44,21 @@ html, body {
   .login-button:hover {
     background-color: #1a62a1;
   }
+
+  .login-link, .login-button {
+    color: #228be6;
+    text-decoration: none;
+    transition: color 0.3s ease, background-color 0.3s ease;
+  }
+  
+  .login-link:hover {
+    color: #1c7ed6;
+  }
+  
+  .login-button {
+    background-color: #228be6;
+  }
+  
+  .login-button:hover {
+    background-color: #1c7ed6;
+  }

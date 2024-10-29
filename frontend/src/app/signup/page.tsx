@@ -1,12 +1,12 @@
 'use client'
 
 import React, { useState } from 'react';
-import { Container, Center, Title, TextInput, PasswordInput, Stack, Space, Button, rem, Group, Text } from '@mantine/core';
-import { IconAt } from '@tabler/icons-react';
+import { Container, Center, Title, Stack, Button, Text, Box } from '@mantine/core';
 import { useRouter } from "next/navigation";
+import { AuthInput } from '../../components/AuthInput';
+import { authStyles, shakeAnimation } from '../../styles/auth-styles';
 
 const SIGN_UP_URL = "https://us-central1-l17-tune-tracer.cloudfunctions.net/signUpUser";
-
 
 export default function SignUp() {
     const [loading, setLoading] = useState(false);
@@ -14,20 +14,23 @@ export default function SignUp() {
     const [displayName, setDisplayName] = useState('');
     const [password, setPassword] = useState('');
     const [checkPassword, setCheckPassword] = useState('');
+    const [error, setError] = useState('');
+    const [isShaking, setIsShaking] = useState(false);
     const router = useRouter();
-    
 
     const handleRegister = async () => {
         setError('');
         setLoading(true);
         if (password !== checkPassword) {
             setError('Passwords do not match');
+            setIsShaking(true);
+            setTimeout(() => setIsShaking(false), 820);
+            setLoading(false);
             return;
         }
 
         try {
-            const userInfo =
-            {
+            const userInfo = {
                 email: email,
                 password: password, 
                 displayName: displayName
@@ -40,125 +43,103 @@ export default function SignUp() {
                 body: JSON.stringify(userInfo),
             }
 
-            fetch(SIGN_UP_URL, requestOptions)
-               .then((res) => {
-                    res.json().then((value) => {
-                        if (value['message'] !== "User signed up successfully")
-                        {
-                            setError(value['message']);
-                            return;
-                        }
-                        else
-                        {
-                            router.push('/login');
-                        }
-                    // Save the userID as a cookie
-                    });
-                }).catch((error) => {
-                    // Getting the Error details.
-                    const message = error.message;
-                    console.log(`Error: ${message}`);
-                    setError(`Error: ${message}`);
-                    return;
-                    // ...
-                  });
+            const res = await fetch(SIGN_UP_URL, requestOptions);
+            const value = await res.json();
+            if (value['message'] !== "User signed up successfully") {
+                setError(value['message']);
+                setIsShaking(true);
+                setTimeout(() => setIsShaking(false), 820);
+            } else {
+                router.push('/login');
+            }
         } catch (error: any) {
             console.log(`Error: ${error.message}`);
-            // Handle any error and display the message
             setError(`Error: ${error.message}`);
+            setIsShaking(true);
+            setTimeout(() => setIsShaking(false), 820);
         } finally {
             setLoading(false);
         }
     };
 
-    const icon = <IconAt style={{ width: rem(16), height: rem(16) }} />;
-    const [error, setError] = useState("");
-    
-    const props = {
-        width: '50vw',
-        height: '100vh',
-        margin: 0,
-    };
-
-    // Add data fetching for the login and sign up 
     return (
-        <Group
-            style={{
-                height: '100vh',
-                width: '100vw'
-            }}
-        >
-            <Container
-                style={{
-                    height: '100vh',
-                    width: '50vw',
-                    margin: 0,
-                    background: 'linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)'
-                }}
-            >
-            </Container>
-            <Container
-                style={{
-                    width: '45vw',
-                }}
-            >
-                <Center>
-                    <Title>Hello there</Title>
-                </Center>
-                <Space h='md'></Space>
-                <Stack
-                    align='stretch'
-                    justify='center'
-                    gap='md'
-                >
-                    <TextInput
-                        leftSection={icon}
-                        leftSectionPointerEvents='none'
-                        withAsterisk
-                        radius='md'
-                        label='Email'
-                        placeholder='email'
-                        error={error}
-                    value={email}
-                    onChange={(event) => setEmail(event.currentTarget.value)}
-                />
-                    <TextInput
-                        withAsterisk
-                        radius='md'
-                        label='Display Name'
-                        placeholder='Name'
-                        value={displayName}
-                        error={error}
-                    onChange={(event) => setDisplayName(event.currentTarget.value)}
-                    />
-                    <PasswordInput
-                        radius='md'
-                        label='Password'
-                        placeholder='password'
-                        withAsterisk
-                        error={error}
-                        value={password}
-                        onChange={(event) => setPassword(event.currentTarget.value)}
-                    />
-                    <PasswordInput
-                        radius='md'
-                        label='Confirm Password'
-                        placeholder='password'
-                        withAsterisk
-                        error={error}
-                        onChange={(event) => setCheckPassword(event.currentTarget.value)}
-                    />
-                    <Button component='a' onClick={handleRegister}>Sign Up</Button>
-                    <Text
-                        c="dimmed"
-                        size="sm"
-                        component="a"
-                        href="/login"
+        <Container fluid style={authStyles.container}>
+            <Box style={authStyles.formBox}>
+                <Box style={authStyles.titleBox}>
+                    <Center>
+                        <Title style={{ color: 'white' }}>Hello there</Title>
+                    </Center>
+                </Box>
+                <Container style={authStyles.formContainer}>
+                    <Stack
+                        align='stretch'
+                        justify='center'
+                        gap='md'
                     >
-                        Already have an account? Login here.
-                    </Text>
-                </Stack>
-            </Container>
-        </Group>
+                        <AuthInput
+                            type="text"
+                            label="Email"
+                            placeholder="email"
+                            value={email}
+                            onChange={(event) => setEmail(event.currentTarget.value)}
+                            isShaking={isShaking}
+                        />
+                        <AuthInput
+                            type="text"
+                            label="Display Name"
+                            placeholder="Name"
+                            value={displayName}
+                            onChange={(event) => setDisplayName(event.currentTarget.value)}
+                            isShaking={isShaking}
+                        />
+                        <AuthInput
+                            type="password"
+                            label="Password"
+                            placeholder="password"
+                            value={password}
+                            onChange={(event) => setPassword(event.currentTarget.value)}
+                            isShaking={isShaking}
+                        />
+                        <AuthInput
+                            type="password"
+                            label="Confirm Password"
+                            placeholder="confirm password"
+                            value={checkPassword}
+                            onChange={(event) => setCheckPassword(event.currentTarget.value)}
+                            isShaking={isShaking}
+                        />
+                        <Button 
+                            onClick={handleRegister} 
+                            radius="xl" 
+                            style={{ marginTop: '1rem' }}
+                            className={`${isShaking ? 'shake-input' : ''} login-button`}
+                            loading={loading}
+                        >
+                            Sign Up
+                        </Button>
+                        {error && (
+                            <Text color="red" size="sm" style={{ marginTop: '0.25rem' }}>
+                                {error}
+                            </Text>
+                        )}
+                        <Text
+                            c="dimmed"
+                            size="sm"
+                            style={{ textAlign: 'center', marginTop: '2rem' }}
+                        >
+                            Already have an account?
+                            <br />
+                            <Text
+                                component="a"
+                                href="/login"
+                                className="login-link"
+                            >
+                                LOGIN NOW
+                            </Text>
+                        </Text>
+                    </Stack>
+                </Container>
+            </Box>
+        </Container>
     );
 }
