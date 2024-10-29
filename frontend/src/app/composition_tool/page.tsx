@@ -111,7 +111,7 @@ export default function CompositionTool() {
             .attr('opacity', 0);
     };
     
-    const moveCursorToPosition = (xPosition: number, duration: number) => {
+    const moveCursorToPosition = (xPosition: number, duration: number, systemY: number, systemHeight: number) => {
         const svg = d3.select(notationRef.current).select('svg');
         const cursor = svg.select('#playback-cursor');
 
@@ -125,7 +125,9 @@ export default function CompositionTool() {
             .duration(duration * 1000)
             .ease(d3.easeLinear)
             .attr('x1', xPosition)
-            .attr('x2', xPosition);
+            .attr('x2', xPosition)
+            .attr('y1', systemY)
+            .attr('y2', systemY + systemHeight);
     }
 
     // Function to play composition
@@ -133,6 +135,9 @@ export default function CompositionTool() {
         stopPlayback();
 
         createCursor();
+
+        // Access the systems from the score
+        const systems = score.current?.getSystems();
 
         await Tone.loaded();
 
@@ -190,8 +195,14 @@ export default function CompositionTool() {
             for (let i = 0; i < topMeasureData.length; i++) {
                 const topNotes = topMeasureData[i].notes;
                 const bottomNotes = bottomMeasureData[i].notes;
-                const topStaveNotes = topMeasures[i].getNotes();
-                const bottomStaveNotes = bottomMeasures[i].getNotes();
+
+                // Determine which system the measure belongs to
+                const systemIndex = score.current.getSystemIndexForMeasure(i);
+                let systemInfo: {y: number; height: number} = {y: 0, height: 0};
+                if (systems)
+                {
+                    systemInfo = systems[systemIndex]
+                }
 
                 console.log(`The length of topNotes is: ${topNotes.length}`);
 
@@ -213,6 +224,8 @@ export default function CompositionTool() {
                             const noteElement = document.getElementById(noteId.toString());
                             // let noteX = noteElement ? noteElement.getBoundingClientRect().left : 0;
 
+                            // Since these coordinates are viewport based at first,
+                            // we have to make them relative to the SVG container 
                             let noteX = 0;
                             if (noteElement && svgRect?.left)
                             {
@@ -226,6 +239,8 @@ export default function CompositionTool() {
                                 duration: durationTop,
                                 noteId: noteId,
                                 noteX: noteX,
+                                systemY: systemInfo.y,
+                                systemHeight: systemInfo.height,
                             });
                         }
                     }
@@ -279,7 +294,7 @@ export default function CompositionTool() {
                 // Schedule the highlighting
                 Tone.getDraw().schedule(() => {
                     highlightNoteStart(event.noteId);
-                    moveCursorToPosition(event.noteX, event.duration);
+                    moveCursorToPosition(event.noteX, event.duration, event.systemY, event.systemHeight);
                 }, time);
 
                 // Scheduleing de-highlighting
