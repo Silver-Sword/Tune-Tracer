@@ -38,9 +38,9 @@ export const ToolbarHeader: React.FC<{
   removeMeasure: () => void;
   addTie: (noteId: number) => void;
   removeTie: (noteId: number) => void;
-  addSharp: (keys: string, noteId: number) => void;
-  addNatural: (keys: string, noteId: number) => void;
-  addFlat: (keys: string, noteId: number) => void;
+  addSharp: (keys: string[], noteId: number) => void;
+  addNatural: (keys: string[], noteId: number) => void;
+  addFlat: (keys: string[], noteId: number) => void;
   // removeAccidentals: (keys: string, noteID: string) => void;
   // setKeySignature: (keySignature: string) => void;
 }> = ({
@@ -218,21 +218,21 @@ export const ToolbarHeader: React.FC<{
             <Button 
 							size="compact-md" 
 							variant="outline"
-							onClick={() => addNatural("", selectedNoteId)}
+							onClick={() => addNatural([], selectedNoteId)}
             >
               <Image h={20} w="auto" fit="contain" src="/icons/natural.jpg" />
             </Button>
             <Button 
 							size="compact-md"
 							variant="outline"
-							onClick={() => addSharp("", selectedNoteId)}	
+							onClick={() => addSharp([], selectedNoteId)}	
 						>
               <Image h={20} w="auto" fit="contain" src="/icons/Sharp.png" />
             </Button>
             <Button
 							size="compact-md"
 							variant="outline"
-							onClick={() => addFlat("", selectedNoteId)}
+							onClick={() => addFlat([], selectedNoteId)}
 						>
               <Image h={20} w="auto" fit="contain" src="/icons/flat.jpg" />
             </Button>
