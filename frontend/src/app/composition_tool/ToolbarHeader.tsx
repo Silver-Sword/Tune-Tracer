@@ -218,7 +218,7 @@ export const ToolbarHeader: React.FC<{
             <Button 
 							size="compact-md" 
 							variant="outline"
-							onClick={() => addNatural([], selectedNoteId)}
+							onClick={() => addNatural(["a/4"], selectedNoteId)}
             >
               <Image h={20} w="auto" fit="contain" src="/icons/natural.jpg" />
             </Button>
@@ -232,7 +232,7 @@ export const ToolbarHeader: React.FC<{
             <Button
 							size="compact-md"
 							variant="outline"
-							onClick={() => addFlat([], selectedNoteId)}
+							onClick={() => addFlat(["a/4"], selectedNoteId)}
 						>
               <Image h={20} w="auto" fit="contain" src="/icons/flat.jpg" />
             </Button>
