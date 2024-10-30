@@ -41,6 +41,7 @@ export const ToolbarHeader: React.FC<{
   addSharp: (keys: string[], noteId: number) => void;
   addNatural: (keys: string[], noteId: number) => void;
   addFlat: (keys: string[], noteId: number) => void;
+	handleDot: (dotType: number, noteId: number) => void;
   // removeAccidentals: (keys: string, noteID: string) => void;
   // setKeySignature: (keySignature: string) => void;
 }> = ({
@@ -58,6 +59,7 @@ export const ToolbarHeader: React.FC<{
 	addSharp,
 	addNatural,
 	addFlat,
+	handleDot,
 	// removeAccidentals,
 	// setKeySignature,
 }) => {
@@ -298,7 +300,11 @@ export const ToolbarHeader: React.FC<{
             <Divider size="sm" orientation="vertical" />
             
             {/* Dots */}
-            <Button size="compact-md" variant="outline">
+            <Button
+							size="compact-md"
+							variant="outline"
+							onClick={() => handleDot(1, selectedNoteId)}
+						>
               <Image
                 h={10}
                 w="auto"
@@ -307,7 +313,11 @@ export const ToolbarHeader: React.FC<{
               />
             </Button>
 
-            <Button size="compact-md" variant="outline">
+            <Button
+							size="compact-md"
+							variant="outline"
+							onClick={() => handleDot(2, selectedNoteId)}
+						>
               <Image
                 h={10}
                 w="auto"

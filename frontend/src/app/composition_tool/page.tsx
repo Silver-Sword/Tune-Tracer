@@ -62,6 +62,30 @@ export default function CompositionTool() {
         }
     }
 
+    // Wrapper functions to call modifyDuration specifically for dots
+    const dotHandler = ( dotType: number, noteId: number) => {
+        if (score && score.current) {
+            const duration = score.current.findNote(noteId)?.getDuration();
+            
+            if (dotType == 1 ) {
+                score.current.modifyDurationInMeasure(duration + "d", noteId);
+            }
+            if (dotType == 2) {
+                score.current.modifyDurationInMeasure(duration + "dd", noteId);
+            }
+
+            sendChanges();
+            setTimeout(() => {
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                    noteElement.classList.add('selected-note');
+                }
+            }, 0);
+        }
+    }
+
     // Wrapper function to add a measure
     const addMeasureHandler = () => {
         if (score && score.current) {
@@ -1075,6 +1099,7 @@ export default function CompositionTool() {
                     addFlat={addFlatHandler}
                     // removeAccidentals={removeAccidentalsHandler}
                     // setKeySignature={setKeySignatureHandler}
+                    handleDot={dotHandler}
                 />
                 {/* <CommentAside /> */}
 
