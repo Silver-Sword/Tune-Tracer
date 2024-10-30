@@ -1,4 +1,4 @@
-import { AppShell, Group, Tooltip, TextInput, Container, Center, ActionIcon, Space, Slider, rem, Select, Tabs, Button, Divider, Text } from "@mantine/core";
+import { AppShell, Group, Tooltip, TextInput, Container, Center, ActionIcon, Space, Slider, rem, Select, Tabs, Button, Divider, Text, Image } from "@mantine/core";
 import React, { useEffect, useState } from "react";
 import { SharingModal } from "./Sharing";
 import {
@@ -64,18 +64,6 @@ export const ToolbarHeader: React.FC<{
         setMode(value);
     }
 
-    // Need logic for swapping pause and play buttons, also if hitting stop it completely resets the time back to 0
-
-    // const [volume, setVolume] = useState(50);
-
-    // const handleVolumeChange = (value: React.SetStateAction<number>) => {
-    //     setVolume(value);
-    //     console.log(`Volume value is: ${value}`);
-    //     // if (audioRef.current) {
-    //     //   audioRef.current.volume = value / 100; // Convert to a scale of 0 to 1 for audio API
-    //     // }
-    // };
-
     return (
         <AppShell.Header p="md">
             {/* First layer (top section) PUT IF STATEMENT HERE IF READ ONLY*/}
@@ -83,11 +71,17 @@ export const ToolbarHeader: React.FC<{
                 align="center"
                 style={{ borderBottom: "1px solid #eee", paddingBottom: "10px" }}
             >
+                {/* Need to route back to storage page */}
                 <Tooltip label="Back to Home">
-                    <Text size="xl" component="a" href="/storage">
-                        Tune Tracer
-                    </Text>
-                </Tooltip>
+                    <Image 
+                        // component="a" 
+                        // href="/storage"
+                        h={50}
+                        w="auto"
+                        fit="contain"
+                        src="TuneTracerLogo.png"
+                    />
+                 </Tooltip>
 
                 {/* Editable Document Title */}
                 {isChangingName ? (
@@ -151,7 +145,6 @@ export const ToolbarHeader: React.FC<{
                     />
                 </Container>
 
-                {/* I'd like to have everything left justified except the sharing button */}
                 {/* Sharing UI */}
 
                 {/* Select Dropdown should not be changable if not the owner */}
@@ -177,58 +170,123 @@ export const ToolbarHeader: React.FC<{
                 <Tabs.Panel value="notes">
                     <Space h="xs"></Space>
                     <Group>
-                        <Button variant="outline">Natural</Button>
-                        <Button variant="outline">Sharp</Button>
-                        <Button variant="outline">Flat</Button>
+                        <Button size="compact-md" variant="outline">
+                        <Image
+                                h={20}
+                                w="auto"
+                                fit="contain"
+                                src="/icons/natural.jpg"/>
+                        </Button>
+                        <Button size="compact-md" variant="outline">
+                        <Image
+                                h={20}
+                                w="auto"
+                                fit="contain"
+                                src="/icons/Sharp.png"/>
+                        </Button>
+                        <Button size="compact-md" variant="outline">
+                        <Image
+                                h={20}
+                                w="auto"
+                                fit="contain"
+                                src="/icons/flat.jpg"/>
+                        </Button>
 
                         <Divider size="sm" orientation="vertical" />
 
                         <Button
+                            size="compact-md"
                             variant="outline"
                             onClick={() => modifyDurationInMeasure('w', selectedNoteId)}
                         >
-                            Whole
+                            <Image
+                                h={10}
+                                w={20}
+                                fit="contain"
+                                src="/icons/wholeNote.jpg"/>
                         </Button>
-                        <Button
+                        <Button 
+                            size="compact-md"
                             variant="outline"
                             onClick={() => modifyDurationInMeasure('h', selectedNoteId)}
                         >
-                            Half
+                            <Image
+                                h={20}
+                                w="auto"
+                                fit="contain"
+                                src="/icons/halfNote.jpg"/>
                         </Button>
-                        <Button
+                        <Button size="compact-md"
                             variant="outline"
                             onClick={() => modifyDurationInMeasure('q', selectedNoteId)}
                         >
-                            Quarter
+                            <Image
+                                h={20}
+                                w="auto"
+                                fit="contain"
+                                src="/icons/quarterNote.png"/>
                         </Button>
-                        <Button
+                        <Button size="compact-md"
                             variant="outline"
                             onClick={() => modifyDurationInMeasure('8', selectedNoteId)}
                         >
-                            Eighth
+                            <Image
+                                h={20}
+                                w="auto"
+                                fit="contain"
+                                src="/icons/8thNote.jpg"/>
                         </Button>
-                        <Button
+                        <Button size="compact-md"
                             variant="outline"
                             onClick={() => modifyDurationInMeasure('16', selectedNoteId)}
                         >
-                            Sixteenth
+                            <Image
+                                h={20}
+                                w="auto"
+                                fit="contain"
+                                src="/icons/16thNote.jpg"/>
                         </Button>
-                        <Button
+                        <Button size="compact-md"
                             variant="outline"
                             onClick={() => modifyDurationInMeasure('32', selectedNoteId)}
                         >
-                            Thirty-Second
+                            <Image
+                                h={20}
+                                w="auto"
+                                fit="contain"
+                                src="/icons/32ndNote.jpg"/>
                         </Button>
-                        <Button
+                        <Button size="compact-md"
                             variant="outline"
                             onClick={() => modifyDurationInMeasure('64', selectedNoteId)}
                         >
-                            Sixty-Fourth
+                            <Image
+                                h={20}
+                                w="auto"
+                                fit="contain"
+                                src="/icons/64thNote.png"/>
                         </Button>
 
                         <Divider size="sm" orientation="vertical" />
 
-                        <Button variant="outline">Dot</Button>
+                        <Button size="compact-md" variant="outline">
+                            <Image
+                                h={10}
+                                w="auto"
+                                fit="contain"
+                                src="/icons/Dotted_whole_note.jpg"
+                            />
+                        </Button>
+
+                        <Button size="compact-md" variant="outline">
+                            <Image
+                                h={10}
+                                w="auto"
+                                fit="contain"
+                                src="/icons/Double_dotted_whole_note.jpg"
+                            />
+                        </Button>
+                        
 
                         <Divider size="sm" orientation="vertical" />
 
@@ -245,7 +303,15 @@ export const ToolbarHeader: React.FC<{
                         >
                             Add Measure
                         </Button>
-                        <Button variant="outline">Delete Measure</Button>
+                        <Button 
+                            variant="outline"
+                            >Delete Measure
+                        </Button>
+
+                        <Divider size="sm" orientation="vertical"/>
+
+                        <Button variant="outline">Key Signature</Button>
+                        <Button variant="outline">Time Signature</Button>
                     </Group>
                 </Tabs.Panel>
 

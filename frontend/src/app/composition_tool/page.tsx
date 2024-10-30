@@ -958,14 +958,14 @@ export default function CompositionTool() {
     return (
         <AppShell
             header={{ height: 180 }}
-            navbar={{
-                width: 150,
-                breakpoint: "sm",
-            }}
-            aside={{
-                width: 300,
-                breakpoint: "sm",
-            }}
+            // navbar={{
+            //     width: 150,
+            //     breakpoint: "sm",
+            // }}
+            // aside={{
+            //     width: 300,
+            //     breakpoint: "sm",
+            // }}
             padding="md"
         >
             <AppShell.Main>
@@ -991,7 +991,7 @@ export default function CompositionTool() {
                         flexDirection: "column",
                         textAlign: "center",
                         background:
-                            "linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)",
+                            "#eee",
                     }}
                 >
                     <Space h="xl"></Space>
