@@ -24,6 +24,7 @@ import * as d3 from 'd3';
 import * as Tone from 'tone';
 import { access, write } from "fs";
 import { HookCallbacks } from "async_hooks";
+import { removeAllListeners } from "process";
 
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
@@ -97,6 +98,54 @@ export default function CompositionTool() {
     const removeTieHandler = (noteId: number) => {
         if (score && score.current) {
             score.current.removeTie(noteId);
+            sendChanges();
+            setTimeout(() => {
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                    noteElement.classList.add('selected-note');
+                }
+            }, 0);
+        }
+    }
+
+    // Wrapper function for naturals
+    const addNaturalHandler = (keys: string[], noteId: number) => {
+        if (score && score.current) {
+            score.current.addNatural(keys, noteId);
+            sendChanges();
+            setTimeout(() => {
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                    noteElement.classList.add('selected-note');
+                }
+            }, 0);
+        }
+    }
+
+    // Wrapper function for sharps
+    const addSharpHandler = (keys: string[], noteId: number) => {
+        if (score && score.current) {
+            score.current.addSharp(keys, noteId);
+            sendChanges();
+            setTimeout(() => {
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                    noteElement.classList.add('selected-note');
+                }
+            }, 0);
+        }
+    }
+
+    // Wrapper function for flats
+    const addFlatHandler = (keys: string[], noteId: number) => {
+        if (score && score.current) {
+            score.current.addFlat(keys, noteId);
             sendChanges();
             setTimeout(() => {
                 d3.selectAll('.vf-stavenote').classed('selected-note', false);
@@ -1021,6 +1070,11 @@ export default function CompositionTool() {
                     removeMeasure={removeMeasureHandler}
                     addTie={addTieHandler}
                     removeTie={removeTieHandler}
+                    addSharp={addSharpHandler}
+                    addNatural={addNaturalHandler}
+                    addFlat={addFlatHandler}
+                    // removeAccidentals={removeAccidentalsHandler}
+                    // setKeySignature={setKeySignatureHandler}
                 />
                 {/* <CommentAside /> */}
 

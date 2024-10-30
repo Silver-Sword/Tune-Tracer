@@ -38,6 +38,11 @@ export const ToolbarHeader: React.FC<{
   removeMeasure: () => void;
   addTie: (noteId: number) => void;
   removeTie: (noteId: number) => void;
+  addSharp: (keys: string, noteId: number) => void;
+  addNatural: (keys: string, noteId: number) => void;
+  addFlat: (keys: string, noteId: number) => void;
+  // removeAccidentals: (keys: string, noteID: string) => void;
+  // setKeySignature: (keySignature: string) => void;
 }> = ({
   documentName,
   modifyDurationInMeasure,
@@ -50,6 +55,11 @@ export const ToolbarHeader: React.FC<{
   removeMeasure,
   addTie,
   removeTie,
+	addSharp,
+	addNatural,
+	addFlat,
+	// removeAccidentals,
+	// setKeySignature,
 }) => {
   // State to manage the input value
   const [inputValue, setInputValue] = useState("Untitled Score");
@@ -205,13 +215,25 @@ export const ToolbarHeader: React.FC<{
           <Space h="xs"></Space>
           <Group>
             {/* Accidentals */}
-            <Button size="compact-md" variant="outline">
+            <Button 
+							size="compact-md" 
+							variant="outline"
+							onClick={() => addNatural("", selectedNoteId)}
+            >
               <Image h={20} w="auto" fit="contain" src="/icons/natural.jpg" />
             </Button>
-            <Button size="compact-md" variant="outline">
+            <Button 
+							size="compact-md"
+							variant="outline"
+							onClick={() => addSharp("", selectedNoteId)}	
+						>
               <Image h={20} w="auto" fit="contain" src="/icons/Sharp.png" />
             </Button>
-            <Button size="compact-md" variant="outline">
+            <Button
+							size="compact-md"
+							variant="outline"
+							onClick={() => addFlat("", selectedNoteId)}
+						>
               <Image h={20} w="auto" fit="contain" src="/icons/flat.jpg" />
             </Button>
 
