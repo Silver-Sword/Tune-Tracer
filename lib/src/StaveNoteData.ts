@@ -8,6 +8,16 @@ export function getDefaultStaveNoteData(): StaveNoteData
     }
 };
 
+export function getDefaultBottomStaveNoteData(): StaveNoteData
+{
+    return {
+        keys: ["d/3"],
+        duration: "qr",
+        dots: 0,
+        modifiers: []
+    }
+};
+
 export function printNoteData(noteData: StaveNoteData): string 
 {
     let modifierArray = "";
