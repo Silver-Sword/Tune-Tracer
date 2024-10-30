@@ -59,11 +59,11 @@ const {
 } = require("./backend/src/document-utils/updateDocumentMetadata");
 const {
   shareDocumentWithUser,
-  unshareDocumentWithUser,
-  deleteDocument,
+  unshareDocumentWithUser
 } = require("./backend/src/document-utils/updateDocumentMetadata");
 const {
   updatePartialDocument,
+  deleteDocument
 } = require("./backend/src/document-utils/documentOperations");
 const {
   createComment,
@@ -424,7 +424,7 @@ exports.deleteDocument = functions.https.onRequest(
         const documentId = request.body.documentId;
         const userId = request.body.userId;
 
-        deleteDocument(documentId, userId);
+        await deleteDocument(documentId, userId);
 
         // Send a successful response back
         response
@@ -434,7 +434,7 @@ exports.deleteDocument = functions.https.onRequest(
         // Send an error response if something goes wrong
         response
           .status(500)
-          .send({ message: "Failed to delete document", data: error as Error });
+          .send({ message: "Failed to delete document "+ error, data: error as Error });
       }
     });
   }
