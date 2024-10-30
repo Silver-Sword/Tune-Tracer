@@ -36,11 +36,11 @@ html, body {
     color: #1c7ed6;
   }
   
-  .login-button, .signup-button {
+  .login-button, .signup-button, .landingpage-blue-button {
     background-color: #228be6;
     transition: background-color 0.5s ease;
   }
   
-  .login-button:hover, .signup-button:hover {
+  .login-button:hover, .signup-button:hover, .landingpage-blue-button:hover {
     background-color: #1a62a1;
   }
