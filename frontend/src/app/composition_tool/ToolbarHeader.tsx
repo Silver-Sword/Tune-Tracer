@@ -204,6 +204,7 @@ export const ToolbarHeader: React.FC<{
         <Tabs.Panel value="notes">
           <Space h="xs"></Space>
           <Group>
+            {/* Accidentals */}
             <Button size="compact-md" variant="outline">
               <Image h={20} w="auto" fit="contain" src="/icons/natural.jpg" />
             </Button>
@@ -216,6 +217,7 @@ export const ToolbarHeader: React.FC<{
 
             <Divider size="sm" orientation="vertical" />
 
+            {/* Note/Rest Duration */}
             <Button
               size="compact-md"
               variant="outline"
@@ -272,7 +274,8 @@ export const ToolbarHeader: React.FC<{
             </Button>
 
             <Divider size="sm" orientation="vertical" />
-
+            
+            {/* Dots */}
             <Button size="compact-md" variant="outline">
               <Image
                 h={10}
@@ -293,6 +296,7 @@ export const ToolbarHeader: React.FC<{
 
             <Divider size="sm" orientation="vertical" />
 
+            {/* Ties */}
             <Button variant="outline" onClick={() => addTie(selectedNoteId)}>
               Add Tie
             </Button>
@@ -308,6 +312,7 @@ export const ToolbarHeader: React.FC<{
         <Tabs.Panel value="measure">
           <Space h="xs"></Space>
           <Group>
+            {/* Measures */}
             <Button variant="outline" onClick={addMeasure}>
               Add Measure
             </Button>
@@ -317,6 +322,7 @@ export const ToolbarHeader: React.FC<{
 
             <Divider size="sm" orientation="vertical" />
 
+            {/* Signatures */}
             <Button variant="outline">Key Signature</Button>
             <Button variant="outline">Time Signature</Button>
           </Group>
