@@ -69,6 +69,14 @@ export default function CompositionTool() {
         }
     }
 
+    // Wrapper function to delete a measure
+   const removeMeasureHandler = () => {
+    if (score && score.current) {
+            score.current.removeMeasure();
+            sendChanges();
+        }
+    }
+
     const playbackAwaiter = async () => {
         await Tone.start();
         console.log('Context started');
@@ -978,6 +986,7 @@ export default function CompositionTool() {
                     volume={volume}
                     onVolumeChange={setVolume}
                     addMeasure={addMeasureHandler}
+                    removeMeasure={removeMeasureHandler}
                 />
                 {/* <CommentAside /> */}
 

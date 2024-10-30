@@ -19,7 +19,8 @@ export const ToolbarHeader: React.FC<{
     volume: number;
     onVolumeChange: (value: number) => void;
     addMeasure: () => void;
-}> = ({ documentName, modifyDurationInMeasure, selectedNoteId, playbackComposition, stopPlayback, volume, onVolumeChange, addMeasure }) => {
+    removeMeasure: () => void;
+}> = ({ documentName, modifyDurationInMeasure, selectedNoteId, playbackComposition, stopPlayback, volume, onVolumeChange, addMeasure, removeMeasure }) => {
     // State to manage the input value
     const [inputValue, setInputValue] = useState("Untitled Score");
 
@@ -305,7 +306,9 @@ export const ToolbarHeader: React.FC<{
                         </Button>
                         <Button 
                             variant="outline"
-                            >Delete Measure
+                            onClick={removeMeasure}
+                        >
+                        Delete Measure
                         </Button>
 
                         <Divider size="sm" orientation="vertical"/>
