@@ -27,7 +27,6 @@ export const CreateCard: React.FC<{userId: string}> = (userId) => {
   const router = useRouter();
 
   const CREATE_DOCUMENT_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/createDocument';
-  const UPDATE_SHARE_STYLE = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updateDocumentShareStyle';
 
   const handleCreateDocument = () => {
     console.log("Create document clicked");
@@ -54,47 +53,9 @@ export const CreateCard: React.FC<{userId: string}> = (userId) => {
               documentId = value['data'].metadata.document_id;
               saveDocID(documentId);
               console.log(`DocumentId: ${documentId}`);
-              updateDocumentShareStyle(documentId);
 
               router.push(`/composition_tool?id=${documentId}`);
             })
-          }
-          else if (res.status == 500)
-          {
-            res.json().then((value) => {
-              console.log(value['message']);
-            })
-          }
-        })
-    }
-    catch (error: any) {
-      console.log(`Error: ${error.message}`);
-    }
-  };
-
-  const updateDocumentShareStyle = (document_id: string) => {
-    console.log("Create document clicked");
-    try {
-      const userInfo = {
-        writerId: userId.userId,
-        documentId: document_id,
-        sharing: 4,
-        // ShareStyle.WRITE
-      }
-      const requestOptions =
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userInfo),
-      }
-
-      fetch(UPDATE_SHARE_STYLE, requestOptions)
-        .then((res) => {
-          if (res.status == 200)
-          {
-            // We are good
           }
           else if (res.status == 500)
           {
@@ -130,10 +91,13 @@ export const CreateCard: React.FC<{userId: string}> = (userId) => {
       res.json().then((value) => {
         if (res.status == 200)
           {
+            if (value['data'] == null)
+            {
+              throw new Error("Invalid invite code");
+            }
             console.log("Successfully joined with invite code:", value['data']);
             console.log("Join with invite code:", inviteCode);
-            saveDocID(value['data']);
-            router.push('/composition_tool');
+            router.push(`/composition_tool?id=${value['data']}`);
           }
           else if (res.status == 500)
           {
