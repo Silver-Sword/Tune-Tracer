@@ -1,11 +1,11 @@
-import { getDefaultMeasureData, MeasureData, printMeasureData } from './MeasureData';
+import { getDefaultMeasureData, getDefaultBottomMeasureData, MeasureData, printMeasureData } from './MeasureData';
 
 export function getDefaultScoreData(): ScoreData
 {
     return {
         title: "Untitled",
         topMeasures: [getDefaultMeasureData()],
-        bottomMeasures: [getDefaultMeasureData()],
+        bottomMeasures: [getDefaultBottomMeasureData()],
         ties: [],
         totalWidth: 325,
         rendererHeight: 2000,
