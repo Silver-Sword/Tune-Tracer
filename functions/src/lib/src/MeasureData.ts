@@ -14,6 +14,12 @@ export function getDefaultMeasureData(): MeasureData
     }
 };
 
+export function getDefaultBottomMeasureData(): MeasureData
+{   let data: MeasureData = getDefaultMeasureData();
+    data.clef = "bass"
+    return data
+};
+
 export function printMeasureData(measureData: MeasureData): string 
 {
     let returnString = 
