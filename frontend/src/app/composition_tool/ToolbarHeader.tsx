@@ -225,7 +225,7 @@ export const ToolbarHeader: React.FC<{
             <Button 
 							size="compact-md"
 							variant="outline"
-							onClick={() => addSharp([], selectedNoteId)}	
+							onClick={() => addSharp(["a/4"], selectedNoteId)}	
 						>
               <Image h={20} w="auto" fit="contain" src="/icons/Sharp.png" />
             </Button>
