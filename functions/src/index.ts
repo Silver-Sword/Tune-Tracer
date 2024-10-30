@@ -21,7 +21,6 @@ const {
   Document: LibDocument,
   getDefaultDocument,
 } = require("./lib/src/Document");
-const { getDefaultScoreData } = require("./lib/src/CompToolData");
 const { UpdateType } = require("./lib/src/UpdateType");
 const { UserEntity, getDefaultUser } = require("./lib/src/UserEntity");
 
