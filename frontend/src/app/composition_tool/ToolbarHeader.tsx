@@ -290,7 +290,7 @@ export const ToolbarHeader: React.FC<{
 
                         <Divider size="sm" orientation="vertical" />
 
-                        <Button size="compact-md">Help</Button>
+                        <Button>Help</Button>
                     </Group>
                 </Tabs.Panel>
 
