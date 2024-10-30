@@ -453,7 +453,7 @@ exports.checkDocumentChanges = functions.https.onRequest(
     corsHandler(request, response, async () => {
       try {
         const documentId = request.body.documentId;
-        const writerId = request.body.userId;
+        const writerId = request.body.writerId;
         const documentChanges = request.body.documentChanges;
 
         // var changed = false;
@@ -468,6 +468,10 @@ exports.checkDocumentChanges = functions.https.onRequest(
         if (!documentId || !writerId) {
           console.log("hello");
         }
+        // if (currentDocumentId !== documentId) {
+        //   currentDocument = documentMap.get(documentId);
+        //   currentDocumentId = documentId;
+        // }
         if (userDoc != currentDocument) {
           userDoc = currentDocument;
           // changed = true;
@@ -528,6 +532,8 @@ exports.subscribeToDocument = functions.https.onRequest(
         const user_email = request.body.user_email;
         const displayName = request.body.displayName;
 
+        currentDocumentId = documentId;
+
         documentMap.set(documentId, currentDocument);
 
         if (!documentId || !userId) {
@@ -541,13 +547,15 @@ exports.subscribeToDocument = functions.https.onRequest(
           display_name: displayName as string,
         };
         userMap.set(userId, userCursor);
-
+        
+        userDoc = currentDocument;
         await subscribeToDocument(
           documentId,
           user,
           (updatedDocument: typeof LibDocument) => {
-            if (currentDocument.metadata.document_id !== documentId) {
+            if (currentDocumentId !== documentId) {
               currentDocument = userMap.get(documentId);
+              currentDocumentId = documentId;
             }
             currentDocument = updatedDocument;
             documentMap.set(documentId, currentDocument);
@@ -610,18 +618,21 @@ exports.updatePartialDocument = functions.https.onRequest(
         );
 
         if (apiResult) {
-          if (currentDocument.metadata.document_id !== documentId) {
-            currentDocument = documentMap.get(documentId);
-          }
+          // if (currentDocumentId !== documentId) {
+          //   currentDocument = documentMap.get(documentId);
+          //   currentDocumentId = documentId;
+          // }
           for (const [key, value] of Object.entries(documentObject)) {
             if (key in currentDocument) {
               if (typeof value === "object") {
                 currentDocument[key] = { ...currentDocument[key], ...value };
-              } else {
+                // await updatePartialDocument(userDoc[key], documentId, writerId);
+              } else if (key === "document_title") {
                 currentDocument[key] = value;
+                // await updatePartialDocument(userDoc[key], documentId, writerId);
+              } else {
+                throw new Error("Invalid key");
               }
-            } else {
-              throw new Error("Invalid key");
             }
           }
           userDoc = currentDocument;
@@ -711,12 +722,31 @@ exports.shareDocumentWithUser = functions.https.onRequest(
       try {
         const documentId = request.body.documentId;
         const invite_email = request.body.invite_email;
-        const sharing = request.body.sharing;
-        const writerId = request.body.writerId;
+        const sharing: number = request.body.sharing;
+        const writerId: string = request.body.writerId;
 
         const userId = getUserIdFromEmail(invite_email);
+        var share_type: typeof ShareStyle;
+        switch (sharing)
+        {
+          case 1:
+            await shareDocumentWithUser(documentId, userId, ShareStyle.NONE, writerId as string);
+            break;
+          case 2:
+            await shareDocumentWithUser(documentId, userId, ShareStyle.READ, writerId as string);
+            break;
+          case 3:
+            await shareDocumentWithUser(documentId, userId, ShareStyle.COMMENT, writerId as string);
+            break;
+          case 4:
+            await shareDocumentWithUser(documentId, userId, ShareStyle.WRITE, writerId as string);
+            break;
+          default:
+            await shareDocumentWithUser(documentId, userId, ShareStyle.NONE, writerId as string);
+            break;
+        }
 
-        await shareDocumentWithUser(documentId, userId, sharing, writerId);
+        await shareDocumentWithUser(documentId, userId, share_type, writerId as string);
         // Send a successful response back
         response
           .status(200)

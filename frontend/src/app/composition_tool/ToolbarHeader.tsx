@@ -1,5 +1,5 @@
 import { AppShell, Group, Tooltip, TextInput, Container, Center, ActionIcon, Space, Slider, rem, Select, Tabs, Button, Divider, Text } from "@mantine/core";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { SharingModal } from "./Sharing";
 import {
     IconPlayerPlay,
@@ -8,6 +8,8 @@ import {
     IconVolume,
 } from "@tabler/icons-react";
 import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
+import { callAPI } from "../../utils/callAPI";
+import { useSearchParams } from "next/navigation";
 
 
 export const ToolbarHeader: React.FC<{
@@ -22,9 +24,10 @@ export const ToolbarHeader: React.FC<{
 }> = ({ documentName, modifyDurationInMeasure, selectedNoteId, playbackComposition, stopPlayback, volume, onVolumeChange, addMeasure }) => {
     // State to manage the input value
     const [inputValue, setInputValue] = useState("Untitled Score");
-
+    const searchParams = useSearchParams();
     // State to toggle between edit and display modes
     const [isChangingName, setIsChangingName] = useState(false);
+    const documentID = useRef<string>();
 
     // Handle the save action (when pressing Enter or clicking outside)
     const handleSave = () => {
@@ -33,6 +36,8 @@ export const ToolbarHeader: React.FC<{
 
     useEffect(() => {
         setInputValue(documentName);
+        documentID.current = searchParams.get('id') || 'null';
+        // callAPI('updatePartialDocument', {})
     }, [documentName]);
 
     const handleDocumentNameChange = (event: { currentTarget: { value: any; }; }) => {
@@ -40,7 +45,7 @@ export const ToolbarHeader: React.FC<{
         const UPDATE_DOCUMENT_NAME_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updatePartialDocument';
 
         const new_title = {
-            documentId: getDocumentID(),
+            documentId: documentID.current,
             documentChanges: {document_title: event.currentTarget.value},
             writerId: getUserID()
         };
