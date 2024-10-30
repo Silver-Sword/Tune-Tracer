@@ -178,7 +178,11 @@ export const ToolbarHeader: React.FC<{
                                 src="/icons/natural.jpg"/>
                         </Button>
                         <Button size="compact-md" variant="outline">
-                            
+                        <Image
+                                h={20}
+                                w="auto"
+                                fit="contain"
+                                src="/icons/Sharp.png"/>
                         </Button>
                         <Button size="compact-md" variant="outline">
                         <Image
@@ -216,7 +220,11 @@ export const ToolbarHeader: React.FC<{
                             variant="outline"
                             onClick={() => modifyDurationInMeasure('q', selectedNoteId)}
                         >
-                            Quarter
+                            <Image
+                                h={20}
+                                w="auto"
+                                fit="contain"
+                                src="/icons/quarterNote.png"/>
                         </Button>
                         <Button size="compact-md"
                             variant="outline"
@@ -252,7 +260,11 @@ export const ToolbarHeader: React.FC<{
                             variant="outline"
                             onClick={() => modifyDurationInMeasure('64', selectedNoteId)}
                         >
-                            Sixty-Fourth
+                            <Image
+                                h={20}
+                                w="auto"
+                                fit="contain"
+                                src="/icons/64thNote.png"/>
                         </Button>
 
                         <Divider size="sm" orientation="vertical" />
