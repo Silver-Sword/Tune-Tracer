@@ -12,7 +12,7 @@ import {
 } from "@mantine/core";
 import { useRouter } from "next/navigation";
 import { AuthInput } from "../../components/AuthInput";
-import { authStyles, shakeAnimation } from "../../styles/auth-styles";
+import { authStyles } from "../../styles/auth-styles";
 import { callAPI } from "../../utils/callAPI";
 
 export default function SignUp() {
@@ -29,14 +29,23 @@ export default function SignUp() {
     setError(errorMessage);
     setIsShaking(true);
     setTimeout(() => setIsShaking(false), 500);
+    setLoading(false);
   };
 
   const handleRegister = async () => {
     setError("");
     setLoading(true);
-    if (password !== checkPassword) {
+    if(email === "") {
+        triggerError("Email is a required field");
+        return;
+    } else if(displayName === "") {
+        triggerError("Display Name is a required field");
+        return;
+    } else if(password === "") {
+        triggerError("Password is a required field");
+        return;
+    } else if (password !== checkPassword) {
       triggerError("Passwords do not match");
-      setLoading(false);
       return;
     }
 
@@ -48,10 +57,10 @@ export default function SignUp() {
       };
 
       const res = await callAPI("signUpUser", userInfo);
-      const value = res.data as { message: string };
+      const value = res as { status: number; message: string; data: string };
       console.log(`Response: ${JSON.stringify(res)}`);
       if (res.status !== 200) {
-        triggerError(value["message"]);
+        triggerError(value["data"]);
       } else {
         if (value["message"] !== "User signed up successfully") {
           triggerError(value["message"]);
@@ -100,6 +109,7 @@ export default function SignUp() {
               value={password}
               onChange={(event) => setPassword(event.currentTarget.value)}
               isShaking={isShaking}
+              isSignUp={true}
             />
             <AuthInput
               type="password"
