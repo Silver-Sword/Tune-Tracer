@@ -1,12 +1,12 @@
 'use client'
 
 import React, { useState } from "react";
-import { Title, Center, Container, TextInput, PasswordInput, Button, Stack, rem, Text, Box } from '@mantine/core';
-import { IconAt } from '@tabler/icons-react';
+import { Title, Center, Container, Button, Stack, rem, Text, Box } from '@mantine/core';
 import { useRouter } from "next/navigation";
 import { saveUserID, saveDisplayName, saveEmail } from "../cookie";
-
-const LOGIN_URL = "https://us-central1-l17-tune-tracer.cloudfunctions.net/logInUser";
+import { AuthInput } from "../../components/AuthInput";
+import { authStyles } from '../../styles/auth-styles';
+import { callAPI } from "../../utils/callAPI";
 
 export default function Login() {
     const [email, setEmail] = useState<string>('');
@@ -14,8 +14,6 @@ export default function Login() {
     const [error, setError] = useState<string>('');
     const [isShaking, setIsShaking] = useState(false);
     const router = useRouter();
-
-    const icon = <IconAt style={{ width: rem(16), height: rem(16) }} />;
 
     const triggerError = async (errorMessage: string) => {
         setError(errorMessage);
@@ -28,13 +26,6 @@ export default function Login() {
                 email: email,
                 password: password
             };
-            const requestOptions = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(loginInfo),
-            }
 
             if(email === '' || password === '') 
             {
@@ -42,25 +33,21 @@ export default function Login() {
                 return;
             }
 
-            await fetch(LOGIN_URL, requestOptions)
+            await callAPI('logInUser', loginInfo)
                 .then((res) => {
                     if (res.status == 500) {
                         triggerError('Incorrect username or password');
                     } else if (res.status == 200) {
-                        const json = res.json()
-                            .then((value) => {
-                                // Save the userID as a cookie
-                                saveUserID(value['data'].user_id);
-                                saveDisplayName(value['data'].display_name);
-                                saveEmail(value['data'].user_email);
-                            });
+                        const data = res.data as { user_id: string, display_name: string, user_email: string };
+                        saveUserID(data.user_id);
+                        saveDisplayName(data.display_name);
+                        saveEmail(data.user_email);
                         router.push('/storage');
                     }
                 }).catch((error) => {
                     console.log(`Error: ${error.message}`);
                     triggerError('An error occurred. Please try again.');
-                })
-
+                });
         } catch (error: any) {
             console.log(`Error: ${error.message}`);
             triggerError('An error occurred. Please try again.');
@@ -68,12 +55,7 @@ export default function Login() {
     }
 
     return (
-        <Container fluid style={{
-            height: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-        }}>
+        <Container fluid style={authStyles.container}>
             <Box
                 style={{
                     width: '100%',
@@ -102,30 +84,21 @@ export default function Login() {
                         justify='center'
                         gap='md'
                     >
-                        <TextInput
-                            leftSectionPointerEvents='none'
-                            radius='xl'
+                        <AuthInput
+                            type='text'
                             label='Email'
                             placeholder='email'
                             value={email}
                             onChange={(event) => setEmail(event.currentTarget.value)}
-                            styles={{
-                                label: {
-                                    animation: 'none',
-                                },
-                            }}
+                            isShaking={isShaking}
                         />
-                        <PasswordInput
-                            radius='xl'
+                        <AuthInput
+                            type='password'
                             label='Password'
                             placeholder='password'
                             value={password}
                             onChange={(event) => setPassword(event.currentTarget.value)}
-                            styles={{
-                                label: {
-                                    animation: 'none',
-                                },
-                            }}
+                            isShaking={isShaking}
                         />
                         <Text size="sm" style={{ textAlign: 'right' }}>
                             Forgot {' '}
