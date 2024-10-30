@@ -77,6 +77,38 @@ export default function CompositionTool() {
         }
     }
 
+    // Wrapper function to add a tie to a note
+    const addTieHandler = (noteId: number) => {
+        if (score && score.current) {
+            score.current.addTie(noteId);
+            sendChanges();
+            setTimeout(() => {
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                    noteElement.classList.add('selected-note');
+                }
+            }, 0);
+        }
+    }
+
+    // Wrapper function to remove a tie to a note
+    const removeTieHandler = (noteId: number) => {
+        if (score && score.current) {
+            score.current.removeTie(noteId);
+            sendChanges();
+            setTimeout(() => {
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                    noteElement.classList.add('selected-note');
+                }
+            }, 0);
+        }
+    }
+
     const playbackAwaiter = async () => {
         await Tone.start();
         console.log('Context started');
@@ -987,6 +1019,8 @@ export default function CompositionTool() {
                     onVolumeChange={setVolume}
                     addMeasure={addMeasureHandler}
                     removeMeasure={removeMeasureHandler}
+                    addTie={addTieHandler}
+                    removeTie={removeTieHandler}
                 />
                 {/* <CommentAside /> */}
 

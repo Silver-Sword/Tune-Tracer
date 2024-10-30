@@ -20,7 +20,9 @@ export const ToolbarHeader: React.FC<{
     onVolumeChange: (value: number) => void;
     addMeasure: () => void;
     removeMeasure: () => void;
-}> = ({ documentName, modifyDurationInMeasure, selectedNoteId, playbackComposition, stopPlayback, volume, onVolumeChange, addMeasure, removeMeasure }) => {
+    addTie: (noteId: number) => void;
+    removeTie: (noteId: number) => void;
+}> = ({ documentName, modifyDurationInMeasure, selectedNoteId, playbackComposition, stopPlayback, volume, onVolumeChange, addMeasure, removeMeasure, addTie, removeTie }) => {
     // State to manage the input value
     const [inputValue, setInputValue] = useState("Untitled Score");
 
@@ -287,10 +289,17 @@ export const ToolbarHeader: React.FC<{
                                 src="/icons/Double_dotted_whole_note.jpg"
                             />
                         </Button>
-                        
 
                         <Divider size="sm" orientation="vertical" />
-
+                        
+                        <Button variant="outline" onClick={() => addTie(selectedNoteId)}>
+                            Add Tie
+                        </Button>
+                        <Button variant="outline" onClick={() => removeTie(selectedNoteId)}>
+                            Remove Tie
+                        </Button>
+                        <Divider size="sm" orientation="vertical" />
+                        
                         <Button>Help</Button>
                     </Group>
                 </Tabs.Panel>
@@ -308,7 +317,7 @@ export const ToolbarHeader: React.FC<{
                             variant="outline"
                             onClick={removeMeasure}
                         >
-                        Delete Measure
+                            Delete Measure
                         </Button>
 
                         <Divider size="sm" orientation="vertical"/>
