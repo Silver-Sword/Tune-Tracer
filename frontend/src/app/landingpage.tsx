@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  Anchor,
   AppShell,
   Button,
   Container,
@@ -13,17 +14,19 @@ import {
   MantineProvider,
   Box,
   Accordion,
+  UnstyledButton,
 } from '@mantine/core'
-import { IconMusic } from '@tabler/icons-react'
+import { IconMusic, IconChevronDown, IconChevronUp } from '@tabler/icons-react'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import React from 'react';
+import React, { useEffect, useState } from 'react'
 import {
   ContentSectionLeftText,
   ContentSectionRightText,
   ContentSectionVertical,
 } from '../components/LandingPageContent'
 
+import '@mantine/core/styles.css';
+import './global.css'; //Uncomment if you need custom global styles
 const theme = createTheme({
   colors: {
     brand: [
@@ -32,11 +35,23 @@ const theme = createTheme({
       '#90CAF9',
       '#64B5F6',
       '#42A5F5',
-      '#228be6',
-      '#1a62a1',
+      '#228be6', // Primary color
+      '#1E7AC5', // Slightly darker for hover
       '#1565C0',
       '#0D47A1',
       '#0A2472',
+    ],
+    dark: [
+      '#C1C2C5',
+      '#A6A7AB',
+      '#909296',
+      '#5C5F66',
+      '#373A40',
+      '#2C2E33',
+      '#25262B',
+      '#1A1B1E',
+      '#141517',
+      '#101113',
     ],
   },
   primaryColor: 'brand',
@@ -53,16 +68,8 @@ const sections = [
 
 const faqs = [
   {
-    question: "What is Tune Tracer's sheet music recognition accuracy?",
-    answer: "Tune Tracer's AI-powered recognition system achieves over 95% accuracy in converting your musical ideas into sheet music, with continuous improvements through machine learning.",
-  },
-  {
     question: 'Can I collaborate with other musicians in real-time?',
-    answer: 'Yes! Multiple musicians can work on the same composition simultaneously, with changes syncing instantly. You can also leave comments and suggestions for other collaborators.',
-  },
-  {
-    question: 'What file formats does Tune Tracer support?',
-    answer: 'We support all major music notation formats including MusicXML, MIDI, PDF, and our native format. You can easily import and export your work in these formats.',
+    answer: 'Yes! Multiple musicians can work on the same composition simultaneously, with changes syncing instantly. Up to 5 composers can collaborate in real-time.',
   },
   {
     question: 'Is my music protected and secure?',
@@ -70,12 +77,13 @@ const faqs = [
   },
   {
     question: 'Do you offer a free trial?',
-    answer: 'Yes, we offer a 14-day free trial with full access to all features. No credit card required to start.',
+    answer: 'Our whole product is free, and you get full access to all features. No credit card required!',
   },
 ]
 
 export default function LandingPage() {
   const [isSubHeaderSticky, setIsSubHeaderSticky] = useState(false)
+  const [allExpanded, setAllExpanded] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -107,7 +115,7 @@ export default function LandingPage() {
       <AppShell>
         <AppShell.Header style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <Flex h={60} px="md" align="center" justify="space-between">
-            <Group>
+            <Group style={{ textDecoration: 'none', color: 'inherit' }}>
               <IconMusic size={30} style={{ color: '#228be6' }} />
               <Text size="xl" fw={700}>
                 Tune Tracer
@@ -117,7 +125,7 @@ export default function LandingPage() {
               <Button component={Link} href="/signup" variant="outline" color="brand">
                 Try Tune Tracer
               </Button>
-              <Button component={Link} href="/login" color="brand">
+              <Button component={Link} href="/login" className='landingpage-blue-button'>
                 Sign in
               </Button>
             </Group>
@@ -137,7 +145,7 @@ export default function LandingPage() {
                     transforms your musical ideas into beautiful sheet music, effortlessly saved to the cloud.
                   </Text>
                   <Group>
-                    <Button component={Link} href="/login" size="lg" color="brand">
+                    <Button component={Link} href="/login" size="lg" className='landingpage-blue-button'>
                       Sign in
                     </Button>
                     <Button component={Link} href="/signup" size="lg" variant="outline" color="brand">
@@ -188,25 +196,27 @@ export default function LandingPage() {
             <Box id="compose" py={120}>
               <ContentSectionLeftText
                 title="Compose"
-                description="Whether you're a seasoned composer or a budding musician, our intuitive tools empower you to create, edit, and share your compositions with ease."
+                description={<Text size="lg" c="dimmed">Whether you're a seasoned composer or a budding musician, our intuitive tools empower you to create, edit, and share your compositions with ease.</Text>}
                 imageSrc="/placeholder.svg?height=300&width=400"
                 imageAlt="Composition Interface"
+                textWidth={7}
               />
             </Box>
 
             <Box id="store" py={120}>
               <ContentSectionRightText
                 title="Store"
-                description="Securely store your musical compositions in the cloud, accessible anywhere, anytime. Never worry about losing your creative work again."
+                description={<Text size="lg" c="dimmed">Securely store your musical compositions in the cloud, accessible anywhere, anytime. Never worry about losing your creative work again.</Text>}
                 imageSrc="/placeholder.svg?height=300&width=400"
                 imageAlt="Cloud Storage"
+                textWidth={7}
               />
             </Box>
 
             <Box id="collaborate" py={120}>
               <ContentSectionLeftText
                 title="Collaborate"
-                description="Work together in real-time with musicians worldwide. Share ideas, provide feedback, and create beautiful music together."
+                description={<Text size="lg" c="dimmed">Work together in real-time with musicians worldwide. Share ideas, provide feedback, and create beautiful music together.</Text>}
                 imageSrc="/placeholder.svg?height=300&width=400"
                 imageAlt="Collaboration Features"
               />
@@ -215,7 +225,7 @@ export default function LandingPage() {
             <Box id="security" py={120}>
               <ContentSectionRightText
                 title="Security"
-                description="Your compositions are protected with enterprise-grade security. Control access and maintain the privacy of your musical creations."
+                description={<Text size="lg" c="dimmed">Your compositions are protected with enterprise-grade security. Control access and maintain the privacy of your musical creations.</Text>}
                 imageSrc="/placeholder.svg?height=300&width=400"
                 imageAlt="Security Features"
               />
@@ -224,7 +234,7 @@ export default function LandingPage() {
             <Box id="download" py={120}>
               <ContentSectionVertical
                 title="Download"
-                description="Export your compositions in various formats, from PDF sheet music to MIDI files. Compatible with major music software."
+                description={<Text size="lg" c="dimmed">Export your compositions in various formats, from PDF sheet music to MIDI files. Compatible with major music software.</Text>}
                 imageSrc="/placeholder.svg?height=300&width=400"
                 imageAlt="Download Options"
               />
@@ -234,23 +244,44 @@ export default function LandingPage() {
               <Title order={2} size={36} mb="xl" ta="center">
                 Frequently Asked Questions
               </Title>
+              <Group justify="right" mb="xl">
+                <UnstyledButton
+                  onClick={() => setAllExpanded(!allExpanded)}
+                  style={{
+                    color: '#228be6',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '16px',
+                  }}
+                >
+                  Expand all
+                  <Box style={{ display: 'flex', flexDirection: 'column', gap: '-4px' }}>
+                    <IconChevronUp size={14} />
+                    <IconChevronDown size={14} style={{ marginTop: '-4px' }} />
+                  </Box>
+                </UnstyledButton>
+              </Group>
               <Accordion
                 variant="separated"
                 radius="md"
+                multiple
+                value={allExpanded ? faqs.map((_, index) => `faq-${index}`) : undefined}
+                onChange={() => setAllExpanded(false)}
                 styles={{
                   item: {
                     borderBottom: '1px solid #eee',
-                    '&[data-active]': {
+                    '&[dataActive]': {
                       backgroundColor: 'transparent',
                     },
                   },
                   control: {
-                    padding: '20px 0',
+                    padding: '20px 24px',
                   },
                   chevron: {
-                    color: theme?.colors?.brand ? theme.colors.brand[5] : '#228be6',
-                    width: 32,
-                    height: 32,
+                    color: '#228be6',
+                    width: 40,
+                    height: 40,
                   },
                   label: {
                     fontSize: '24px',
@@ -258,7 +289,7 @@ export default function LandingPage() {
                     color: 'inherit',
                   },
                   panel: {
-                    padding: '0 0 20px 0',
+                    padding: '0 24px 20px 24px',
                   },
                 }}
               >
@@ -266,7 +297,7 @@ export default function LandingPage() {
                   <Accordion.Item key={index} value={`faq-${index}`}>
                     <Accordion.Control>{faq.question}</Accordion.Control>
                     <Accordion.Panel>
-                      <Text size="lg">{faq.answer}</Text>
+                      <Text size="lg" c="dimmed">{faq.answer}</Text>
                     </Accordion.Panel>
                   </Accordion.Item>
                 ))}

@@ -1,37 +1,40 @@
-import { Flex, Image, Text, Title } from '@mantine/core'
-import React from 'react';
+import { Box, Flex, Image, Title } from '@mantine/core'
+import React, { ReactNode } from 'react'
 
 interface ContentSectionProps {
   title: string
-  description: string
+  description: ReactNode
   imageSrc: string
   imageAlt: string
+  textWidth?: number // Value between 1-11, default is 6 (half)
 }
 
-export function ContentSectionLeftText({ title, description, imageSrc, imageAlt }: ContentSectionProps) {
+export function ContentSectionLeftText({ title, description, imageSrc, imageAlt, textWidth = 6 }: ContentSectionProps) {
+  const imageWidth = 12 - textWidth
   return (
     <Flex gap={50} align="center">
-      <div style={{ flex: 1 }}>
+      <Box style={{ flex: textWidth }}>
         <Title order={2} size={36} mb="xl">
           {title}
         </Title>
-        <Text size="lg">{description}</Text>
-      </div>
-      <Image src={imageSrc} alt={imageAlt} style={{ flex: 1 }} radius="md" />
+        {description}
+      </Box>
+      <Image src={imageSrc} alt={imageAlt} style={{ flex: imageWidth }} radius="md" />
     </Flex>
   )
 }
 
-export function ContentSectionRightText({ title, description, imageSrc, imageAlt }: ContentSectionProps) {
+export function ContentSectionRightText({ title, description, imageSrc, imageAlt, textWidth = 6 }: ContentSectionProps) {
+  const imageWidth = 12 - textWidth
   return (
     <Flex gap={50} align="center">
-      <Image src={imageSrc} alt={imageAlt} style={{ flex: 1 }} radius="md" />
-      <div style={{ flex: 1 }}>
+      <Image src={imageSrc} alt={imageAlt} style={{ flex: imageWidth }} radius="md" />
+      <Box style={{ flex: textWidth }}>
         <Title order={2} size={36} mb="xl">
           {title}
         </Title>
-        <Text size="lg">{description}</Text>
-      </div>
+        {description}
+      </Box>
     </Flex>
   )
 }
@@ -43,9 +46,7 @@ export function ContentSectionVertical({ title, description, imageSrc, imageAlt 
         <Title order={2} size={36} mb="xl" ta="center">
           {title}
         </Title>
-        <Text size="lg" ta="center">
-          {description}
-        </Text>
+        <div style={{ textAlign: 'center' }}>{description}</div>
       </div>
       <Image src={imageSrc} alt={imageAlt} style={{ width: '100%', maxWidth: '800px' }} radius="md" />
     </Flex>
