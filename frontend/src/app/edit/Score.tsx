@@ -117,6 +117,18 @@ export class Score {
     getTopMeasures = (): Measure[] => {
         return this.top_measures;
     }
+    
+    getMeasureFromNoteId = (noteId: number): Measure  | null=> {
+        let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        if (measureIndex == undefined || topMeasure == undefined) { console.log('Something was null in Score.getMeasureFromNoteId()!'); return null; }
+        if (topMeasure) {
+            return this.top_measures[measureIndex];
+        }
+        else {
+            return this.bottom_measures[measureIndex];
+        }
+    }
 
     getBottomMeasures = (): Measure[] => {
         return this.bottom_measures;
@@ -409,17 +421,14 @@ export class Score {
         this.renderMeasures();
     }
 
-    removeMeasure = (index: number): void => {
+    removeMeasure = (): void => {
         if (this.top_measures.length > 1) {
-            if (index > -1 && index < this.top_measures.length) {
-                this.top_measures.splice(index, 1);
-                this.bottom_measures.splice(index, 1);
-                // Always renderTimeSig for first measures
-                this.top_measures[0].renderTimeSignature();
-                this.bottom_measures[0].renderTimeSignature();
-                this.renderMeasures();
-
-            }
+            this.top_measures.pop()
+            this.bottom_measures.pop()
+            // Always renderTimeSig for first measures
+            this.top_measures[0].renderTimeSignature();
+            this.bottom_measures[0].renderTimeSignature();
+            this.renderMeasures();
         }
     }
 

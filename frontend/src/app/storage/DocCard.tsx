@@ -1,4 +1,5 @@
 import { saveDocID } from "../cookie";
+import { format } from 'date-fns';
 import React, {useState } from "react";
 import { useRouter } from "next/navigation";
 import {IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
@@ -11,6 +12,7 @@ import {
     Modal,
     Tooltip,
   } from "@mantine/core";
+import { title } from "process";
 
 
  export interface DocumentData {
@@ -55,6 +57,16 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
 
     // Navigates to /document/{documentId}
   };
+
+  const returnTitle = () => {
+    if(document_title === "") document_title = "Untitled";
+    return document_title
+  }
+
+  function millisecondsToFormattedDateString(ms: number): string {
+    const date = new Date(ms);
+    return format(date, 'yyyy-MM-dd'); // Customize the format as needed
+}
 
   // const documentTitle = "[DOCUMENT NAME] OVERFLOW TEST TEXT: This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum."
 
@@ -142,8 +154,9 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
               {document_title}
             </Text>
           </Tooltip>
-          <Text size="md">Created by: {owner_id}</Text>
-          <Text size="sm" c="dimmed">Date Last Edited: {last_edit_time}</Text>
+          <Text size="lg">{returnTitle()}</Text>
+          {/* <Text size="md">Created by: {owner_id}</Text> */}
+          <Text size="sm" c="dimmed">Date Last Edited: {millisecondsToFormattedDateString(last_edit_time)}</Text>
         </Stack>
       </Card>
     </>
