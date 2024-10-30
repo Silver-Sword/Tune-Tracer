@@ -64,18 +64,6 @@ export const ToolbarHeader: React.FC<{
         setMode(value);
     }
 
-    // Need logic for swapping pause and play buttons, also if hitting stop it completely resets the time back to 0
-
-    // const [volume, setVolume] = useState(50);
-
-    // const handleVolumeChange = (value: React.SetStateAction<number>) => {
-    //     setVolume(value);
-    //     console.log(`Volume value is: ${value}`);
-    //     // if (audioRef.current) {
-    //     //   audioRef.current.volume = value / 100; // Convert to a scale of 0 to 1 for audio API
-    //     // }
-    // };
-
     return (
         <AppShell.Header p="md">
             {/* First layer (top section) PUT IF STATEMENT HERE IF READ ONLY*/}
@@ -151,7 +139,6 @@ export const ToolbarHeader: React.FC<{
                     />
                 </Container>
 
-                {/* I'd like to have everything left justified except the sharing button */}
                 {/* Sharing UI */}
 
                 {/* Select Dropdown should not be changable if not the owner */}
