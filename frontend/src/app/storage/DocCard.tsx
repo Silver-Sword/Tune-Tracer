@@ -14,7 +14,6 @@ import {
   } from "@mantine/core";
 import { title } from "process";
 
-
  export interface DocumentData {
     last_edit_time: number;
     owner_id: string;
