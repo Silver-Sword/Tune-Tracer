@@ -59,10 +59,130 @@ export default function CompositionTool() {
         }
     }
 
+    // Wrapper functions to call modifyDuration specifically for dots
+    const dotHandler = ( dotType: number, noteId: number) => {
+        if (score && score.current) {
+            const duration = score.current.findNote(noteId)?.getDuration();
+            
+            if (dotType == 1 ) {
+                score.current.modifyDurationInMeasure(duration + "d", noteId);
+            }
+            if (dotType == 2) {
+                score.current.modifyDurationInMeasure(duration + "dd", noteId);
+            }
+
+            sendChanges();
+            setTimeout(() => {
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                    noteElement.classList.add('selected-note');
+                }
+            }, 0);
+        }
+    }
+
     // Wrapper function to add a measure
     const addMeasureHandler = () => {
         if (score && score.current) {
             score.current.addMeasure();
+            sendChanges();
+        }
+    }
+
+    // Wrapper function to delete a measure
+    const removeMeasureHandler = () => {
+        if (score && score.current) {
+                score.current.removeMeasure();
+                sendChanges();
+            }
+        }
+
+    // Wrapper function to add a tie to a note
+    const addTieHandler = (noteId: number) => {
+        if (score && score.current) {
+            score.current.addTie(noteId);
+            sendChanges();
+            setTimeout(() => {
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                    noteElement.classList.add('selected-note');
+                }
+            }, 0);
+        }
+    }
+
+    // Wrapper function to remove a tie to a note
+    const removeTieHandler = (noteId: number) => {
+        if (score && score.current) {
+            score.current.removeTie(noteId);
+            sendChanges();
+            setTimeout(() => {
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                    noteElement.classList.add('selected-note');
+                }
+            }, 0);
+        }
+    }
+
+    // Wrapper function for naturals
+    const addNaturalHandler = (keys: string[], noteId: number) => {
+        if (score && score.current) {
+            score.current.addNatural(keys, noteId);
+            sendChanges();
+            setTimeout(() => {
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                    noteElement.classList.add('selected-note');
+                }
+            }, 0);
+        }
+    }
+
+    // Wrapper function for sharps
+    const addSharpHandler = (keys: string[], noteId: number) => {
+        if (score && score.current) {
+            score.current.addSharp(keys, noteId);
+            sendChanges();
+            setTimeout(() => {
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                    noteElement.classList.add('selected-note');
+                }
+            }, 0);
+        }
+    }
+
+    // Wrapper function for flats
+    const addFlatHandler = (keys: string[], noteId: number) => {
+        if (score && score.current) {
+            score.current.addFlat(keys, noteId);
+            sendChanges();
+            setTimeout(() => {
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                    noteElement.classList.add('selected-note');
+                }
+            }, 0);
+        }
+    }
+
+    // Wrapper function for keySignature
+    const setKeySignatureHandler = (keySignature: string) => {
+        if (score && score.current) {
+            score.current.setKeySignature(keySignature);
             sendChanges();
         }
     }
@@ -493,20 +613,28 @@ export default function CompositionTool() {
     }
 
     const fetchChanges = async () => {
+        const changesTemp =
+        {
+            documentId: documentID.current,
+            writerId: userId.current
+        };
+        
         const PUT_OPTION = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            }
+            },
+            body: JSON.stringify(changesTemp)
         }
+        console.log(JSON.stringify(changesTemp));
         await fetch(CHECK_CHANGE_URL, PUT_OPTION)
             .then((res) => {
-                res.json().then((data) => {
-                    console.log("Recieved Score data: " + JSON.stringify(data));
-                    const compData: ScoreData = (data.data.document).score;
-                    const document_title: string = (data.data.document).document_title;
-                    const comments: Comment[] = (data.data.document).comments;
-                    const metadata: DocumentMetadata = (data.data.document).metadata;
+                res.json().then((value) => {
+                    console.log("Recieved Score data: " + JSON.stringify(value.data));
+                    const compData: ScoreData = (value.data.document).score;
+                    const document_title: string = (value.data.document).document_title;
+                    const comments: Comment[] = (value.data.document).comments;
+                    const metadata: DocumentMetadata = (value.data.document).metadata;
                     const tempDocument: Document = {
                         document_title: document_title,
                         comments: comments,
@@ -681,6 +809,7 @@ export default function CompositionTool() {
             // else {
             //     return;
             // }
+            console.log("User Info: " + JSON.stringify(userInfo));
 
             const POST_OPTION = {
                 method: 'POST',
@@ -727,35 +856,25 @@ export default function CompositionTool() {
     }, []);
 
     useEffect(() => {
+        if (userTemp !== '1') {
+            console.log("No user");
+            return;
+        }
         const intervalID = setInterval(() => {
-            var userInfo;
-            if (userTemp === '1') {
-                userInfo = {
-                    documentId: 'aco5tXEzQt7dSeB1WSlV',
-                    userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
-                    user_email: 'sophiad03@hotmail.com',
-                    displayName: 'Sopa'
-                };
-            }
-            else if (userTemp === '2') {
-                userInfo = {
-                    documentId: 'aco5tXEzQt7dSeB1WSlV',
-                    userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
-                    user_email: 'test-user-1@tune-tracer.com',
-                    displayName: 'test_one'
-                }
-            }
-            else {
-                console.log("No User");
-                return;
+
+            const changesTemp =
+            {
+                documentId: documentID.current,
+                writerId: userId.current
             }
             const POST_OPTION = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: ""
+                body: JSON.stringify(changesTemp),
             }
+            console.log(`Check Changes Input: ${JSON.stringify(changesTemp)}`);
             fetch(CHECK_CHANGE_URL, POST_OPTION)
                 .then((res) => {
                     res.json().then((data) => {
@@ -956,14 +1075,14 @@ export default function CompositionTool() {
     return (
         <AppShell
             header={{ height: 180 }}
-            navbar={{
-                width: 150,
-                breakpoint: "sm",
-            }}
-            aside={{
-                width: 300,
-                breakpoint: "sm",
-            }}
+            // navbar={{
+            //     width: 150,
+            //     breakpoint: "sm",
+            // }}
+            // aside={{
+            //     width: 300,
+            //     breakpoint: "sm",
+            // }}
             padding="md"
         >
             <AppShell.Main>
@@ -976,6 +1095,15 @@ export default function CompositionTool() {
                     volume={volume}
                     onVolumeChange={setVolume}
                     addMeasure={addMeasureHandler}
+                    removeMeasure={removeMeasureHandler}
+                    addTie={addTieHandler}
+                    removeTie={removeTieHandler}
+                    addSharp={addSharpHandler}
+                    addNatural={addNaturalHandler}
+                    addFlat={addFlatHandler}
+                    // removeAccidentals={removeAccidentalsHandler}
+                    setKeySignature={setKeySignatureHandler}
+                    handleDot={dotHandler}
                 />
                 {/* <CommentAside /> */}
 
@@ -989,7 +1117,11 @@ export default function CompositionTool() {
                         flexDirection: "column",
                         textAlign: "center",
                         background:
-                            "linear-gradient(180deg, rgba(154,215,255,1) 0%, rgba(0,105,182,1) 100%)",
+                            "#FFFFFF",
+                        boxShadow: '0 0px 5px rgba(0, 0, 0, 0.3)', // Shadow effect
+                        borderRadius: '4px', // Rounded corners for a more "page" look
+                        margin: '20px', // Space around AppShell to enhance the effect
+                        border: '1px solid #e0e0e0', // Border around the AppShell
                     }}
                 >
                     <Space h="xl"></Space>
