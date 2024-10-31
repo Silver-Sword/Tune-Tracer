@@ -1,4 +1,4 @@
-import { getDefaultStaveNoteData, StaveNoteData, printNoteData } from './StaveNoteData';
+import { getDefaultStaveNoteData, StaveNoteData, printNoteData, getDefaultBottomStaveNoteData } from './StaveNoteData';
 
 export function getDefaultMeasureData(): MeasureData
 {
@@ -12,6 +12,13 @@ export function getDefaultMeasureData(): MeasureData
         renderTimeSignature: false,
         notes: [getDefaultStaveNoteData(), getDefaultStaveNoteData(), getDefaultStaveNoteData(), getDefaultStaveNoteData()]
     }
+};
+
+export function getDefaultBottomMeasureData(): MeasureData
+{   let data: MeasureData = getDefaultMeasureData();
+    data.clef = "bass"
+    data.notes = [getDefaultBottomStaveNoteData(), getDefaultBottomStaveNoteData(), getDefaultBottomStaveNoteData(), getDefaultBottomStaveNoteData()]
+    return data
 };
 
 export function printMeasureData(measureData: MeasureData): string 

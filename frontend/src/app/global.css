@@ -26,21 +26,21 @@ html, body {
     animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
   }
   
-  .forgot-link, .signup-link {
+  .forgot-link, .signup-link, .login-link {
     color: #228be6;
     text-decoration: none;
     transition: color 0.3s ease;
   }
   
-  .forgot-link:hover, .signup-link:hover {
+  .forgot-link:hover, .signup-link:hover, .login-link:hover {
     color: #1c7ed6;
   }
   
-  .login-button {
+  .login-button, .signup-button, .landingpage-blue-button {
     background-color: #228be6;
     transition: background-color 0.5s ease;
   }
   
-  .login-button:hover {
+  .login-button:hover, .signup-button:hover, .landingpage-blue-button:hover {
     background-color: #1a62a1;
   }

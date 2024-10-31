@@ -1,6 +1,6 @@
 
-import { Comment } from "../../../lib/src/Comment";
-import { UpdateType } from "../../../lib/src/UpdateType";
+import { Comment } from "../lib/src/Comment";
+import { UpdateType } from "../lib/src/UpdateType";
 
 import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 import { recordOnlineUserUpdatedDocument } from "../document-utils/realtimeOnlineUsers";

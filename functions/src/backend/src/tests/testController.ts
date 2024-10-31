@@ -1,9 +1,8 @@
-import { getDefaultScoreData } from '../../../lib/src/ScoreData';
-import { DocumentPreview, ShareStyle } from '../../../lib/src/documentProperties';
-import { Document, getDefaultDocument } from '../../../lib/src/Document';
-import { OnlineEntity } from "../../../lib/src/realtimeUserTypes";
-import { UpdateType } from "../../../lib/src/UpdateType";
-import { Comment } from '../../../lib/src/Comment';
+import { DocumentPreview, ShareStyle } from '../lib/src/documentProperties';
+import { Document, getDefaultDocument } from '../lib/src/Document';
+import { OnlineEntity } from "../lib/src/realtimeUserTypes";
+import { UpdateType } from "../lib/src/UpdateType";
+import { Comment } from '../lib/src/Comment';
 
 import { createComment, deleteComment, editCommentText, subscribeToComments } from '../comment-utils/commentOperations';
 import { 
@@ -113,7 +112,6 @@ export async function testDocumentChanges()
     SOURCE_DOCUMENT.metadata.document_id = id;
     console.log(`Document Id: ${id}`);
     
-    let currentDocument = SOURCE_DOCUMENT;
     const user = {
         user_email: PRIMARY_TEST_EMAIL,
         user_id: PRIMARY_TEST_ID,
@@ -127,7 +125,6 @@ export async function testDocumentChanges()
         (updatedDocument: Document) => {
             console.log(`Detected changes in document ${id}`);
             console.log(`Updated Document: ${JSON.stringify(updatedDocument)}`);
-            currentDocument = updatedDocument;
         }, 
         (updateType: UpdateType, onlineEntity: OnlineEntity) => {
             console.log(`Update type ${updateType} with entity: ${JSON.stringify(onlineEntity)}`);
@@ -144,12 +141,12 @@ export async function testDocumentChanges()
     console.log(`Completed test`);
 }
 
-async function testSignUp(firebase: FirebaseWrapper)
+export async function testSignUp(firebase: FirebaseWrapper)
 {
     await firebase.signUpNewUser(PRIMARY_TEST_EMAIL, TEST_PASSWORD, "adminTest1");
 }
 
-async function testLogIn(firebase: FirebaseWrapper)
+export async function testLogIn(firebase: FirebaseWrapper)
 {
     await firebase.signInUser(PRIMARY_TEST_EMAIL, TEST_PASSWORD)
     .then(() => {
@@ -159,7 +156,7 @@ async function testLogIn(firebase: FirebaseWrapper)
     });
 }
 
-async function testDocumentUpdate(firebase: FirebaseWrapper)
+export async function testDocumentUpdate(firebase: FirebaseWrapper)
 {
     const doc = await createDocument(TEST_DOCUMENT.metadata.owner_id);
     console.log(`Document Id: ${doc.metadata.document_id}`);
@@ -173,14 +170,14 @@ async function testDocumentUpdate(firebase: FirebaseWrapper)
     console.log(`Document Update was successful: ${success ? "true" : "false"}`);
 }
 
-async function testDocumentDeletion(firebase: FirebaseWrapper)
+export async function testDocumentDeletion(firebase: FirebaseWrapper)
 {
     const doc = await createDocument(TEST_DOCUMENT.metadata.owner_id);
     console.log(`Document Id: ${doc.metadata.document_id}`);
     await deleteDocument(doc.metadata.document_id, TEST_DOCUMENT.metadata.owner_id);
 }
 
-async function testUserRegistrationToDocument(firebase: FirebaseWrapper) {
+export async function testUserRegistrationToDocument(firebase: FirebaseWrapper) {
     const doc = await createDocument(TEST_DOCUMENT.metadata.owner_id);
     const documentId = doc.metadata.document_id;
     console.log(`Document Id: ${documentId}`);
