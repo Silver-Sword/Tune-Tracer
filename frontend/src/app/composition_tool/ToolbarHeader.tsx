@@ -26,6 +26,39 @@ import {
 } from "@tabler/icons-react";
 import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
 
+const keySignatures = [
+  { label: 'C Major', value: 'C' },
+  { label: 'G Major', value: 'G' },
+  { label: 'D Major', value: 'D' },
+  { label: 'A Major', value: 'A' },
+  { label: 'E Major', value: 'E' },
+  { label: 'B Major', value: 'B' },
+  { label: 'F# Major', value: 'F#' },
+  { label: 'C# Major', value: 'C#' },
+  { label: 'A Minor', value: 'Am' },
+  { label: 'E Minor', value: 'Em' },
+  { label: 'B Minor', value: 'Bm' },
+  { label: 'F# Minor', value: 'F#m' },
+  { label: 'C# Minor', value: 'C#m' },
+  { label: 'G# Minor', value: 'G#m' },
+  { label: 'D# Minor', value: 'D#m' },
+  { label: 'A# Minor', value: 'A#m' },
+  { label: 'F Major', value: 'F' },
+  { label: 'B♭ Major', value: 'Bb' },
+  { label: 'E♭ Major', value: 'Eb' },
+  { label: 'A♭ Major', value: 'Ab' },
+  { label: 'D♭ Major', value: 'Db' },
+  { label: 'G♭ Major', value: 'Gb' },
+  { label: 'C♭ Major', value: 'Cb' },
+  { label: 'D Minor', value: 'Dm' },
+  { label: 'G Minor', value: 'Gm' },
+  { label: 'C Minor', value: 'Cm' },
+  { label: 'F Minor', value: 'Fm' },
+  { label: 'B♭ Minor', value: 'Bbm' },
+  { label: 'E♭ Minor', value: 'Ebm' },
+  { label: 'A♭ Minor', value: 'Abm' },
+];
+
 export const ToolbarHeader: React.FC<{
   documentName: string;
   modifyDurationInMeasure: (duration: string, noteId: number) => void;
@@ -354,10 +387,18 @@ export const ToolbarHeader: React.FC<{
 
             <Divider size="sm" orientation="vertical" />
 
-            {/* Signatures */}
+            {/* Signatures */}   
+
+           
+              <Select
+                placeholder="Set Key Signature"
+                onChange={(value) => value && setKeySignature(value)}
+                data={keySignatures}
+              />
+         
             <Button
               variant="outline"
-              onClick={() => setKeySignature("G")}
+              onClick={() => setKeySignature("C")}
               >
                 Key Signature test
               </Button>
