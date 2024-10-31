@@ -13,8 +13,6 @@ import {
     Tooltip,
   } from "@mantine/core";
 import { title } from "process";
-import { callAPI } from "../../utils/callAPI";
-import { getUserID } from "../cookie";
 
  export interface DocumentData {
     last_edit_time: number;
@@ -48,13 +46,6 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   // Handle card deletion (only proceed after confirmation)
   const handleDelete = () => {
     console.log('Document deleted');
-    const userId = getUserID();
-    const input = {
-      documentId: document_id, 
-      userId: userId
-    }
-    console.log(input);
-    callAPI("deleteDocument", input);
     setDeleteModalOpened(false); // Close modal after deletion
   };
 
