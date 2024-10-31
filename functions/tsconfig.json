@@ -5,12 +5,16 @@
     "noImplicitAny": false,
     "noUnusedLocals": true,
     "outDir": "out",
+    "rootDir": "../",
     "sourceMap": true,
     "strict": true,
-    "target": "es2017"
+    "target": "es2017",
+    "baseUrl": "./",
+    "paths": {
+      "@lib/*": ["../lib/*"]
+    }
   },
   "compileOnSave": true,
-  "include": [
-    "src"
-  ]
+  "include": ["src/**/*.ts", "../lib/**/*.ts"],        // Specifies which files to include in the project.
+  "exclude": ["node_modules", "dist"]                  // Specifies which files or directories to exclude from the project.
 }

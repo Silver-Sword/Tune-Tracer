@@ -16,13 +16,13 @@ const functions = require("firebase-functions/v1");
 const express = require("express");
 const app = express();
 
-const { ShareStyle } = require("./lib/src/documentProperties");
+const { ShareStyle } = require("@lib/src/documentProperties");
 const {
   Document: LibDocument,
   getDefaultDocument,
-} = require("./lib/src/Document");
-const { UpdateType } = require("./lib/src/UpdateType");
-const { UserEntity, getDefaultUser } = require("./lib/src/UserEntity");
+} = require("@lib/src/Document");
+const { UpdateType } = require("@lib/src/UpdateType");
+const { UserEntity, getDefaultUser } = require("@lib/src/UserEntity");
 
 const { signUpAPI, login } = require("./backend/src/endpoints/loginEndpoints");
 const {
