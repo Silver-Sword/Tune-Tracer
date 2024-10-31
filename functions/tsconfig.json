@@ -1,16 +1,15 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "noImplicitReturns": true,
-    "noImplicitAny": false,
-    "noUnusedLocals": true,
-    "outDir": "out",
-    "sourceMap": true,
-    "strict": true,
-    "target": "es2017"
-  },
-  "compileOnSave": true,
-  "include": [
-    "src"
-  ]
+    "compilerOptions": {
+      "module": "commonjs",
+      "noImplicitReturns": true,
+      "noImplicitAny": false,
+      "noUnusedLocals": true,
+      "outDir": "out",
+      "sourceMap": true,
+      "strict": true,
+      "target": "es2017"
+    },
+    "compileOnSave": true,
+    "include": ["src/**/*.ts"],        // Specifies which files to include in the project.
+    "exclude": ["node_modules", "dist"]                  // Specifies which files or directories to exclude from the project.
 }

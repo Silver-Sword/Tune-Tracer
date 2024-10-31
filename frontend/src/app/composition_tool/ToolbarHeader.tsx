@@ -16,7 +16,7 @@ import {
   Text,
   Image,
 } from "@mantine/core";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { SharingModal } from "./Sharing";
 import {
   IconPlayerPlay,
@@ -25,6 +25,10 @@ import {
   IconVolume,
 } from "@tabler/icons-react";
 import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
+import Link from 'next/link';
+import { callAPI } from "../../utils/callAPI";
+import { useSearchParams } from "next/navigation";
+
 
 const keySignatures = [
   { label: 'C Major', value: 'C' },
@@ -98,18 +102,21 @@ export const ToolbarHeader: React.FC<{
 }) => {
   // State to manage the input value
   const [inputValue, setInputValue] = useState("Untitled Score");
+  const searchParams = useSearchParams();
 
   // State to toggle between edit and display modes
   const [isChangingName, setIsChangingName] = useState(false);
+  const documentID = useRef<string>();
 
   // Handle the save action (when pressing Enter or clicking outside)
   const handleSave = () => {
     setIsChangingName(false); // Exit edit mode and save
   };
 
-  useEffect(() => {
-    setInputValue(documentName);
-  }, [documentName]);
+    useEffect(() => {
+        setInputValue(documentName);
+        documentID.current = searchParams.get('id') || 'null';
+    }, [documentName]);
 
   const handleDocumentNameChange = (event: {
     currentTarget: { value: any };
@@ -118,24 +125,24 @@ export const ToolbarHeader: React.FC<{
     const UPDATE_DOCUMENT_NAME_URL =
       "https://us-central1-l17-tune-tracer.cloudfunctions.net/updatePartialDocument";
 
-    const new_title = {
-      documentId: getDocumentID(),
-      documentChanges: { document_title: event.currentTarget.value },
-      writerId: getUserID(),
+        const new_title = {
+            documentId: documentID.current,
+            documentChanges: {document_title: event.currentTarget.value},
+            writerId: getUserID()
+        };
+        const PUT_OPTION = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(new_title)
+        }
+        fetch(UPDATE_DOCUMENT_NAME_URL, PUT_OPTION);
     };
-    const PUT_OPTION = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(new_title),
+    // Handle when the user clicks the text to switch to editing mode
+    const handleEdit = () => {
+        setIsChangingName(true);
     };
-    fetch(UPDATE_DOCUMENT_NAME_URL, PUT_OPTION);
-  };
-  // Handle when the user clicks the text to switch to editing mode
-  const handleEdit = () => {
-    setIsChangingName(true);
-  };
 
   // Toggle between editable and read-only states
   const [mode, setMode] = useState<string>("Editable");
@@ -152,14 +159,16 @@ export const ToolbarHeader: React.FC<{
       >
         {/* Need to route back to storage page */}
         <Tooltip label="Back to Home">
-          <Image
-            // component="a"
-            // href="/storage"
-            h={50}
-            w="auto"
-            fit="contain"
-            src="TuneTracerLogo.png"
-          />
+          <Link href="/storage">
+            <Image
+              // component="a"
+              // href="/storage"
+              h={50}
+              w="auto"
+              fit="contain"
+              src="TuneTracerLogo.png"
+            />
+          </Link>
         </Tooltip>
 
         {/* Editable Document Title */}

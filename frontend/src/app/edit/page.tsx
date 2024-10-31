@@ -5,7 +5,7 @@ import { Score } from './Score';
 import * as d3 from 'd3';
 import { Button } from '@mantine/core';
 import { MeasureData } from '../../../../lib/src/MeasureData'; // edit the tsconfig file to include this import
-import { getScoreObj1} from './ScoreObjs'
+import { getScoreObj1, getScoreDefaultObj} from './ScoreObjs'
 
 
 const DEFAULT_RENDERER_WIDTH = 1000;
@@ -247,7 +247,7 @@ export default function Editor() {
 
     const loadScore = () => {
         if (notationRef.current) {
-            score.current?.loadScoreDataObj(getScoreObj1());
+            score.current?.loadScoreDataObj(getScoreDefaultObj());
         }
     }
 

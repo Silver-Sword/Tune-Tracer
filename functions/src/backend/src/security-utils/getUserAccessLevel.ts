@@ -1,4 +1,4 @@
-import { DocumentMetadata, ShareStyle } from "../../../lib/src/documentProperties";
+import { DocumentMetadata, ShareStyle } from "../lib/src/documentProperties";
 import { highestPermissions } from "./permissionVerification";
 import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 

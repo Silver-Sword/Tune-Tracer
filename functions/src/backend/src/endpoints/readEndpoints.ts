@@ -1,5 +1,5 @@
 import { getDocumentPreviewsOwnedByUser, getDocumentPreviewsSharedWithUser } from '../document-utils/documentBatchRead';
-import { DocumentPreview } from '../../../lib/src/documentProperties';
+import { DocumentPreview } from '../lib/src/documentProperties';
 
 export async function getAllDocuments (userId: string) : Promise<DocumentPreview[]>
 {

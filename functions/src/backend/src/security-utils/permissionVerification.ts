@@ -1,5 +1,5 @@
-import { DocumentMetadata, ShareStyle } from "../../../lib/src/documentProperties";
-import { Document } from "../../../lib/src/Document";
+import { DocumentMetadata, ShareStyle } from "../lib/src/documentProperties";
+import { Document } from "../lib/src/Document";
 
 // returns true iff a user has read access
 // takes in the email of a user and the document to check

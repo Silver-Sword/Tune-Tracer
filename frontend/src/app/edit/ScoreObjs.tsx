@@ -14,6 +14,10 @@ export function getScoreObj1(): ScoreData {
     }
 }
 
+export function getScoreDefaultObj(): ScoreData {
+    return getDefaultScoreData();
+}
+
 function getTopMeasuresObj1(): MeasureData[] {
     let modifier1natural: ModifierData ={
         index: 0,

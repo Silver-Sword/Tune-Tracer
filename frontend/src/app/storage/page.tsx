@@ -24,7 +24,7 @@ import { useRouter } from "next/navigation";
 import { CreateCard } from "./CreateCard";
 import { DocCard, DocumentData } from "./DocCard";
 
-
+import { getSharedPreviews, getOwnPreviews } from "./documentPreviewsData";
 
 // Define filter labels for the navbar
 const filterLabels = [
@@ -111,6 +111,18 @@ export default function Storage() {
     router.push(`/`);
   }
 
+  const useOwnedPreviews = async () => {
+    const userId = getUserID();
+    const data = await getOwnPreviews(userId);
+    setDocuments(data);
+  }
+  
+  const useSharedPreviews = async () => {
+    const userId = getUserID();
+    const data = await getSharedPreviews(userId);
+    setDocuments(data);
+  }
+
   useEffect(() => {
     let displayCookie = getDisplayName();
     let emailCookie = getEmail();
@@ -119,80 +131,11 @@ export default function Storage() {
     setDisplayName(displayCookie);
     setEmail(emailCookie);
     setUID(userIdCookie);
-    setTimeout(() => {
-      getOwnPreviews2(userIdCookie);
-    }, 0)
-    // getOwnPreviews();
+    setTimeout(async () => {
+      const data = await getOwnPreviews(userIdCookie);
+      setDocuments(data);
+    }, 0);
   }, []);
-
-  const GET_OWN_PREV = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/getOwnedPreviews';
-  const GET_SHARE_PREV = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/getSharedPreviews';
-
-  const getOwnPreviews = async () => {
-    const userInfo2 = {
-      userId: userId,
-    }
-    const reqOptions = {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userInfo2)
-    }
-    fetch(GET_OWN_PREV, reqOptions)
-      .then((res) => {
-        if (res.status == 200) {
-          res.json().then((val) => {
-            console.log(val['data']);
-            setDocuments(val['data']);
-          })
-        }
-      })
-  }
-
-  const getOwnPreviews2 = async (userId: string) => {
-    const userInfo2 = {
-      userId: userId,
-    }
-    const reqOptions = {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userInfo2)
-    }
-    fetch(GET_OWN_PREV, reqOptions)
-      .then((res) => {
-        if (res.status == 200) {
-          res.json().then((val) => {
-            console.log(val['data']);
-            setDocuments(val['data']);
-          })
-        }
-      })
-  }
-
-  const getSharedPreviews = async () => {
-    const userInfo2 = {
-      userId: userId,
-    }
-    const reqOptions = {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userInfo2)
-    }
-    fetch(GET_SHARE_PREV, reqOptions)
-      .then((res) => {
-        if (res.status == 200) {
-          res.json().then((val) => {
-            console.log(val['data']);
-            setDocuments(val['data']);
-          })
-        }
-      })
-  }
 
   return (
     <AppShell
@@ -241,7 +184,7 @@ export default function Storage() {
 
           </Group>
         </AppShell.Header>
-        <FiltersNavbar getOwnPreviews={getOwnPreviews} getSharedPreviews={getSharedPreviews} />
+        <FiltersNavbar getOwnPreviews={useOwnedPreviews} getSharedPreviews={useSharedPreviews} />
 
         <Container
           fluid
@@ -264,7 +207,14 @@ export default function Storage() {
           >
 
             {documents.map((doc) => (
-              <DocCard key={doc.document_id} last_edit_user={doc.last_edit_user} document_id={doc.document_id} document_title={doc.document_title} owner_id={doc.owner_id} last_edit_time={doc.last_edit_time} />
+              <DocCard 
+                key={doc.document_id} 
+                last_edit_user={doc.last_edit_user} 
+                document_id={doc.document_id} 
+                document_title={doc.document_title} 
+                owner_id={doc.owner_id} 
+                last_edit_time={doc.last_edit_time} 
+              />
             ))}
             {/* Uncomment to see card behaviors for storage page */}
             {/* {documents.map((document) =>(
