@@ -25,6 +25,7 @@ import {
   IconVolume,
 } from "@tabler/icons-react";
 import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
+import Link from 'next/link';
 import { callAPI } from "../../utils/callAPI";
 import { useSearchParams } from "next/navigation";
 
@@ -123,14 +124,16 @@ export const ToolbarHeader: React.FC<{
       >
         {/* Need to route back to storage page */}
         <Tooltip label="Back to Home">
-          <Image
-            // component="a"
-            // href="/storage"
-            h={50}
-            w="auto"
-            fit="contain"
-            src="TuneTracerLogo.png"
-          />
+          <Link href="/storage">
+            <Image
+              // component="a"
+              // href="/storage"
+              h={50}
+              w="auto"
+              fit="contain"
+              src="TuneTracerLogo.png"
+            />
+          </Link>
         </Tooltip>
 
         {/* Editable Document Title */}

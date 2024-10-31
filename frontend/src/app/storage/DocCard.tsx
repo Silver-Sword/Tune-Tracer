@@ -1,4 +1,3 @@
-import { saveDocID } from "../cookie";
 import { format } from 'date-fns';
 import React, {useState } from "react";
 import { useRouter } from "next/navigation";
@@ -13,8 +12,9 @@ import {
     Tooltip,
   } from "@mantine/core";
 import { title } from "process";
+
 import { callAPI } from "../../utils/callAPI";
-import { getUserID } from "../cookie";
+import { getUserID, saveDocID } from "../cookie";
 
  export interface DocumentData {
     last_edit_time: number;
@@ -48,13 +48,15 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   // Handle card deletion (only proceed after confirmation)
   const handleDelete = () => {
     console.log('Document deleted');
+    
     const userId = getUserID();
     const input = {
       documentId: document_id, 
       userId: userId
     }
-    console.log(input);
+    console.log(`Delete Document Input: ${JSON.stringify(input)}`);
     callAPI("deleteDocument", input);
+
     setDeleteModalOpened(false); // Close modal after deletion
   };
 
@@ -115,6 +117,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           justifyContent: "space-between",
           cursor: 'pointer',
         }}
+        onClick={handleDocumentOpen}
       >
         <Stack 
           style={{ paddingTop: '25px' /* Add padding to avoid button overlap */ }}

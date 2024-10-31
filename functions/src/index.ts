@@ -28,6 +28,7 @@ const {
   getDefaultUser,
 } = require("./backend/src/lib/src/UserEntity");
 const { Comment: LibComment } = require("./backend/src/lib/src/Comment");
+const {  OnlineEntity } = require("./backend/src/lib/src/realtimeUserTypes");
 
 const { signUpAPI, login } = require("./backend/src/endpoints/loginEndpoints");
 const {
@@ -53,7 +54,6 @@ const {
 } = require("./backend/src/document-utils/updateUserLevelDocumentProperties");
 const {
   subscribeToDocument,
-  OnlineEntity,
 } = require("./backend/src/document-utils/realtimeDocumentUpdates");
 const {
   updateUserCursor,
@@ -158,7 +158,7 @@ exports.logInUser = functions.https.onRequest(
         // Send an error response if something goes wrong
         response
           .status(StatusCode.GENERAL_ERROR)
-          .send({ message: "Failed to log in user:" + error });
+          .send({ message: "Failed to log in user", data: error as Error });
       }
     });
   }
@@ -187,7 +187,10 @@ exports.getAllPreviews = functions.https.onRequest(
         // Send an error response if something goes wrong
         response
           .status(StatusCode.GENERAL_ERROR)
-          .send({ message: "Error: Failed to get documents - " + error });
+          .send({
+            message: "Error: Failed to get documents",
+            data: error as Error,
+          });
       }
     });
   }
@@ -215,7 +218,7 @@ exports.getOwnedPreviews = functions.https.onRequest(
         // Send an error response if something goes wrong
         response
           .status(StatusCode.GENERAL_ERROR)
-          .send({ message: "Failed to get documents - " + error });
+          .send({ message: "Failed to get documents", data: error as Error });
       }
     });
   }
@@ -243,7 +246,7 @@ exports.getSharedPreviews = functions.https.onRequest(
         // Send an error response if something goes wrong
         response
           .status(StatusCode.GENERAL_ERROR)
-          .send({ message: "Failed to get documents" + error });
+          .send({ message: "Failed to get documents", data: error as Error });
       }
     });
   }
@@ -270,7 +273,7 @@ exports.getTrashedDocumentPreviews = functions.https.onRequest(
         // Send an error response if something goes wrong
         response
           .status(StatusCode.GENERAL_ERROR)
-          .send({ message: "Failed to get documents - " + error });
+          .send({ message: "Failed to get documents", data: error as Error });
       }
     });
   }
@@ -306,7 +309,7 @@ exports.createShareCode = functions.https.onRequest(
         // Send an error response if something goes wrong
         response
           .status(StatusCode.GENERAL_ERROR)
-          .send({ message: "Failed to get share code " + error });
+          .send({ message: "Failed to get share code", data: error as Error });
       }
     });
   }
@@ -333,7 +336,7 @@ exports.getDocumentIdFromShareCode = functions.https.onRequest(
         // Send an error response if something goes wrong
         response
           .status(StatusCode.GENERAL_ERROR)
-          .send({ message: "Failed to get documents" + error });
+          .send({ message: "Failed to get documents", data: error as Error });
       }
     });
   }
@@ -362,7 +365,7 @@ exports.deleteShareCode = functions.https.onRequest(
       } catch (error) {
         // Send an error response if something goes wrong
         response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to delete share code " + error,
+          message: "Failed to delete share code",
           data: error as Error,
         });
       }
@@ -394,7 +397,7 @@ exports.updateDocumentEmoji = functions.https.onRequest(
       } catch (error) {
         // Send an error response if something goes wrong
         response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to update document emoji" + error,
+          message: "Failed to update document emoji",
           data: error as Error,
         });
       }
@@ -425,7 +428,10 @@ exports.updateDocumentColor = functions.https.onRequest(
         // Send an error response if something goes wrong
         response
           .status(StatusCode.GENERAL_ERROR)
-          .send({ message: "Failed to update document color" + error });
+          .send({
+            message: "Failed to update document color",
+            data: error as Error,
+          });
       }
     });
   }
@@ -604,7 +610,7 @@ exports.checkDocumentChanges = functions.https.onRequest(
         }
       } catch (error) {
         response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to check Document Changes " + error,
+          message: "Failed to check Document Changes",
           data: error as Error,
         });
       }
@@ -754,7 +760,7 @@ exports.updatePartialDocument = functions.https.onRequest(
       } catch (error) {
         // Send an error response if something goes wrong
         response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to update document " + error,
+          message: "Failed to update document",
           data: error as Error,
         });
       }
@@ -869,8 +875,7 @@ exports.shareDocumentWithUser = functions.https.onRequest(
       } catch (error) {
         // Send an error response if something goes wrong
         response.status(StatusCode.GENERAL_ERROR).send({
-          message:
-            "Failed to update document sharing style with user. " + error,
+          message: "Failed to update document sharing style with user.",
           data: error as Error,
         });
       }
@@ -987,7 +992,7 @@ exports.createComment = functions.https.onRequest(
       } catch (error) {
         // Send an error response if something goes wrong
         response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Could not create new comment " + error,
+          message: "Could not create new comment",
           data: error as Error,
         });
       }
@@ -1019,7 +1024,8 @@ exports.deleteComment = functions.https.onRequest(
       } catch (error) {
         // Send an error response if something goes wrong
         response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to update document sharing style. " + error,
+          message: "Failed to update document sharing style.",
+          data: error as Error,
         });
       }
     });
@@ -1100,7 +1106,10 @@ exports.subscribeToComments = functions.https.onRequest(
         // Send an error response if something goes wrong
         response
           .status(StatusCode.GENERAL_ERROR)
-          .send({ message: "Failed to subscribe to comments." + error });
+          .send({
+            message: "Failed to subscribe to comments.",
+            data: error as Error,
+          });
       }
     });
   }
@@ -1129,7 +1138,8 @@ exports.getUserAccessLevel = functions.https.onRequest(
       } catch (error) {
         // Send an error response if something goes wrong
         response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to get highest user access level." + error,
+          message: "Failed to get highest user access level.",
+          data: error as Error,
         });
       }
     });
