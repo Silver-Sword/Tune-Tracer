@@ -28,6 +28,7 @@ const {
   getDefaultUser,
 } = require("./backend/src/lib/src/UserEntity");
 const { Comment: LibComment } = require("./backend/src/lib/src/Comment");
+const {  OnlineEntity } = require("./backend/src/lib/src/realtimeUserTypes");
 
 const { signUpAPI, login } = require("./backend/src/endpoints/loginEndpoints");
 const {
@@ -53,7 +54,6 @@ const {
 } = require("./backend/src/document-utils/updateUserLevelDocumentProperties");
 const {
   subscribeToDocument,
-  OnlineEntity,
 } = require("./backend/src/document-utils/realtimeDocumentUpdates");
 const {
   updateUserCursor,
