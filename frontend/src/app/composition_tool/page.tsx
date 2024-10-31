@@ -589,7 +589,8 @@ export default function CompositionTool() {
         {
             documentId: documentID.current,
             writerId: userId.current
-        }
+        };
+        
         const PUT_OPTION = {
             method: 'POST',
             headers: {
@@ -845,7 +846,7 @@ export default function CompositionTool() {
                 },
                 body: JSON.stringify(changesTemp),
             }
-            console.log(JSON.stringify(changesTemp));
+            console.log(`Check Changes Input: ${JSON.stringify(changesTemp)}`);
             fetch(CHECK_CHANGE_URL, POST_OPTION)
                 .then((res) => {
                     res.json().then((data) => {
