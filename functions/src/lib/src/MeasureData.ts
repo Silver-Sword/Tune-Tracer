@@ -1,4 +1,4 @@
-import { getDefaultStaveNoteData, StaveNoteData, printNoteData } from './StaveNoteData';
+import { getDefaultStaveNoteData, StaveNoteData, printNoteData, getDefaultBottomStaveNoteData } from './StaveNoteData';
 
 export function getDefaultMeasureData(): MeasureData
 {
@@ -17,6 +17,7 @@ export function getDefaultMeasureData(): MeasureData
 export function getDefaultBottomMeasureData(): MeasureData
 {   let data: MeasureData = getDefaultMeasureData();
     data.clef = "bass"
+    data.notes = [getDefaultBottomStaveNoteData(), getDefaultBottomStaveNoteData(), getDefaultBottomStaveNoteData(), getDefaultBottomStaveNoteData()]
     return data
 };
 
