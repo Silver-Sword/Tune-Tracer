@@ -16,7 +16,6 @@ import { title } from "process";
 import { callAPI } from "../../utils/callAPI";
 import { getUserID } from "../cookie";
 
-
  export interface DocumentData {
     last_edit_time: number;
     owner_id: string;
