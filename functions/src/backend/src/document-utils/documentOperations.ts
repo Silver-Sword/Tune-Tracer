@@ -1,5 +1,5 @@
-import { DocumentMetadata, ShareStyle } from '@lib/src/documentProperties';
-import { Document, getDefaultDocument } from '@lib/src/Document';
+import { DocumentMetadata, ShareStyle } from '../lib/src/documentProperties';
+import { Document, getDefaultDocument } from '../lib/src/Document';
 
 import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 import { userHasReadAccess, userHasWriteAccess } from '../security-utils/permissionVerification';

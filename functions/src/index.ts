@@ -16,14 +16,15 @@ const functions = require("firebase-functions/v1");
 const express = require("express");
 const app = express();
 
-const { StatusCode } = require("@lib/src/StatusCode");
-const { ShareStyle } = require("@lib/src/documentProperties");
+const { StatusCode } = require("./backend/src/lib/src/StatusCode");
+const { ShareStyle } = require("./backend/src/lib/src/documentProperties");
 const {
   Document: LibDocument,
   getDefaultDocument,
-} = require("@lib/src/Document");
-const { UpdateType } = require("@lib/src/UpdateType");
-const { UserEntity, getDefaultUser } = require("@lib/src/UserEntity");
+} = require("./backend/src/lib/src/Document");
+const { UpdateType } = require("./backend/src/lib/src/UpdateType");
+const { UserEntity, getDefaultUser } = require("./backend/src/lib/src/UserEntity");
+const { Comment: LibComment } = require("./backend/src/lib/src/Comment");
 
 const { signUpAPI, login } = require("./backend/src/endpoints/loginEndpoints");
 const {
@@ -73,7 +74,6 @@ const {
   subscribeToComments,
 } = require("./backend/src/comment-utils/commentOperations");
 const { getUserIdFromEmail } = require("./backend/src/user-utils/getUserData");
-const { Comment: LibComment } = require("./lib/src/Comment");
 const {
   getUserAccessLevel,
 } = require("./backend/src/security-utils/getUserAccessLevel");
@@ -561,7 +561,7 @@ exports.checkDocumentChanges = functions.https.onRequest(
         if (!documentId || !writerId) {
           response
             .status(StatusCode.MISSING_ARGUMENTS)
-            .send({ message: "Missing required fields" });
+            .send({ message: `Missing required field: ${!documentId ? 'documentId' : 'writerId'}`});
         } else {
           // var changed = false;
           // if (currentDocument.metadata.document_id !== documentId)

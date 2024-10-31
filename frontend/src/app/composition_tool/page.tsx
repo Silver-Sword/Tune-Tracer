@@ -588,7 +588,11 @@ export default function CompositionTool() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            }
+            }, 
+            body: JSON.stringify({
+                documentId: documentID.current,
+                writerId: userId.current,
+            })
         }
         await fetch(CHECK_CHANGE_URL, PUT_OPTION)
             .then((res) => {
@@ -845,7 +849,7 @@ export default function CompositionTool() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: ""
+                body: JSON.stringify(docu)
             }
             fetch(CHECK_CHANGE_URL, POST_OPTION)
                 .then((res) => {
