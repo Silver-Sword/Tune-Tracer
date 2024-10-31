@@ -3,12 +3,12 @@ import 'firebase/compat/auth';
 import "firebase/compat/database";
 import 'firebase/compat/firestore';
 
-import { Comment } from '@lib/src/Comment';
-import { DocumentMetadata } from '@lib/src/documentProperties';
-import { Document } from '@lib/src/Document';
-import { OnlineEntity } from "@lib/src/realtimeUserTypes";
-import { UpdateType } from "@lib/src/UpdateType";
-import { AccessType, getDefaultUser, UserEntity } from '@lib/src/UserEntity';
+import { Comment } from '../lib/src/Comment';
+import { DocumentMetadata } from '../lib/src/documentProperties';
+import { Document } from '../lib/src/Document';
+import { OnlineEntity } from "../lib/src/realtimeUserTypes";
+import { UpdateType } from "../lib/src/UpdateType";
+import { AccessType, getDefaultUser, UserEntity } from '../lib/src/UserEntity';
 
 import { 
     DOCUMENT_DATABASE_NAME, 
