@@ -393,13 +393,6 @@ export const ToolbarHeader: React.FC<{
                 onChange={(value) => value && setKeySignature(value)}
                 data={keySignatures}
               />
-         
-            <Button
-              variant="outline"
-              onClick={() => setKeySignature("C")}
-              >
-                Key Signature test
-              </Button>
           </Group>
         </Tabs.Panel>
 
