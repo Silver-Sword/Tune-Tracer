@@ -1,8 +1,8 @@
-import { DocumentPreview, ShareStyle } from '../../../lib/src/documentProperties';
-import { Document, getDefaultDocument } from '../../../lib/src/Document';
-import { OnlineEntity } from "../../../lib/src/realtimeUserTypes";
-import { UpdateType } from "../../../lib/src/UpdateType";
-import { Comment } from '../../../lib/src/Comment';
+import { DocumentPreview, ShareStyle } from '@lib/src/documentProperties';
+import { Document, getDefaultDocument } from '@lib/src/Document';
+import { OnlineEntity } from "@lib/src/realtimeUserTypes";
+import { UpdateType } from "@lib/src/UpdateType";
+import { Comment } from '@lib/src/Comment';
 
 import { createComment, deleteComment, editCommentText, subscribeToComments } from '../comment-utils/commentOperations';
 import { 
