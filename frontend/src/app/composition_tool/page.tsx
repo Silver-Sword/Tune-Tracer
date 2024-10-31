@@ -579,29 +579,33 @@ export default function CompositionTool() {
             },
             body: JSON.stringify(changesTemp)
         }
+
         await fetch(CHECK_CHANGE_URL, PUT_OPTION);
         await fetch(UPDATE_URL, PUT_OPTION);
     }
 
     const fetchChanges = async () => {
+        const changesTemp =
+        {
+            documentId: documentID.current,
+            writerId: userId.current
+        }
         const PUT_OPTION = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            }, 
-            body: JSON.stringify({
-                documentId: documentID.current,
-                writerId: userId.current,
-            })
+            },
+            body: JSON.stringify(changesTemp)
         }
+        console.log(JSON.stringify(changesTemp));
         await fetch(CHECK_CHANGE_URL, PUT_OPTION)
             .then((res) => {
-                res.json().then((data) => {
-                    console.log("Recieved Score data: " + JSON.stringify(data));
-                    const compData: ScoreData = (data.data.document).score;
-                    const document_title: string = (data.data.document).document_title;
-                    const comments: Comment[] = (data.data.document).comments;
-                    const metadata: DocumentMetadata = (data.data.document).metadata;
+                res.json().then((value) => {
+                    console.log("Recieved Score data: " + JSON.stringify(value.data));
+                    const compData: ScoreData = (value.data.document).score;
+                    const document_title: string = (value.data.document).document_title;
+                    const comments: Comment[] = (value.data.document).comments;
+                    const metadata: DocumentMetadata = (value.data.document).metadata;
                     const tempDocument: Document = {
                         document_title: document_title,
                         comments: comments,
@@ -776,6 +780,7 @@ export default function CompositionTool() {
             // else {
             //     return;
             // }
+            console.log("User Info: " + JSON.stringify(userInfo));
 
             const POST_OPTION = {
                 method: 'POST',
@@ -822,35 +827,25 @@ export default function CompositionTool() {
     }, []);
 
     useEffect(() => {
+        if (userTemp !== '1') {
+            console.log("No user");
+            return;
+        }
         const intervalID = setInterval(() => {
-            var userInfo;
-            if (userTemp === '1') {
-                userInfo = {
-                    documentId: 'aco5tXEzQt7dSeB1WSlV',
-                    userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
-                    user_email: 'sophiad03@hotmail.com',
-                    displayName: 'Sopa'
-                };
-            }
-            else if (userTemp === '2') {
-                userInfo = {
-                    documentId: 'aco5tXEzQt7dSeB1WSlV',
-                    userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
-                    user_email: 'test-user-1@tune-tracer.com',
-                    displayName: 'test_one'
-                }
-            }
-            else {
-                console.log("No User");
-                return;
+
+            const changesTemp =
+            {
+                documentId: documentID.current,
+                writerId: userId.current
             }
             const POST_OPTION = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(docu)
+                body: JSON.stringify(changesTemp),
             }
+            console.log(JSON.stringify(changesTemp));
             fetch(CHECK_CHANGE_URL, POST_OPTION)
                 .then((res) => {
                     res.json().then((data) => {

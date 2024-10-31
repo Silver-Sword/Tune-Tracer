@@ -23,7 +23,10 @@ const {
   getDefaultDocument,
 } = require("./backend/src/lib/src/Document");
 const { UpdateType } = require("./backend/src/lib/src/UpdateType");
-const { UserEntity, getDefaultUser } = require("./backend/src/lib/src/UserEntity");
+const {
+  UserEntity,
+  getDefaultUser,
+} = require("./backend/src/lib/src/UserEntity");
 const { Comment: LibComment } = require("./backend/src/lib/src/Comment");
 
 const { signUpAPI, login } = require("./backend/src/endpoints/loginEndpoints");
@@ -62,10 +65,10 @@ const {
 const {
   shareDocumentWithUser,
   unshareDocumentWithUser,
-  deleteDocument,
 } = require("./backend/src/document-utils/updateDocumentMetadata");
 const {
   updatePartialDocument,
+  deleteDocument,
 } = require("./backend/src/document-utils/documentOperations");
 const {
   createComment,
@@ -203,12 +206,10 @@ exports.getOwnedPreviews = functions.https.onRequest(
           const apiResult = await getUserDocuments(userId);
 
           // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({
-              message: "Successful retrieval of documents",
-              data: apiResult,
-            });
+          response.status(StatusCode.OK).send({
+            message: "Successful retrieval of documents",
+            data: apiResult,
+          });
         }
       } catch (error) {
         // Send an error response if something goes wrong
@@ -233,12 +234,10 @@ exports.getSharedPreviews = functions.https.onRequest(
           const apiResult = await getSharedDocuments(userId);
 
           // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({
-              message: "Successful retrieval of documents",
-              data: apiResult,
-            });
+          response.status(StatusCode.OK).send({
+            message: "Successful retrieval of documents",
+            data: apiResult,
+          });
         }
       } catch (error) {
         // Send an error response if something goes wrong
@@ -288,13 +287,11 @@ exports.createShareCode = functions.https.onRequest(
         const writerId = request.body.writerId;
 
         if (!documentId || !sharing || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : !sharing ? "sharing" : "writerId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId ? "documentId" : !sharing ? "sharing" : "writerId"
+            }`,
+          });
         } else {
           const apiResult = await createShareCode(documentId);
 
@@ -349,13 +346,11 @@ exports.deleteShareCode = functions.https.onRequest(
         const documentId = request.body.documentId;
         const shareCode = request.body.shareCode;
         if (!documentId || !shareCode) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : "shareCode"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId ? "documentId" : "shareCode"
+            }`,
+          });
         } else {
           await deleteShareCode(documentId, shareCode);
 
@@ -383,13 +378,11 @@ exports.updateDocumentEmoji = functions.https.onRequest(
       try {
         const { documentId, newEmoji, writerId } = request.body;
         if (!documentId || !newEmoji || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : !newEmoji ? "newEmoji" : "writerId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId ? "documentId" : !newEmoji ? "newEmoji" : "writerId"
+            }`,
+          });
         } else {
           await updateDocumentEmoji(documentId, newEmoji, writerId);
 
@@ -415,13 +408,11 @@ exports.updateDocumentColor = functions.https.onRequest(
       try {
         const { documentId, newColor, writerId } = request.body;
         if (!documentId || !newColor || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : !newColor ? "newColor" : "writerId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId ? "documentId" : !newColor ? "newColor" : "writerId"
+            }`,
+          });
         } else {
           await updateDocumentColor(documentId, newColor, writerId);
 
@@ -446,17 +437,15 @@ exports.updateDocumentFavoritedStatus = functions.https.onRequest(
       try {
         const { documentId, isFavorited, writerId } = request.body;
         if (!documentId || isFavorited === undefined || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId
-                  ? "documentId"
-                  : isFavorited === undefined
-                  ? "isFavorited"
-                  : "writerId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId
+                ? "documentId"
+                : isFavorited === undefined
+                ? "isFavorited"
+                : "writerId"
+            }`,
+          });
         } else {
           await updateDocumentFavoritedStatus(
             documentId,
@@ -518,15 +507,13 @@ exports.deleteDocument = functions.https.onRequest(
         const documentId = request.body.documentId;
         const userId = request.body.userId;
         if (!documentId || !userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : "userId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId ? "documentId" : "userId"
+            }`,
+          });
         } else {
-          deleteDocument(documentId, userId);
+          await deleteDocument(documentId, userId);
 
           // Send a successful response back
           response
@@ -556,12 +543,16 @@ exports.checkDocumentChanges = functions.https.onRequest(
     corsHandler(request, response, async () => {
       try {
         const documentId = request.body.documentId;
-        const writerId = request.body.userId;
+        const writerId = request.body.writerId;
         const documentChanges = request.body.documentChanges;
         if (!documentId || !writerId) {
           response
             .status(StatusCode.MISSING_ARGUMENTS)
-            .send({ message: `Missing required field: ${!documentId ? 'documentId' : 'writerId'}`});
+            .send({
+              message: `Missing required field: ${
+                !documentId ? "documentId" : "writerId"
+              }`,
+            });
         } else {
           // var changed = false;
           // if (currentDocument.metadata.document_id !== documentId)
@@ -633,20 +624,20 @@ exports.subscribeToDocument = functions.https.onRequest(
         const userId = request.body.userId;
         const user_email = request.body.user_email;
         const displayName = request.body.displayName;
+        currentDocumentId = documentId;
+
         if (!documentId || !userId || !user_email || !displayName) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required fields: ${
-                !documentId
-                  ? "documentId"
-                  : !userId
-                  ? "userId"
-                  : !user_email
-                  ? "user_email"
-                  : "displayName"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required fields: ${
+              !documentId
+                ? "documentId"
+                : !userId
+                ? "userId"
+                : !user_email
+                ? "user_email"
+                : "displayName"
+            }`,
+          });
         } else {
           documentMap.set(documentId, currentDocument);
 
@@ -658,13 +649,15 @@ exports.subscribeToDocument = functions.https.onRequest(
             display_name: displayName as string,
           };
           userMap.set(userId, userCursor);
+          userDoc = currentDocument;
 
           await subscribeToDocument(
             documentId,
             user,
             (updatedDocument: typeof LibDocument) => {
-              if (currentDocument.metadata.document_id !== documentId) {
+              if (currentDocumentId !== documentId) {
                 currentDocument = userMap.get(documentId);
+                currentDocumentId = documentId;
               }
               currentDocument = updatedDocument;
               documentMap.set(documentId, currentDocument);
@@ -716,17 +709,15 @@ exports.updatePartialDocument = functions.https.onRequest(
         const documentChanges = request.body.documentChanges;
         const writerId = request.body.writerId;
         if (!documentId || !documentChanges || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId
-                  ? "documentId"
-                  : !documentChanges
-                  ? "documentChanges"
-                  : "writerId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId
+                ? "documentId"
+                : !documentChanges
+                ? "documentChanges"
+                : "writerId"
+            }`,
+          });
         } else {
           const documentObject: Record<string, unknown> = JSON.parse(
             JSON.stringify(documentChanges)
@@ -739,18 +730,17 @@ exports.updatePartialDocument = functions.https.onRequest(
           );
 
           if (apiResult) {
-            if (currentDocument.metadata.document_id !== documentId) {
-              currentDocument = documentMap.get(documentId);
-            }
             for (const [key, value] of Object.entries(documentObject)) {
               if (key in currentDocument) {
                 if (typeof value === "object") {
                   currentDocument[key] = { ...currentDocument[key], ...value };
-                } else {
+                  // await updatePartialDocument(userDoc[key], documentId, writerId);
+                } else if (key === "document_title") {
                   currentDocument[key] = value;
+                  // await updatePartialDocument(userDoc[key], documentId, writerId);
+                } else {
+                  throw new Error("Invalid key");
                 }
-              } else {
-                throw new Error("Invalid key");
               }
             }
             userDoc = currentDocument;
@@ -782,13 +772,11 @@ exports.updateUserCursor = functions.https.onRequest(
         const userId = request.body.userId;
         const cursor = request.body.cursor;
         if (!documentId || !userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : "userId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId ? "documentId" : "userId"
+            }`,
+          });
         } else {
           await updateUserCursor(documentId, { userId, cursor });
 
@@ -818,13 +806,11 @@ exports.updateDocumentShareStyle = functions.https.onRequest(
         const sharing = request.body.sharing;
         const writerId = request.body.writerId;
         if (!documentId || !sharing || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : !sharing ? "sharing" : "writerId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId ? "documentId" : !sharing ? "sharing" : "writerId"
+            }`,
+          });
         } else {
           await updateDocumentShareStyle(documentId, sharing, writerId);
           // Send a successful response back
@@ -851,24 +837,22 @@ exports.shareDocumentWithUser = functions.https.onRequest(
       try {
         const documentId = request.body.documentId;
         const invite_email = request.body.invite_email;
-        const sharing = request.body.sharing;
-        const writerId = request.body.writerId;
+        const sharing: number = request.body.sharing;
+        const writerId: string = request.body.writerId;
         if (!documentId || !invite_email || !sharing || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId
-                  ? "documentId"
-                  : !invite_email
-                  ? "invite_email"
-                  : !sharing
-                  ? "sharing"
-                  : "writerId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId
+                ? "documentId"
+                : !invite_email
+                ? "invite_email"
+                : !sharing
+                ? "sharing"
+                : "writerId"
+            }`,
+          });
         } else {
-          const userId = getUserIdFromEmail(invite_email);
+          const userId = await getUserIdFromEmail(invite_email);
 
           await shareDocumentWithUser(documentId, userId, sharing, writerId);
           // Send a successful response back
@@ -900,13 +884,11 @@ exports.unshareDocumentWithUser = functions.https.onRequest(
       try {
         const { documentId, userId, writerId } = request.body;
         if (!documentId || !userId || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : !userId ? "userId" : "writerId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId ? "documentId" : !userId ? "userId" : "writerId"
+            }`,
+          });
         } else {
           await unshareDocumentWithUser(documentId, userId, writerId);
           // Send a successful response back
@@ -933,17 +915,15 @@ exports.updateDocumentTrashedStatus = functions.https.onRequest(
       try {
         const { documentId, is_trashed, writerId } = request.body;
         if (!documentId || is_trashed === undefined || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId
-                  ? "documentId"
-                  : is_trashed === undefined
-                  ? "is_trashed"
-                  : "writerId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId
+                ? "documentId"
+                : is_trashed === undefined
+                ? "is_trashed"
+                : "writerId"
+            }`,
+          });
         } else {
           await updateDocumentTrashedStatus(documentId, is_trashed, writerId);
           // Send a successful response back
@@ -973,19 +953,17 @@ exports.createComment = functions.https.onRequest(
         const displayName = request.body.displayName;
         const documentId = request.body.documentId;
         if (!commentText || !userId || !displayName || !documentId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !commentText
-                  ? "commentText"
-                  : !userId
-                  ? "userId"
-                  : !displayName
-                  ? "displayName"
-                  : "documentId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !commentText
+                ? "commentText"
+                : !userId
+                ? "userId"
+                : !displayName
+                ? "displayName"
+                : "documentId"
+            }`,
+          });
         } else {
           const user = {
             user_id: userId,
@@ -1025,22 +1003,18 @@ exports.deleteComment = functions.https.onRequest(
         const documentId = request.body.documentId;
         const userId = request.body.userId;
         if (!commentId || !documentId || !userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !commentId ? "commentId" : !documentId ? "documentId" : "userId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !commentId ? "commentId" : !documentId ? "documentId" : "userId"
+            }`,
+          });
         } else {
           const apiResult = await deleteComment(commentId, documentId, userId);
           // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({
-              message: "Successfully deleted comment.",
-              data: apiResult,
-            });
+          response.status(StatusCode.OK).send({
+            message: "Successfully deleted comment.",
+            data: apiResult,
+          });
         }
       } catch (error) {
         // Send an error response if something goes wrong
@@ -1061,19 +1035,17 @@ exports.editCommentText = functions.https.onRequest(
         const documentId = request.body.documentId;
         const userId = request.body.userId;
         if (newText === undefined || !commentId || !documentId || !userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                newText === undefined
-                  ? "newText"
-                  : !commentId
-                  ? "commentId"
-                  : !documentId
-                  ? "documentId"
-                  : "userId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              newText === undefined
+                ? "newText"
+                : !commentId
+                ? "commentId"
+                : !documentId
+                ? "documentId"
+                : "userId"
+            }`,
+          });
         } else {
           await editCommentText(newText, commentId, documentId, userId);
           // Send a successful response back
@@ -1098,13 +1070,11 @@ exports.subscribeToComments = functions.https.onRequest(
         const documentId = request.body.documentId;
         const userId = request.body.userId;
         if (!documentId || !userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : "userId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId ? "documentId" : "userId"
+            }`,
+          });
         } else {
           await subscribeToComments(
             documentId,
@@ -1143,13 +1113,11 @@ exports.getUserAccessLevel = functions.https.onRequest(
         const userId = request.body.userId;
         const documentId = request.body.documentId;
         if (!userId || !documentId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !userId ? "userId" : "documentId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !userId ? "userId" : "documentId"
+            }`,
+          });
         } else {
           const apiResult = await getUserAccessLevel(userId, documentId);
           response.status(StatusCode.OK).send({
