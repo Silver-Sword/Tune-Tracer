@@ -107,7 +107,6 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           justifyContent: "space-between",
           cursor: 'pointer',
         }}
-        onClick={handleDocumentOpen}
       >
         <Stack 
           style={{ paddingTop: '25px' /* Add padding to avoid button overlap */ }}
