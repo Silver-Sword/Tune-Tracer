@@ -13,6 +13,7 @@ import {
     Container,
     Button,
     Space,
+    keys,
 } from "@mantine/core";
 
 import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
@@ -181,6 +182,14 @@ export default function CompositionTool() {
             }, 0);
         }
     }
+
+    // Wrapper function for keySignature
+    const setKeySignatureHandler = (keySignature: string) => {
+        if (score && score.current) {
+            score.current.setKeySignature(keySignature);
+            sendChanges();
+        }
+    }  
 
     const playbackAwaiter = async () => {
         await Tone.start();
@@ -1098,7 +1107,7 @@ export default function CompositionTool() {
                     addNatural={addNaturalHandler}
                     addFlat={addFlatHandler}
                     // removeAccidentals={removeAccidentalsHandler}
-                    // setKeySignature={setKeySignatureHandler}
+                    setKeySignature={setKeySignatureHandler}
                     handleDot={dotHandler}
                 />
                 {/* <CommentAside /> */}

@@ -43,7 +43,7 @@ export const ToolbarHeader: React.FC<{
   addFlat: (keys: string[], noteId: number) => void;
 	handleDot: (dotType: number, noteId: number) => void;
   // removeAccidentals: (keys: string, noteID: string) => void;
-  // setKeySignature: (keySignature: string) => void;
+  setKeySignature: (keySignature: string) => void;
 }> = ({
   documentName,
   modifyDurationInMeasure,
@@ -61,7 +61,7 @@ export const ToolbarHeader: React.FC<{
 	addFlat,
 	handleDot,
 	// removeAccidentals,
-	// setKeySignature,
+	setKeySignature,
 }) => {
   // State to manage the input value
   const [inputValue, setInputValue] = useState("Untitled Score");
@@ -355,8 +355,12 @@ export const ToolbarHeader: React.FC<{
             <Divider size="sm" orientation="vertical" />
 
             {/* Signatures */}
-            <Button variant="outline">Key Signature</Button>
-            <Button variant="outline">Time Signature</Button>
+            <Button
+              variant="outline"
+              onClick={() => setKeySignature("G")}
+              >
+                Key Signature test
+              </Button>
           </Group>
         </Tabs.Panel>
 
