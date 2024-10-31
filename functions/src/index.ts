@@ -561,7 +561,7 @@ exports.checkDocumentChanges = functions.https.onRequest(
         if (!documentId || !writerId) {
           response
             .status(StatusCode.MISSING_ARGUMENTS)
-            .send({ message: "Missing required fields" });
+            .send({ message: `Missing required field: ${!documentId ? 'documentId' : 'writerId'}`});
         } else {
           // var changed = false;
           // if (currentDocument.metadata.document_id !== documentId)
