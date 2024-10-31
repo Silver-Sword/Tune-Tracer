@@ -1056,6 +1056,11 @@ export default function CompositionTool() {
             //     breakpoint: "sm",
             // }}
             padding="md"
+            styles={{
+                main: {
+                    backgroundColor: '#fafafa',
+                },
+            }}
         >
             <AppShell.Main>
                 <ToolbarHeader
@@ -1088,7 +1093,11 @@ export default function CompositionTool() {
                         flexDirection: "column",
                         textAlign: "center",
                         background:
-                            "#eee",
+                            "#FFFFFF",
+                        boxShadow: '0 0px 5px rgba(0, 0, 0, 0.3)', // Shadow effect
+                        borderRadius: '4px', // Rounded corners for a more "page" look
+                        margin: '20px', // Space around AppShell to enhance the effect
+                        border: '1px solid #e0e0e0', // Border around the AppShell
                     }}
                 >
                     <Space h="xl"></Space>
