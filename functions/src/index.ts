@@ -16,7 +16,6 @@ const functions = require("firebase-functions/v1");
 const express = require("express");
 const app = express();
 
-const { StatusCode } = require("@lib/src/StatusCode");
 const { ShareStyle } = require("@lib/src/documentProperties");
 const {
   Document: LibDocument,
@@ -97,22 +96,20 @@ exports.signUpUser = functions.https.onRequest(async (req, res) => {
       const displayName: string = req.body.displayName;
 
       if (!email || !password || !displayName) {
-        res
-          .status(StatusCode.MISSING_ARGUMENTS)
-          .send({ message: "Missing required fields" });
-      } else {
-        // Call the signUpAPI and await the result
-        const apiResult = await signUpAPI(email, password, displayName);
-
-        res.status(StatusCode.OK).send({
-          message: "User signed up successfully",
-          data: apiResult,
-        });
+        throw new Error("Missing required fields");
       }
+
+      // Call the signUpAPI and await the result
+      const apiResult = await signUpAPI(email, password, displayName);
+
+      res.status(200).send({
+        message: "User signed up successfully",
+        data: apiResult,
+      });
     } catch (error) {
       // Send an error response if something goes wrong
       console.log("Failed to sign up user: " + (error as Error).message);
-      res.status(StatusCode.GENERAL_ERROR).send({
+      res.status(500).send({
         message: "Failed to sign up user: " + (error as Error).message,
         data: (error as Error).message,
       });
@@ -127,34 +124,29 @@ exports.logInUser = functions.https.onRequest(
         // Parse user input from the request body
         const email = request.body.email;
         const password = request.body.password;
-        if (!email || !password) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({ message: "Missing required fields" });
-        } else {
-          // Call the signUpAPI and await the result
-          const apiResult = await login(email, password);
 
-          if (!apiResult) {
-            throw new Error("Could not identify user");
-          }
+        // Call the signUpAPI and await the result
+        const apiResult = await login(email, password);
 
-          const user: typeof UserEntity = {
-            user_id: apiResult.uid,
-            user_email: apiResult.email,
-            display_name: apiResult.displayName,
-            account_creation_time: apiResult.createdAt,
-          };
-
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({ message: "User signed in successfully", data: user });
+        if (!apiResult) {
+          throw new Error("Could not identify user");
         }
+
+        const user: typeof UserEntity = {
+          user_id: apiResult.uid,
+          user_email: apiResult.email,
+          display_name: apiResult.displayName,
+          account_creation_time: apiResult.createdAt,
+        };
+
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "User signed in successfully", data: user });
       } catch (error) {
         // Send an error response if something goes wrong
         response
-          .status(StatusCode.GENERAL_ERROR)
+          .status(500)
           .send({ message: "Failed to log in user:" + error });
       }
     });
@@ -168,23 +160,17 @@ exports.getAllPreviews = functions.https.onRequest(
     corsHandler(request, response, async () => {
       try {
         const userId = request.body.userId;
-        if (!userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({ message: "Missing required fields: userId" });
-        } else {
-          const apiResult = await getAllDocuments(userId);
+        const apiResult = await getAllDocuments(userId);
 
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({ message: "Here are all the documents", data: apiResult });
-        }
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "Here are all the documents", data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
         response
-          .status(StatusCode.GENERAL_ERROR)
-          .send({ message: "Error: Failed to get documents - " + error });
+          .status(500)
+          .send({ message: "Failed to get documents" + error });
       }
     });
   }
@@ -195,26 +181,17 @@ exports.getOwnedPreviews = functions.https.onRequest(
     corsHandler(request, response, async () => {
       try {
         const userId = request.body.userId;
-        if (!userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({ message: "Missing required fields: userId" });
-        } else {
-          const apiResult = await getUserDocuments(userId);
+        const apiResult = await getUserDocuments(userId);
 
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({
-              message: "Successful retrieval of documents",
-              data: apiResult,
-            });
-        }
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "Here are all the documents", data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
         response
-          .status(StatusCode.GENERAL_ERROR)
-          .send({ message: "Failed to get documents - " + error });
+          .status(500)
+          .send({ message: "Failed to get documents" + error });
       }
     });
   }
@@ -225,25 +202,16 @@ exports.getSharedPreviews = functions.https.onRequest(
     corsHandler(request, response, async () => {
       try {
         const userId = request.body.userId;
-        if (!userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({ message: "Missing required fields: userId" });
-        } else {
-          const apiResult = await getSharedDocuments(userId);
+        const apiResult = await getSharedDocuments(userId);
 
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({
-              message: "Successful retrieval of documents",
-              data: apiResult,
-            });
-        }
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "Here are all the documents", data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
         response
-          .status(StatusCode.GENERAL_ERROR)
+          .status(500)
           .send({ message: "Failed to get documents" + error });
       }
     });
@@ -255,23 +223,17 @@ exports.getTrashedDocumentPreviews = functions.https.onRequest(
     corsHandler(request, response, async () => {
       try {
         const userId = request.body.userId;
-        if (!userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({ message: "Missing required fields: userId" });
-        } else {
-          const apiResult = await getTrashedDocumentPreviews(userId);
+        const apiResult = await getTrashedDocumentPreviews(userId);
 
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({ message: "Here are all the documents", data: apiResult });
-        }
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "Here are all the documents", data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
         response
-          .status(StatusCode.GENERAL_ERROR)
-          .send({ message: "Failed to get documents - " + error });
+          .status(500)
+          .send({ message: "Failed to get documents" + error });
       }
     });
   }
@@ -287,28 +249,18 @@ exports.createShareCode = functions.https.onRequest(
         const sharing = request.body.sharing;
         const writerId = request.body.writerId;
 
-        if (!documentId || !sharing || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : !sharing ? "sharing" : "writerId"
-              }`,
-            });
-        } else {
-          const apiResult = await createShareCode(documentId);
+        const apiResult = await createShareCode(documentId);
 
-          await updateDocumentShareStyle(documentId, sharing, writerId);
+        await updateDocumentShareStyle(documentId, sharing, writerId);
 
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({ message: "Here is the share code", data: apiResult });
-        }
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "Here is the share code", data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
         response
-          .status(StatusCode.GENERAL_ERROR)
+          .status(500)
           .send({ message: "Failed to get share code " + error });
       }
     });
@@ -320,22 +272,16 @@ exports.getDocumentIdFromShareCode = functions.https.onRequest(
     corsHandler(request, response, async () => {
       try {
         const shareCode = request.body.shareCode;
-        if (!shareCode) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({ message: "Missing required field: shareCode" });
-        } else {
-          const apiResult = await getDocumentIdFromShareCode(shareCode);
+        const apiResult = await getDocumentIdFromShareCode(shareCode);
 
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({ message: "Here is the document id", data: apiResult });
-        }
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "Here is the document id", data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
         response
-          .status(StatusCode.GENERAL_ERROR)
+          .status(500)
           .send({ message: "Failed to get documents" + error });
       }
     });
@@ -348,28 +294,20 @@ exports.deleteShareCode = functions.https.onRequest(
       try {
         const documentId = request.body.documentId;
         const shareCode = request.body.shareCode;
-        if (!documentId || !shareCode) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : "shareCode"
-              }`,
-            });
-        } else {
-          await deleteShareCode(documentId, shareCode);
+        await deleteShareCode(documentId, shareCode);
 
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({ message: "Share Code Deleted", data: true });
-        }
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "Share Code Deleted", data: true });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to delete share code " + error,
-          data: error as Error,
-        });
+        response
+          .status(500)
+          .send({
+            message: "Failed to delete share code " + error,
+            data: error as Error,
+          });
       }
     });
   }
@@ -382,28 +320,20 @@ exports.updateDocumentEmoji = functions.https.onRequest(
     corsHandler(request, response, async () => {
       try {
         const { documentId, newEmoji, writerId } = request.body;
-        if (!documentId || !newEmoji || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : !newEmoji ? "newEmoji" : "writerId"
-              }`,
-            });
-        } else {
-          await updateDocumentEmoji(documentId, newEmoji, writerId);
+        await updateDocumentEmoji(documentId, newEmoji, writerId);
 
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({ message: "Updated document emoji", data: true });
-        }
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "Updated document emoji", data: true });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to update document emoji" + error,
-          data: error as Error,
-        });
+        response
+          .status(500)
+          .send({
+            message: "Failed to update document emoji" + error,
+            data: error as Error,
+          });
       }
     });
   }
@@ -414,26 +344,16 @@ exports.updateDocumentColor = functions.https.onRequest(
     corsHandler(request, response, async () => {
       try {
         const { documentId, newColor, writerId } = request.body;
-        if (!documentId || !newColor || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : !newColor ? "newColor" : "writerId"
-              }`,
-            });
-        } else {
-          await updateDocumentColor(documentId, newColor, writerId);
+        await updateDocumentColor(documentId, newColor, writerId);
 
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({ message: "Updated document color", data: true });
-        }
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "Updated document color", data: true });
       } catch (error) {
         // Send an error response if something goes wrong
         response
-          .status(StatusCode.GENERAL_ERROR)
+          .status(500)
           .send({ message: "Failed to update document color" + error });
       }
     });
@@ -445,36 +365,25 @@ exports.updateDocumentFavoritedStatus = functions.https.onRequest(
     corsHandler(request, response, async () => {
       try {
         const { documentId, isFavorited, writerId } = request.body;
-        if (!documentId || isFavorited === undefined || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId
-                  ? "documentId"
-                  : isFavorited === undefined
-                  ? "isFavorited"
-                  : "writerId"
-              }`,
-            });
-        } else {
-          await updateDocumentFavoritedStatus(
-            documentId,
-            isFavorited as boolean,
-            writerId
-          );
 
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({ message: "Updated document favorited status", data: true });
-        }
+        await updateDocumentFavoritedStatus(
+          documentId,
+          isFavorited as boolean,
+          writerId
+        );
+
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "Updated document favorited status", data: true });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to update document favorite status",
-          data: error as Error,
-        });
+        response
+          .status(500)
+          .send({
+            message: "Failed to update document favorite status",
+            data: error as Error,
+          });
       }
     });
   }
@@ -487,24 +396,21 @@ exports.createDocument = functions.https.onRequest(
     corsHandler(request, response, async () => {
       try {
         const userId = request.body.userId;
-        if (!userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({ message: "Missing required fields: userId" });
-        } else {
-          const currentDocument = await createDocument(userId);
 
-          response.status(StatusCode.OK).send({
+        const currentDocument = await createDocument(userId);
+
+        response
+          .status(200)
+          .send({
             message: "Successfully created new document",
             data: currentDocument,
           });
-        }
 
         // Send a successful response back
       } catch (error) {
         // Send an error response if something goes wrong
         response
-          .status(StatusCode.GENERAL_ERROR)
+          .status(500)
           .send({ message: "Failed to get documents.", data: error as Error });
       }
     });
@@ -517,26 +423,17 @@ exports.deleteDocument = functions.https.onRequest(
       try {
         const documentId = request.body.documentId;
         const userId = request.body.userId;
-        if (!documentId || !userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : "userId"
-              }`,
-            });
-        } else {
-          deleteDocument(documentId, userId);
 
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({ message: "Delete document successful", data: true });
-        }
+        deleteDocument(documentId, userId);
+
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "Delete document successful", data: true });
       } catch (error) {
         // Send an error response if something goes wrong
         response
-          .status(StatusCode.GENERAL_ERROR)
+          .status(500)
           .send({ message: "Failed to delete document", data: error as Error });
       }
     });
@@ -558,64 +455,61 @@ exports.checkDocumentChanges = functions.https.onRequest(
         const documentId = request.body.documentId;
         const writerId = request.body.userId;
         const documentChanges = request.body.documentChanges;
+
+        // var changed = false;
+        // if (currentDocument.metadata.document_id !== documentId)
+        // {
+        //   currentDocument = documentMap.get(documentId);
+        // }
+        // else if (userDoc.metadata.document_id !== documentId)
+        // {
+        //   userDoc = currentDocument;
+        // }
         if (!documentId || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({ message: "Missing required fields" });
-        } else {
-          // var changed = false;
-          // if (currentDocument.metadata.document_id !== documentId)
-          // {
-          //   currentDocument = documentMap.get(documentId);
-          // }
-          // else if (userDoc.metadata.document_id !== documentId)
-          // {
-          //   userDoc = currentDocument;
-          // }
-          if (!documentId || !writerId) {
-            console.log("hello");
-          }
-          if (userDoc != currentDocument) {
-            userDoc = currentDocument;
-            // changed = true;
-          }
-          if (documentChanges) {
-            const documentObject: Record<string, unknown> = JSON.parse(
-              JSON.stringify(documentChanges)
-            );
-            for (const [key, value] of Object.entries(documentObject)) {
-              if (key in userDoc) {
-                if (typeof value === "object") {
-                  userDoc[key] = { ...userDoc[key], ...value };
-                  // await updatePartialDocument(userDoc[key], documentId, writerId);
-                } else if (key === "document_title") {
-                  userDoc[key] = value;
-                  // await updatePartialDocument(userDoc[key], documentId, writerId);
-                } else {
-                  throw new Error("Invalid key");
-                }
+          console.log("hello");
+        }
+        if (userDoc != currentDocument) {
+          userDoc = currentDocument;
+          // changed = true;
+        }
+        if (documentChanges) {
+          const documentObject: Record<string, unknown> = JSON.parse(
+            JSON.stringify(documentChanges)
+          );
+          for (const [key, value] of Object.entries(documentObject)) {
+            if (key in userDoc) {
+              if (typeof value === "object") {
+                userDoc[key] = { ...userDoc[key], ...value };
+                // await updatePartialDocument(userDoc[key], documentId, writerId);
+              } else if (key === "document_title") {
+                userDoc[key] = value;
+                // await updatePartialDocument(userDoc[key], documentId, writerId);
+              } else {
+                throw new Error("Invalid key");
               }
             }
-            // const documentObject: Record<string,unknown> = currentDocument as Record<string,unknown>;
-            // await updatePartialDocument(documentObject, documentId, writerId);
           }
-
-          // for (se)
-          currentDocument = userDoc;
-          documentMap.set(documentId, currentDocument);
-          response.status(StatusCode.OK).send({
-            message: "Successfully checked document changes",
-            data: {
-              document: currentDocument,
-              onlineUsers: Array.from(userMap.values()),
-            },
-          });
+          // const documentObject: Record<string,unknown> = currentDocument as Record<string,unknown>;
+          // await updatePartialDocument(documentObject, documentId, writerId);
         }
-      } catch (error) {
-        response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to check Document Changes " + error,
-          data: error as Error,
+
+        // for (se)
+        currentDocument = userDoc;
+        documentMap.set(documentId, currentDocument);
+        response.status(200).send({
+          message: "Successfully checked document changes",
+          data: {
+            document: currentDocument,
+            onlineUsers: Array.from(userMap.values()),
+          },
         });
+      } catch (error) {
+        response
+          .status(500)
+          .send({
+            message: "Failed to check Document Changes " + error,
+            data: error as Error,
+          });
       }
     });
   }
@@ -633,76 +527,66 @@ exports.subscribeToDocument = functions.https.onRequest(
         const userId = request.body.userId;
         const user_email = request.body.user_email;
         const displayName = request.body.displayName;
-        if (!documentId || !userId || !user_email || !displayName) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required fields: ${
-                !documentId
-                  ? "documentId"
-                  : !userId
-                  ? "userId"
-                  : !user_email
-                  ? "user_email"
-                  : "displayName"
-              }`,
-            });
-        } else {
-          documentMap.set(documentId, currentDocument);
 
-          // const email = request.body.email;
+        documentMap.set(documentId, currentDocument);
 
-          const user = {
-            user_email: user_email as string,
-            user_id: userId as string,
-            display_name: displayName as string,
-          };
-          userMap.set(userId, userCursor);
-
-          await subscribeToDocument(
-            documentId,
-            user,
-            (updatedDocument: typeof LibDocument) => {
-              if (currentDocument.metadata.document_id !== documentId) {
-                currentDocument = userMap.get(documentId);
-              }
-              currentDocument = updatedDocument;
-              documentMap.set(documentId, currentDocument);
-              response.status(StatusCode.OK).send({
-                message: "Successfully subscribed to document",
-                data: {
-                  document: currentDocument,
-                  onlineUsers: Array.from(userMap.values()),
-                },
-              });
-            },
-            (
-              updateType: typeof UpdateType,
-              onlineEntity: typeof OnlineEntity
-            ) => {
-              userCursor = onlineEntity;
-              switch (updateType) {
-                case UpdateType.ADD:
-                  userMap.set(onlineEntity.user_id, onlineEntity);
-                  break;
-                case UpdateType.CHANGE:
-                  userMap.set(onlineEntity.user_id, onlineEntity);
-                  break;
-                case UpdateType.REMOVE:
-                  userMap.delete(onlineEntity.user_id);
-                  break;
-                default:
-                  break;
-              }
-            }
-          );
-          userDoc = currentDocument;
+        if (!documentId || !userId) {
+          throw new Error("Missing required fields");
         }
+        // const email = request.body.email;
+
+        const user = {
+          user_email: user_email as string,
+          user_id: userId as string,
+          display_name: displayName as string,
+        };
+        userMap.set(userId, userCursor);
+
+        await subscribeToDocument(
+          documentId,
+          user,
+          (updatedDocument: typeof LibDocument) => {
+            if (currentDocument.metadata.document_id !== documentId) {
+              currentDocument = userMap.get(documentId);
+            }
+            currentDocument = updatedDocument;
+            documentMap.set(documentId, currentDocument);
+            response.status(200).send({
+              message: "Successfully subscribed to document",
+              data: {
+                document: currentDocument,
+                onlineUsers: Array.from(userMap.values()),
+              },
+            });
+          },
+          (
+            updateType: typeof UpdateType,
+            onlineEntity: typeof OnlineEntity
+          ) => {
+            userCursor = onlineEntity;
+            switch (updateType) {
+              case UpdateType.ADD:
+                userMap.set(onlineEntity.user_id, onlineEntity);
+                break;
+              case UpdateType.CHANGE:
+                userMap.set(onlineEntity.user_id, onlineEntity);
+                break;
+              case UpdateType.REMOVE:
+                userMap.delete(onlineEntity.user_id);
+                break;
+              default:
+                break;
+            }
+          }
+        );
+        userDoc = currentDocument;
       } catch (error) {
-        response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to subscribe to document ",
-          data: error as Error,
-        });
+        response
+          .status(500)
+          .send({
+            message: "Failed to subscribe to document ",
+            data: error as Error,
+          });
       }
     });
   }
@@ -715,58 +599,46 @@ exports.updatePartialDocument = functions.https.onRequest(
         const documentId = request.body.documentId;
         const documentChanges = request.body.documentChanges;
         const writerId = request.body.writerId;
-        if (!documentId || !documentChanges || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId
-                  ? "documentId"
-                  : !documentChanges
-                  ? "documentChanges"
-                  : "writerId"
-              }`,
-            });
-        } else {
-          const documentObject: Record<string, unknown> = JSON.parse(
-            JSON.stringify(documentChanges)
-          );
+        const documentObject: Record<string, unknown> = JSON.parse(
+          JSON.stringify(documentChanges)
+        );
 
-          const apiResult = await updatePartialDocument(
-            documentObject,
-            documentId,
-            writerId
-          );
+        const apiResult = await updatePartialDocument(
+          documentObject,
+          documentId,
+          writerId
+        );
 
-          if (apiResult) {
-            if (currentDocument.metadata.document_id !== documentId) {
-              currentDocument = documentMap.get(documentId);
-            }
-            for (const [key, value] of Object.entries(documentObject)) {
-              if (key in currentDocument) {
-                if (typeof value === "object") {
-                  currentDocument[key] = { ...currentDocument[key], ...value };
-                } else {
-                  currentDocument[key] = value;
-                }
-              } else {
-                throw new Error("Invalid key");
-              }
-            }
-            userDoc = currentDocument;
-            documentMap.set(documentId, currentDocument);
+        if (apiResult) {
+          if (currentDocument.metadata.document_id !== documentId) {
+            currentDocument = documentMap.get(documentId);
           }
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({ message: "Document has been updated", data: apiResult });
+          for (const [key, value] of Object.entries(documentObject)) {
+            if (key in currentDocument) {
+              if (typeof value === "object") {
+                currentDocument[key] = { ...currentDocument[key], ...value };
+              } else {
+                currentDocument[key] = value;
+              }
+            } else {
+              throw new Error("Invalid key");
+            }
+          }
+          userDoc = currentDocument;
+          documentMap.set(documentId, currentDocument);
         }
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "Document has been updated", data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to update document " + error,
-          data: error as Error,
-        });
+        response
+          .status(500)
+          .send({
+            message: "Failed to update document " + error,
+            data: error as Error,
+          });
       }
     });
   }
@@ -781,27 +653,20 @@ exports.updateUserCursor = functions.https.onRequest(
         const documentId = request.body.documentId;
         const userId = request.body.userId;
         const cursor = request.body.cursor;
-        if (!documentId || !userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : "userId"
-              }`,
-            });
-        } else {
-          await updateUserCursor(documentId, { userId, cursor });
 
-          // Send a successful response back
-          response.status(StatusCode.OK).send({
+        await updateUserCursor(documentId, { userId, cursor });
+
+        // Send a successful response back
+        response
+          .status(200)
+          .send({
             message: "Updated user cursor",
             data: Array.from(userMap.values()),
           });
-        }
       } catch (error) {
         // Send an error response if something goes wrong
         response
-          .status(StatusCode.GENERAL_ERROR)
+          .status(500)
           .send({ message: "Failed to update cursor", data: error as Error });
       }
     });
@@ -817,29 +682,24 @@ exports.updateDocumentShareStyle = functions.https.onRequest(
         const documentId = request.body.documentId;
         const sharing = request.body.sharing;
         const writerId = request.body.writerId;
-        if (!documentId || !sharing || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : !sharing ? "sharing" : "writerId"
-              }`,
-            });
-        } else {
-          await updateDocumentShareStyle(documentId, sharing, writerId);
-          // Send a successful response back
-          response.status(StatusCode.OK).send({
+
+        await updateDocumentShareStyle(documentId, sharing, writerId);
+        // Send a successful response back
+        response
+          .status(200)
+          .send({
             message:
               "Successfully updated share style to " + ShareStyle[sharing],
             data: true,
           });
-        }
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to update document sharing style. ",
-          data: error as Error,
-        });
+        response
+          .status(500)
+          .send({
+            message: "Failed to update document sharing style. ",
+            data: error as Error,
+          });
       }
     });
   }
@@ -853,26 +713,14 @@ exports.shareDocumentWithUser = functions.https.onRequest(
         const invite_email = request.body.invite_email;
         const sharing = request.body.sharing;
         const writerId = request.body.writerId;
-        if (!documentId || !invite_email || !sharing || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId
-                  ? "documentId"
-                  : !invite_email
-                  ? "invite_email"
-                  : !sharing
-                  ? "sharing"
-                  : "writerId"
-              }`,
-            });
-        } else {
-          const userId = getUserIdFromEmail(invite_email);
 
-          await shareDocumentWithUser(documentId, userId, sharing, writerId);
-          // Send a successful response back
-          response.status(StatusCode.OK).send({
+        const userId = getUserIdFromEmail(invite_email);
+
+        await shareDocumentWithUser(documentId, userId, sharing, writerId);
+        // Send a successful response back
+        response
+          .status(200)
+          .send({
             message:
               "Successfully shared document with " +
               userId +
@@ -881,14 +729,15 @@ exports.shareDocumentWithUser = functions.https.onRequest(
               " permissions.",
             data: true,
           });
-        }
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(StatusCode.GENERAL_ERROR).send({
-          message:
-            "Failed to update document sharing style with user. " + error,
-          data: error as Error,
-        });
+        response
+          .status(500)
+          .send({
+            message:
+              "Failed to update document sharing style with user. " + error,
+            data: error as Error,
+          });
       }
     });
   }
@@ -899,29 +748,24 @@ exports.unshareDocumentWithUser = functions.https.onRequest(
     corsHandler(request, response, async () => {
       try {
         const { documentId, userId, writerId } = request.body;
-        if (!documentId || !userId || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : !userId ? "userId" : "writerId"
-              }`,
-            });
-        } else {
-          await unshareDocumentWithUser(documentId, userId, writerId);
-          // Send a successful response back
-          response.status(StatusCode.OK).send({
+
+        await unshareDocumentWithUser(documentId, userId, writerId);
+        // Send a successful response back
+        response
+          .status(200)
+          .send({
             message:
               "Successfully removed user " + userId + " access to document.",
             data: true,
           });
-        }
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to update document sharing style with user. ",
-          data: error as Error,
-        });
+        response
+          .status(500)
+          .send({
+            message: "Failed to update document sharing style with user. ",
+            data: error as Error,
+          });
       }
     });
   }
@@ -932,32 +776,23 @@ exports.updateDocumentTrashedStatus = functions.https.onRequest(
     corsHandler(request, response, async () => {
       try {
         const { documentId, is_trashed, writerId } = request.body;
-        if (!documentId || is_trashed === undefined || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId
-                  ? "documentId"
-                  : is_trashed === undefined
-                  ? "is_trashed"
-                  : "writerId"
-              }`,
-            });
-        } else {
-          await updateDocumentTrashedStatus(documentId, is_trashed, writerId);
-          // Send a successful response back
-          response.status(StatusCode.OK).send({
+
+        await updateDocumentTrashedStatus(documentId, is_trashed, writerId);
+        // Send a successful response back
+        response
+          .status(200)
+          .send({
             message: "Successfully updated trashed status to " + is_trashed,
             data: true,
           });
-        }
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to update document trashed status. ",
-          data: error as Error,
-        });
+        response
+          .status(500)
+          .send({
+            message: "Failed to update document trashed status. ",
+            data: error as Error,
+          });
       }
     });
   }
@@ -972,46 +807,35 @@ exports.createComment = functions.https.onRequest(
         const userId = request.body.userId;
         const displayName = request.body.displayName;
         const documentId = request.body.documentId;
-        if (!commentText || !userId || !displayName || !documentId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !commentText
-                  ? "commentText"
-                  : !userId
-                  ? "userId"
-                  : !displayName
-                  ? "displayName"
-                  : "documentId"
-              }`,
-            });
-        } else {
-          const user = {
-            user_id: userId,
-            display_name: displayName,
-          };
 
-          const commentId = await createComment(
-            commentText,
-            replyId,
-            user,
-            documentId
-          );
+        const user = {
+          user_id: userId,
+          display_name: displayName,
+        };
 
-          comments[commentId];
-          // Send a successful response back
-          response.status(StatusCode.OK).send({
+        const commentId = await createComment(
+          commentText,
+          replyId,
+          user,
+          documentId
+        );
+
+        comments[commentId];
+        // Send a successful response back
+        response
+          .status(200)
+          .send({
             message: "Successfully created new comment.",
             data: commentId,
           });
-        }
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Could not create new comment " + error,
-          data: error as Error,
-        });
+        response
+          .status(500)
+          .send({
+            message: "Could not create new comment " + error,
+            data: error as Error,
+          });
       }
     });
   }
@@ -1024,29 +848,19 @@ exports.deleteComment = functions.https.onRequest(
         const commentId = request.body.commentText;
         const documentId = request.body.documentId;
         const userId = request.body.userId;
-        if (!commentId || !documentId || !userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !commentId ? "commentId" : !documentId ? "documentId" : "userId"
-              }`,
-            });
-        } else {
-          const apiResult = await deleteComment(commentId, documentId, userId);
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({
-              message: "Successfully deleted comment.",
-              data: apiResult,
-            });
-        }
+
+        const apiResult = await deleteComment(commentId, documentId, userId);
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "Successfully deleted comment.", data: apiResult });
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to update document sharing style. " + error,
-        });
+        response
+          .status(500)
+          .send({
+            message: "Failed to update document sharing style. " + error,
+          });
       }
     });
   }
@@ -1060,31 +874,16 @@ exports.editCommentText = functions.https.onRequest(
         const commentId = request.body.commentId;
         const documentId = request.body.documentId;
         const userId = request.body.userId;
-        if (newText === undefined || !commentId || !documentId || !userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                newText === undefined
-                  ? "newText"
-                  : !commentId
-                  ? "commentId"
-                  : !documentId
-                  ? "documentId"
-                  : "userId"
-              }`,
-            });
-        } else {
-          await editCommentText(newText, commentId, documentId, userId);
-          // Send a successful response back
-          response
-            .status(StatusCode.OK)
-            .send({ message: "Updated comment to " + newText, data: true });
-        }
+
+        await editCommentText(newText, commentId, documentId, userId);
+        // Send a successful response back
+        response
+          .status(200)
+          .send({ message: "Updated comment to " + newText, data: true });
       } catch (error) {
         // Send an error response if something goes wrong
         response
-          .status(StatusCode.GENERAL_ERROR)
+          .status(500)
           .send({ message: "Failed to update comment", data: error as Error });
       }
     });
@@ -1097,39 +896,32 @@ exports.subscribeToComments = functions.https.onRequest(
       try {
         const documentId = request.body.documentId;
         const userId = request.body.userId;
-        if (!documentId || !userId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : "userId"
-              }`,
-            });
-        } else {
-          await subscribeToComments(
-            documentId,
-            userId,
-            (updateType: typeof UpdateType, comment: typeof LibComment) => {
-              if (
-                updateType === UpdateType.ADD ||
-                updateType === UpdateType.CHANGE
-              ) {
-                comments[comment.comment_id] = comment;
-                response.status(StatusCode.OK).send({
+
+        await subscribeToComments(
+          documentId,
+          userId,
+          (updateType: typeof UpdateType, comment: typeof LibComment) => {
+            if (
+              updateType === UpdateType.ADD ||
+              updateType === UpdateType.CHANGE
+            ) {
+              comments[comment.comment_id] = comment;
+              response
+                .status(200)
+                .send({
                   message: "Successfully subscribed to comments.",
                   data: comments,
                 });
-              } else {
-                delete comments[comment.comment_id];
-              }
+            } else {
+              delete comments[comment.comment_id];
             }
-          );
-        }
+          }
+        );
         // Send a successful response back
       } catch (error) {
         // Send an error response if something goes wrong
         response
-          .status(StatusCode.GENERAL_ERROR)
+          .status(500)
           .send({ message: "Failed to subscribe to comments." + error });
       }
     });
@@ -1142,27 +934,26 @@ exports.getUserAccessLevel = functions.https.onRequest(
       try {
         const userId = request.body.userId;
         const documentId = request.body.documentId;
+
         if (!userId || !documentId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !userId ? "userId" : "documentId"
-              }`,
-            });
-        } else {
-          const apiResult = await getUserAccessLevel(userId, documentId);
-          response.status(StatusCode.OK).send({
+          throw new Error("Missing required fields");
+        }
+
+        const apiResult = await getUserAccessLevel(userId, documentId);
+        response
+          .status(200)
+          .send({
             message: "The highest user access level is " + apiResult,
             data: apiResult,
           });
-        }
         // Send a successful response back
       } catch (error) {
         // Send an error response if something goes wrong
-        response.status(StatusCode.GENERAL_ERROR).send({
-          message: "Failed to get highest user access level." + error,
-        });
+        response
+          .status(500)
+          .send({
+            message: "Failed to get highest user access level." + error,
+          });
       }
     });
   }
