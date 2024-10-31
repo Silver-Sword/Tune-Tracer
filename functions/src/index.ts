@@ -64,11 +64,11 @@ const {
 } = require("./backend/src/document-utils/updateDocumentMetadata");
 const {
   shareDocumentWithUser,
-  unshareDocumentWithUser
+  unshareDocumentWithUser,
 } = require("./backend/src/document-utils/updateDocumentMetadata");
 const {
   updatePartialDocument,
-  deleteDocument
+  deleteDocument,
 } = require("./backend/src/document-utils/documentOperations");
 const {
   createComment,
