@@ -30,6 +30,39 @@ import { callAPI } from "../../utils/callAPI";
 import { useSearchParams } from "next/navigation";
 
 
+const keySignatures = [
+  { label: 'C Major', value: 'C' },
+  { label: 'G Major', value: 'G' },
+  { label: 'D Major', value: 'D' },
+  { label: 'A Major', value: 'A' },
+  { label: 'E Major', value: 'E' },
+  { label: 'B Major', value: 'B' },
+  { label: 'F# Major', value: 'F#' },
+  { label: 'C# Major', value: 'C#' },
+  { label: 'A Minor', value: 'Am' },
+  { label: 'E Minor', value: 'Em' },
+  { label: 'B Minor', value: 'Bm' },
+  { label: 'F# Minor', value: 'F#m' },
+  { label: 'C# Minor', value: 'C#m' },
+  { label: 'G# Minor', value: 'G#m' },
+  { label: 'D# Minor', value: 'D#m' },
+  { label: 'A# Minor', value: 'A#m' },
+  { label: 'F Major', value: 'F' },
+  { label: 'B♭ Major', value: 'Bb' },
+  { label: 'E♭ Major', value: 'Eb' },
+  { label: 'A♭ Major', value: 'Ab' },
+  { label: 'D♭ Major', value: 'Db' },
+  { label: 'G♭ Major', value: 'Gb' },
+  { label: 'C♭ Major', value: 'Cb' },
+  { label: 'D Minor', value: 'Dm' },
+  { label: 'G Minor', value: 'Gm' },
+  { label: 'C Minor', value: 'Cm' },
+  { label: 'F Minor', value: 'Fm' },
+  { label: 'B♭ Minor', value: 'Bbm' },
+  { label: 'E♭ Minor', value: 'Ebm' },
+  { label: 'A♭ Minor', value: 'Abm' },
+];
+
 export const ToolbarHeader: React.FC<{
   documentName: string;
   modifyDurationInMeasure: (duration: string, noteId: number) => void;
@@ -45,8 +78,9 @@ export const ToolbarHeader: React.FC<{
   addSharp: (keys: string[], noteId: number) => void;
   addNatural: (keys: string[], noteId: number) => void;
   addFlat: (keys: string[], noteId: number) => void;
+	handleDot: (dotType: number, noteId: number) => void;
   // removeAccidentals: (keys: string, noteID: string) => void;
-  // setKeySignature: (keySignature: string) => void;
+  setKeySignature: (keySignature: string) => void;
 }> = ({
   documentName,
   modifyDurationInMeasure,
@@ -62,8 +96,9 @@ export const ToolbarHeader: React.FC<{
 	addSharp,
 	addNatural,
 	addFlat,
+	handleDot,
 	// removeAccidentals,
-	// setKeySignature,
+	setKeySignature,
 }) => {
   // State to manage the input value
   const [inputValue, setInputValue] = useState("Untitled Score");
@@ -227,7 +262,7 @@ export const ToolbarHeader: React.FC<{
             <Button 
 							size="compact-md" 
 							variant="outline"
-							onClick={() => addNatural([], selectedNoteId)}
+							onClick={() => addNatural(["a/4"], selectedNoteId)}
             >
               <Image h={20} w="auto" fit="contain" src="/icons/natural.jpg" />
             </Button>
@@ -241,7 +276,7 @@ export const ToolbarHeader: React.FC<{
             <Button
 							size="compact-md"
 							variant="outline"
-							onClick={() => addFlat([], selectedNoteId)}
+							onClick={() => addFlat(["a/4"], selectedNoteId)}
 						>
               <Image h={20} w="auto" fit="contain" src="/icons/flat.jpg" />
             </Button>
@@ -307,7 +342,11 @@ export const ToolbarHeader: React.FC<{
             <Divider size="sm" orientation="vertical" />
             
             {/* Dots */}
-            <Button size="compact-md" variant="outline">
+            <Button
+							size="compact-md"
+							variant="outline"
+							onClick={() => handleDot(1, selectedNoteId)}
+						>
               <Image
                 h={10}
                 w="auto"
@@ -316,7 +355,11 @@ export const ToolbarHeader: React.FC<{
               />
             </Button>
 
-            <Button size="compact-md" variant="outline">
+            <Button
+							size="compact-md"
+							variant="outline"
+							onClick={() => handleDot(2, selectedNoteId)}
+						>
               <Image
                 h={10}
                 w="auto"
@@ -353,9 +396,19 @@ export const ToolbarHeader: React.FC<{
 
             <Divider size="sm" orientation="vertical" />
 
-            {/* Signatures */}
-            <Button variant="outline">Key Signature</Button>
-            <Button variant="outline">Time Signature</Button>
+            {/* Signatures */}              
+              <Select
+                placeholder="Set Key Signature"
+                onChange={(value) => value && setKeySignature(value)}
+                data={keySignatures}
+              />
+         
+            <Button
+              variant="outline"
+              onClick={() => setKeySignature("C")}
+              >
+                Key Signature test
+              </Button>
           </Group>
         </Tabs.Panel>
 

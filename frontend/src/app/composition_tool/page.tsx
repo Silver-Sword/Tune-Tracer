@@ -13,6 +13,7 @@ import {
     Container,
     Button,
     Space,
+    keys,
 } from "@mantine/core";
 
 import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
@@ -50,6 +51,30 @@ export default function CompositionTool() {
     const modifyDurationHandler = (duration: string, noteId: number) => {
         if (score && score.current) {
             score.current.modifyDurationInMeasure(duration, noteId);
+            sendChanges();
+            setTimeout(() => {
+                d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+                const noteElement = document.getElementById(noteId.toString());
+                if (noteElement) {
+                    noteElement.classList.add('selected-note');
+                }
+            }, 0);
+        }
+    }
+
+    // Wrapper functions to call modifyDuration specifically for dots
+    const dotHandler = ( dotType: number, noteId: number) => {
+        if (score && score.current) {
+            const duration = score.current.findNote(noteId)?.getDuration();
+            
+            if (dotType == 1 ) {
+                score.current.modifyDurationInMeasure(duration + "d", noteId);
+            }
+            if (dotType == 2) {
+                score.current.modifyDurationInMeasure(duration + "dd", noteId);
+            }
+
             sendChanges();
             setTimeout(() => {
                 d3.selectAll('.vf-stavenote').classed('selected-note', false);
@@ -157,6 +182,14 @@ export default function CompositionTool() {
             }, 0);
         }
     }
+
+    // Wrapper function for keySignature
+    const setKeySignatureHandler = (keySignature: string) => {
+        if (score && score.current) {
+            score.current.setKeySignature(keySignature);
+            sendChanges();
+        }
+    }  
 
     const playbackAwaiter = async () => {
         await Tone.start();
@@ -1079,7 +1112,8 @@ export default function CompositionTool() {
                     addNatural={addNaturalHandler}
                     addFlat={addFlatHandler}
                     // removeAccidentals={removeAccidentalsHandler}
-                    // setKeySignature={setKeySignatureHandler}
+                    setKeySignature={setKeySignatureHandler}
+                    handleDot={dotHandler}
                 />
                 {/* <CommentAside /> */}
 
