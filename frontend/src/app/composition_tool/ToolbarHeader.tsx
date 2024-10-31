@@ -387,9 +387,7 @@ export const ToolbarHeader: React.FC<{
 
             <Divider size="sm" orientation="vertical" />
 
-            {/* Signatures */}   
-
-           
+            {/* Signatures */}              
               <Select
                 placeholder="Set Key Signature"
                 onChange={(value) => value && setKeySignature(value)}
