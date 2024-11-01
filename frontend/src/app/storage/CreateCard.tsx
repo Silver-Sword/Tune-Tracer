@@ -124,6 +124,7 @@ export const CreateCard: React.FC<{userId: string}> = (userId) => {
         flexDirection: "column",
         justifyContent: "space-between", // Ensure content spreads evenly
       }}
+      className="create-card"
     >
       <Stack>
         {/* THE HREF IS TEMPORARY FOR DEMO */}
