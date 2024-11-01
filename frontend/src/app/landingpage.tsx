@@ -61,8 +61,8 @@ const sections = [
   { id: 'compose', label: 'Compose' },
   { id: 'store', label: 'Store' },
   { id: 'collaborate', label: 'Collaborate' },
+  { id: 'playback', label: 'Playback' },
   { id: 'security', label: 'Security' },
-  { id: 'download', label: 'Download' },
   { id: 'faqs', label: 'FAQs' },
 ]
 
@@ -222,8 +222,17 @@ export default function LandingPage() {
               />
             </Box>
 
-            <Box id="security" py={120}>
+            <Box id="playback" py={120}>
               <ContentSectionRightText
+                title="Playback"
+                description={<Text size="lg" c="dimmed">Hear the music you create together with our playback software! Get instant feedback on your compositions with highly versatile playback. </Text>}
+                imageSrc="/placeholder.svg?height=300&width=400"
+                imageAlt="Playback Feature"
+              />
+            </Box>
+
+            <Box id="security" py={120}>
+              <ContentSectionVertical
                 title="Security"
                 description={<Text size="lg" c="dimmed">Your compositions are protected with enterprise-grade security. Control access and maintain the privacy of your musical creations.</Text>}
                 imageSrc="/placeholder.svg?height=300&width=400"
@@ -231,14 +240,7 @@ export default function LandingPage() {
               />
             </Box>
 
-            <Box id="download" py={120}>
-              <ContentSectionVertical
-                title="Download"
-                description={<Text size="lg" c="dimmed">Export your compositions in various formats, from PDF sheet music to MIDI files. Compatible with major music software.</Text>}
-                imageSrc="/placeholder.svg?height=300&width=400"
-                imageAlt="Download Options"
-              />
-            </Box>
+            
 
             <Box id="faqs" py={120}>
               <Title order={2} size={36} mb="xl" ta="center">
