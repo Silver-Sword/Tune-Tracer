@@ -122,12 +122,12 @@ export default function Storage() {
 
   // Something is wrong with the callback, not allowing to move forward in states
   const handleJoyrideCallback = (data: CallBackProps) => {
-    const { status, index } = data;
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-      setRun(false);
-    } else {
-      setStepIndex(index);
-    }
+    // const { status, index } = data;
+    // if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    //   setRun(false);
+    // } else {
+    //   setStepIndex(index);
+    // }
   };
 
   const handleLogout = () => {
