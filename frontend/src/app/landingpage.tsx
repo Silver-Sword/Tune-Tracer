@@ -123,7 +123,7 @@ export default function LandingPage() {
             </Group>
             <Group>
               <Button component={Link} href="/signup" variant="outline" color="brand">
-                Try Tune Tracer
+                Join Tune Tracer
               </Button>
               <Button component={Link} href="/login" className='landingpage-blue-button'>
                 Sign in
@@ -149,7 +149,7 @@ export default function LandingPage() {
                       Sign in
                     </Button>
                     <Button component={Link} href="/signup" size="lg" variant="outline" color="brand">
-                      Try Tune Tracer
+                      Join Tune Tracer
                     </Button>
                   </Group>
                 </div>
