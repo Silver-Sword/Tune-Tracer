@@ -218,7 +218,8 @@ export default function CompositionTool() {
 
         // Hide the cursor
         const svg = d3.select(notationRef.current).select('svg');
-        svg.select('#playback-cursor').attr('opacity', 0);
+        // svg.select('#playback-cursor').attr('opacity', 0);
+        svg.select('#playback-cursor').remove();
     }
 
     // Create a cursor to follow notes during playback
@@ -267,6 +268,9 @@ export default function CompositionTool() {
     // Function to play composition
     const playbackComposition = async () => {
         stopPlayback();
+
+        Tone.getTransport().stop();
+        Tone.getTransport().position = 0;
     
         createCursor();
     
@@ -299,18 +303,30 @@ export default function CompositionTool() {
             const svgElement = notationRef.current?.querySelector('svg');
             const svgRect = svgElement?.getBoundingClientRect();
     
-            // Keep a track of our noteID
-            let noteIdTracker: number = 0;
+            // Keep track of noteId
+            let noteIdTracker = 0;
+    
+            // Array to hold all events for cursor movement
+            let allEvents = [];
+    
+            // Variables to store treble clef systemY and systemHeight
+            let trebleSystemY = 0;
+            let trebleSystemHeight = 0;
     
             for (let i = 0; i < topMeasureData.length; i++) {
                 const topNotes = topMeasureData[i].notes;
                 const bottomNotes = bottomMeasureData[i].notes;
     
+                // Get system info for the measure
                 const systemIndex = score.current.getSystemIndexForMeasure(i);
                 let systemInfo = { y: 0, height: 0 };
                 if (systems) {
                     systemInfo = systems[systemIndex];
                 }
+    
+                // Save treble clef systemY and systemHeight
+                trebleSystemY = systemInfo.y;
+                trebleSystemHeight = systemInfo.height;
     
                 // Process treble clef notes
                 for (let j = 0; j < topNotes.length; j++) {
@@ -348,19 +364,25 @@ export default function CompositionTool() {
                             noteX = noteRect.left - svgRect.left;
                         }
     
-                        topPart.add({
+                        const event = {
                             time: currentTimeTop,
                             note: sanitizedKey,
                             duration: durationWithDots,
                             noteId: noteId,
                             noteX: noteX,
+                            systemIndex: systemIndex,
                             systemY: systemInfo.y,
                             systemHeight: systemInfo.height,
                             isRest: isRest,
-                        });
+                            staff: 'top',
+                        };
+    
+                        allEvents.push(event);
+    
+                        // Add to topPart for playback
+                        topPart.add(event);
                     }
     
-                    // Update currentTime
                     currentTimeTop += Tone.Time(durationWithDots).toSeconds();
                 }
     
@@ -396,20 +418,60 @@ export default function CompositionTool() {
                             noteX = noteRect.left - svgRect.left;
                         }
     
-                        bottomPart.add({
+                        const event = {
                             time: currentTimeBottom,
                             note: sanitizedKey,
                             duration: durationWithDots,
                             noteId: noteId,
                             noteX: noteX,
+                            systemIndex: systemIndex,
+                            systemY: systemInfo.y, // Use treble clef systemY
+                            systemHeight: systemInfo.height, // Use treble clef systemHeight
                             isRest: isRest,
-                        });
+                            staff: 'bottom',
+                        };
+    
+                        allEvents.push(event);
+    
+                        // Add to bottomPart for playback
+                        bottomPart.add(event);
                     }
     
-                    // Update currentTime
                     currentTimeBottom += Tone.Time(durationWithDots).toSeconds();
                 }
             }
+
+            const currentTransportTime = Tone.getTransport().now();
+    
+            // Sort allEvents by time
+            allEvents.sort((a, b) => a.time - b.time);
+    
+            // Schedule cursor movements based on allEvents
+            let lastNoteX = -Infinity;
+            let lastSystemIndex = -1;
+            allEvents.forEach(event => {
+                const durationInSeconds = Tone.Time(event.duration).toSeconds();
+                const adjustedEventTime = currentTransportTime + event.time;
+    
+                // Check if we have moved to a new system
+                if (event.systemIndex !== lastSystemIndex)
+                {
+                    // Reset values since we are in a new system
+                    lastNoteX = -Infinity;
+                    lastSystemIndex = event.systemIndex;
+                }
+
+                // Only schedule cursor movement if noteX is greater than lastNoteX
+                if (event.noteX > lastNoteX) {
+                    lastNoteX = event.noteX;
+    
+                    console.log('This is being called!')
+                    Tone.getDraw().schedule(() => {
+                        console.log('We are scheduling to move the cursor!');
+                        moveCursorToPosition(event.noteX, durationInSeconds, event.systemY, event.systemHeight);
+                    }, adjustedEventTime);
+                }
+            });
     
             // Configure the playback callbacks
             topPart.callback = (time, event) => {
@@ -422,7 +484,6 @@ export default function CompositionTool() {
                 // Schedule highlighting
                 Tone.getDraw().schedule(() => {
                     highlightNoteStart(event.noteId);
-                    moveCursorToPosition(event.noteX, durationInSeconds, event.systemY, event.systemHeight);
                 }, time);
     
                 // Schedule de-highlighting
@@ -453,10 +514,9 @@ export default function CompositionTool() {
             topPart.start(0);
             bottomPart.start(0);
     
-            Tone.getTransport().start();
+            Tone.getTransport().start('+0.1');
         }
     };
-    
 
     const highlightNoteStart = (noteId: string) => {
         // console.log(`Highlight note start running at note id: ${noteId}`);
