@@ -236,10 +236,10 @@ export default function CompositionTool() {
         // Start the opacity as 0 to hide it
         svg.append('line')
             .attr('id', 'playback-cursor')
-            .attr('x1', 0)
+            .attr('x1', 75)
             .attr('y1', 0)
-            .attr('x2', 0)
-            .attr('y2', 280)
+            .attr('x2', 75)
+            .attr('y2', 300)
             .attr('stroke', 'red')
             .attr('stroke-width', 4)
             .attr('opacity', 0);
@@ -267,99 +267,91 @@ export default function CompositionTool() {
     // Function to play composition
     const playbackComposition = async () => {
         stopPlayback();
-
+    
         createCursor();
-
+    
         // Access the systems from the score
         const systems = score.current?.getSystems();
-
+    
         await Tone.loaded();
-
+    
         if (score && score.current) {
             const scoreData = score.current.exportScoreDataObj();
             const topMeasureData = scoreData.topMeasures;
             const bottomMeasureData = scoreData.bottomMeasures;
-            const topMeasures = score.current.getTopMeasures();
-            const bottomMeasures = score.current.getBottomMeasures();
-
-            // Map for durations since ToneJS and VexFlow use different
-            // representation strings for duration
+    
             const durationMap: { [duration: string]: string } = {
-                'q': '4n',
                 'w': '1n',
                 'h': '2n',
+                'q': '4n',
                 '8': '8n',
                 '16': '16n',
                 '32': '32n',
-                'qr': '4n',
-                'wr': '1n',
-                'hr': '2n',
-                '8r': '8n',
-                '16r': '16n',
-                '32r': '32n'
+                '64': '64n',
             };
-
-            // Create two separate parts. One for treble clef, one for bass clef
+    
             topPart = new Tone.Part();
             bottomPart = new Tone.Part();
-
-            // Keep track of the current time for each measure separately
+    
             let currentTimeTop = 0;
             let currentTimeBottom = 0;
-
-            // Grab references to svg elements for their coordinates
+    
             const svgElement = notationRef.current?.querySelector('svg');
             const svgRect = svgElement?.getBoundingClientRect();
-
+    
             // Keep a track of our noteID
             let noteIdTracker: number = 0;
-
-            // Iterate over each measure
+    
             for (let i = 0; i < topMeasureData.length; i++) {
                 const topNotes = topMeasureData[i].notes;
                 const bottomNotes = bottomMeasureData[i].notes;
-
-                // Determine which system the measure belongs to
+    
                 const systemIndex = score.current.getSystemIndexForMeasure(i);
-                let systemInfo: {y: number; height: number} = {y: 0, height: 0};
-                if (systems)
-                {
-                    systemInfo = systems[systemIndex]
+                let systemInfo = { y: 0, height: 0 };
+                if (systems) {
+                    systemInfo = systems[systemIndex];
                 }
-
-                console.log(`The length of topNotes is: ${topNotes.length}`);
-
-                // 1. Remove the '/' from the note string
-                // 2. Map the duration to a string that ToneJs likes (q -> 4n, w -> 1n, 8 -> 8n, h -> 2n)
-
-                // Iterate over notes in treble clef
+    
+                // Process treble clef notes
                 for (let j = 0; j < topNotes.length; j++) {
-                    const durationTop = durationMap[topNotes[j].duration];
-                    const isRest = topNotes[j].duration.includes('r');
-
+                    const note = topNotes[j];
+                    const isRest = note.duration.includes('r');
+                    const baseDurationKey = note.duration.replace('r', '').replaceAll('d', '');
+                    const baseDuration = durationMap[baseDurationKey];
+    
+                    if (!baseDuration) {
+                        console.warn(`Unknown duration: ${note.duration}`);
+                        continue;
+                    }
+    
+                    const dots = note.dots || 0;
+    
+                    // Adjust baseDuration to include dots
+                    let durationWithDots = baseDuration;
+                    for (let d = 0; d < dots; d++) {
+                        durationWithDots += '.';
+                    }
+    
                     // Since noteIds are deterministic we can keep track of how many notes
                     // have been iterated over and use that as the noteId
                     const noteId = noteIdTracker++;
-
-                    // Schedule the part to be played
-                    for (let k = 0; k < topNotes[j].keys.length; k++) {
-                        const sanitizedKeyTop = topNotes[j].keys[k].replace('/', '');
+    
+                    for (let k = 0; k < note.keys.length; k++) {
+                        const sanitizedKey = note.keys[k].replace('/', '');
                         const noteElement = document.getElementById(noteId.toString());
-                        // let noteX = noteElement ? noteElement.getBoundingClientRect().left : 0;
 
                         // Since these coordinates are viewport based at first,
-                        // we have to make them relative to the SVG container 
+                        // we have to make them relative to the SVG container
                         let noteX = 0;
-                        if (noteElement && svgRect?.left)
-                        {
+                        if (noteElement && svgRect?.left) {
                             const noteRect = noteElement.getBoundingClientRect();
-                            noteX = noteRect.left - svgRect?.left;
+                            noteX = noteRect.left - svgRect.left;
                         }
-
+    
                         topPart.add({
                             time: currentTimeTop,
-                            note: sanitizedKeyTop,
-                            duration: durationTop,
+                            note: sanitizedKey,
+                            duration: durationWithDots,
                             noteId: noteId,
                             noteX: noteX,
                             systemY: systemInfo.y,
@@ -367,90 +359,104 @@ export default function CompositionTool() {
                             isRest: isRest,
                         });
                     }
-
+    
                     // Update currentTime
-                    currentTimeTop += Tone.Time(durationTop).toSeconds();
+                    currentTimeTop += Tone.Time(durationWithDots).toSeconds();
                 }
-
-                // Iterate over the notes in the bass clef
+    
+                // Process bass clef notes
                 for (let j = 0; j < bottomNotes.length; j++) {
-                    const durationBottom = durationMap[bottomNotes[j].duration];
-                    const isRest = bottomNotes[j].duration.includes('r');
-
+                    const note = bottomNotes[j];
+                    const isRest = note.duration.includes('r');
+                    const baseDurationKey = note.duration.replace('r', '').replaceAll('d', '');
+                    const baseDuration = durationMap[baseDurationKey];
+    
+                    if (!baseDuration) {
+                        console.warn(`Unknown duration: ${note.duration}`);
+                        continue;
+                    }
+    
+                    const dots = note.dots || 0;
+    
+                    // Adjust baseDuration to include dots
+                    let durationWithDots = baseDuration;
+                    for (let d = 0; d < dots; d++) {
+                        durationWithDots += '.';
+                    }
+    
                     const noteId = noteIdTracker++;
-
-                    // Schedule the notes for the bass clef
-                    for (let k = 0; k < bottomNotes[j].keys.length; k++) {
-                        const sanitizedKeyBottom = bottomNotes[j].keys[k].replace('/', '');
+    
+                    for (let k = 0; k < note.keys.length; k++) {
+                        const sanitizedKey = note.keys[k].replace('/', '');
                         const noteElement = document.getElementById(noteId.toString());
-                        // const noteX = noteElement ? noteElement.getBoundingClientRect().left : 0;
-
+    
                         let noteX = 0;
-                        if (noteElement && svgRect?.left)
-                        {
+                        if (noteElement && svgRect?.left) {
                             const noteRect = noteElement.getBoundingClientRect();
                             noteX = noteRect.left - svgRect.left;
                         }
+    
                         bottomPart.add({
                             time: currentTimeBottom,
-                            note: sanitizedKeyBottom,
-                            duration: durationBottom,
+                            note: sanitizedKey,
+                            duration: durationWithDots,
                             noteId: noteId,
                             noteX: noteX,
                             isRest: isRest,
                         });
                     }
-
+    
                     // Update currentTime
-                    currentTimeBottom += Tone.Time(durationBottom).toSeconds();
+                    currentTimeBottom += Tone.Time(durationWithDots).toSeconds();
                 }
             }
-
-            // Configure the playback of the top and bottom parts
+    
+            // Configure the playback callbacks
             topPart.callback = (time, event) => {
                 if (piano && !event.isRest) {
                     piano.triggerAttackRelease(event.note, event.duration, time);
                 }
-
+    
                 const durationInSeconds = Tone.Time(event.duration).toSeconds();
-
-                // Schedule the highlighting
+    
+                // Schedule highlighting
                 Tone.getDraw().schedule(() => {
                     highlightNoteStart(event.noteId);
-                    moveCursorToPosition(event.noteX, event.duration, event.systemY, event.systemHeight);
+                    moveCursorToPosition(event.noteX, durationInSeconds, event.systemY, event.systemHeight);
                 }, time);
-
-                // Scheduleing de-highlighting
+    
+                // Schedule de-highlighting
                 Tone.getDraw().schedule(() => {
                     highlightNoteEnd(event.noteId);
                 }, time + durationInSeconds);
             };
-
+    
             bottomPart.callback = (time, event) => {
                 if (piano && !event.isRest) {
                     piano.triggerAttackRelease(event.note, event.duration, time);
                 }
-
+    
                 const durationInSeconds = Tone.Time(event.duration).toSeconds();
-
+    
                 // Schedule highlighting
                 Tone.getDraw().schedule(() => {
                     highlightNoteStart(event.noteId);
-                    // moveCursorToPosition(event.noteX);
                 }, time);
-
+    
+                // Schedule de-highlighting
                 Tone.getDraw().schedule(() => {
                     highlightNoteEnd(event.noteId);
                 }, time + durationInSeconds);
             };
-
-            // Start from the beginning
+    
+            // Start playback
             topPart.start(0);
             bottomPart.start(0);
-
+    
             Tone.getTransport().start();
         }
-    }
+    };
+    
 
     const highlightNoteStart = (noteId: string) => {
         // console.log(`Highlight note start running at note id: ${noteId}`);
