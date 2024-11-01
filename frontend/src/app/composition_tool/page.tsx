@@ -27,6 +27,8 @@ import { access, write } from "fs";
 import { HookCallbacks } from "async_hooks";
 import { removeAllListeners } from "process";
 
+import { DocumentListener } from "./DocumentListener";
+
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
 
@@ -42,6 +44,7 @@ export default function CompositionTool() {
     const [piano, setPiano] = useState<Tone.Sampler>();
     const volumeNode = useRef<Tone.Volume>();
     const searchParams = useSearchParams();
+    const documentId = searchParams.get('id') || 'null';
     const email = useRef<string>();
     const userId = useRef<string>();
     const displayName = useRef<string>();
@@ -1153,6 +1156,7 @@ export default function CompositionTool() {
                         <div ref={notationRef}></div>
                     </div>
                 </Container>
+                <DocumentListener docId={documentId}></DocumentListener>
             </AppShell.Main>
         </AppShell>
     );

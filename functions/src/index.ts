@@ -8,14 +8,61 @@
  */
 
 "use strict";
+// const VERSION_NUMBER = "1.1.0";
 
 // [START all]
 // [START import]
 // The Cloud Functions for Firebase SDK to setup triggers and logging.
 const functions = require("firebase-functions/v1");
+const admin = require("firebase-admin");
+admin.initializeApp();
 const express = require("express");
-const app = express();
+const { Server } = require("socket.io");
+const { createServer } = require("http");
 
+const app = express();
+const cors = require("cors");
+const corsHandler = cors({ origin: true });
+app.use( corsHandler );
+
+
+// Create an HTTP server and bind the Socket.IO server to it
+const server = createServer(app);
+// const io = new Server(server, {
+//   cors: {
+//     origin: "*", // Adjust this in production
+//     methods: ["GET", "POST"],
+//     allowedHeaders: ["Access-Control-Allow-Origin"],
+//     credentials: true,
+//   },
+// });
+
+// Socket.IO connection event
+// io.on("connection", (socket) => {
+//   console.log("Socket connected:", socket.id);
+//   socket.on("disconnect", () => {
+//     console.log("Socket disconnected:", socket.id);
+//   });
+// });
+
+// Firestore trigger to emit changes through Socket.IO
+// exports.firestoreTrigger = functions.firestore
+//   .document("Composition_Documents/{docId}")
+//   .onWrite((change, context) => {
+//     const docId = context.params.docId;
+//     const data = change.after.exists ? change.after.data() : null;
+
+//     // Emit to clients connected via Socket.IO
+//     io.emit(`firestoreUpdate-${docId}`, data);
+//     return null;
+//   });
+
+// Export the HTTP server
+// Not sure if this is a good thing
+// exports.api = functions.https.onRequest(app);
+exports.socketServer = functions.https.onRequest(server);
+
+/*
 const { StatusCode } = require("./backend/src/lib/src/StatusCode");
 const { ShareStyle } = require("./backend/src/lib/src/documentProperties");
 const {
@@ -28,7 +75,7 @@ const {
   getDefaultUser,
 } = require("./backend/src/lib/src/UserEntity");
 const { Comment: LibComment } = require("./backend/src/lib/src/Comment");
-const {  OnlineEntity } = require("./backend/src/lib/src/realtimeUserTypes");
+const { OnlineEntity } = require("./backend/src/lib/src/realtimeUserTypes");
 
 const { signUpAPI, login } = require("./backend/src/endpoints/loginEndpoints");
 const {
@@ -81,20 +128,13 @@ const {
   getUserAccessLevel,
 } = require("./backend/src/security-utils/getUserAccessLevel");
 
-const cors = require("cors");
-const corsHandler = cors({ origin: true });
-
 var comments: Record<string, typeof LibComment> = {};
 
 exports.signUpUser = functions.https.onRequest(async (req, res) => {
   corsHandler(req, res, async () => {
+    console.log(`Using API version: ${VERSION_NUMBER}`);
     try {
       // Parse user input from the request body
-      // if (!req.body)
-      // {
-      //   throw new Error('Missing any inputs');
-      // }
-
       const email: string = req.body.email;
       const password: string = req.body.password;
       const displayName: string = req.body.displayName;
@@ -126,6 +166,7 @@ exports.signUpUser = functions.https.onRequest(async (req, res) => {
 exports.logInUser = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         // Parse user input from the request body
         const email = request.body.email;
@@ -169,6 +210,7 @@ exports.logInUser = functions.https.onRequest(
 exports.getAllPreviews = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const userId = request.body.userId;
         if (!userId) {
@@ -185,12 +227,10 @@ exports.getAllPreviews = functions.https.onRequest(
         }
       } catch (error) {
         // Send an error response if something goes wrong
-        response
-          .status(StatusCode.GENERAL_ERROR)
-          .send({
-            message: "Error: Failed to get documents",
-            data: error as Error,
-          });
+        response.status(StatusCode.GENERAL_ERROR).send({
+          message: "Error: Failed to get documents",
+          data: error as Error,
+        });
       }
     });
   }
@@ -199,6 +239,7 @@ exports.getAllPreviews = functions.https.onRequest(
 exports.getOwnedPreviews = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const userId = request.body.userId;
         if (!userId) {
@@ -227,6 +268,7 @@ exports.getOwnedPreviews = functions.https.onRequest(
 exports.getSharedPreviews = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const userId = request.body.userId;
         if (!userId) {
@@ -255,6 +297,7 @@ exports.getSharedPreviews = functions.https.onRequest(
 exports.getTrashedDocumentPreviews = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const userId = request.body.userId;
         if (!userId) {
@@ -284,6 +327,7 @@ exports.getTrashedDocumentPreviews = functions.https.onRequest(
 exports.createShareCode = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const documentId = request.body.documentId;
         const sharing = request.body.sharing;
@@ -318,6 +362,7 @@ exports.createShareCode = functions.https.onRequest(
 exports.getDocumentIdFromShareCode = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const shareCode = request.body.shareCode;
         if (!shareCode) {
@@ -345,6 +390,7 @@ exports.getDocumentIdFromShareCode = functions.https.onRequest(
 exports.deleteShareCode = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const documentId = request.body.documentId;
         const shareCode = request.body.shareCode;
@@ -378,6 +424,7 @@ exports.deleteShareCode = functions.https.onRequest(
 exports.updateDocumentEmoji = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const { documentId, newEmoji, writerId } = request.body;
         if (!documentId || !newEmoji || !writerId) {
@@ -408,6 +455,7 @@ exports.updateDocumentEmoji = functions.https.onRequest(
 exports.updateDocumentColor = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const { documentId, newColor, writerId } = request.body;
         if (!documentId || !newColor || !writerId) {
@@ -426,12 +474,10 @@ exports.updateDocumentColor = functions.https.onRequest(
         }
       } catch (error) {
         // Send an error response if something goes wrong
-        response
-          .status(StatusCode.GENERAL_ERROR)
-          .send({
-            message: "Failed to update document color",
-            data: error as Error,
-          });
+        response.status(StatusCode.GENERAL_ERROR).send({
+          message: "Failed to update document color",
+          data: error as Error,
+        });
       }
     });
   }
@@ -440,6 +486,7 @@ exports.updateDocumentColor = functions.https.onRequest(
 exports.updateDocumentFavoritedStatus = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const { documentId, isFavorited, writerId } = request.body;
         if (!documentId || isFavorited === undefined || !writerId) {
@@ -480,6 +527,7 @@ exports.updateDocumentFavoritedStatus = functions.https.onRequest(
 exports.createDocument = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const userId = request.body.userId;
         if (!userId) {
@@ -509,6 +557,7 @@ exports.createDocument = functions.https.onRequest(
 exports.deleteDocument = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const documentId = request.body.documentId;
         const userId = request.body.userId;
@@ -547,18 +596,17 @@ var currentDocumentId = "";
 exports.checkDocumentChanges = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const documentId = request.body.documentId;
         const writerId = request.body.writerId;
         const documentChanges = request.body.documentChanges;
         if (!documentId || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : "writerId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId ? "documentId" : "writerId"
+            }`,
+          });
         } else {
           // var changed = false;
           // if (currentDocument.metadata.document_id !== documentId)
@@ -621,6 +669,7 @@ exports.checkDocumentChanges = functions.https.onRequest(
 exports.subscribeToDocument = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         // var currentDocument = request.body.currentDocument as typeof LibDocument;
         currentDocument = getDefaultDocument();
@@ -710,6 +759,7 @@ exports.subscribeToDocument = functions.https.onRequest(
 exports.updatePartialDocument = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const documentId = request.body.documentId;
         const documentChanges = request.body.documentChanges;
@@ -773,6 +823,7 @@ exports.updatePartialDocument = functions.https.onRequest(
 exports.updateUserCursor = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const documentId = request.body.documentId;
         const userId = request.body.userId;
@@ -807,6 +858,7 @@ exports.updateUserCursor = functions.https.onRequest(
 exports.updateDocumentShareStyle = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const documentId = request.body.documentId;
         const sharing = request.body.sharing;
@@ -840,6 +892,7 @@ exports.updateDocumentShareStyle = functions.https.onRequest(
 exports.shareDocumentWithUser = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const documentId = request.body.documentId;
         const invite_email = request.body.invite_email;
@@ -886,6 +939,7 @@ exports.shareDocumentWithUser = functions.https.onRequest(
 exports.unshareDocumentWithUser = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const { documentId, userId, writerId } = request.body;
         if (!documentId || !userId || !writerId) {
@@ -917,6 +971,7 @@ exports.unshareDocumentWithUser = functions.https.onRequest(
 exports.updateDocumentTrashedStatus = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const { documentId, is_trashed, writerId } = request.body;
         if (!documentId || is_trashed === undefined || !writerId) {
@@ -951,6 +1006,7 @@ exports.updateDocumentTrashedStatus = functions.https.onRequest(
 exports.createComment = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const commentText = request.body.commentText;
         const replyId = request.body.replyId;
@@ -1003,6 +1059,7 @@ exports.createComment = functions.https.onRequest(
 exports.deleteComment = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const commentId = request.body.commentText;
         const documentId = request.body.documentId;
@@ -1035,6 +1092,7 @@ exports.deleteComment = functions.https.onRequest(
 exports.editCommentText = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const newText = request.body.newText;
         const commentId = request.body.commentId;
@@ -1072,6 +1130,7 @@ exports.editCommentText = functions.https.onRequest(
 exports.subscribeToComments = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const documentId = request.body.documentId;
         const userId = request.body.userId;
@@ -1104,12 +1163,10 @@ exports.subscribeToComments = functions.https.onRequest(
         // Send a successful response back
       } catch (error) {
         // Send an error response if something goes wrong
-        response
-          .status(StatusCode.GENERAL_ERROR)
-          .send({
-            message: "Failed to subscribe to comments.",
-            data: error as Error,
-          });
+        response.status(StatusCode.GENERAL_ERROR).send({
+          message: "Failed to subscribe to comments.",
+          data: error as Error,
+        });
       }
     });
   }
@@ -1118,6 +1175,7 @@ exports.subscribeToComments = functions.https.onRequest(
 exports.getUserAccessLevel = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
+      console.log(`Using API version: ${VERSION_NUMBER}`);
       try {
         const userId = request.body.userId;
         const documentId = request.body.documentId;
@@ -1145,3 +1203,5 @@ exports.getUserAccessLevel = functions.https.onRequest(
     });
   }
 );
+
+*/
