@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState, useRef } from "react";
 import {
   AppShell,
@@ -14,6 +13,7 @@ import {
   SimpleGrid,
   rem,
   Modal,
+  Image,
   Tooltip,
   Menu,
 } from "@mantine/core";
@@ -21,8 +21,8 @@ import {
 import { IconSearch, IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
 import { getUserID, getDisplayName, getEmail, clearUserCookies, saveDocID } from "../cookie";
 import { useRouter } from "next/navigation";
-import { CreateCard} from "./CreateCard";
-import { DocCard, DocumentData} from "./DocCard";
+import { CreateCard } from "./CreateCard";
+import { DocCard, DocumentData } from "./DocCard";
 
 
 
@@ -36,17 +36,15 @@ const filterLabels = [
 ];
 
 // FiltersNavbar component
-const FiltersNavbar: React.FC<{getOwnPreviews: () => void, getSharedPreviews: () => void}> = ({getOwnPreviews, getSharedPreviews}) => {
+const FiltersNavbar: React.FC<{ getOwnPreviews: () => void, getSharedPreviews: () => void }> = ({ getOwnPreviews, getSharedPreviews }) => {
   const [activeFilter, setActiveFilter] = useState<string>("All");
 
   const handleFilterClick = (label: string) => {
     setActiveFilter(label);
-    if (label == "All")
-    {
+    if (label == "All") {
       getOwnPreviews();
     }
-    else if (label == "Shared with you")
-    {
+    else if (label == "Shared with you") {
       getSharedPreviews();
     }
     console.log(`Filter selected: ${label}`);
@@ -55,6 +53,8 @@ const FiltersNavbar: React.FC<{getOwnPreviews: () => void, getSharedPreviews: ()
 
   return (
     <AppShell.Navbar p="xl">
+      <CreateCard userId={getUserID()} />
+      <Space h="xl"></Space>
       <Stack gap="xs">
         {filterLabels.map((filter) => (
           <Button
@@ -86,6 +86,8 @@ const SearchBar: React.FC = () => {
     <TextInput
       variant="filled"
       radius="xl"
+      size ="lg"
+      style={{ width: "50%"}}
       placeholder="Search compositions"
       leftSectionPointerEvents="none"
       leftSection={<IconSearch style={{ width: rem(16), height: rem(16) }} />}
@@ -101,9 +103,12 @@ export default function Storage() {
   const [email, setEmail] = useState<string>('');
   const [userId, setUID] = useState<string>('');
   const [documents, setDocuments] = useState<DocumentData[]>([]);
+  const router = useRouter();
+
   const handleLogout = () => {
     console.log(`Successfully logged out of: ${email}`);
     clearUserCookies();
+    router.push(`/`);
   }
 
   useEffect(() => {
@@ -136,8 +141,7 @@ export default function Storage() {
     }
     fetch(GET_OWN_PREV, reqOptions)
       .then((res) => {
-        if (res.status == 200)
-        {
+        if (res.status == 200) {
           res.json().then((val) => {
             console.log(val['data']);
             setDocuments(val['data']);
@@ -159,8 +163,7 @@ export default function Storage() {
     }
     fetch(GET_OWN_PREV, reqOptions)
       .then((res) => {
-        if (res.status == 200)
-        {
+        if (res.status == 200) {
           res.json().then((val) => {
             console.log(val['data']);
             setDocuments(val['data']);
@@ -182,8 +185,7 @@ export default function Storage() {
     }
     fetch(GET_SHARE_PREV, reqOptions)
       .then((res) => {
-        if (res.status == 200)
-        {
+        if (res.status == 200) {
           res.json().then((val) => {
             console.log(val['data']);
             setDocuments(val['data']);
@@ -196,7 +198,7 @@ export default function Storage() {
     <AppShell
       header={{ height: 60 }}
       navbar={{
-        width: 250,
+        width: 350,
         breakpoint: "sm",
       }}
       padding="md"
@@ -210,17 +212,23 @@ export default function Storage() {
           }}
         >
           <Group justify="space-between" px="lg">
-            <Text>Tune Tracer</Text>
+            <Image
+              src="/TuneTracerLogo.png" // Path to your image
+              alt="Description of the image"
+              fit="contain" // Optional: can be 'contain', 'cover', or 'fill'
+              width={50} // Optional: Set the width
+              height={50} // Optional: Set the height
+            />
             <SearchBar />
 
             {/* Profile Menu */}
             <Menu shadow="md" width={200}>
               <Menu.Target>
-                <Button>{displayName}</Button>
+                <Button size="lg">{displayName}</Button>
               </Menu.Target>
 
               <Menu.Dropdown>
-                <Menu.Label>{email}</Menu.Label>
+                <Menu.Label style={{ fontSize: rem(13), fontWeight: 'bold' }}>{email}</Menu.Label>
                 <Menu.Divider />
                 <Menu.Item
                   color="red"
@@ -233,7 +241,7 @@ export default function Storage() {
 
           </Group>
         </AppShell.Header>
-        <FiltersNavbar getOwnPreviews={getOwnPreviews} getSharedPreviews={getSharedPreviews}/>
+        <FiltersNavbar getOwnPreviews={getOwnPreviews} getSharedPreviews={getSharedPreviews} />
 
         <Container
           fluid
@@ -245,17 +253,18 @@ export default function Storage() {
             textAlign: "center",
           }}
         >
+          <Text style={{ textAlign: 'left', fontSize: '2rem', fontWeight: 'bold' }}>
+            Scores
+          </Text>
           <Space h="xl"></Space>
-
           {/* Updated SimpleGrid with responsive breakpoints */}
           <SimpleGrid
-            cols={{ base: 1, sm: 2, md: 3, lg: 5}}
-            spacing={{ base: "xl"}}
+            cols={{ base: 1, sm: 2, md: 3, lg: 5 }}
+            spacing={{ base: "xl" }}
           >
-            <CreateCard userId={userId} />
 
             {documents.map((doc) => (
-              <DocCard key={doc.document_id} last_edit_user={doc.last_edit_user} document_id={doc.document_id} document_title={doc.document_title} owner_id={doc.owner_id} last_edit_time={doc.last_edit_time}/>
+              <DocCard key={doc.document_id} last_edit_user={doc.last_edit_user} document_id={doc.document_id} document_title={doc.document_title} owner_id={doc.owner_id} last_edit_time={doc.last_edit_time} />
             ))}
             {/* Uncomment to see card behaviors for storage page */}
             {/* {documents.map((document) =>(
