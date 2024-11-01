@@ -17,10 +17,11 @@ import {
   Tooltip,
   Menu,
   Divider,
+  ActionIcon,
 } from "@mantine/core";
 import Joyride, { CallBackProps, STATUS } from "react-joyride";
 
-import { IconSearch, IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
+import { IconSearch, IconSortDescending, IconArrowUp, IconArrowDown} from "@tabler/icons-react";
 import { getUserID, getDisplayName, getEmail, clearUserCookies, saveDocID } from "../cookie";
 import { useRouter } from "next/navigation";
 import { CreateCard } from "./CreateCard";
@@ -32,8 +33,6 @@ const filterLabels = [
   { link: "", label: "All" },
   { link: "", label: "Shared with you" },
   { link: "", label: "Favorites" },
-  { link: "", label: "Recents" },
-  { link: "", label: "A-Z" },
 ];
 
 const tutorialSteps = [
@@ -115,18 +114,20 @@ export default function Storage() {
   const [email, setEmail] = useState<string>('');
   const [userId, setUID] = useState<string>('');
   const [documents, setDocuments] = useState<DocumentData[]>([]);
+  const [sortBy, setSortBy] = useState<string>("lastEdited");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const router = useRouter();
   const [run, setRun] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
 
   // Something is wrong with the callback, not allowing to move forward in states
   const handleJoyrideCallback = (data: CallBackProps) => {
-    const { status, index } = data;
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-      setRun(false);
-    } else {
-      setStepIndex(index);
-    }
+    // const { status, index } = data;
+    // if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    //   setRun(false);
+    // } else {
+    //   setStepIndex(index);
+    // }
   };
 
   const handleLogout = () => {
@@ -138,14 +139,43 @@ export default function Storage() {
   const useOwnedPreviews = async () => {
     const userId = getUserID();
     const data = await getOwnPreviews(userId);
-    setDocuments(data);
+    setDocuments(sortDocuments(data, sortBy, sortDirection));
   }
   
   const useSharedPreviews = async () => {
     const userId = getUserID();
     const data = await getSharedPreviews(userId);
-    setDocuments(data);
+    setDocuments(sortDocuments(data, sortBy, sortDirection));
   }
+
+  const sortDocuments = (docs: DocumentData[], sortType: string, direction: "asc" | "desc") => {
+    return [...docs].sort((a, b) => {
+      let comparison = 0;
+      switch (sortType) {
+        case "lastEdited":
+          comparison = b.last_edit_time - a.last_edit_time;
+          break;
+        case "title":
+          comparison = a.document_title.localeCompare(b.document_title);
+          break;
+        default:
+          return 0;
+      }
+      return direction === "asc" ? comparison : -comparison;
+    });
+  }
+
+  const handleSort = (type: string) => {
+    setSortBy(type);
+    setDocuments(sortDocuments(documents, type, sortDirection));
+  }
+
+  const toggleSortDirection = () => {
+    const newDirection = sortDirection === "asc" ? "desc" : "asc";
+    setSortDirection(newDirection);
+    setDocuments(sortDocuments(documents, sortBy, newDirection));
+  }
+
 
   useEffect(() => {
     let displayCookie = getDisplayName();
@@ -157,9 +187,13 @@ export default function Storage() {
     setUID(userIdCookie);
     setTimeout(async () => {
       const data = await getOwnPreviews(userIdCookie);
-      setDocuments(data);
+      setDocuments(sortDocuments(data, sortBy, sortDirection));
     }, 0);
   }, []);
+
+  const getSortLabel = () => {
+    return sortBy === "lastEdited" ? "Last Edited" : "Title";
+  }
 
   return (
     <AppShell
@@ -188,11 +222,11 @@ export default function Storage() {
         >
           <Group justify="space-between" px="lg">
             <Image
-              src="/TuneTracerLogo.png" // Path to your image
-              alt="Description of the image"
-              fit="contain" // Optional: can be 'contain', 'cover', or 'fill'
-              width={50} // Optional: Set the width
-              height={50} // Optional: Set the height
+              src="/TuneTracerLogo.png"
+              alt="TuneTracer Logo"
+              fit="contain"
+              width={50}
+              height={50}
             />
             <SearchBar />
             <Group>
@@ -229,16 +263,44 @@ export default function Storage() {
             textAlign: "center",
           }}
         >
-          <Text style={{ textAlign: 'left', fontSize: '2rem', fontWeight: 'bold' }}>
-            Scores
-          </Text>
-          <Space h="xl"></Space>
-          {/* Updated SimpleGrid with responsive breakpoints */}
+          <Group justify="space-between" align="center">
+            <Text style={{ textAlign: 'left', fontSize: '2rem', fontWeight: 'bold' }}>
+              Scores
+            </Text>
+            <Group>
+              <Tooltip label={`Reverse sort direction`} withArrow>
+                <ActionIcon 
+                  variant="subtle" 
+                  onClick={toggleSortDirection}
+                  size="lg"
+                >
+                  {sortDirection === "asc" ? <IconArrowUp size={20} /> : <IconArrowDown size={20} />}
+                </ActionIcon>
+              </Tooltip>
+              <Menu>
+                <Tooltip label={`Sort by`} withArrow>
+                  <Menu.Target>
+                    <ActionIcon variant="subtle" size="lg">
+                      <IconSortDescending size={30} />
+                    </ActionIcon>
+                  </Menu.Target>
+                </Tooltip>
+                <Menu.Dropdown>
+                  <Menu.Item onClick={() => handleSort("title")}>
+                    Sort by Title {sortBy === "title" && "✓"}
+                  </Menu.Item>
+                  <Menu.Item onClick={() => handleSort("lastEdited")}>
+                    Sort by Last Edited {sortBy === "lastEdited" && "✓"}
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            </Group>
+          </Group>
+          <Space h="xl" />
           <SimpleGrid
             cols={{ base: 1, sm: 2, md: 3, lg: 5 }}
             spacing={{ base: "xl" }}
           >
-
             {documents.map((doc) => (
               <DocCard 
                 key={doc.document_id} 
@@ -250,7 +312,7 @@ export default function Storage() {
               />
             ))}
           </SimpleGrid>
-          <Space h="xl"></Space>
+          <Space h="xl" />
         </Container>
       </AppShell.Main>
     </AppShell>
