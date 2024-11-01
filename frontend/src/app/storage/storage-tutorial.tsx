@@ -30,6 +30,7 @@ const StorageTutorial: React.FC<TutorialProps> = ({ run, stepIndex, onCallback }
           textColor: "#333",
           arrowColor: "#fff",
           backgroundColor: "#fff",
+          zIndex: 1000,
         },
       }}
     />
