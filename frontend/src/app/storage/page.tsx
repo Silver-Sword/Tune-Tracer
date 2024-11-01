@@ -19,8 +19,8 @@ import {
   Divider,
   ActionIcon,
 } from "@mantine/core";
-import Joyride, { CallBackProps, STATUS } from "react-joyride";
-
+// import StorageTutorial from "./storage-tutorial";
+// import Joyride, { CallBackProps, STATUS, Step } from "react-joyride";
 import { IconSearch, IconSortDescending, IconArrowUp, IconArrowDown} from "@tabler/icons-react";
 import { getUserID, getDisplayName, getEmail, clearUserCookies, saveDocID } from "../cookie";
 import { useRouter } from "next/navigation";
@@ -117,18 +117,19 @@ export default function Storage() {
   const [sortBy, setSortBy] = useState<string>("lastEdited");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const router = useRouter();
-  const [run, setRun] = useState(false);
-  const [stepIndex, setStepIndex] = useState(0);
+  // const [run, setRun] = useState(false);
+  // const [stepIndex, setStepIndex] = useState(0);
 
-  // Something is wrong with the callback, not allowing to move forward in states
-  const handleJoyrideCallback = (data: CallBackProps) => {
-    // const { status, index } = data;
-    // if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-    //   setRun(false);
-    // } else {
-    //   setStepIndex(index);
-    // }
-  };
+  // // Something is wrong with the callback, not allowing to move forward in states
+  // // Handle tutorial callback to manage step progression and tutorial completion
+  // const handleJoyrideCallback = (data: any) => {
+  //   const { status, index } = data;
+  //   if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+  //     setRun(false); // Stop tutorial
+  //   } else {
+  //     setStepIndex(index); // Update to the next step
+  //   }
+  // };
 
   const handleLogout = () => {
     console.log(`Successfully logged out of: ${email}`);
@@ -204,14 +205,11 @@ export default function Storage() {
       }}
       padding="md"
     >
-      <Joyride
-        steps={tutorialSteps}
+      {/* <StorageTutorial
         run={run}
         stepIndex={stepIndex}
-        showProgress
-        showSkipButton
-        callback={handleJoyrideCallback}
-      />
+        onCallback={handleJoyrideCallback}
+      /> */}
       <AppShell.Main>
         <AppShell.Header
           style={{
@@ -230,7 +228,7 @@ export default function Storage() {
             />
             <SearchBar />
             <Group>
-              <Button onClick={() => setRun(true)}>Help</Button>
+              {/* <Button onClick={() => setRun(true)}>Help</Button> */}
               {/* Profile Menu */}
               <Menu shadow="md" width={200}>
                 <Menu.Target>
