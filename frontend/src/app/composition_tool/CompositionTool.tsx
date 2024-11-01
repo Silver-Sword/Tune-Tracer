@@ -13,6 +13,7 @@ import {
     Container,
     Button,
     Space,
+    keys,
 } from "@mantine/core";
 
 import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
@@ -22,6 +23,9 @@ import { useSearchParams } from "next/navigation";
 
 import * as d3 from 'd3';
 import * as Tone from 'tone';
+import { access, write } from "fs";
+import { HookCallbacks } from "async_hooks";
+import { removeAllListeners } from "process";
 
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
@@ -92,12 +96,12 @@ export default function CompositionTool() {
     }
 
     // Wrapper function to delete a measure
-    const removeMeasureHandler = () => {
-        if (score && score.current) {
-                score.current.removeMeasure();
-                sendChanges();
-            }
+   const removeMeasureHandler = () => {
+    if (score && score.current) {
+            score.current.removeMeasure();
+            sendChanges();
         }
+    }
 
     // Wrapper function to add a tie to a note
     const addTieHandler = (noteId: number) => {
@@ -185,7 +189,7 @@ export default function CompositionTool() {
             score.current.setKeySignature(keySignature);
             sendChanges();
         }
-    }
+    }  
 
     const playbackAwaiter = async () => {
         await Tone.start();
@@ -608,6 +612,7 @@ export default function CompositionTool() {
             },
             body: JSON.stringify(changesTemp)
         }
+
         await fetch(CHECK_CHANGE_URL, PUT_OPTION);
         await fetch(UPDATE_URL, PUT_OPTION);
     }
@@ -1084,6 +1089,11 @@ export default function CompositionTool() {
             //     breakpoint: "sm",
             // }}
             padding="md"
+            styles={{
+                main: {
+                    backgroundColor: '#fafafa',
+                },
+            }}
         >
             <AppShell.Main>
                 <ToolbarHeader
@@ -1138,7 +1148,7 @@ export default function CompositionTool() {
                         placeholder={userTemp}
                     />
                     <Button onClick={sendChanges}>Send Score change</Button>*/}
-                    <Button onClick={fetchChanges}>fetch Score change</Button> 
+                    {/* <Button onClick={fetchChanges}>fetch Score change</Button>  */}
                     <div>
                         <div ref={notationRef}></div>
                     </div>
