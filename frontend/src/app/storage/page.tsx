@@ -18,8 +18,8 @@ import {
   Menu,
   Divider,
 } from "@mantine/core";
-import Joyride, { CallBackProps, STATUS } from "react-joyride";
-
+import StorageTutorial from "./storage-tutorial";
+import Joyride, { CallBackProps, STATUS, Step } from "react-joyride";
 import { IconSearch, IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
 import { getUserID, getDisplayName, getEmail, clearUserCookies, saveDocID } from "../cookie";
 import { useRouter } from "next/navigation";
@@ -34,13 +34,6 @@ const filterLabels = [
   { link: "", label: "Favorites" },
   { link: "", label: "Recents" },
   { link: "", label: "A-Z" },
-];
-
-const tutorialSteps = [
-  { target: ".search-bar", content: "Search for compositions here." },
-  { target: ".create-card", content: "Create a new score or join with an invite code." },
-  { target: ".navbar-filters", content: "Filter your compositions here." },
-  { target: ".profile-menu", content: "Access your profile settings and logout here." },
 ];
 
 // FiltersNavbar component
@@ -120,12 +113,13 @@ export default function Storage() {
   const [stepIndex, setStepIndex] = useState(0);
 
   // Something is wrong with the callback, not allowing to move forward in states
-  const handleJoyrideCallback = (data: CallBackProps) => {
+  // Handle tutorial callback to manage step progression and tutorial completion
+  const handleJoyrideCallback = (data: any) => {
     const { status, index } = data;
     if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-      setRun(false);
+      setRun(false); // Stop tutorial
     } else {
-      setStepIndex(index);
+      setStepIndex(index); // Update to the next step
     }
   };
 
@@ -170,13 +164,10 @@ export default function Storage() {
       }}
       padding="md"
     >
-      <Joyride
-        steps={tutorialSteps}
+      <StorageTutorial
         run={run}
         stepIndex={stepIndex}
-        showProgress
-        showSkipButton
-        callback={handleJoyrideCallback}
+        onCallback={handleJoyrideCallback}
       />
       <AppShell.Main>
         <AppShell.Header
