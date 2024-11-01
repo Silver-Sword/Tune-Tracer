@@ -9,23 +9,23 @@
 
 "use strict";
 
+import { getDocument } from "./backend/src/document-utils/documentOperations";
+
 // [START all]
 // [START import]
 // The Cloud Functions for Firebase SDK to setup triggers and logging.
 const functions = require("firebase-functions/v1");
-const express = require("express");
-const app = express();
+// const express = require("express");
+// const app = express();
 
 const { StatusCode } = require("./backend/src/lib/src/StatusCode");
 const { ShareStyle } = require("./backend/src/lib/src/documentProperties");
 const {
   Document: LibDocument,
-  getDefaultDocument,
 } = require("./backend/src/lib/src/Document");
 const { UpdateType } = require("./backend/src/lib/src/UpdateType");
 const {
   UserEntity,
-  getDefaultUser,
 } = require("./backend/src/lib/src/UserEntity");
 const { Comment: LibComment } = require("./backend/src/lib/src/Comment");
 const {  OnlineEntity } = require("./backend/src/lib/src/realtimeUserTypes");
@@ -537,11 +537,39 @@ exports.deleteDocument = functions.https.onRequest(
 );
 
 var documentMap = new Map<string, typeof LibDocument>();
-var currentDocument: typeof LibDocument = getDefaultDocument();
-var userDoc = getDefaultDocument();
-var userMap = new Map<string, typeof OnlineEntity>();
-var userCursor = getDefaultUser();
-var currentDocumentId = "";
+var userMap = new Map<string, Map<string, typeof OnlineEntity>>();
+
+function updateDocumentMap(documentId: string, document: typeof LibDocument) {
+  const oldDocument = documentMap.get(documentId);
+
+  if(oldDocument === undefined || oldDocument.metadata.last_modified_time < document.metadata.last_modified_time) {
+    documentMap.set(documentId, document);
+  }
+}
+
+async function getDocumentFromMap(documentId: string, userId: string) {
+  if(!documentMap.has(documentId)) {
+    const doc = await getDocument(documentId, userId);
+    documentMap.set(documentId, doc);
+  }
+  return documentMap.get(documentId);
+}
+
+function updateUserMap(
+  documentId: string,
+  onlineEntity: typeof OnlineEntity,
+  isRemove: boolean
+) {
+  if(!userMap.has(documentId)) {
+    userMap.set(documentId, new Map<string, typeof OnlineEntity>());
+  }
+
+  if (isRemove) {
+    userMap.get(documentId)?.delete(onlineEntity.user_id);
+  } else {
+    userMap.get(documentId)?.set(onlineEntity.user_id, onlineEntity);
+  }
+}
 
 // assumes that subscribeToDocument is called first
 exports.checkDocumentChanges = functions.https.onRequest(
@@ -560,26 +588,15 @@ exports.checkDocumentChanges = functions.https.onRequest(
               }`,
             });
         } else {
-          // var changed = false;
-          // if (currentDocument.metadata.document_id !== documentId)
-          // {
-          //   currentDocument = documentMap.get(documentId);
-          // }
-          // else if (userDoc.metadata.document_id !== documentId)
-          // {
-          //   userDoc = currentDocument;
-          // }
-          if (!documentId || !writerId) {
-            console.log("hello");
-          }
-          if (userDoc != currentDocument) {
-            userDoc = currentDocument;
-            // changed = true;
-          }
+
           if (documentChanges) {
             const documentObject: Record<string, unknown> = JSON.parse(
               JSON.stringify(documentChanges)
             );
+            const userDoc = documentMap.get(documentId);
+            if(userDoc === undefined) {
+              throw new Error("Document does not exist");
+            }
             for (const [key, value] of Object.entries(documentObject)) {
               if (key in userDoc) {
                 if (typeof value === "object") {
@@ -594,16 +611,15 @@ exports.checkDocumentChanges = functions.https.onRequest(
               }
             }
             // const documentObject: Record<string,unknown> = currentDocument as Record<string,unknown>;
-            // await updatePartialDocument(documentObject, documentId, writerId);
+            await updatePartialDocument(documentObject, documentId, writerId);
           }
 
           // for (se)
-          currentDocument = userDoc;
-          documentMap.set(documentId, currentDocument);
+          // documentMap.set(documentId, currentDocument);
           response.status(StatusCode.OK).send({
             message: "Successfully checked document changes",
             data: {
-              document: currentDocument,
+              document: await getDocumentFromMap(documentId, writerId), 
               onlineUsers: Array.from(userMap.values()),
             },
           });
@@ -621,16 +637,11 @@ exports.checkDocumentChanges = functions.https.onRequest(
 exports.subscribeToDocument = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
-      try {
-        // var currentDocument = request.body.currentDocument as typeof LibDocument;
-        currentDocument = getDefaultDocument();
-        userDoc = getDefaultDocument();
-
+      try {;
         const documentId = request.body.documentId;
         const userId = request.body.userId;
         const user_email = request.body.user_email;
         const displayName = request.body.displayName;
-        currentDocumentId = documentId;
 
         if (!documentId || !userId || !user_email || !displayName) {
           response.status(StatusCode.MISSING_ARGUMENTS).send({
@@ -645,8 +656,6 @@ exports.subscribeToDocument = functions.https.onRequest(
             }`,
           });
         } else {
-          documentMap.set(documentId, currentDocument);
-
           // const email = request.body.email;
 
           const user = {
@@ -654,48 +663,40 @@ exports.subscribeToDocument = functions.https.onRequest(
             user_id: userId as string,
             display_name: displayName as string,
           };
-          userMap.set(userId, userCursor);
-          userDoc = currentDocument;
 
           await subscribeToDocument(
             documentId,
             user,
             (updatedDocument: typeof LibDocument) => {
-              if (currentDocumentId !== documentId) {
-                currentDocument = userMap.get(documentId);
-                currentDocumentId = documentId;
-              }
-              currentDocument = updatedDocument;
-              documentMap.set(documentId, currentDocument);
-              response.status(StatusCode.OK).send({
-                message: "Successfully subscribed to document",
-                data: {
-                  document: currentDocument,
-                  onlineUsers: Array.from(userMap.values()),
-                },
-              });
+              updateDocumentMap(documentId, updatedDocument);
             },
             (
               updateType: typeof UpdateType,
               onlineEntity: typeof OnlineEntity
             ) => {
-              userCursor = onlineEntity;
               switch (updateType) {
                 case UpdateType.ADD:
-                  userMap.set(onlineEntity.user_id, onlineEntity);
+                  updateUserMap(documentId, onlineEntity, false);
                   break;
                 case UpdateType.CHANGE:
-                  userMap.set(onlineEntity.user_id, onlineEntity);
+                  updateUserMap(documentId, onlineEntity, false);
                   break;
                 case UpdateType.REMOVE:
-                  userMap.delete(onlineEntity.user_id);
+                  updateUserMap(documentId, onlineEntity, true);
                   break;
-                default:
-                  break;
+                  default:
+                    break;
               }
             }
           );
-          userDoc = currentDocument;
+
+          response.status(StatusCode.OK).send({
+            message: "Successfully subscribed to document",
+            data: {
+              document: await getDocumentFromMap(documentId, userId),
+              onlineUsers: Array.from(userMap.values()),
+            },
+          });
         }
       } catch (error) {
         response.status(StatusCode.GENERAL_ERROR).send({
@@ -734,24 +735,6 @@ exports.updatePartialDocument = functions.https.onRequest(
             documentId,
             writerId
           );
-
-          if (apiResult) {
-            for (const [key, value] of Object.entries(documentObject)) {
-              if (key in currentDocument) {
-                if (typeof value === "object") {
-                  currentDocument[key] = { ...currentDocument[key], ...value };
-                  // await updatePartialDocument(userDoc[key], documentId, writerId);
-                } else if (key === "document_title") {
-                  currentDocument[key] = value;
-                  // await updatePartialDocument(userDoc[key], documentId, writerId);
-                } else {
-                  throw new Error("Invalid key");
-                }
-              }
-            }
-            userDoc = currentDocument;
-            documentMap.set(documentId, currentDocument);
-          }
           // Send a successful response back
           response
             .status(StatusCode.OK)
