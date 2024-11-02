@@ -2,9 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Score } from "../edit/Score";
-// We have two of these for some reason
-//import { printScoreData, ScoreData } from "../lib/src/ScoreData";
-import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
+import { printScoreData, ScoreData } from '../lib/src/ScoreData';
 import { Document } from "../lib/src/Document";
 import { DocumentMetadata, ShareStyle } from "../lib/src/documentProperties";
 import { Comment } from "../lib/src/Comment";
@@ -26,6 +24,7 @@ import * as Tone from 'tone';
 import { access, write } from "fs";
 import { HookCallbacks } from "async_hooks";
 import { removeAllListeners } from "process";
+import { sendDocumentChanges, sendUserChanges, subscribe } from "../backend/api";
 
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
@@ -35,6 +34,7 @@ export default function CompositionTool() {
     const score = useRef<Score | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
     const [selectedNoteId, setSelectedNoteId] = useState<number>(-1);
+    const [versionTime, setVersionTime] = useState<number>(0);
 
     const [volume, setVolume] = useState<number>(50);
     let topPart: Tone.Part;
@@ -632,10 +632,6 @@ export default function CompositionTool() {
         }
     }, [volume]);
 
-    const SUBSCRIBE_TO_DOC_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToDocument';
-    const SUBSCRIBE_TO_COMMENTS_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToComments';
-    const CHECK_CHANGE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/checkDocumentChanges';
-    const UPDATE_CURSOR_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updateUserCursor';
     const CHECK_ACCESS_LEVEL_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/getUserAccessLevel';
 
     const [currentDocument, setDocument] = useState<Document>({
@@ -652,7 +648,6 @@ export default function CompositionTool() {
     const sendChanges = async () => {
         if (score.current === null) return;
         let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
-        const UPDATE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updatePartialDocument';
 
         const changesTemp =
         {
@@ -671,71 +666,62 @@ export default function CompositionTool() {
 
         // setChanges(recordTemp);
 
-        const PUT_OPTION = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(changesTemp)
-        }
-
-        await fetch(CHECK_CHANGE_URL, PUT_OPTION);
-        await fetch(UPDATE_URL, PUT_OPTION);
+        await sendDocumentChanges(changesTemp);
     }
 
-    const fetchChanges = async () => {
-        const changesTemp =
-        {
-            documentId: documentID.current,
-            writerId: userId.current
-        };
+    // const fetchChanges = async () => {
+    //     const changesTemp =
+    //     {
+    //         documentId: documentID.current,
+    //         writerId: userId.current
+    //     };
         
-        const PUT_OPTION = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(changesTemp)
-        }
-        console.log(JSON.stringify(changesTemp));
-        await fetch(CHECK_CHANGE_URL, PUT_OPTION)
-            .then((res) => {
-                res.json().then((value) => {
-                    console.log("Recieved Score data: " + JSON.stringify(value.data));
-                    const compData: ScoreData = (value.data.document).score;
-                    const document_title: string = (value.data.document).document_title;
-                    const comments: Comment[] = (value.data.document).comments;
-                    const metadata: DocumentMetadata = (value.data.document).metadata;
-                    const tempDocument: Document = {
-                        document_title: document_title,
-                        comments: comments,
-                        score: compData,
-                        metadata: metadata,
-                    };
-                    setDocument(tempDocument);
-                    if (notationRef.current) {
-                        score.current?.loadScoreDataObj(compData);
-                        console.log("LOADED SCORE DATA");
-                        console.log("asd selectedNoteId: " + selectedNoteId);
-                        // Now add it to the currently selected note
-                        if (selectedNoteId !== -1) {
-                            console.log("Reached selectedNoteId: " + selectedNoteId);
-                            d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
-                        }
-                    }
-                }).catch((error) => {
-                    // Getting the Error details.
-                    const message = error.message;
-                    console.log(`Error: ${message}`);
-                    return;
-                });;
-            });
-    }
+    //     const PUT_OPTION = {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify(changesTemp)
+    //     }
+        // console.log(JSON.stringify(changesTemp));
+        // await fetch(CHECK_CHANGE_URL, PUT_OPTION)
+        //     .then((res) => {
+        //         res.json().then((value) => {
+        //             console.log("Recieved Score data: " + JSON.stringify(value.data));
+        //             const compData: ScoreData = (value.data.document).score;
+        //             const document_title: string = (value.data.document).document_title;
+        //             const comments: Comment[] = (value.data.document).comments;
+        //             const metadata: DocumentMetadata = (value.data.document).metadata;
+        //             const tempDocument: Document = {
+        //                 document_title: document_title,
+        //                 comments: comments,
+        //                 score: compData,
+        //                 metadata: metadata,
+        //             };
+        //             setDocument(tempDocument);
+        //             if (notationRef.current) {
+        //                 score.current?.loadScoreDataObj(compData);
+        //                 console.log("LOADED SCORE DATA");
+        //                 console.log("asd selectedNoteId: " + selectedNoteId);
+        //                 // Now add it to the currently selected note
+        //                 if (selectedNoteId !== -1) {
+        //                     console.log("Reached selectedNoteId: " + selectedNoteId);
+        //                     d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
+        //                 }
+        //             }
+        //         }).catch((error) => {
+        //             // Getting the Error details.
+        //             const message = error.message;
+        //             console.log(`Error: ${message}`);
+        //             return;
+        //         });;
+        //     });
+    // }
 
-    // check if the user has edit access and update tools accordingly
-    useEffect(() => {
-        doesUserHaveEditAccess();
-    }, []);
+    // // check if the user has edit access and update tools accordingly
+    // useEffect(() => {
+    //     doesUserHaveEditAccess();
+    // }, []);
 
     const doesUserHaveEditAccess = async () => {
         // NOTE: documentId and userId are assumed to be set (but are probably not in reality) (move this code to somewhere where they are)
@@ -779,8 +765,6 @@ export default function CompositionTool() {
       }, [delay]);
     }
     
-    
-
     // THIS FETCHES CHANGES PERIODICALLY
     // UNCOMMENT below to actually do it.
     // useInterval(() => {
@@ -819,31 +803,31 @@ export default function CompositionTool() {
             },
             body: JSON.stringify(changesTemp)
         }
-        await fetch(CHECK_CHANGE_URL, PUT_OPTION)
-            .then((res) => {
-                res.json().then((data) => {
-                    const compData: ScoreData = (data.data.document).score;
-                    const document_title: string = (data.data.document).document_title;
-                    const comments: Comment[] = (data.data.document).comments;
-                    const metadata: DocumentMetadata = (data.data.document).metadata;
-                    const tempDocument: Document = {
-                        document_title: document_title,
-                        comments: comments,
-                        score: compData,
-                        metadata: metadata,
-                    };
-                    setDocument(tempDocument);
-                    // console.log("Recieved Score data: " + printScoreData(compData));
-                    // if (notationRef.current) {
-                    //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
-                    // }
-                }).catch((error) => {
-                    // Getting the Error details.
-                    const message = error.message;
-                    console.log(`Error: ${message}`);
-                    return;
-                });;
-            });
+        // await fetch(CHECK_CHANGE_URL, PUT_OPTION)
+        //     .then((res) => {
+        //         res.json().then((data) => {
+        //             const compData: ScoreData = (data.data.document).score;
+        //             const document_title: string = (data.data.document).document_title;
+        //             const comments: Comment[] = (data.data.document).comments;
+        //             const metadata: DocumentMetadata = (data.data.document).metadata;
+        //             const tempDocument: Document = {
+        //                 document_title: document_title,
+        //                 comments: comments,
+        //                 score: compData,
+        //                 metadata: metadata,
+        //             };
+        //             setDocument(tempDocument);
+        //             // console.log("Recieved Score data: " + printScoreData(compData));
+        //             // if (notationRef.current) {
+        //             //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
+        //             // }
+        //         }).catch((error) => {
+        //             // Getting the Error details.
+        //             const message = error.message;
+        //             console.log(`Error: ${message}`);
+        //             return;
+        //         });;
+        //     });
     }
 
 
@@ -851,15 +835,20 @@ export default function CompositionTool() {
 
     // for networking
     useEffect(() => {
+        console.log(`Subscription for document ${documentID.current} and user ${userId.current}`);
         if (!loaded && userId.current !== '') {
+            const documentId = documentID.current as string;
+            if(!documentId) {
+                console.error("No document ID");
+                return;
+            }
             var userInfo = {
-                documentId: documentID.current,
-                userId: userId.current,
-                user_email: email.current,
-                displayName: displayName.current
+                user_id: userId.current as string,
+                user_email: email.current as string,
+                display_name: displayName.current as string
             };
             console.log("document ID: " + documentID.current);
-
+            
             // if (userTemp === '1') {
             //     userInfo = {
             //         documentId: 'aco5tXEzQt7dSeB1WSlV',
@@ -882,47 +871,43 @@ export default function CompositionTool() {
             // }
             console.log("User Info: " + JSON.stringify(userInfo));
 
-            const POST_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(userInfo),
-            }
-            fetch(SUBSCRIBE_TO_DOC_URL, POST_OPTION)
-                .then((res) => {
-                    // Read result of the Cloud Function.
-                    res.json().then((data) => {
-                        const compData: ScoreData = (data.data.document).score;
-                        const document_title: string = (data.data.document).document_title;
-                        const comments: Comment[] = (data.data.document).comments;
-                        const metadata: DocumentMetadata = (data.data.document).metadata;
+            // const POST_OPTION = {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //     },
+            //     body: JSON.stringify(userInfo),
+            // }
+            subscribe(documentId, userInfo, (document) => {
+                        const compData: ScoreData = (document).score;
+                        const document_title: string = (document).document_title;
+                        const comments: Comment[] = (document).comments;
+                        const metadata: DocumentMetadata = (document).metadata;
                         const tempDocument: Document = {
                             document_title: document_title,
                             comments: comments,
                             score: compData,
                             metadata: metadata,
                         };
+                        if(versionTime > document.metadata.last_edit_time)
+                        {
+                            return;
+                        }
+                        setVersionTime(document.metadata.last_edit_time);
                         setDocument(tempDocument);
-                        // console.log("Document:" + currentDocument);
+                        if (notationRef.current) {
+                            score.current?.loadScoreDataObj(compData as any);
+                            console.log("LOADED SCORE DATA");
+                            console.log("asd selectedNoteId: " + selectedNoteId);
+                            // Now add it to the currently selected note
+                            if (selectedNoteId !== -1) {
+                                console.log("Reached selectedNoteId: " + selectedNoteId);
+                                d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
+                            }
+                        }
                         setLoadState(true);
-                        // console.log("Recieved Score data: " + printScoreData(compData));
-                        // if (notationRef.current) {
-                        //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
-                        // }
-
                         console.log("Document Loaded");
-                        var temp = !loaded;
-                        setLoadState(temp);
-                    });
-                }).catch((error) => {
-                    // Getting the Error details.
-                    const message = error.message;
-                    console.log(`Error: ${message}`);
-                    return;
-                    // ...
-                });
-            fetchChanges();
+                    }, (updateType, entity) => {});
         }
     }, []);
 
@@ -933,40 +918,40 @@ export default function CompositionTool() {
         }
         const intervalID = setInterval(() => {
 
-            const changesTemp =
-            {
-                documentId: documentID.current,
-                writerId: userId.current
-            }
-            const POST_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(changesTemp),
-            }
-            console.log(`Check Changes Input: ${JSON.stringify(changesTemp)}`);
-            fetch(CHECK_CHANGE_URL, POST_OPTION)
-                .then((res) => {
-                    res.json().then((data) => {
-                        const compData: ScoreData = (data.data.document).score;
-                        const document_title: string = (data.data.document).document_title;
-                        const comments: Comment[] = (data.data.document).comments;
-                        const metadata: DocumentMetadata = (data.data.document).metadata;
-                        const tempDocument: Document = {
-                            document_title: document_title,
-                            comments: comments,
-                            score: compData,
-                            metadata: metadata,
-                        };
-                        setDocument(tempDocument);
-                    }).catch((error) => {
-                        // Getting the Error details.
-                        const message = error.message;
-                        console.log(`Error: ${message}`);
-                        return;
-                    });
-                });
+        //     const changesTemp =
+        //     {
+        //         documentId: documentID.current,
+        //         writerId: userId.current
+        //     }
+        //     const POST_OPTION = {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json',
+        //         },
+        //         body: JSON.stringify(changesTemp),
+        //     }
+        //     console.log(`Check Changes Input: ${JSON.stringify(changesTemp)}`);
+        //     fetch(CHECK_CHANGE_URL, POST_OPTION)
+        //         .then((res) => {
+        //             res.json().then((data) => {
+        //                 const compData: ScoreData = (data.data.document).score;
+        //                 const document_title: string = (data.data.document).document_title;
+        //                 const comments: Comment[] = (data.data.document).comments;
+        //                 const metadata: DocumentMetadata = (data.data.document).metadata;
+        //                 const tempDocument: Document = {
+        //                     document_title: document_title,
+        //                     comments: comments,
+        //                     score: compData,
+        //                     metadata: metadata,
+        //                 };
+        //                 setDocument(tempDocument);
+        //             }).catch((error) => {
+        //                 // Getting the Error details.
+        //                 const message = error.message;
+        //                 console.log(`Error: ${message}`);
+        //                 return;
+        //             });
+        //         });
         }, 1000);
 
         return function stopChecking() {
@@ -1125,6 +1110,7 @@ export default function CompositionTool() {
                 cursor: selectedNoteId
             }
 
+
             const POST_OPTION = {
                 method: 'POST',
                 headers: {
@@ -1133,13 +1119,15 @@ export default function CompositionTool() {
                 body: JSON.stringify(userInfo)
             }
 
-            fetch(UPDATE_CURSOR_URL, POST_OPTION)
-                .then((res) => {
-                    res.json().then((data) => {
-                        console.log('Successfully called updateCursor endpoint');
-                        console.log(`User cursor data: ${data.data}`);
-                    })
-                })
+            await sendUserChanges(userInfo.documentId, userId.current, userInfo.cursor);
+
+            // fetch(UPDATE_CURSOR_URL, POST_OPTION)
+            //     .then((res) => {
+            //         res.json().then((data) => {
+            //             console.log('Successfully called updateCursor endpoint');
+            //             console.log(`User cursor data: ${data.data}`);
+            //         })
+            //     })
         }
     };
 

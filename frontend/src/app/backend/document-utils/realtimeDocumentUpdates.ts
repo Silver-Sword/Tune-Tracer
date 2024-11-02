@@ -37,9 +37,7 @@ export async function subscribeToDocument(
       snapshot.data() !== undefined
     ) {
       const document = snapshot.data() as Document;
-      if(!userHasReadAccess(user.user_id, document)) {
-          throw Error(`User with id ${user.user_id} does not have read access to document with id ${document.metadata.document_id}`)
-      } else if(firstAccess) {
+       if(firstAccess) {
         firstAccess = false;
         processFirstAccess(user, document, firebase);
       }
