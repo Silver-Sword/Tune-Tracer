@@ -744,6 +744,7 @@ export default function CompositionTool() {
                                 console.log("Reached selectedNoteId: " + selectedNoteId);
                                 d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
                             }
+                            createNewNoteBox();
                         }
                         setIsFetching(false);
                     }).catch((error) => {
@@ -1113,9 +1114,9 @@ export default function CompositionTool() {
                 }
             }
         }, [selectedNoteId]);
-        
-        // Create PlaceNoteBox
-        useEffect (() => {
+
+        function createNewNoteBox()
+        {
             if(notationRef.current === null) return;
             if(selectedNoteId === -1) return;
             let note = score.current?.findNote(selectedNoteId);
@@ -1129,6 +1130,11 @@ export default function CompositionTool() {
             notePlacementRectangleRef.current = d3.select(notePlacementRectangleSVG.current);
 
             //attachMouseMoveListener(notePlacementRectangleRef.current, note, measure);
+        }
+        
+        // Create PlaceNoteBox
+        useEffect (() => {
+            createNewNoteBox();
         }, [selectedNoteId]);
 
         useEffect(() => {
