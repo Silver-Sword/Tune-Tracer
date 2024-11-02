@@ -183,16 +183,13 @@ export function attachMouseClickListener(
     }
     // Event listener for mouse move within the box
     selection.on("click", async function (event) {
-        console.log("RUNNING!");
         const mouseY = event.clientY - svgBoxY;
         const snapIndex = Math.floor(mouseY / SNAP_INTERVAL);
         let addKey = snapToKeyMap.get(snapIndex);
         if (addKey === undefined) return;
         score.addNoteInMeasure([addKey],selectedNoteId);
         sendChanges();
-        console.log("Old Note ID: " + selectedNoteId);
         let newNoteId = score.getAdjacentNote(selectedNoteId);
-        console.log("New Note ID: " + newNoteId);
         return newNoteId;
     });
     return selectedNoteId;
