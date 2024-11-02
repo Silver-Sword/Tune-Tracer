@@ -17,7 +17,7 @@ import {
   Image,
 } from "@mantine/core";
 import React, { useEffect, useRef, useState } from "react";
-import { SharingModal } from "./Sharing";
+import { SharingModal } from "./sharing/SharingModal";
 import {
   IconPlayerPlay,
   IconPlayerPause,

@@ -31,7 +31,8 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import React from "react";
 import { useState } from "react";
-import { getUserID, getDocumentID } from "../cookie";
+import { getUserID, getDocumentID } from "../../cookie";
+import { callAPI } from "../../../utils/callAPI";
 
 // CollaboratorCard component used in SharingModal to show who has access 
 export const CollaboratorCard: React.FC<{
@@ -120,12 +121,11 @@ export const SharingModal: React.FC = () => {
         setCollaborators(updatedCollaborators);
     };
 
-    const [shareCode, setShareCode] = useState<number>(0);
+    const [shareCode, setShareCode] = useState<string>("------");
     const [shareCodeIsLoading, setShareCodeIsLoading] = useState<string>("Generate Code");
     const [accessLevel, setAccessLevel] = useState<'Viewer' | 'Commenter' | 'Editor'>('Viewer');
 
     const handleCreateCode = async () => {
-        const CREATE_CODE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/createShareCode';
         setShareCodeIsLoading("Loading...");
         var sharing = 1;
         switch (accessLevel) {     
@@ -147,33 +147,20 @@ export const SharingModal: React.FC = () => {
             sharing: sharing,
             writerId: getUserID()
         }
-        console.log(param);
-        const PUT_OPTION = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(param)
-        }
 
-        await fetch(CREATE_CODE_URL, PUT_OPTION).then((res) => {
-            res.json().then((value) => {
-                if (res.status === 200) {
-                    setShareCode(value['data']);
-                }
-                else if (res.status === 500) {
-                    console.log(`Error: ${value['message']}`);
-                    throw new Error(value['message']);
-                }
-            });
-        }).catch((error) => {
-            console.error('Error:', error);
-        });
+        const response = await callAPI("createShareCode", param);
+        
+        if (response.status === 200) {
+            setShareCode(response.data as string);
+        } else if (response.status === 500) {
+            console.log(`Error: ${response.message}`);
+            setShareCode("ERROR");
+        }
         setShareCodeIsLoading("Generate Code");
     };
 
     return (
-        <>
+        <Group>
             <Modal
                 opened={openShare}
                 onClose={close}
@@ -250,6 +237,6 @@ export const SharingModal: React.FC = () => {
             </Modal>
             <Button onClick={open}>Share</Button>
             {/* Profile Icon */}
-        </>
+        </Group>
     );
 };

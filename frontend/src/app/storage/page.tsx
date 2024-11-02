@@ -33,8 +33,13 @@ const filterLabels = [
   { link: "", label: "All" },
   { link: "", label: "Shared with you" },
   { link: "", label: "Favorites" },
-  { link: "", label: "Recents" },
-  { link: "", label: "A-Z" },
+];
+
+const tutorialSteps = [
+  { target: ".search-bar", content: "Search for compositions here." },
+  { target: ".create-card", content: "Create a new score or join with an invite code." },
+  { target: ".navbar-filters", content: "Filter your compositions here." },
+  { target: ".profile-menu", content: "Access your profile settings and logout here." },
 ];
 
 // FiltersNavbar component
