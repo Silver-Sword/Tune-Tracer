@@ -28,6 +28,7 @@ export class Measure {
     private x: number;
     private y: number;
     private width: number;
+    public ids: number[] =[];
 
     constructor(
         x: number = 0,
@@ -181,7 +182,6 @@ export class Measure {
 
             let modifierDataArray: ModifierData[] = [];
             
-            console.log("staveNote keys: " + staveNote.keys);
             modifiers.forEach((modifier) => {
                let modifierData: ModifierData = {
                 index: modifier.checkIndex(),
@@ -246,6 +246,10 @@ export class Measure {
         return this.num_beats;
     }
 
+    getCurrentBeatValue = (): number => {
+        return this.beat_value;
+    }
+
     getClef = (): string => {
         return this.clef;
     }
@@ -268,6 +272,16 @@ export class Measure {
         if (this.stave) {
             this.stave.setClef(clef);
         }
+    }
+
+    createDurationFromDots = (note: StaveNote): string => {
+        let duration = note.getDuration();
+        let modifiers = note.getModifiers();
+        // Filter the modifiers to count how many are dots
+        const dotCount = modifiers.filter(modifier => modifier.getCategory() === 'Dot').length;
+        if (dotCount > 0) duration += "d";
+        if (dotCount > 1) duration += "d";
+        return duration;
     }
 
     addModifiers = (newNote: StaveNote, modifiers: Modifier[], modifierContext: ModifierContext | undefined) => {
@@ -568,10 +582,7 @@ export class Measure {
                         const modifiers = staveNote.getModifiers();
                         let modifierContext = staveNote.getModifierContext();
 
-                        // Filter the modifiers to count how many are dots
-                        const dotCount = modifiers.filter(modifier => modifier.getCategory() === 'Dot').length;
-                        if (dotCount > 0) newDuration += "d";
-                        if (dotCount > 1) newDuration += "d";
+                        newDuration = this.createDurationFromDots(staveNote);
 
                         returnNote = new this.VF.StaveNote({ clef: this.clef, keys: newKeys, duration: newDuration });
                         this.addModifiers(returnNote, modifiers, modifierContext)
