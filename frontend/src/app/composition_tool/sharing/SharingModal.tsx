@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Modal,
   TextInput,
@@ -26,8 +26,13 @@ import { CollaboratorCard } from './CollaboratorCard';
 import { Collaborator } from './sharing_types';
 import { createShareCode } from './sharing_api';
 
-export const SharingModal: React.FC = () => {
+interface SharingModalProps {
+  documentTitle: string;
+}
+
+export const SharingModal: React.FC<SharingModalProps> = ({ documentTitle = 'Untitled Document' }) => {
   const [openShare, { open, close }] = useDisclosure(false)
+  const [currentTitle, setCurrentTitle] = useState(documentTitle)
   const [collaborators, setCollaborators] = useState<Collaborator[]>([
     { name: 'Jose Cuyugan', email: 'werhhh@gmail.com', role: 'Editor' },
     { name: 'Chris Gittings', email: 'asdfadf.cg@gmail.com', role: 'Viewer' },
@@ -39,6 +44,10 @@ export const SharingModal: React.FC = () => {
   const [shareCodeIsLoading, setShareCodeIsLoading] = useState<string>("Generate Code")
   const [accessType, setAccessType] = useState<'restricted' | 'anyone'>('restricted')
   const [accessLevel, setAccessLevel] = useState<'Viewer' | 'Editor'>('Viewer')
+
+  useEffect(() => {
+    setCurrentTitle(documentTitle)
+  }, [documentTitle])
 
   const handleRoleChange = (newRole: 'Viewer' | 'Editor', index: number) => {
     const updatedCollaborators = [...collaborators]
@@ -73,7 +82,7 @@ export const SharingModal: React.FC = () => {
       <Modal
         opened={openShare}
         onClose={close}
-        title={<Title order={2}>Share: [Document Name]</Title>}
+        title={<Title order={2}>Share Composition: {currentTitle}</Title>}
         centered
         size="lg"
       >

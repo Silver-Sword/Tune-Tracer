@@ -232,7 +232,9 @@ export const ToolbarHeader: React.FC<{
           withCheckIcon={false}
           style={{ width: 125, marginLeft: "10px" }}
         />
-        <SharingModal />
+        <SharingModal
+          documentTitle={inputValue}
+        />
       </Group>
 
       {/* Second layer (middle section) */}
