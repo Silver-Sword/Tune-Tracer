@@ -23,15 +23,18 @@ import { CollaboratorCard } from "./CollaboratorCard";
 import { Collaborator } from "./sharing_types";
 import { createShareCode } from "./sharing_api";
 import { ShareStyle } from "../../lib/src/documentProperties";
+import { DocumentMetadata } from "../../lib/src/documentProperties";
+import { callAPI } from "../../../utils/callAPI";
+import { getDocumentID, getUserID } from "../../cookie";
 
 interface SharingModalProps {
   documentTitle: string;
-  shareStyle: ShareStyle;
+  metadata: DocumentMetadata | undefined;
 }
 
 export const SharingModal: React.FC<SharingModalProps> = ({
   documentTitle = "Untitled Document",
-  shareStyle,
+  metadata = undefined,
 }) => {
   const [openShare, { open, close }] = useDisclosure(false);
   const [currentTitle, setCurrentTitle] = useState(documentTitle);
@@ -54,17 +57,20 @@ export const SharingModal: React.FC<SharingModalProps> = ({
     setCurrentTitle(documentTitle);
   }, [documentTitle]);
 
+  // use effect when the document metadata is updated
   useEffect(() => {
-    if (
-      shareStyle === ShareStyle.READ ||
-      shareStyle === ShareStyle.COMMENT ||
-      shareStyle === ShareStyle.WRITE
-    ) {
-      setAccessType("anyone");
-    } else {
-      setAccessType("restricted");
+    if(metadata === undefined)
+    {
+      console.warn("Metadata is undefined in sharing modal");
+      return;
     }
-  }, [shareStyle]);
+
+    // update share style
+    const shareStyle = metadata.share_link_style;
+    setAccessLevel(shareStyle === ShareStyle.WRITE ? "Editor" : "Viewer");
+    setAccessType(shareStyle === ShareStyle.NONE ? "restricted" : "anyone");
+
+  }, [metadata]);
 
   const handleRoleChange = (newRole: "Viewer" | "Editor", index: number) => {
     const updatedCollaborators = [...collaborators];
@@ -127,8 +133,14 @@ export const SharingModal: React.FC<SharingModalProps> = ({
           <Select
             label="Access Type"
             value={accessType}
-            onChange={(value) =>
-              setAccessType(value as "restricted" | "anyone")
+            onChange={(value) => {
+                callAPI("updateDocumentShareStyle", {
+                  documentId: getDocumentID(),
+                  sharing: value === "restricted" ? ShareStyle.NONE : ShareStyle.READ,
+                  writerId: getUserID()
+                });
+                setAccessType(value as "restricted" | "anyone")
+              }
             }
             data={[
               { value: "restricted", label: "Restricted" },
@@ -140,7 +152,15 @@ export const SharingModal: React.FC<SharingModalProps> = ({
             <Select
               label="Role"
               value={accessLevel}
-              onChange={(value) => setAccessLevel(value as "Viewer" | "Editor")}
+              onChange={(value) => {
+                  callAPI("updateDocumentShareStyle", {
+                    documentId: getDocumentID(),
+                    sharing: value === "Editor" ? ShareStyle.WRITE : ShareStyle.READ,
+                    writerId: getUserID()
+                  });
+                  setAccessLevel(value as "Viewer" | "Editor")
+                }
+              }
               data={[
                 { value: "Viewer", label: "Viewer" },
                 { value: "Editor", label: "Editor" },

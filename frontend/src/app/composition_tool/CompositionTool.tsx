@@ -1216,6 +1216,7 @@ export default function CompositionTool() {
                 <AppShell.Main>
                     <ToolbarHeader
                         documentName={currentDocument.document_title}
+                        documentMetadata={currentDocument.metadata}
                         modifyDurationInMeasure={modifyDurationHandler}
                         selectedNoteId={selectedNoteId}
                         playbackComposition={playbackAwaiter}

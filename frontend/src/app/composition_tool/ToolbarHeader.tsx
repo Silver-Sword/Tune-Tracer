@@ -244,7 +244,7 @@ export const ToolbarHeader: React.FC<{
         />
         <SharingModal
           documentTitle={inputValue}
-          shareStyle={shareStyle}
+          metadata={documentMetadata}
         />
       </Group>
 
