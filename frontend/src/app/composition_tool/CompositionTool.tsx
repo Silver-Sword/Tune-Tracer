@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Score } from "../edit/Score";
+import { createPlaceNoteBox, attachMouseMoveListener} from "./PlaceNoteBox";
 // We have two of these for some reason
 //import { printScoreData, ScoreData } from "../lib/src/ScoreData";
 import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
@@ -22,6 +23,7 @@ import { ToolbarHeader } from './ToolbarHeader'
 import { useSearchParams } from "next/navigation";
 
 import * as d3 from 'd3';
+import { Selection } from 'd3';
 import * as Tone from 'tone';
 import { access, write } from "fs";
 import { HookCallbacks } from "async_hooks";
@@ -36,6 +38,8 @@ export default function CompositionTool() {
     const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
     const [selectedNoteId, setSelectedNoteId] = useState<number>(-1);
     const [isFetching, setIsFetching] = useState<boolean>(false);
+    const notePlacementRectangleSVG = useRef<SVGElement | null>(null);
+    const notePlacementRectangleRef = useRef<Selection<SVGElement, unknown, null, undefined> | null>(null);
 
     const [volume, setVolume] = useState<number>(50);
     let topPart: Tone.Part;
@@ -798,7 +802,7 @@ export default function CompositionTool() {
                 }
             }, [delay]);
         }
-
+        
 
 
         // THIS FETCHES CHANGES PERIODICALLY
@@ -1108,6 +1112,23 @@ export default function CompositionTool() {
                     notationDiv.removeEventListener('keydown', handleKeyDown);
                 }
             }
+        }, [selectedNoteId]);
+        
+        // Create PlaceNoteBox
+        useEffect (() => {
+            if(notationRef.current === null) return;
+            if(selectedNoteId === -1) return;
+            let note = score.current?.findNote(selectedNoteId);
+            let measure = score.current?.getMeasureFromNoteId(selectedNoteId);
+            if(!note || !measure) return;
+
+            notePlacementRectangleSVG.current?.remove();
+            notePlacementRectangleSVG.current = createPlaceNoteBox(note);
+            if(!notePlacementRectangleSVG.current) return;
+            notationRef.current.querySelector("svg")?.appendChild(notePlacementRectangleSVG.current);
+            notePlacementRectangleRef.current = d3.select(notePlacementRectangleSVG.current);
+
+            //attachMouseMoveListener(notePlacementRectangleRef.current, note, measure);
         }, [selectedNoteId]);
 
         useEffect(() => {
