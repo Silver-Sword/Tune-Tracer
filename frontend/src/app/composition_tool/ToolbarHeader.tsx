@@ -29,7 +29,6 @@ import Link from 'next/link';
 import { callAPI } from "../../utils/callAPI";
 import { useSearchParams } from "next/navigation";
 
-
 const keySignatures = [
   { label: 'C Major', value: 'C' },
   { label: 'G Major', value: 'G' },
@@ -121,24 +120,14 @@ export const ToolbarHeader: React.FC<{
   const handleDocumentNameChange = (event: {
     currentTarget: { value: any };
   }) => {
-    setInputValue(event.currentTarget.value);
-    const UPDATE_DOCUMENT_NAME_URL =
-      "https://us-central1-l17-tune-tracer.cloudfunctions.net/updatePartialDocument";
-
-        const new_title = {
-            documentId: documentID.current,
-            documentChanges: {document_title: event.currentTarget.value},
-            writerId: getUserID()
-        };
-        const PUT_OPTION = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(new_title)
-        }
-        fetch(UPDATE_DOCUMENT_NAME_URL, PUT_OPTION);
-    };
+      setInputValue(event.currentTarget.value);
+      const new_title = {
+          documentId: documentID.current,
+          documentChanges: {document_title: event.currentTarget.value},
+          writerId: getUserID()
+      };
+      callAPI('updatePartialDocument', new_title);
+  };
     // Handle when the user clicks the text to switch to editing mode
     const handleEdit = () => {
         setIsChangingName(true);
