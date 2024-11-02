@@ -7,7 +7,6 @@ import { Vex, StaveNote, Formatter, Voice } from 'vexflow';
 import { DO_NOT_USE_OR_YOU_WILL_BE_FIRED_EXPERIMENTAL_FORM_ACTIONS } from "react";
 
 const SNAP_INTERVAL = 5;
-let isProcessing = false;
 
 export function createPlaceNoteBox(note: StaveNote): SVGElement {
     // Add a custom SVG rectangle outline as an overlay
@@ -62,6 +61,15 @@ function getBassMap(): Map<number, string> {
     return map2;
 }
 
+function reAssignIds(voice: Voice, measure: Measure)
+{
+    let tickables = voice.getTickables();
+    for (let i = 0; i < tickables.length; i++) {
+        let currentNote = tickables[i] as StaveNote;
+        currentNote.getSVGElement()?.setAttribute('id', measure.ids[i]+"");
+    }
+}
+
 export function attachMouseMoveListener(selection: Selection<SVGElement, unknown, null, undefined>, note: StaveNote | null, measure: Measure, svgBoxY: number) {
     let snapToKeyMap;
     if (measure.getClef() == "treble") {
@@ -74,7 +82,6 @@ export function attachMouseMoveListener(selection: Selection<SVGElement, unknown
     selection.on("mousemove", async function (event) {
         if (note === null) return;
 
-        isProcessing = true;
         const mouseY = event.clientY - svgBoxY;
         let stave = note.getStave();
         if (!stave) return;
@@ -96,7 +103,7 @@ export function attachMouseMoveListener(selection: Selection<SVGElement, unknown
             if(note.isRest()) newKeys = [addKey];
             else newKeys = note.getKeys().concat(addKey);
         }
-        console.log("Add key: " + addKey);
+        //console.log("Add key: " + addKey);
 
         let newNote = new StaveNote({clef: measure.getClef(), keys: newKeys, duration: measure.createDurationFromDots(note) });
 
@@ -117,17 +124,53 @@ export function attachMouseMoveListener(selection: Selection<SVGElement, unknown
         }
 
         let newVoice = new Voice({ num_beats: measure.getCurrentBeats(), beat_value: measure.getCurrentBeatValue() }).addTickables(newNotes);
+        
+        new Formatter().formatToStave([newVoice], stave);
+        // Render the voice
+        newVoice.draw(context, stave);
+        
+        reAssignIds(newVoice, measure);
+       
+    });
+}
+
+export function attachMouseLeaveListener(selection: Selection<SVGElement, unknown, null, undefined>, note: StaveNote | null, measure: Measure) {
+    let snapToKeyMap;
+    if (measure.getClef() == "treble") {
+        snapToKeyMap = getTrebleMap();
+    }
+    else {
+        snapToKeyMap = getBassMap();
+    }
+    // Event listener for mouse move within the box
+    selection.on("mouseleave", async function (event) {
+        if (note === null) return;
+
+        let stave = note.getStave();
+        if (!stave) return;
+
+        let voice = measure.getVoice1();
+        //console.log("Add key: " + addKey);
+
+        voice.setStave(stave);
+
+        let context = note.getContext();
+
+        let tickables = voice.getTickables();
+        let newNotes: StaveNote[] = [];
+
+        for (let i = 0; i < tickables.length; i++) {
+            let currentNote = tickables[i] as StaveNote;
+            newNotes.push(currentNote);
+            document.getElementById(measure.ids[i] + "")?.remove();
+        }
+
+        let newVoice = new Voice({ num_beats: measure.getCurrentBeats(), beat_value: measure.getCurrentBeatValue() }).addTickables(newNotes);
 
         new Formatter().formatToStave([newVoice], stave);
         // Render the voice
         newVoice.draw(context, stave);
 
-        let newVoiceTickables = newVoice.getTickables();
-        for (let i = 0; i < tickables.length; i++) {
-            let currentNote = newVoiceTickables[i] as StaveNote;
-            currentNote.getSVGElement()?.setAttribute('id', measure.ids[i]+"");
-        }
-
-       
+        reAssignIds(newVoice, measure);
     });
 }

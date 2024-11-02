@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Score } from "../edit/Score";
-import { createPlaceNoteBox, attachMouseMoveListener} from "./PlaceNoteBox";
+import { createPlaceNoteBox, attachMouseMoveListener, attachMouseLeaveListener} from "./PlaceNoteBox";
 // We have two of these for some reason
 //import { printScoreData, ScoreData } from "../lib/src/ScoreData";
 import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
@@ -1130,6 +1130,7 @@ export default function CompositionTool() {
             notePlacementRectangleRef.current = d3.select(notePlacementRectangleSVG.current);
 
             attachMouseMoveListener(notePlacementRectangleRef.current, note, measure, notePlacementRectangleSVG.current.getBoundingClientRect().top);
+            attachMouseLeaveListener(notePlacementRectangleRef.current, note, measure);
         }
         
         // Create PlaceNoteBox
