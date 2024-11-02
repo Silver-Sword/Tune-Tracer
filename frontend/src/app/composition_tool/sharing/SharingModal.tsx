@@ -21,12 +21,9 @@ import { IconCopy, IconCheck } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 import { CollaboratorCard } from "./CollaboratorCard";
 import { Collaborator } from "./sharing_types";
-import { createShareCode } from "./sharing_api";
+import { createShareCode, updateDocumentShareStyle } from "./sharing_api";
 import { ShareStyle } from "../../lib/src/documentProperties";
 import { DocumentMetadata } from "../../lib/src/documentProperties";
-import { callAPI } from "../../../utils/callAPI";
-import { getDocumentID, getUserID } from "../../cookie";
-
 interface SharingModalProps {
   documentTitle: string;
   metadata: DocumentMetadata | undefined;
@@ -134,12 +131,8 @@ export const SharingModal: React.FC<SharingModalProps> = ({
             label="Access Type"
             value={accessType}
             onChange={(value) => {
-                callAPI("updateDocumentShareStyle", {
-                  documentId: getDocumentID(),
-                  sharing: value === "restricted" ? ShareStyle.NONE : ShareStyle.READ,
-                  writerId: getUserID()
-                });
-                setAccessType(value as "restricted" | "anyone")
+                setAccessType(value as "restricted" | "anyone");
+                updateDocumentShareStyle(accessType, accessLevel);
               }
             }
             data={[
@@ -153,12 +146,8 @@ export const SharingModal: React.FC<SharingModalProps> = ({
               label="Role"
               value={accessLevel}
               onChange={(value) => {
-                  callAPI("updateDocumentShareStyle", {
-                    documentId: getDocumentID(),
-                    sharing: value === "Editor" ? ShareStyle.WRITE : ShareStyle.READ,
-                    writerId: getUserID()
-                  });
                   setAccessLevel(value as "Viewer" | "Editor")
+                  updateDocumentShareStyle(accessType, accessLevel);
                 }
               }
               data={[
