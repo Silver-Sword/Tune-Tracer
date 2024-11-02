@@ -173,7 +173,7 @@ export class Score {
         return scoreData;
     }
 
-    loadScoreDataObj = (scoreData: ScoreData) => {
+    loadScoreDataObj = (scoreData: ScoreData, render: boolean = true) => {
         this.renderer_height = scoreData.rendererHeight;
         this.renderer_height = scoreData.rendererWidth;
         this.total_width = scoreData.totalWidth;
@@ -190,7 +190,7 @@ export class Score {
         // Always renderTimeSig for first measures
         this.top_measures[0].renderTimeSignature();
         this.bottom_measures[0].renderTimeSignature();
-        this.renderMeasures();
+        if(render) this.renderMeasures();
     }
 
     isTopMeasure = (
