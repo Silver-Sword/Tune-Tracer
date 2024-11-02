@@ -25,12 +25,17 @@ import { useDisclosure } from '@mantine/hooks';
 import { CollaboratorCard } from './CollaboratorCard';
 import { Collaborator } from './sharing_types';
 import { createShareCode } from './sharing_api';
+import { ShareStyle } from '../../lib/src/documentProperties';
 
 interface SharingModalProps {
   documentTitle: string;
+  shareStyle: ShareStyle;
 }
 
-export const SharingModal: React.FC<SharingModalProps> = ({ documentTitle = 'Untitled Document' }) => {
+export const SharingModal: React.FC<SharingModalProps> = ({ 
+  documentTitle = 'Untitled Document',
+  shareStyle,
+}) => {
   const [openShare, { open, close }] = useDisclosure(false)
   const [currentTitle, setCurrentTitle] = useState(documentTitle)
   const [collaborators, setCollaborators] = useState<Collaborator[]>([
@@ -48,6 +53,17 @@ export const SharingModal: React.FC<SharingModalProps> = ({ documentTitle = 'Unt
   useEffect(() => {
     setCurrentTitle(documentTitle)
   }, [documentTitle])
+
+  useEffect(() => {
+    if(shareStyle === ShareStyle.READ 
+      || shareStyle === ShareStyle.COMMENT 
+      || shareStyle === ShareStyle.WRITE) {
+      setAccessType('anyone')
+    } else {
+      setAccessType('restricted')
+    }
+     
+  }, [shareStyle]);
 
   const handleRoleChange = (newRole: 'Viewer' | 'Editor', index: number) => {
     const updatedCollaborators = [...collaborators]

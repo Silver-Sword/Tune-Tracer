@@ -29,6 +29,9 @@ import Link from 'next/link';
 import { callAPI } from "../../utils/callAPI";
 import { useSearchParams } from "next/navigation";
 
+import { DocumentMetadata } from "../lib/src/documentProperties";
+import { ShareStyle } from "../lib/src/documentProperties";
+
 const keySignatures = [
   { label: 'C Major', value: 'C' },
   { label: 'G Major', value: 'G' },
@@ -64,6 +67,7 @@ const keySignatures = [
 
 export const ToolbarHeader: React.FC<{
   documentName: string;
+  documentMetadata: DocumentMetadata;
   modifyDurationInMeasure: (duration: string, noteId: number) => void;
   selectedNoteId: number;
   playbackComposition: () => void;
@@ -82,6 +86,7 @@ export const ToolbarHeader: React.FC<{
   setKeySignature: (keySignature: string) => void;
 }> = ({
   documentName,
+  documentMetadata,
   modifyDurationInMeasure,
   selectedNoteId,
   playbackComposition,
@@ -101,6 +106,7 @@ export const ToolbarHeader: React.FC<{
 }) => {
   // State to manage the input value
   const [inputValue, setInputValue] = useState("Untitled Score");
+  const [shareStyle, setShareStyle] = useState(ShareStyle.NONE);
   const searchParams = useSearchParams();
 
   // State to toggle between edit and display modes
@@ -112,10 +118,14 @@ export const ToolbarHeader: React.FC<{
     setIsChangingName(false); // Exit edit mode and save
   };
 
-    useEffect(() => {
-        setInputValue(documentName);
-        documentID.current = searchParams.get('id') || 'null';
-    }, [documentName]);
+  useEffect(() => {
+      setInputValue(documentName);
+      documentID.current = searchParams.get('id') || 'null';
+  }, [documentName]);
+
+  useEffect(() => {
+    setShareStyle(documentMetadata?.share_link_style ?? ShareStyle.NONE);
+  }, [documentMetadata]);
 
   const handleDocumentNameChange = (event: {
     currentTarget: { value: any };
@@ -234,6 +244,7 @@ export const ToolbarHeader: React.FC<{
         />
         <SharingModal
           documentTitle={inputValue}
+          shareStyle={shareStyle}
         />
       </Group>
 
