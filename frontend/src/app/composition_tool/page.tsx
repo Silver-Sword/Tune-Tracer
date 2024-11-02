@@ -1148,7 +1148,7 @@ export default function CompositionTool() {
                         placeholder={userTemp}
                     />
                     <Button onClick={sendChanges}>Send Score change</Button>*/}
-                    {/* <Button onClick={fetchChanges}>fetch Score change</Button>  */}
+                    <Button onClick={fetchChanges}>fetch Score change</Button> 
                     <div>
                         <div ref={notationRef}></div>
                     </div>
