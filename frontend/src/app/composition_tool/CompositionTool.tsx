@@ -311,10 +311,6 @@ export default function CompositionTool() {
             // Array to hold all events for cursor movement
             let allEvents = [];
 
-            // Variables to store treble clef systemY and systemHeight
-            let trebleSystemY = 0;
-            let trebleSystemHeight = 0;
-
             for (let i = 0; i < topMeasureData.length; i++) {
                 const topNotes = topMeasureData[i].notes;
                 const bottomNotes = bottomMeasureData[i].notes;
@@ -325,10 +321,6 @@ export default function CompositionTool() {
                 if (systems) {
                     systemInfo = systems[systemIndex];
                 }
-
-                // Save treble clef systemY and systemHeight
-                trebleSystemY = systemInfo.y;
-                trebleSystemHeight = systemInfo.height;
 
                 // Process treble clef notes
                 for (let j = 0; j < topNotes.length; j++) {
