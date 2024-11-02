@@ -4,22 +4,10 @@ import {
     Button,
     Group,
     Space,
-    Stack,
-    SimpleGrid,
-    Grid,
-    Flex,
-    Input,
     TextInput,
-    Paper,
-    Avatar,
     Divider,
     ScrollArea,
-    Tooltip,
-    Tabs,
-    SegmentedControl,
-    ActionIcon,
     Modal,
-    rem,
     Center,
     CopyButton,
     Select,
@@ -33,6 +21,8 @@ import React from "react";
 import { useState } from "react";
 import { getUserID, getDocumentID } from "../../cookie";
 import { callAPI } from "../../../utils/callAPI";
+
+import { ShareStyle } from "../../lib/src/documentProperties";
 
 // CollaboratorCard component used in SharingModal to show who has access 
 export const CollaboratorCard: React.FC<{
@@ -127,16 +117,16 @@ export const SharingModal: React.FC = () => {
 
     const handleCreateCode = async () => {
         setShareCodeIsLoading("Loading...");
-        var sharing = 1;
+        var sharing = ShareStyle.NONE;
         switch (accessLevel) {     
             case 'Viewer':
-                sharing = 2;
+                sharing = ShareStyle.READ;
                 break;
             case 'Commenter':
-                sharing = 3;
+                sharing = ShareStyle.COMMENT;
                 break;
             case 'Editor':
-                sharing = 4;
+                sharing = ShareStyle.WRITE;
                 break;
             default:
                 return;
