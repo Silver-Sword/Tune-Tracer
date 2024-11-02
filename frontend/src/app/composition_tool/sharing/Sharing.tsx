@@ -19,7 +19,8 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import React from "react";
 import { useState } from "react";
-import { getUserID, getDocumentID } from "../../cookie";
+import { getUserID } from "../../cookie";
+import { useSearchParams } from "next/navigation";
 import { callAPI } from "../../../utils/callAPI";
 
 import { ShareStyle } from "../../lib/src/documentProperties";
@@ -90,6 +91,7 @@ interface Collaborator {
 export const SharingModal: React.FC = () => {
     // Sharing logic here
     const [openShare, { open, close }] = useDisclosure(false);
+    const searchParams = useSearchParams();
 
     // SAMPLE
     const [collaborators, setCollaborators] = useState<Collaborator[]>([
@@ -133,7 +135,7 @@ export const SharingModal: React.FC = () => {
         }
         
         const param = {
-            documentId: getDocumentID(),
+            documentId: searchParams.get('id') || 'null',
             sharing: sharing,
             writerId: getUserID()
         }

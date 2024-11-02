@@ -24,7 +24,7 @@ import {
   IconPlayerStop,
   IconVolume,
 } from "@tabler/icons-react";
-import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
+import { getUserID } from "../cookie";
 import Link from 'next/link';
 import { callAPI } from "../../utils/callAPI";
 import { useSearchParams } from "next/navigation";
