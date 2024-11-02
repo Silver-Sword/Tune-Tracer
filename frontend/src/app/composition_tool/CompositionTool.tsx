@@ -35,6 +35,8 @@ export default function CompositionTool() {
     const score = useRef<Score | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
     const [selectedNoteId, setSelectedNoteId] = useState<number>(-1);
+    const [selectedNoteHeadId, setSelectedNoteHeadId] = useState<string>('');
+    const [selectedKey, setSelectedKey] = useState<string>('');
     const [isFetching, setIsFetching] = useState<boolean>(false);
 
     const [volume, setVolume] = useState<number>(50);
@@ -986,29 +988,85 @@ export default function CompositionTool() {
             }
         }, [userTemp]);
         useEffect(() => {
-            // Attach the note selection handler to the notationRef container
-            d3.select(notationRef.current)
-                .on('click', function (event) {
-                    // Grab a reference to what we click on
-                    let targetElement = event.target;
-
-                    // Keep going up the DOM to look for an element that has the VF note class
-                    while (targetElement && !targetElement.classList.contains('vf-stavenote')) {
-                        targetElement = targetElement.parentElement;
+            const svg = d3.select(notationRef.current).select('svg');
+        
+            svg.on('click', function (event) {
+                const targetElement = event.target as HTMLElement;
+        
+                // Check if the clicked element is a vf-notehead or a child of one
+                const noteheadElement = targetElement.closest('.vf-notehead');
+        
+                if (noteheadElement) {
+                    console.log('Clicked on a notehead!', noteheadElement);
+        
+                    // Save the CSS ID of the notehead element
+                    const noteHeadId = noteheadElement.getAttribute('id');
+                    if (noteHeadId)
+                    {
+                        setSelectedNoteHeadId(noteHeadId);
                     }
-
-                    // Check to see if we've found an element in the DOM with the class we're looking for
-                    if (targetElement && targetElement.classList.contains('vf-stavenote')) {
-                        const selectId = d3.select(targetElement).attr('id');
-                        setSelectedNoteId(parseInt(selectId));
+        
+                    // Find the parent vf-stavenote element
+                    const stavenoteElement = noteheadElement.closest('.vf-stavenote') as HTMLElement;
+        
+                    if (stavenoteElement) {
+                        const stavenoteId = stavenoteElement.getAttribute('id');
+                        if (stavenoteId)
+                        {
+                            setSelectedNoteId(parseInt(stavenoteId));
+                        }
+                    } else {
+                        console.warn('Parent vf-stavenote element not found');
+                        setSelectedNoteId(-1);
+                        setSelectedNoteHeadId('');
+                        setSelectedKey('');
                     }
-                });
-
-            // Clean up the event listener when notationRef unmounts
+                } else {
+                    console.log('Clicked elsewhere');
+                }
+            });
+        
+            // Clean up on unmount
             return () => {
-                d3.select(notationRef.current).on('click', null);
+                svg.on('click', null);
+            };
+        }, [notationRef.current]);
+        
+        // Gets the key of a note head
+        const getKeyFromNoteHead = () => {
+            if (selectedNoteId !== -1 && selectedNoteHeadId !== '' && score.current) {
+                const staveNote = score.current.findNote(selectedNoteId);
+        
+                if (staveNote) {
+                    const noteHeads = staveNote.noteHeads;
+                    const keys = staveNote.getKeys();
+        
+                    for (let i = 0; i < noteHeads.length; i++) {
+                        const noteHeadId = noteHeads[i].getAttribute('id');
+                        if (selectedNoteHeadId.includes(noteHeadId)) {
+                            const key = keys[i];
+                            setSelectedKey(key);
+                            return;
+                        }
+                    }
+                    console.warn('Note head ID not found in staveNote.noteHeads');
+                    setSelectedKey('');
+                } else {
+                    console.warn('StaveNote not found for selectedNoteId');
+                    setSelectedKey('');
+                }
+            } else {
+                setSelectedKey('');
             }
-        }, [notationRef.current])
+        };
+        
+        useEffect(() => {
+            getKeyFromNoteHead();
+        }, [selectedNoteId, selectedNoteHeadId])
+
+        useEffect(() => {
+            console.log(`selectedKey is: ${selectedKey}`);
+        }, [selectedKey])
 
         useEffect(() => {
             // First remove the selectd note class from previously selected note
@@ -1020,7 +1078,7 @@ export default function CompositionTool() {
             }
 
             // Update the user cursor on the backend
-            updateUserCursor();
+            // updateUserCursor();
 
             // Keyboard shortcuts for adding notes
             const handleKeyDown = (event: KeyboardEvent) => {
@@ -1102,31 +1160,6 @@ export default function CompositionTool() {
             }
         }, [selectedNoteId]);
 
-        useEffect(() => {
-            // Attach the note selection handler to the notationRef container
-            d3.select(notationRef.current)
-                .on('click', function (event) {
-                    // Grab a reference to what we click on
-                    let targetElement = event.target;
-
-                    // Keep going up the DOM to look for an element that has the VF note class
-                    while (targetElement && !targetElement.classList.contains('vf-stavenote')) {
-                        targetElement = targetElement.parentElement;
-                    }
-
-                    // Check to see if we've found an element in the DOM with the class we're looking for
-                    if (targetElement && targetElement.classList.contains('vf-stavenote')) {
-                        const selectId = d3.select(targetElement).attr('id');
-                        setSelectedNoteId(parseInt(selectId));
-                    }
-                });
-
-            // Clean up the event listener when notationRef unmounts
-            return () => {
-                d3.select(notationRef.current).on('click', null);
-            }
-        }, [notationRef.current])
-
         const updateUserCursor = async () => {
             if (selectedNoteId) {
                 const userInfo = {
@@ -1148,8 +1181,8 @@ export default function CompositionTool() {
                 fetch(UPDATE_CURSOR_URL, POST_OPTION)
                     .then((res) => {
                         res.json().then((data) => {
-                            console.log('Successfully called updateCursor endpoint');
-                            console.log(`User cursor data: ${data.data}`);
+                            // console.log('Successfully called updateCursor endpoint');
+                            // console.log(`User cursor data: ${data.data}`);
                         })
                     })
             }
