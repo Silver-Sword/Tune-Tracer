@@ -1129,7 +1129,7 @@ export default function CompositionTool() {
             notationRef.current.querySelector("svg")?.appendChild(notePlacementRectangleSVG.current);
             notePlacementRectangleRef.current = d3.select(notePlacementRectangleSVG.current);
 
-            //attachMouseMoveListener(notePlacementRectangleRef.current, note, measure);
+            attachMouseMoveListener(notePlacementRectangleRef.current, note, measure, notePlacementRectangleSVG.current.getBoundingClientRect().top);
         }
         
         // Create PlaceNoteBox
