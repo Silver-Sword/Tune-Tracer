@@ -182,7 +182,6 @@ export class Measure {
 
             let modifierDataArray: ModifierData[] = [];
             
-            console.log("staveNote keys: " + staveNote.keys);
             modifiers.forEach((modifier) => {
                let modifierData: ModifierData = {
                 index: modifier.checkIndex(),
@@ -305,9 +304,7 @@ export class Measure {
 
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
-            console.log("ID OF LOOKING NOTE: " + staveNote.getAttributes().id);
             if (staveNote.getAttributes().id === noteId) {
-                console.log("FOUDN: " + noteId);
                 let countDots = staveNote.getModifiersByType('Dot').length;
                 let duration = staveNote.getDuration();
                 let modifiers = staveNote.getModifiers();

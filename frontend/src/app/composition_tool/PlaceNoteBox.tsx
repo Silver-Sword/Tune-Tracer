@@ -4,7 +4,7 @@ import { Measure } from "../edit/Measure";
 import * as d3 from 'd3';
 import { Selection } from 'd3';
 import { Vex, StaveNote, Formatter, Voice } from 'vexflow';
-import { DO_NOT_USE_OR_YOU_WILL_BE_FIRED_EXPERIMENTAL_FORM_ACTIONS } from "react";
+import { SendChangesType } from "./CompositionTool";
 
 const SNAP_INTERVAL = 5;
 
@@ -61,12 +61,11 @@ function getBassMap(): Map<number, string> {
     return map2;
 }
 
-function reAssignIds(voice: Voice, measure: Measure)
-{
+function reAssignIds(voice: Voice, measure: Measure) {
     let tickables = voice.getTickables();
     for (let i = 0; i < tickables.length; i++) {
         let currentNote = tickables[i] as StaveNote;
-        currentNote.getSVGElement()?.setAttribute('id', measure.ids[i]+"");
+        currentNote.getSVGElement()?.setAttribute('id', measure.ids[i] + "");
     }
 }
 
@@ -90,22 +89,21 @@ export function attachMouseMoveListener(selection: Selection<SVGElement, unknown
         let keys = note.getKeys();
         let addKey = snapToKeyMap.get(snapIndex);
         if (addKey === undefined) return;
-        
+
         let voice = measure.getVoice1();
 
         let newKeys;
         let includesKey = keys.includes(addKey);
-        if(includesKey){
+        if (includesKey) {
             newKeys = note.getKeys();
         }
-        else
-        {
-            if(note.isRest()) newKeys = [addKey];
+        else {
+            if (note.isRest()) newKeys = [addKey];
             else newKeys = note.getKeys().concat(addKey);
         }
         //console.log("Add key: " + addKey);
 
-        let newNote = new StaveNote({clef: measure.getClef(), keys: newKeys, duration: measure.createDurationFromDots(note) });
+        let newNote = new StaveNote({ clef: measure.getClef(), keys: newKeys, duration: measure.createDurationFromDots(note) });
 
         voice.setStave(stave);
 
@@ -116,7 +114,7 @@ export function attachMouseMoveListener(selection: Selection<SVGElement, unknown
 
         for (let i = 0; i < tickables.length; i++) {
             let currentNote = tickables[i] as StaveNote;
-            if(currentNote.getAttribute('id') === note.getAttribute('id')) {
+            if (currentNote.getAttribute('id') === note.getAttribute('id')) {
                 newNotes.push(newNote);
             }
             else newNotes.push(currentNote);
@@ -124,24 +122,17 @@ export function attachMouseMoveListener(selection: Selection<SVGElement, unknown
         }
 
         let newVoice = new Voice({ num_beats: measure.getCurrentBeats(), beat_value: measure.getCurrentBeatValue() }).addTickables(newNotes);
-        
+
         new Formatter().formatToStave([newVoice], stave);
         // Render the voice
         newVoice.draw(context, stave);
-        
+
         reAssignIds(newVoice, measure);
-       
+
     });
 }
 
 export function attachMouseLeaveListener(selection: Selection<SVGElement, unknown, null, undefined>, note: StaveNote | null, measure: Measure) {
-    let snapToKeyMap;
-    if (measure.getClef() == "treble") {
-        snapToKeyMap = getTrebleMap();
-    }
-    else {
-        snapToKeyMap = getBassMap();
-    }
     // Event listener for mouse move within the box
     selection.on("mouseleave", async function (event) {
         if (note === null) return;
@@ -173,4 +164,37 @@ export function attachMouseLeaveListener(selection: Selection<SVGElement, unknow
 
         reAssignIds(newVoice, measure);
     });
+}
+
+export function attachMouseClickListener(
+    selection: Selection<SVGElement, unknown, null, undefined>,
+    measure: Measure,
+    score: Score,
+    sendChanges: SendChangesType,
+    selectedNoteId: number,
+    svgBoxY: number): number {
+
+    let snapToKeyMap;
+    if (measure.getClef() == "treble") {
+        snapToKeyMap = getTrebleMap();
+    }
+    else {
+        snapToKeyMap = getBassMap();
+    }
+    // Event listener for mouse move within the box
+    selection.on("click", async function (event) {
+        console.log("RUNNING!");
+        const mouseY = event.clientY - svgBoxY;
+        const snapIndex = Math.floor(mouseY / SNAP_INTERVAL);
+        let addKey = snapToKeyMap.get(snapIndex);
+        if (addKey === undefined) return;
+        score.addNoteInMeasure([addKey],selectedNoteId);
+        sendChanges();
+        console.log("Old Note ID: " + selectedNoteId);
+        let newNoteId = score.getAdjacentNote(selectedNoteId);
+        console.log("New Note ID: " + newNoteId);
+        return newNoteId;
+    });
+    return selectedNoteId;
+
 }

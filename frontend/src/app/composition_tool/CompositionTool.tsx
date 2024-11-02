@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Score } from "../edit/Score";
-import { createPlaceNoteBox, attachMouseMoveListener, attachMouseLeaveListener} from "./PlaceNoteBox";
+import { createPlaceNoteBox, attachMouseMoveListener, attachMouseLeaveListener, attachMouseClickListener} from "./PlaceNoteBox";
 // We have two of these for some reason
 //import { printScoreData, ScoreData } from "../lib/src/ScoreData";
 import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
@@ -31,6 +31,9 @@ import { removeAllListeners } from "process";
 
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
+
+// Define the type
+export type SendChangesType = () => Promise<void>;
 
 export default function CompositionTool() {
     const notationRef = useRef<HTMLDivElement>(null);
@@ -659,7 +662,7 @@ export default function CompositionTool() {
     let sendChangesTimeout: NodeJS.Timeout | null = null;
     const debounceDelay = 500; // Delay in ms, adjust as needed
 
-    const sendChanges = async () => {
+    const sendChanges: SendChangesType = async () => {
         if (score.current === null) return;
         // Debounce the function to prevent rapid consecutive calls
         if (sendChangesTimeout) {
@@ -680,7 +683,7 @@ export default function CompositionTool() {
                 documentId: documentID.current,
                 writerId: userId.current,
             }
-            console.log("Exporting Score data: " + printScoreData(exportedScoreDataObj));
+            console.log("Exporting Score data ------------------------------- ");
             // var recordTemp: Record<string, unknown> = changes;
             // if (!('score' in recordTemp)) {
             //     recordTemp['score'] = exportedScoreDataObj;
@@ -698,7 +701,6 @@ export default function CompositionTool() {
                 },
                 body: JSON.stringify(changesTemp)
             }
-            console.log("DOC ID VEFORE SEND: " + documentID.current);
             await fetch(CHECK_CHANGE_URL, PUT_OPTION);
             await fetch(UPDATE_URL, PUT_OPTION);
         }, debounceDelay);
@@ -1031,7 +1033,7 @@ export default function CompositionTool() {
             if (selectedNoteId !== -1) {
                 d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
             }
-
+            console.log("HIGHLIGHT noteID: " + selectedNoteId);
             // Update the user cursor on the backend
             updateUserCursor();
 
@@ -1117,7 +1119,7 @@ export default function CompositionTool() {
 
         function createNewNoteBox()
         {
-            if(notationRef.current === null) return;
+            if(!notationRef.current || !score.current) return;
             if(selectedNoteId === -1) return;
             let note = score.current?.findNote(selectedNoteId);
             let measure = score.current?.getMeasureFromNoteId(selectedNoteId);
@@ -1129,8 +1131,10 @@ export default function CompositionTool() {
             notationRef.current.querySelector("svg")?.appendChild(notePlacementRectangleSVG.current);
             notePlacementRectangleRef.current = d3.select(notePlacementRectangleSVG.current);
 
-            attachMouseMoveListener(notePlacementRectangleRef.current, note, measure, notePlacementRectangleSVG.current.getBoundingClientRect().top);
+            let svgBoxY = notePlacementRectangleSVG.current.getBoundingClientRect().top + 10;
+            attachMouseMoveListener(notePlacementRectangleRef.current, note, measure, svgBoxY);
             attachMouseLeaveListener(notePlacementRectangleRef.current, note, measure);
+            setSelectedNoteId(attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId,svgBoxY));
         }
         
         // Create PlaceNoteBox
