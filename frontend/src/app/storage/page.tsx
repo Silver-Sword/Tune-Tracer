@@ -20,7 +20,7 @@ import {
   ActionIcon,
 } from "@mantine/core";
 import StorageTutorial from "./storage-tutorial";
-import Joyride, { CallBackProps, STATUS, Step } from "react-joyride";
+import Joyride, { CallBackProps, STATUS, Step, ACTIONS, EVENTS} from "react-joyride";
 import { IconSearch, IconSortDescending, IconArrowUp, IconArrowDown} from "@tabler/icons-react";
 import { getUserID, getDisplayName, getEmail, clearUserCookies, saveDocID } from "../cookie";
 import { useRouter } from "next/navigation";
@@ -112,8 +112,10 @@ export default function Storage() {
   const [sortBy, setSortBy] = useState<string>("lastEdited");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const router = useRouter();
+  
   const [run, setRun] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
+  const [actions, setActions] = useState(ACTIONS);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -123,12 +125,31 @@ export default function Storage() {
   // Something is wrong with the callback, not allowing to move forward in states
   // Handle tutorial callback to manage step progression and tutorial completion
   const handleJoyrideCallback = (data: any) => {
-    const { status, index } = data;
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    const { status, index, action, type } = data;
+    console.log('data', data);
+
+
+    console.log(`Joyride callback: ${status}, ${index}`);
+    if (([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND] as string[]).includes(type)) {
+      console.log('inside if');
+      setStepIndex(index + (action === ACTIONS.PREV ? -1 : 1)); // Update to the next step
+    }
+    else if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+      console.log('inside else if');
       setRun(false); // Stop tutorial
     } else {
-      setStepIndex(index); // Update to the next step
+      console.log('inside else');
     }
+    // if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    //   console.log('inside if');
+    //   // setRun(false); // Stop tutorial
+    // } else {
+    //   console.log('inside else');
+    //   // setActions();
+    //   // setStepIndex(index); // Update to the next step
+    //   setStepIndex(index + (action === ACTIONS.PREV ? -1 : 1)); // Update to the next step
+
+    // }
   };
 
   const handleLogout = () => {
