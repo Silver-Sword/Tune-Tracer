@@ -36,7 +36,8 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   };
 
   // Open delete confirmation modal
-  const openDeleteModal = () => {
+  const openDeleteModal = (event: React.MouseEvent) => {
+    event.stopPropagation();
     setDeleteModalOpened(true);
   };
 
@@ -110,7 +111,9 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
+          cursor: "pointer",
         }}
+        onClick={handleDocumentOpen}
       >
         <Stack 
           style={{ paddingTop: '25px' /* Add padding to avoid button overlap */ }}
@@ -147,14 +150,16 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           </div>
 
           {/* Truncate title text to prevent overflow */}
-          {/* Tooltip for the title to show full text on hover */}
-          <Tooltip label={`Open: ${document_title}`} withArrow>
-            <Text 
-              lineClamp={2}
-              style={{ cursor: 'pointer'}}
-              onClick={handleDocumentOpen}
-              >
-              {document_title}
+          <Tooltip label={`${document_title}`} withArrow>
+            <Text
+                lineClamp={2}
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => {
+                    e.stopPropagation(); // Prevents propagation to card click
+                    handleDocumentOpen();
+                }}
+            >
+                {document_title}
             </Text>
           </Tooltip>
           
