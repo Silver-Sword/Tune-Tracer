@@ -145,6 +145,7 @@ export const SharingModal: React.FC<SharingModalProps> = ({
         >
           <Select
             label="Access Type"
+            c="dimmed"
             value={accessType}
             onChange={(value) => {
                 const newAccessType = value as "restricted" | "anyone";
@@ -162,6 +163,7 @@ export const SharingModal: React.FC<SharingModalProps> = ({
             <Group align="right">
               <Select
                 label="Role"
+                c="dimmed"
                 value={accessLevel}
                 onChange={(value) => {
                     const newAccessLevel = value as "Viewer" | "Editor";
