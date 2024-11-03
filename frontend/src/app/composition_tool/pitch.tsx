@@ -3,6 +3,7 @@
 import { Score } from "../edit/Score";
 
 export const shiftNoteUp = (note: string) => {
+    console.log(`The note ${note} was passed to shiftNoteUp`);
     const noteSequence = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
     const [noteLetter, octave] = note.split('/');  // Example: 'C/4' -> 'C' and '4'
     let noteIndex = noteSequence.indexOf(noteLetter);
@@ -43,19 +44,28 @@ export const shiftNoteDown = (note: string) => {
 };
 
 // Increase the pitch of a note (or all notes in a given chord)
-export const increasePitch = (score: React.MutableRefObject<Score | null>, selectedNoteId: number) => {
-    // Get all the keys from the note passed in, raise all the pitches of them, return the new array
-    const newNotes: string[] = [];
+export const increasePitch = (
+    score: React.MutableRefObject<Score | null>,
+    selectedNoteId: number,
+    selectedKey: string
+) => {
+    const newKeys: string[] = [];
     if (score && score.current) {
         const staveNote = score.current.findNote(selectedNoteId);
         if (staveNote) {
             for (let i = 0; i < staveNote.keys.length; i++) {
-                newNotes.push(shiftNoteUp(staveNote.keys[i]));
+                if (staveNote.keys[i] === selectedKey) {
+                    // Shift only the selected key
+                    newKeys.push(shiftNoteUp(staveNote.keys[i]));
+                } else {
+                    // Keep other keys unchanged
+                    newKeys.push(staveNote.keys[i]);
+                }
             }
         }
     }
-    return newNotes;
-}
+    return newKeys;
+};
 
 // Decreaese the pitch of a note (or all notes in a given chord)
 export const lowerPitch = (score: React.MutableRefObject<Score | null>, selectedNoteId: number) => {
