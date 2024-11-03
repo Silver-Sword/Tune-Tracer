@@ -18,7 +18,7 @@ import {
 } from "@mantine/core";
 
 import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
-import { increasePitch, lowerPitch, shiftNoteUp } from './pitch'
+import { increasePitch, lowerPitch, shiftNoteDown, shiftNoteUp } from './pitch'
 import { ToolbarHeader } from './ToolbarHeader'
 import { useSearchParams } from "next/navigation";
 
@@ -44,7 +44,7 @@ export default function CompositionTool() {
     const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
     const [selectedNoteId, setSelectedNoteId] = useState<number>(-1);
     const [selectedNoteHeadId, setSelectedNoteHeadId] = useState<string>('');
-    const [selectedKey, setSelectedKey] = useState<string>('');
+    let selectedKey = useRef<string>('');
     const [isFetching, setIsFetching] = useState<boolean>(false);
     const notePlacementRectangleSVG = useRef<SVGElement | null>(null);
     const notePlacementRectangleRef = useRef<Selection<SVGElement, unknown, null, undefined> | null>(null);
@@ -535,7 +535,7 @@ export default function CompositionTool() {
     }
 
     // Wrapper function to call addNoteInMeasure
-    const addNoteHandler = async (notes: string[], noteId: number) => {
+    const addNoteHandler = async (notes: string[], noteId: number, sendNetworkChanges: boolean = true) => {
         if (score && score.current) {
 
             score.current.addNoteInMeasure(notes, noteId);
@@ -684,6 +684,7 @@ export default function CompositionTool() {
                 writerId: userId.current,
             }
             console.log("Exporting Score data ------------------------------- ");
+            
             // var recordTemp: Record<string, unknown> = changes;
             // if (!('score' in recordTemp)) {
             //     recordTemp['score'] = exportedScoreDataObj;
@@ -695,6 +696,7 @@ export default function CompositionTool() {
             // setChanges(recordTemp);
 
             await callAPI("checkDocumentChanges", changesTemp);
+            console.log("Selected KEy after export: " + selectedKey);
             // await fetch(UPDATE_URL, PUT_OPTION);
         }, debounceDelay);
     }
@@ -1031,14 +1033,14 @@ export default function CompositionTool() {
                         console.warn('Parent vf-stavenote element not found');
                         setSelectedNoteId(-1);
                         setSelectedNoteHeadId('');
-                        setSelectedKey('');
+                        selectedKey.current = ''
                     }
                 } else {
                     console.log('Clicked elsewhere');
                     // Optionally reset selections
                     setSelectedNoteId(-1);
                     setSelectedNoteHeadId('');
-                    setSelectedKey('');
+                    selectedKey.current = ''
                 }
             });
         
@@ -1062,19 +1064,19 @@ export default function CompositionTool() {
                         const currentNoteHeadId = noteHeadElement?.getAttribute('id');
                         if (currentNoteHeadId === noteHeadId) {
                             const key = keys[i];
-                            setSelectedKey(key);
+                            selectedKey.current = key;
                             return;
                         }
                     }
                     console.warn('Note head ID not found in staveNote.noteHeads');
-                    setSelectedKey('');
+                    selectedKey.current = ''
                 } else {
                     console.warn('StaveNote not found for selectedNoteId');
-                    setSelectedKey('');
+                    selectedKey.current = ''
                 }
             } else {
                 console.warn('Setting selected key to an empty string');
-                setSelectedKey('');
+                selectedKey.current = ''
             }
         };
 
@@ -1096,7 +1098,7 @@ export default function CompositionTool() {
         
                     // Find the index of the selectedKey
                     console.log(`Trying to find the indexOf: **${selectedKey}**`);
-                    const index = keys.indexOf(selectedKey);
+                    const index = keys.indexOf(selectedKey.current);
                     console.log(`Index of selectedKey is: ${index}`);
         
                     if (index !== -1 && index < noteHeads.length) {
@@ -1113,6 +1115,7 @@ export default function CompositionTool() {
                 } else {
                     console.warn('StaveNote not found for selectedNoteId');
                 }
+                console.log(`After all is said and done. Selected Key: ${selectedKey}`);
             }
         }, [selectedNoteId, selectedKey, notationUpdated]);
         
@@ -1161,7 +1164,8 @@ export default function CompositionTool() {
                 // If a valid note was pressed and we have a note selected
                 if (note && selectedNoteId !== -1) {
                     addNoteHandler([note], selectedNoteId);
-                    setSelectedKey(note);
+                    console.log("this thingamabob rann");
+                    selectedKey.current = note;
                 }
 
                 // // If we press the up arrow, raise the pitch
@@ -1177,15 +1181,14 @@ export default function CompositionTool() {
                 // If we press the w key, raise the pitch
                 if (key === 'w') {
                     if (selectedNoteId !== null && selectedKey !== null) {
-                        const newKeys = increasePitch(score, selectedNoteId, selectedKey);
+                        const newKeys = increasePitch(score, selectedNoteId, selectedKey.current);
                         const staveNote = score.current?.findNote(selectedNoteId);
                         if (staveNote) {
                             removeNoteHandler(staveNote.keys, selectedNoteId);
                             addNoteHandler(newKeys, selectedNoteId);
                             // Update selectedKey to the new pitch
-                            const newSelectedKey = shiftNoteUp(selectedKey);
-                            console.log(`After pitch shifting, newSelectedKey is ${newSelectedKey}`);
-                            setSelectedKey(newSelectedKey);
+                            const newSelectedKey = shiftNoteUp(selectedKey.current);
+                            selectedKey.current = newSelectedKey;
                             setNotationUpdated(prev => prev + 1);
                         }
                     }
@@ -1194,11 +1197,17 @@ export default function CompositionTool() {
 
                 // If we press the down arrow, lower the pitch
                 if (key === 's') {
-                    const newNotes = lowerPitch(score, selectedNoteId);
-                    const staveNote = score.current?.findNote(selectedNoteId);
-                    if (staveNote) {
-                        removeNoteHandler(staveNote.keys, selectedNoteId);
-                        addNoteHandler(newNotes, selectedNoteId);
+                    if (selectedNoteId !== null && selectedKey !== null) {
+                        const newKeys = lowerPitch(score, selectedNoteId, selectedKey.current);
+                        const staveNote = score.current?.findNote(selectedNoteId);
+                        if (staveNote) {
+                            removeNoteHandler(staveNote.keys, selectedNoteId);
+                            addNoteHandler(newKeys, selectedNoteId);
+                            // Update selectedKey to the new pitch
+                            const newSelectedKey = shiftNoteDown(selectedKey.current);
+                            selectedKey.current = newSelectedKey;
+                            setNotationUpdated(prev => prev + 1);
+                        }
                     }
                 }
 

@@ -68,15 +68,24 @@ export const increasePitch = (
 };
 
 // Decreaese the pitch of a note (or all notes in a given chord)
-export const lowerPitch = (score: React.MutableRefObject<Score | null>, selectedNoteId: number) => {
-    const newNotes: string[] = [];
+export const lowerPitch = (
+    score: React.MutableRefObject<Score | null>, 
+    selectedNoteId: number,
+    selectedKey: string) => {
+        const newKeys: string[] = [];
     if (score && score.current) {
         const staveNote = score.current.findNote(selectedNoteId);
         if (staveNote) {
             for (let i = 0; i < staveNote.keys.length; i++) {
-                newNotes.push(shiftNoteDown(staveNote.keys[i]))
+                if (staveNote.keys[i] === selectedKey) {
+                    // Shift only the selected key
+                    newKeys.push(shiftNoteDown(staveNote.keys[i]));
+                } else {
+                    // Keep other keys unchanged
+                    newKeys.push(staveNote.keys[i]);
+                }
             }
         }
     }
-    return newNotes;
+    return newKeys;
 }
