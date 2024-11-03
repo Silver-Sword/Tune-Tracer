@@ -29,6 +29,7 @@ import { useRouter } from "next/navigation";
 import { access, write } from "fs";
 import { HookCallbacks } from "async_hooks";
 import { removeAllListeners } from "process";
+import { callAPI } from "../../utils/callAPI";
 
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
@@ -697,70 +698,65 @@ export default function CompositionTool() {
 
             // setChanges(recordTemp);
 
-            const PUT_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(changesTemp)
-            }
-            await fetch(CHECK_CHANGE_URL, PUT_OPTION);
-            await fetch(UPDATE_URL, PUT_OPTION);
+            await callAPI("checkDocumentChanges", changesTemp);
+            // await fetch(UPDATE_URL, PUT_OPTION);
         }, debounceDelay);
     }
 
     const fetchChanges = async (render: boolean = true) => {
-            const changesTemp =
-            {
-                documentId: documentID.current,
-                writerId: userId.current
-            };
+        const changesTemp =
+        {
+            documentId: documentID.current,
+            writerId: userId.current
+        };
 
-            const PUT_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(changesTemp)
+        console.log(JSON.stringify(changesTemp));
+        setIsFetching(true);
+        await callAPI("checkDocumentChanges", changesTemp)
+        .then((res) => {
+            if(res.status !== 200) {
+                console.log("Error fetching changes");
+                setIsFetching(false);
+                return;
             }
-            console.log(JSON.stringify(changesTemp));
-            setIsFetching(true);
-            await fetch(CHECK_CHANGE_URL, PUT_OPTION)
-                .then((res) => {
-                    res.json().then((value) => {
-                        console.log("Recieved Score data: " + JSON.stringify(value.data));
-                        const compData: ScoreData = (value.data.document).score;
-                        const document_title: string = (value.data.document).document_title;
-                        const comments: Comment[] = (value.data.document).comments;
-                        const metadata: DocumentMetadata = (value.data.document).metadata;
-                        const tempDocument: Document = {
-                            document_title: document_title,
-                            comments: comments,
-                            score: compData,
-                            metadata: metadata,
-                        };
-                        setDocument(tempDocument);
-                        if (notationRef.current) {
-                            score.current?.loadScoreDataObj(compData, render);
-                            console.log("LOADED SCORE DATA");
-                            console.log("asd selectedNoteId: " + selectedNoteId);
-                            // Now add it to the currently selected note
-                            if (selectedNoteId !== -1) {
-                                console.log("Reached selectedNoteId: " + selectedNoteId);
-                                d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
-                            }
-                            createNewNoteBox();
-                        }
-                        setIsFetching(false);
-                    }).catch((error) => {
-                        // Getting the Error details.
-                        const message = error.message;
-                        console.log(`Error: ${message}`);
-                        setIsFetching(false);
-                        return;
-                    });;
-                });
-        }
+            const receivedDocument = (res.data as any)['document'];
+            if(receivedDocument === undefined) {
+                console.error(`Something went wrong. Received document is undefined`);
+                setIsFetching(false);
+                return;
+            }
+            console.log("Recieved Score data: " + JSON.stringify(receivedDocument));
+            const compData: ScoreData = receivedDocument.score;
+            const document_title: string = receivedDocument.document_title;
+            const comments: Comment[] = receivedDocument.comments;
+            const metadata: DocumentMetadata = receivedDocument.metadata;
+            const tempDocument: Document = {
+                document_title: document_title,
+                comments: comments,
+                score: compData,
+                metadata: metadata,
+            };
+            setDocument(tempDocument);
+            if (notationRef.current) {
+                score.current?.loadScoreDataObj(compData, render);
+                console.log("LOADED SCORE DATA");
+                console.log("asd selectedNoteId: " + selectedNoteId);
+                // Now add it to the currently selected note
+                if (selectedNoteId !== -1) {
+                    console.log("Reached selectedNoteId: " + selectedNoteId);
+                    d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
+                }
+                createNewNoteBox();
+            }
+            setIsFetching(false);
+        }).catch((error) => {
+            // Getting the Error details.
+            const message = error.message;
+            console.log(`Error: ${message}`);
+            setIsFetching(false);
+            return;
+        });
+    }
 
         // check if the user has edit access and update tools accordingly
         useEffect(() => {
@@ -823,10 +819,10 @@ export default function CompositionTool() {
 
         // THIS FETCHES CHANGES PERIODICALLY
         // UNCOMMENT below to actually do it.
-        // useInterval(() => {
-        //     // Your custom logic here
-        //     fetchChanges();
-        // }, 5000); // 5 seconds
+        useInterval(() => {
+            // Your custom logic here
+            fetchChanges();
+        }, 5000); // 5 seconds
 
         const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
             const value = event.currentTarget.value;
@@ -849,41 +845,32 @@ export default function CompositionTool() {
             else {
                 (recordTemp['score'] as ScoreData) = exportedScoreDataObj;
             }
-
             setChanges(recordTemp);
 
-            const PUT_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(changesTemp)
-            }
-            await fetch(CHECK_CHANGE_URL, PUT_OPTION)
-                .then((res) => {
-                    res.json().then((data) => {
-                        const compData: ScoreData = (data.data.document).score;
-                        const document_title: string = (data.data.document).document_title;
-                        const comments: Comment[] = (data.data.document).comments;
-                        const metadata: DocumentMetadata = (data.data.document).metadata;
-                        const tempDocument: Document = {
-                            document_title: document_title,
-                            comments: comments,
-                            score: compData,
-                            metadata: metadata,
-                        };
-                        setDocument(tempDocument);
-                        // console.log("Recieved Score data: " + printScoreData(compData));
-                        // if (notationRef.current) {
-                        //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
-                        // }
-                    }).catch((error) => {
-                        // Getting the Error details.
-                        const message = error.message;
-                        console.log(`Error: ${message}`);
-                        return;
-                    });;
-                });
+            await callAPI("checkDocumentChanges", changesTemp)
+            .then((res) => {
+                if (res.status !== 200) {
+                    console.log("Error fetching changes");
+                    return;
+                }
+                const receivedDocument = (res.data as any)['document'];
+                const compData: ScoreData = receivedDocument.score;
+                const document_title: string = receivedDocument.document_title;
+                const comments: Comment[] = receivedDocument.comments;
+                const metadata: DocumentMetadata = receivedDocument.metadata;
+                const tempDocument: Document = {
+                    document_title: document_title,
+                    comments: comments,
+                    score: compData,
+                    metadata: metadata,
+                };
+                setDocument(tempDocument);
+            }).catch((error) => {
+                // Getting the Error details.
+                const message = error.message;
+                console.log(`Error: ${message}`);
+                return;
+            });
         }
 
 
@@ -986,27 +973,30 @@ export default function CompositionTool() {
                     body: JSON.stringify(changesTemp),
                 }
                 console.log(`Check Changes Input: ${JSON.stringify(changesTemp)}`);
-                fetch(CHECK_CHANGE_URL, POST_OPTION)
-                    .then((res) => {
-                        res.json().then((data) => {
-                            const compData: ScoreData = (data.data.document).score;
-                            const document_title: string = (data.data.document).document_title;
-                            const comments: Comment[] = (data.data.document).comments;
-                            const metadata: DocumentMetadata = (data.data.document).metadata;
-                            const tempDocument: Document = {
-                                document_title: document_title,
-                                comments: comments,
-                                score: compData,
-                                metadata: metadata,
-                            };
-                            setDocument(tempDocument);
-                        }).catch((error) => {
-                            // Getting the Error details.
-                            const message = error.message;
-                            console.log(`Error: ${message}`);
-                            return;
-                        });
-                    });
+                callAPI("checkDocumentChanges", changesTemp)
+                .then((res) => {
+                    if (res.status !== 200) {
+                        console.log("Error fetching changes");
+                        return;
+                    }
+                    const receivedDocument = (res.data as any)['document'];
+                    const compData: ScoreData = receivedDocument.score;
+                    const document_title: string = receivedDocument.document_title;
+                    const comments: Comment[] = receivedDocument.comments;
+                    const metadata: DocumentMetadata = receivedDocument.metadata;
+                    const tempDocument: Document = {
+                        document_title: document_title,
+                        comments: comments,
+                        score: compData,
+                        metadata: metadata,
+                    };
+                    setDocument(tempDocument);
+                }).catch((error) => {
+                    // Getting the Error details.
+                    const message = error.message;
+                    console.log(`Error: ${message}`);
+                    return;
+                });
             }, 1000);
 
             return function stopChecking() {
