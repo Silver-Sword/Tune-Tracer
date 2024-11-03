@@ -247,7 +247,7 @@ export default function Editor() {
 
     const loadScore = () => {
         if (notationRef.current) {
-            score.current?.loadScoreDataObj(getScoreDefaultObj(), true);
+            score.current?.loadScoreDataObj(getScoreObj1(), true);
         }
     }
 
