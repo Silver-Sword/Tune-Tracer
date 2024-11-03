@@ -65,7 +65,7 @@ export default function SignUp() {
         if (value["message"] !== "User signed up successfully") {
           triggerError(value["message"]);
         } else {
-          router.push("/login");
+          router.push("/signup_success");
         }
       }
     } catch (error: any) {

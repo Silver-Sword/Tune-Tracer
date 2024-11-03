@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Score } from "../edit/Score";
+import { createPlaceNoteBox, attachMouseMoveListener, attachMouseLeaveListener, attachMouseClickListener} from "./PlaceNoteBox";
 // We have two of these for some reason
 //import { printScoreData, ScoreData } from "../lib/src/ScoreData";
 import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
@@ -22,15 +23,22 @@ import { ToolbarHeader } from './ToolbarHeader'
 import { useSearchParams } from "next/navigation";
 
 import * as d3 from 'd3';
+import { Selection } from 'd3';
 import * as Tone from 'tone';
+import { useRouter } from "next/navigation";
 import { access, write } from "fs";
 import { HookCallbacks } from "async_hooks";
 import { removeAllListeners } from "process";
+import { callAPI } from "../../utils/callAPI";
 
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
 
+// Define the type
+export type SendChangesType = () => Promise<void>;
+
 export default function CompositionTool() {
+    const router = useRouter();
     const notationRef = useRef<HTMLDivElement>(null);
     const score = useRef<Score | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -38,6 +46,8 @@ export default function CompositionTool() {
     const [selectedNoteHeadId, setSelectedNoteHeadId] = useState<string>('');
     const [selectedKey, setSelectedKey] = useState<string>('');
     const [isFetching, setIsFetching] = useState<boolean>(false);
+    const notePlacementRectangleSVG = useRef<SVGElement | null>(null);
+    const notePlacementRectangleRef = useRef<Selection<SVGElement, unknown, null, undefined> | null>(null);
 
     const [volume, setVolume] = useState<number>(50);
     let topPart: Tone.Part;
@@ -49,6 +59,7 @@ export default function CompositionTool() {
     const userId = useRef<string>();
     const displayName = useRef<string>();
     const documentID = useRef<string>();
+    const [hasWriteAccess, setHasWriteAccess] = useState<boolean>(true);
 
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = async (duration: string, noteId: number) => {
@@ -649,7 +660,7 @@ export default function CompositionTool() {
     let sendChangesTimeout: NodeJS.Timeout | null = null;
     const debounceDelay = 500; // Delay in ms, adjust as needed
 
-    const sendChanges = async () => {
+    const sendChanges: SendChangesType = async () => {
         if (score.current === null) return;
         // Debounce the function to prevent rapid consecutive calls
         if (sendChangesTimeout) {
@@ -670,7 +681,7 @@ export default function CompositionTool() {
                 documentId: documentID.current,
                 writerId: userId.current,
             }
-            console.log("Exporting Score data: " + printScoreData(exportedScoreDataObj));
+            console.log("Exporting Score data ------------------------------- ");
             // var recordTemp: Record<string, unknown> = changes;
             // if (!('score' in recordTemp)) {
             //     recordTemp['score'] = exportedScoreDataObj;
@@ -681,70 +692,65 @@ export default function CompositionTool() {
 
             // setChanges(recordTemp);
 
-            const PUT_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(changesTemp)
-            }
-            console.log("DOC ID VEFORE SEND: " + documentID.current);
-            await fetch(CHECK_CHANGE_URL, PUT_OPTION);
-            await fetch(UPDATE_URL, PUT_OPTION);
+            await callAPI("checkDocumentChanges", changesTemp);
+            // await fetch(UPDATE_URL, PUT_OPTION);
         }, debounceDelay);
     }
 
     const fetchChanges = async (render: boolean = true) => {
-            const changesTemp =
-            {
-                documentId: documentID.current,
-                writerId: userId.current
-            };
+        const changesTemp =
+        {
+            documentId: documentID.current,
+            writerId: userId.current
+        };
 
-            const PUT_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(changesTemp)
+        console.log(JSON.stringify(changesTemp));
+        setIsFetching(true);
+        await callAPI("checkDocumentChanges", changesTemp)
+        .then((res) => {
+            if(res.status !== 200) {
+                console.log("Error fetching changes");
+                setIsFetching(false);
+                return;
             }
-            console.log(JSON.stringify(changesTemp));
-            setIsFetching(true);
-            await fetch(CHECK_CHANGE_URL, PUT_OPTION)
-                .then((res) => {
-                    res.json().then((value) => {
-                        console.log("Recieved Score data: " + JSON.stringify(value.data));
-                        const compData: ScoreData = (value.data.document).score;
-                        const document_title: string = (value.data.document).document_title;
-                        const comments: Comment[] = (value.data.document).comments;
-                        const metadata: DocumentMetadata = (value.data.document).metadata;
-                        const tempDocument: Document = {
-                            document_title: document_title,
-                            comments: comments,
-                            score: compData,
-                            metadata: metadata,
-                        };
-                        setDocument(tempDocument);
-                        if (notationRef.current) {
-                            score.current?.loadScoreDataObj(compData, render);
-                            console.log("LOADED SCORE DATA");
-                            console.log("asd selectedNoteId: " + selectedNoteId);
-                            // Now add it to the currently selected note
-                            if (selectedNoteId !== -1) {
-                                console.log("Reached selectedNoteId: " + selectedNoteId);
-                                d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
-                            }
-                        }
-                        setIsFetching(false);
-                    }).catch((error) => {
-                        // Getting the Error details.
-                        const message = error.message;
-                        console.log(`Error: ${message}`);
-                        setIsFetching(false);
-                        return;
-                    });;
-                });
-        }
+            const receivedDocument = (res.data as any)['document'];
+            if(receivedDocument === undefined) {
+                console.error(`Something went wrong. Received document is undefined`);
+                setIsFetching(false);
+                return;
+            }
+            console.log("Recieved Score data: " + JSON.stringify(receivedDocument));
+            const compData: ScoreData = receivedDocument.score;
+            const document_title: string = receivedDocument.document_title;
+            const comments: Comment[] = receivedDocument.comments;
+            const metadata: DocumentMetadata = receivedDocument.metadata;
+            const tempDocument: Document = {
+                document_title: document_title,
+                comments: comments,
+                score: compData,
+                metadata: metadata,
+            };
+            setDocument(tempDocument);
+            if (notationRef.current) {
+                score.current?.loadScoreDataObj(compData, render);
+                console.log("LOADED SCORE DATA");
+                console.log("asd selectedNoteId: " + selectedNoteId);
+                // Now add it to the currently selected note
+                if (selectedNoteId !== -1) {
+                    console.log("Reached selectedNoteId: " + selectedNoteId);
+                    d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
+                }
+                createNewNoteBox();
+            }
+            setIsFetching(false);
+        }).catch((error) => {
+            // Getting the Error details.
+            const message = error.message;
+            console.log(`Error: ${message}`);
+            setIsFetching(false);
+            return;
+        });
+    }
 
         // check if the user has edit access and update tools accordingly
         useEffect(() => {
@@ -767,7 +773,17 @@ export default function CompositionTool() {
             const accessLevel = await fetch(CHECK_ACCESS_LEVEL_URL, data)
                 .then((res) => res.json().then((data) => {
                     console.log(`Access Level Response: ${data.data}`);
-                    const hasWriteAcces: boolean = data.data >= ShareStyle.WRITE;
+                    const hasWriteAccess: boolean = data.data >= ShareStyle.WRITE;
+                    setHasWriteAccess(hasWriteAccess);
+                    if(data.data <= ShareStyle.NONE)
+                    {
+                        router.push(`/no_access`);
+                    }
+                    if(!hasWriteAccess && notationRef.current){
+                        d3.select(notationRef.current)
+                    .on('click', null);
+                    }
+                    
                 }));
         };
 
@@ -792,7 +808,7 @@ export default function CompositionTool() {
                 }
             }, [delay]);
         }
-
+        
 
 
         // THIS FETCHES CHANGES PERIODICALLY
@@ -823,41 +839,32 @@ export default function CompositionTool() {
             else {
                 (recordTemp['score'] as ScoreData) = exportedScoreDataObj;
             }
-
             setChanges(recordTemp);
 
-            const PUT_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(changesTemp)
-            }
-            await fetch(CHECK_CHANGE_URL, PUT_OPTION)
-                .then((res) => {
-                    res.json().then((data) => {
-                        const compData: ScoreData = (data.data.document).score;
-                        const document_title: string = (data.data.document).document_title;
-                        const comments: Comment[] = (data.data.document).comments;
-                        const metadata: DocumentMetadata = (data.data.document).metadata;
-                        const tempDocument: Document = {
-                            document_title: document_title,
-                            comments: comments,
-                            score: compData,
-                            metadata: metadata,
-                        };
-                        setDocument(tempDocument);
-                        // console.log("Recieved Score data: " + printScoreData(compData));
-                        // if (notationRef.current) {
-                        //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
-                        // }
-                    }).catch((error) => {
-                        // Getting the Error details.
-                        const message = error.message;
-                        console.log(`Error: ${message}`);
-                        return;
-                    });;
-                });
+            await callAPI("checkDocumentChanges", changesTemp)
+            .then((res) => {
+                if (res.status !== 200) {
+                    console.log("Error fetching changes");
+                    return;
+                }
+                const receivedDocument = (res.data as any)['document'];
+                const compData: ScoreData = receivedDocument.score;
+                const document_title: string = receivedDocument.document_title;
+                const comments: Comment[] = receivedDocument.comments;
+                const metadata: DocumentMetadata = receivedDocument.metadata;
+                const tempDocument: Document = {
+                    document_title: document_title,
+                    comments: comments,
+                    score: compData,
+                    metadata: metadata,
+                };
+                setDocument(tempDocument);
+            }).catch((error) => {
+                // Getting the Error details.
+                const message = error.message;
+                console.log(`Error: ${message}`);
+                return;
+            });
         }
 
 
@@ -960,27 +967,30 @@ export default function CompositionTool() {
                     body: JSON.stringify(changesTemp),
                 }
                 console.log(`Check Changes Input: ${JSON.stringify(changesTemp)}`);
-                fetch(CHECK_CHANGE_URL, POST_OPTION)
-                    .then((res) => {
-                        res.json().then((data) => {
-                            const compData: ScoreData = (data.data.document).score;
-                            const document_title: string = (data.data.document).document_title;
-                            const comments: Comment[] = (data.data.document).comments;
-                            const metadata: DocumentMetadata = (data.data.document).metadata;
-                            const tempDocument: Document = {
-                                document_title: document_title,
-                                comments: comments,
-                                score: compData,
-                                metadata: metadata,
-                            };
-                            setDocument(tempDocument);
-                        }).catch((error) => {
-                            // Getting the Error details.
-                            const message = error.message;
-                            console.log(`Error: ${message}`);
-                            return;
-                        });
-                    });
+                callAPI("checkDocumentChanges", changesTemp)
+                .then((res) => {
+                    if (res.status !== 200) {
+                        console.log("Error fetching changes");
+                        return;
+                    }
+                    const receivedDocument = (res.data as any)['document'];
+                    const compData: ScoreData = receivedDocument.score;
+                    const document_title: string = receivedDocument.document_title;
+                    const comments: Comment[] = receivedDocument.comments;
+                    const metadata: DocumentMetadata = receivedDocument.metadata;
+                    const tempDocument: Document = {
+                        document_title: document_title,
+                        comments: comments,
+                        score: compData,
+                        metadata: metadata,
+                    };
+                    setDocument(tempDocument);
+                }).catch((error) => {
+                    // Getting the Error details.
+                    const message = error.message;
+                    console.log(`Error: ${message}`);
+                    return;
+                });
             }, 1000);
 
             return function stopChecking() {
@@ -1076,7 +1086,6 @@ export default function CompositionTool() {
             if (selectedNoteId !== -1) {
                 d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
             }
-
             // Update the user cursor on the backend
             // updateUserCursor();
 
@@ -1160,6 +1169,58 @@ export default function CompositionTool() {
             }
         }, [selectedNoteId]);
 
+        function createNewNoteBox()
+        {
+            if(!hasWriteAccess) return;
+            if(!notationRef.current || !score.current) return;
+            if(selectedNoteId === -1) return;
+            let note = score.current?.findNote(selectedNoteId);
+            let measure = score.current?.getMeasureFromNoteId(selectedNoteId);
+            if(!note || !measure) return;
+
+            notePlacementRectangleSVG.current?.remove();
+            notePlacementRectangleSVG.current = createPlaceNoteBox(note);
+            if(!notePlacementRectangleSVG.current) return;
+            notationRef.current.querySelector("svg")?.appendChild(notePlacementRectangleSVG.current);
+            notePlacementRectangleRef.current = d3.select(notePlacementRectangleSVG.current);
+
+            let svgBoxY = notePlacementRectangleSVG.current.getBoundingClientRect().top + 10;
+            attachMouseMoveListener(notePlacementRectangleRef.current, note, measure, svgBoxY);
+            attachMouseLeaveListener(notePlacementRectangleRef.current, note, measure);
+            setSelectedNoteId(attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId,svgBoxY));
+        }
+        
+        // Create PlaceNoteBox
+        useEffect (() => {
+            createNewNoteBox();
+        }, [selectedNoteId]);
+
+        useEffect(() => {
+            
+            // Attach the note selection handler to the notationRef container
+            d3.select(notationRef.current)
+                .on('click', function (event) {
+                    // Grab a reference to what we click on
+                    let targetElement = event.target;
+
+                    // Keep going up the DOM to look for an element that has the VF note class
+                    while (targetElement && !targetElement.classList.contains('vf-stavenote')) {
+                        targetElement = targetElement.parentElement;
+                    }
+
+                    // Check to see if we've found an element in the DOM with the class we're looking for
+                    if (targetElement && targetElement.classList.contains('vf-stavenote')) {
+                        const selectId = d3.select(targetElement).attr('id');
+                        setSelectedNoteId(parseInt(selectId));
+                    }
+                });
+
+            // Clean up the event listener when notationRef unmounts
+            return () => {
+                d3.select(notationRef.current).on('click', null);
+            }
+        }, [notationRef.current])
+
         const updateUserCursor = async () => {
             if (selectedNoteId) {
                 const userInfo = {
@@ -1209,6 +1270,7 @@ export default function CompositionTool() {
                 <AppShell.Main>
                     <ToolbarHeader
                         documentName={currentDocument.document_title}
+                        documentMetadata={currentDocument.metadata}
                         modifyDurationInMeasure={modifyDurationHandler}
                         selectedNoteId={selectedNoteId}
                         playbackComposition={playbackAwaiter}
@@ -1225,6 +1287,7 @@ export default function CompositionTool() {
                         // removeAccidentals={removeAccidentalsHandler}
                         setKeySignature={setKeySignatureHandler}
                         handleDot={dotHandler}
+                        hasWriteAccess = {hasWriteAccess}
                     />
                     {/* <CommentAside /> */}
 

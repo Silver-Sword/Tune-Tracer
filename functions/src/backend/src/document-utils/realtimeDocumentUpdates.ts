@@ -49,6 +49,34 @@ export async function subscribeToDocument(
   });
 }
 
+/**
+ * DANGEROUS!!! THIS FUNCTION BYPASSES A LOT OF SECURITY
+ * Use this to keep the API "server" up to date with the document
+ * @param documentId id of the document to subscribe to
+ * @param onDocumentUpdateFn stuff to do when the document is updated
+ * @param onUserPoolUpdateFn stuff to do when the user pool is updated
+ */
+export async function admin_subscribeToDocument(
+  documentId: string,
+  onDocumentUpdateFn: (updatedDocument: Document) => void,
+  onUserPoolUpdateFn: (updateType: UpdateType, updatedUser: OnlineEntity) => void,
+) {
+  const firebase = getFirebase();
+
+  await firebase.subscribeToOnlineUsers(documentId, onUserPoolUpdateFn);
+  firebase.subscribeToDocument(documentId, (snapshot) => {
+    if (
+      snapshot.exists &&
+      snapshot.data() !== null &&
+      snapshot.data() !== undefined
+    ) {
+      const document = snapshot.data() as Document;
+      
+      onDocumentUpdateFn(document as Document);
+    }
+  });
+}
+
 // NOTE: ACCESS LIST INSERTION IS NOT AWAITED ON
 function processFirstAccess(
   user: Record<string, unknown> & Required<Pick<UserEntity, 'user_id' | 'user_email' | 'display_name'>>,
