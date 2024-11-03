@@ -25,7 +25,7 @@ import {
     IconVolume,
 } from "@tabler/icons-react";
 import { getUserID } from "../cookie";
-import Link from 'next/link';
+import Link from "next/link";
 import { callAPI } from "../../utils/callAPI";
 import { useSearchParams } from "next/navigation";
 
@@ -33,36 +33,36 @@ import { DocumentMetadata } from "../lib/src/documentProperties";
 import { ShareStyle } from "../lib/src/documentProperties";
 
 const keySignatures = [
-    { label: 'C Major', value: 'C' },
-    { label: 'G Major', value: 'G' },
-    { label: 'D Major', value: 'D' },
-    { label: 'A Major', value: 'A' },
-    { label: 'E Major', value: 'E' },
-    { label: 'B Major', value: 'B' },
-    { label: 'F# Major', value: 'F#' },
-    { label: 'C# Major', value: 'C#' },
-    { label: 'A Minor', value: 'Am' },
-    { label: 'E Minor', value: 'Em' },
-    { label: 'B Minor', value: 'Bm' },
-    { label: 'F# Minor', value: 'F#m' },
-    { label: 'C# Minor', value: 'C#m' },
-    { label: 'G# Minor', value: 'G#m' },
-    { label: 'D# Minor', value: 'D#m' },
-    { label: 'A# Minor', value: 'A#m' },
-    { label: 'F Major', value: 'F' },
-    { label: 'B♭ Major', value: 'Bb' },
-    { label: 'E♭ Major', value: 'Eb' },
-    { label: 'A♭ Major', value: 'Ab' },
-    { label: 'D♭ Major', value: 'Db' },
-    { label: 'G♭ Major', value: 'Gb' },
-    { label: 'C♭ Major', value: 'Cb' },
-    { label: 'D Minor', value: 'Dm' },
-    { label: 'G Minor', value: 'Gm' },
-    { label: 'C Minor', value: 'Cm' },
-    { label: 'F Minor', value: 'Fm' },
-    { label: 'B♭ Minor', value: 'Bbm' },
-    { label: 'E♭ Minor', value: 'Ebm' },
-    { label: 'A♭ Minor', value: 'Abm' },
+  { label: "C Major", value: "C" },
+  { label: "G Major", value: "G" },
+  { label: "D Major", value: "D" },
+  { label: "A Major", value: "A" },
+  { label: "E Major", value: "E" },
+  { label: "B Major", value: "B" },
+  { label: "F# Major", value: "F#" },
+  { label: "C# Major", value: "C#" },
+  { label: "A Minor", value: "Am" },
+  { label: "E Minor", value: "Em" },
+  { label: "B Minor", value: "Bm" },
+  { label: "F# Minor", value: "F#m" },
+  { label: "C# Minor", value: "C#m" },
+  { label: "G# Minor", value: "G#m" },
+  { label: "D# Minor", value: "D#m" },
+  { label: "A# Minor", value: "A#m" },
+  { label: "F Major", value: "F" },
+  { label: "B♭ Major", value: "Bb" },
+  { label: "E♭ Major", value: "Eb" },
+  { label: "A♭ Major", value: "Ab" },
+  { label: "D♭ Major", value: "Db" },
+  { label: "G♭ Major", value: "Gb" },
+  { label: "C♭ Major", value: "Cb" },
+  { label: "D Minor", value: "Dm" },
+  { label: "G Minor", value: "Gm" },
+  { label: "C Minor", value: "Cm" },
+  { label: "F Minor", value: "Fm" },
+  { label: "B♭ Minor", value: "Bbm" },
+  { label: "E♭ Minor", value: "Ebm" },
+  { label: "A♭ Minor", value: "Abm" },
 ];
 
 export const ToolbarHeader: React.FC<{
@@ -120,10 +120,10 @@ export const ToolbarHeader: React.FC<{
             setIsChangingName(false); // Exit edit mode and save
         };
 
-        useEffect(() => {
-            setInputValue(documentName);
-            documentID.current = searchParams.get('id') || 'null';
-        }, [documentName]);
+  useEffect(() => {
+    setInputValue(documentName);
+    documentID.current = searchParams.get("id") || "null";
+  }, [documentName]);
 
         useEffect(() => {
             setShareStyle(documentMetadata?.share_link_style ?? ShareStyle.NONE);
@@ -132,19 +132,19 @@ export const ToolbarHeader: React.FC<{
         const handleDocumentNameChange = (event: {
             currentTarget: { value: any };
         }) => {
-            setInputValue(event.currentTarget.value);
-            const new_title = {
-                documentId: documentID.current,
-                documentChanges: { document_title: event.currentTarget.value },
-                writerId: getUserID()
-            };
-            callAPI('updatePartialDocument', new_title);
+          setInputValue(event.currentTarget.value);
+          const new_title = {
+            documentId: documentID.current,
+            documentChanges: {  document_title: event.currentTarget.value  },
+            writerId: getUserID(),
+          };
+          callAPI("updatePartialDocument", new_title);
         };
-        // Handle when the user clicks the text to switch to editing mode
-        const handleEdit = () => {
+      // Handle when the user clicks the text to switch to editing mode
+      const handleEdit = () => {
             if(!hasWriteAccess) return;
-            setIsChangingName(true);
-        };
+        setIsChangingName(true);
+      };
 
         // Toggle between editable and read-only states
         const [mode, setMode] = useState<string>("Editable");
@@ -237,13 +237,13 @@ export const ToolbarHeader: React.FC<{
                     {/* Sharing UI */}
 
                     {/* Select Dropdown should not be changable if not the owner */}
-                    <Select
+                    {/* <Select
                         placeholder="Select Sharing Mode"
                         onChange={(value) => handleModeChange(value)}
                         allowDeselect={false}
                         withCheckIcon={false}
                         style={{ width: 125, marginLeft: "10px" }}
-                    />
+                    /> */}
                     <SharingModal
                         documentTitle={inputValue}
                         metadata={documentMetadata}
@@ -251,164 +251,226 @@ export const ToolbarHeader: React.FC<{
                 </Group>
 
                 {/* Second layer (middle section) */}
-                {/* <Group align="center" mt="xs" style={{ paddingBottom: "10px" }}> */}
+                <Group align="space-between" mt="xs" style={{ paddingBottom: "10px" }}>
                 {hasWriteAccess && <Tabs defaultValue="notes">
                     <Tabs.List>
                         <Tabs.Tab value="notes">Notes</Tabs.Tab>
                         <Tabs.Tab value="measure">Measure</Tabs.Tab>
                     </Tabs.List>
 
-                    {/* Notes Tab */}
-                    <Tabs.Panel value="notes">
-                        <Space h="xs"></Space>
-                        <Group>
-                            {/* Accidentals */}
-                            <Button
-                                size="compact-md"
-                                variant="outline"
-                                onClick={() => addNatural(["a/4"], selectedNoteId)}
-                            >
-                                <Image h={20} w="auto" fit="contain" src="/icons/natural.jpg" />
-                            </Button>
-                            <Button
-                                size="compact-md"
-                                variant="outline"
-                                onClick={() => addSharp(["a/4"], selectedNoteId)}
-                            >
-                                <Image h={20} w="auto" fit="contain" src="/icons/Sharp.png" />
-                            </Button>
-                            <Button
-                                size="compact-md"
-                                variant="outline"
-                                onClick={() => addFlat(["a/4"], selectedNoteId)}
-                            >
-                                <Image h={20} w="auto" fit="contain" src="/icons/flat.jpg" />
-                            </Button>
+        {/* Notes Tab */}
+        <Tabs.Panel value="notes">
+          <Space h="xs" />
+          <Group>
+            {/* Accidentals */}
+            <Tooltip label="Add Natural" position="top" withArrow>
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => addNatural(["a/4"], selectedNoteId)}
+              >
+                <Image h={20} w="auto" fit="contain" src="/icons/natural.jpg" />
+              </Button>
+            </Tooltip>
+            <Tooltip label="Add Sharp" position="top" withArrow>
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => addSharp(["a/4"], selectedNoteId)}
+              >
+                <Image h={20} w="auto" fit="contain" src="/icons/Sharp.png" />
+              </Button>
+            </Tooltip>
+            <Tooltip label="Add Flat" position="top" withArrow>
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => addFlat(["a/4"], selectedNoteId)}
+              >
+                <Image h={20} w="auto" fit="contain" src="/icons/flat.jpg" />
+              </Button>
+            </Tooltip>
 
                             <Divider size="sm" orientation="vertical" />
 
-                            {/* Note/Rest Duration */}
-                            <Button
-                                size="compact-md"
-                                variant="outline"
-                                onClick={() => modifyDurationInMeasure("w", selectedNoteId)}
-                            >
-                                <Image h={10} w={20} fit="contain" src="/icons/wholeNote.jpg" />
-                            </Button>
-                            <Button
-                                size="compact-md"
-                                variant="outline"
-                                onClick={() => modifyDurationInMeasure("h", selectedNoteId)}
-                            >
-                                <Image h={20} w="auto" fit="contain" src="/icons/halfNote.jpg" />
-                            </Button>
-                            <Button
-                                size="compact-md"
-                                variant="outline"
-                                onClick={() => modifyDurationInMeasure("q", selectedNoteId)}
-                            >
-                                <Image
-                                    h={20}
-                                    w="auto"
-                                    fit="contain"
-                                    src="/icons/quarterNote.png"
-                                />
-                            </Button>
-                            <Button
-                                size="compact-md"
-                                variant="outline"
-                                onClick={() => modifyDurationInMeasure("8", selectedNoteId)}
-                            >
-                                <Image h={20} w="auto" fit="contain" src="/icons/8thNote.jpg" />
-                            </Button>
-                            <Button
-                                size="compact-md"
-                                variant="outline"
-                                onClick={() => modifyDurationInMeasure("16", selectedNoteId)}
-                            >
-                                <Image h={20} w="auto" fit="contain" src="/icons/16thNote.jpg" />
-                            </Button>
-                            <Button
-                                size="compact-md"
-                                variant="outline"
-                                onClick={() => modifyDurationInMeasure("32", selectedNoteId)}
-                            >
-                                <Image h={20} w="auto" fit="contain" src="/icons/32ndNote.jpg" />
-                            </Button>
-                            <Button
-                                size="compact-md"
-                                variant="outline"
-                                onClick={() => modifyDurationInMeasure("64", selectedNoteId)}
-                            >
-                                <Image h={20} w="auto" fit="contain" src="/icons/64thNote.png" />
-                            </Button>
+            {/* Note/Rest Duration */}
+            <Tooltip label="Whole Note Duration" position="top" withArrow>
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => modifyDurationInMeasure("w", selectedNoteId)}
+              >
+                <Image h={10} w={20} fit="contain" src="/icons/wholeNote.jpg" />
+              </Button>
+            </Tooltip>
+            <Tooltip label="Half Note Duration" position="top" withArrow>
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => modifyDurationInMeasure("h", selectedNoteId)}
+              >
+                <Image
+                  h={20}
+                  w="auto"
+                  fit="contain"
+                  src="/icons/halfNote.jpg"
+                />
+              </Button>
+            </Tooltip>
+            <Tooltip label="Quarter Note Duration" position="top" withArrow>
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => modifyDurationInMeasure("q", selectedNoteId)}
+              >
+                <Image
+                  h={20}
+                  w="auto"
+                  fit="contain"
+                  src="/icons/quarterNote.png"
+                />
+              </Button>
+            </Tooltip>
+            <Tooltip label="Eighth Note Duration" position="top" withArrow>
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => modifyDurationInMeasure("8", selectedNoteId)}
+              >
+                <Image h={20} w="auto" fit="contain" src="/icons/8thNote.jpg" />
+              </Button>
+            </Tooltip>
+            <Tooltip label="Sixteenth Note Duration" position="top" withArrow>
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => modifyDurationInMeasure("16", selectedNoteId)}
+              >
+                <Image
+                  h={20}
+                  w="auto"
+                  fit="contain"
+                  src="/icons/16thNote.jpg"
+                />
+              </Button>
+            </Tooltip>
+            <Tooltip
+              label="Thirty-Second Note Duration"
+              position="top"
+              withArrow
+            >
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => modifyDurationInMeasure("32", selectedNoteId)}
+              >
+                <Image
+                  h={20}
+                  w="auto"
+                  fit="contain"
+                  src="/icons/32ndNote.jpg"
+                />
+              </Button>
+            </Tooltip>
+            <Tooltip
+              label="Sixty-Fourth Note Duration"
+              position="top"
+              withArrow
+            >
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => modifyDurationInMeasure("64", selectedNoteId)}
+              >
+                <Image
+                  h={20}
+                  w="auto"
+                  fit="contain"
+                  src="/icons/64thNote.png"
+                />
+              </Button>
+            </Tooltip>
+
+            <Divider size="sm" orientation="vertical" />
+
+            {/* Dots */}
+            <Tooltip label="Add Single Dot" position="top" withArrow>
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => handleDot(1, selectedNoteId)}
+              >
+                <Image
+                  h={10}
+                  w="auto"
+                  fit="contain"
+                  src="/icons/Dotted_whole_note.jpg"
+                />
+              </Button>
+            </Tooltip>
+
+            <Tooltip label="Add Double Dot" position="top" withArrow>
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => handleDot(2, selectedNoteId)}
+              >
+                <Image
+                  h={10}
+                  w="auto"
+                  fit="contain"
+                  src="/icons/Double_dotted_whole_note.jpg"
+                />
+              </Button>
+            </Tooltip>
 
                             <Divider size="sm" orientation="vertical" />
 
-                            {/* Dots */}
-                            <Button
-                                size="compact-md"
-                                variant="outline"
-                                onClick={() => handleDot(1, selectedNoteId)}
-                            >
-                                <Image
-                                    h={10}
-                                    w="auto"
-                                    fit="contain"
-                                    src="/icons/Dotted_whole_note.jpg"
-                                />
-                            </Button>
+            {/* Ties */}
+            <Tooltip label="Add Tie" position="top" withArrow>
+              <Button variant="outline" onClick={() => addTie(selectedNoteId)}>
+                Add Tie
+              </Button>
+            </Tooltip>
+            <Tooltip label="Remove Tie" position="top" withArrow>
+              <Button
+                variant="outline"
+                onClick={() => removeTie(selectedNoteId)}
+              >
+                Remove Tie
+              </Button>
+            </Tooltip>
+          </Group>
+        </Tabs.Panel>
 
-                            <Button
-                                size="compact-md"
-                                variant="outline"
-                                onClick={() => handleDot(2, selectedNoteId)}
-                            >
-                                <Image
-                                    h={10}
-                                    w="auto"
-                                    fit="contain"
-                                    src="/icons/Double_dotted_whole_note.jpg"
-                                />
-                            </Button>
-
-                            <Divider size="sm" orientation="vertical" />
-
-                            {/* Ties */}
-                            <Button variant="outline" onClick={() => addTie(selectedNoteId)}>
-                                Add Tie
-                            </Button>
-                            <Button variant="outline" onClick={() => removeTie(selectedNoteId)}>
-                                Remove Tie
-                            </Button>
-                            <Divider size="sm" orientation="vertical" />
-
-                            <Button>Help</Button>
-                        </Group>
-                    </Tabs.Panel>
-
-                    <Tabs.Panel value="measure">
-                        <Space h="xs"></Space>
-                        <Group>
-                            {/* Measures */}
-                            <Button variant="outline" onClick={addMeasure}>
-                                Add Measure
-                            </Button>
-                            <Button variant="outline" onClick={removeMeasure}>
-                                Delete Measure
-                            </Button>
+        <Tabs.Panel value="measure">
+          <Space h="xs" />
+          <Group>
+            {/* Measures */}
+            <Tooltip label="Add Measure" position="top" withArrow>
+              <Button variant="outline" onClick={addMeasure}>
+                Add Measure
+              </Button>
+            </Tooltip>
+            <Tooltip label="Delete Measure" position="top" withArrow>
+              <Button variant="outline" onClick={removeMeasure}>
+                Delete Measure
+              </Button>
+            </Tooltip>
 
                             <Divider size="sm" orientation="vertical" />
 
-                            {/* Signatures */}
-                            <Text>Set Key Signature: </Text>
-                            <Select
-                                placeholder="Choose Key Signature"
-                                onChange={(value) => value && setKeySignature(value)}
-                                data={keySignatures}
-                            />
-                        </Group>
-                    </Tabs.Panel>
+            {/* Signatures */}
+            <Text>Set Key Signature: </Text>
+            <Tooltip label="Choose Key Signature" position="top" withArrow>
+              <Select
+                placeholder="Choose Key Signature"
+                onChange={(value) => value && setKeySignature(value)}
+                data={keySignatures}
+              />
+            </Tooltip>
+          </Group>
+        </Tabs.Panel>
 
                     <></>
                 </Tabs>}
@@ -417,7 +479,11 @@ export const ToolbarHeader: React.FC<{
                         YOU ONLY HAVE READ ACCESS TO THIS SCORE
                     </Text>
                 </Center>}
-                {/* </Group> */}
+          
+      <Tooltip label="Help" position="top" withArrow>
+              <Button style={{ marginLeft: 'auto', marginTop: '20px' }}>Help</Button>
+            </Tooltip>
+      </Group>
             </AppShell.Header>
         );
     };
