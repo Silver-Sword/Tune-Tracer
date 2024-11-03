@@ -28,7 +28,7 @@ export function createPlaceNoteBox(note: StaveNote): SVGElement {
 }
 
 function getTrebleMap(): Map<number, string> {
-    const map1 = new Map();
+    const map1 = new Map<number, string>();
     const notes1 = ["g", "f", "e", "d", "c", "b", "a"];
     let octave1 = 7;
     let interval1 = 1;
@@ -70,7 +70,7 @@ function reAssignIds(voice: Voice, measure: Measure) {
 }
 
 export function attachMouseMoveListener(selection: Selection<SVGElement, unknown, null, undefined>, note: StaveNote | null, measure: Measure, svgBoxY: number) {
-    let snapToKeyMap;
+    let snapToKeyMap: Map<number, string>;
     if (measure.getClef() == "treble") {
         snapToKeyMap = getTrebleMap();
     }
