@@ -25,6 +25,7 @@ import { useSearchParams } from "next/navigation";
 import * as d3 from 'd3';
 import { Selection } from 'd3';
 import * as Tone from 'tone';
+import { useRouter } from "next/navigation";
 import { access, write } from "fs";
 import { HookCallbacks } from "async_hooks";
 import { removeAllListeners } from "process";
@@ -36,6 +37,7 @@ const DEFAULT_RENDERER_HEIGHT = 2000;
 export type SendChangesType = () => Promise<void>;
 
 export default function CompositionTool() {
+    const router = useRouter();
     const notationRef = useRef<HTMLDivElement>(null);
     const score = useRef<Score | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -54,6 +56,7 @@ export default function CompositionTool() {
     const userId = useRef<string>();
     const displayName = useRef<string>();
     const documentID = useRef<string>();
+    const [hasWriteAccess, setHasWriteAccess] = useState<boolean>(true);
 
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = async (duration: string, noteId: number) => {
@@ -780,7 +783,17 @@ export default function CompositionTool() {
             const accessLevel = await fetch(CHECK_ACCESS_LEVEL_URL, data)
                 .then((res) => res.json().then((data) => {
                     console.log(`Access Level Response: ${data.data}`);
-                    const hasWriteAcces: boolean = data.data >= ShareStyle.WRITE;
+                    const hasWriteAccess: boolean = data.data >= ShareStyle.WRITE;
+                    setHasWriteAccess(hasWriteAccess);
+                    if(data.data <= ShareStyle.NONE)
+                    {
+                        router.push(`/no_access`);
+                    }
+                    if(!hasWriteAccess && notationRef.current){
+                        d3.select(notationRef.current)
+                    .on('click', null);
+                    }
+                    
                 }));
         };
 
@@ -1000,30 +1013,6 @@ export default function CompositionTool() {
                 clearInterval(intervalID);
             }
         }, [userTemp]);
-        useEffect(() => {
-            // Attach the note selection handler to the notationRef container
-            d3.select(notationRef.current)
-                .on('click', function (event) {
-                    // Grab a reference to what we click on
-                    let targetElement = event.target;
-
-                    // Keep going up the DOM to look for an element that has the VF note class
-                    while (targetElement && !targetElement.classList.contains('vf-stavenote')) {
-                        targetElement = targetElement.parentElement;
-                    }
-
-                    // Check to see if we've found an element in the DOM with the class we're looking for
-                    if (targetElement && targetElement.classList.contains('vf-stavenote')) {
-                        const selectId = d3.select(targetElement).attr('id');
-                        setSelectedNoteId(parseInt(selectId));
-                    }
-                });
-
-            // Clean up the event listener when notationRef unmounts
-            return () => {
-                d3.select(notationRef.current).on('click', null);
-            }
-        }, [notationRef.current])
 
         useEffect(() => {
             // First remove the selectd note class from previously selected note
@@ -1118,6 +1107,7 @@ export default function CompositionTool() {
 
         function createNewNoteBox()
         {
+            if(!hasWriteAccess) return;
             if(!notationRef.current || !score.current) return;
             if(selectedNoteId === -1) return;
             let note = score.current?.findNote(selectedNoteId);
@@ -1142,6 +1132,7 @@ export default function CompositionTool() {
         }, [selectedNoteId]);
 
         useEffect(() => {
+            
             // Attach the note selection handler to the notationRef container
             d3.select(notationRef.current)
                 .on('click', function (event) {
@@ -1232,6 +1223,7 @@ export default function CompositionTool() {
                         // removeAccidentals={removeAccidentalsHandler}
                         setKeySignature={setKeySignatureHandler}
                         handleDot={dotHandler}
+                        hasWriteAccess = {hasWriteAccess}
                     />
                     {/* <CommentAside /> */}
 

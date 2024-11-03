@@ -1,28 +1,28 @@
 import {
-  AppShell,
-  Group,
-  Tooltip,
-  TextInput,
-  Container,
-  Center,
-  ActionIcon,
-  Space,
-  Slider,
-  rem,
-  Select,
-  Tabs,
-  Button,
-  Divider,
-  Text,
-  Image,
+    AppShell,
+    Group,
+    Tooltip,
+    TextInput,
+    Container,
+    Center,
+    ActionIcon,
+    Space,
+    Slider,
+    rem,
+    Select,
+    Tabs,
+    Button,
+    Divider,
+    Text,
+    Image,
 } from "@mantine/core";
 import React, { useEffect, useRef, useState } from "react";
 import { SharingModal } from "./sharing/SharingModal";
 import {
-  IconPlayerPlay,
-  IconPlayerPause,
-  IconPlayerStop,
-  IconVolume,
+    IconPlayerPlay,
+    IconPlayerPause,
+    IconPlayerStop,
+    IconVolume,
 } from "@tabler/icons-react";
 import { getUserID } from "../cookie";
 import Link from "next/link";
@@ -66,192 +66,197 @@ const keySignatures = [
 ];
 
 export const ToolbarHeader: React.FC<{
-  documentName: string;
-  documentMetadata: DocumentMetadata;
-  modifyDurationInMeasure: (duration: string, noteId: number) => void;
-  selectedNoteId: number;
-  playbackComposition: () => void;
-  stopPlayback: () => void;
-  volume: number;
-  onVolumeChange: (value: number) => void;
-  addMeasure: () => void;
-  removeMeasure: () => void;
-  addTie: (noteId: number) => void;
-  removeTie: (noteId: number) => void;
-  addSharp: (keys: string[], noteId: number) => void;
-  addNatural: (keys: string[], noteId: number) => void;
-  addFlat: (keys: string[], noteId: number) => void;
-  handleDot: (dotType: number, noteId: number) => void;
-  // removeAccidentals: (keys: string, noteID: string) => void;
-  setKeySignature: (keySignature: string) => void;
+    documentName: string;
+    documentMetadata: DocumentMetadata;
+    modifyDurationInMeasure: (duration: string, noteId: number) => void;
+    selectedNoteId: number;
+    playbackComposition: () => void;
+    stopPlayback: () => void;
+    volume: number;
+    onVolumeChange: (value: number) => void;
+    addMeasure: () => void;
+    removeMeasure: () => void;
+    addTie: (noteId: number) => void;
+    removeTie: (noteId: number) => void;
+    addSharp: (keys: string[], noteId: number) => void;
+    addNatural: (keys: string[], noteId: number) => void;
+    addFlat: (keys: string[], noteId: number) => void;
+    handleDot: (dotType: number, noteId: number) => void;
+    // removeAccidentals: (keys: string, noteID: string) => void;
+    setKeySignature: (keySignature: string) => void;
+    hasWriteAccess: boolean;
 }> = ({
-  documentName,
-  documentMetadata,
-  modifyDurationInMeasure,
-  selectedNoteId,
-  playbackComposition,
-  stopPlayback,
-  volume,
-  onVolumeChange,
-  addMeasure,
-  removeMeasure,
-  addTie,
-  removeTie,
-  addSharp,
-  addNatural,
-  addFlat,
-  handleDot,
-  // removeAccidentals,
-  setKeySignature,
+    documentName,
+    documentMetadata,
+    modifyDurationInMeasure,
+    selectedNoteId,
+    playbackComposition,
+    stopPlayback,
+    volume,
+    onVolumeChange,
+    addMeasure,
+    removeMeasure,
+    addTie,
+    removeTie,
+    addSharp,
+    addNatural,
+    addFlat,
+    handleDot,
+    // removeAccidentals,
+    setKeySignature,
+    hasWriteAccess
 }) => {
-  // State to manage the input value
-  const [inputValue, setInputValue] = useState("Untitled Score");
-  const [shareStyle, setShareStyle] = useState(ShareStyle.NONE);
-  const searchParams = useSearchParams();
+        // State to manage the input value
+        const [inputValue, setInputValue] = useState("Untitled Score");
+        const [shareStyle, setShareStyle] = useState(ShareStyle.NONE);
+        const searchParams = useSearchParams();
 
-  // State to toggle between edit and display modes
-  const [isChangingName, setIsChangingName] = useState(false);
-  const documentID = useRef<string>();
+        // State to toggle between edit and display modes
+        const [isChangingName, setIsChangingName] = useState(false);
+        const documentID = useRef<string>();
 
-  // Handle the save action (when pressing Enter or clicking outside)
-  const handleSave = () => {
-    setIsChangingName(false); // Exit edit mode and save
-  };
+        // Handle the save action (when pressing Enter or clicking outside)
+        const handleSave = () => {
+            setIsChangingName(false); // Exit edit mode and save
+        };
 
   useEffect(() => {
     setInputValue(documentName);
     documentID.current = searchParams.get("id") || "null";
   }, [documentName]);
 
-  useEffect(() => {
-    setShareStyle(documentMetadata?.share_link_style ?? ShareStyle.NONE);
-  }, [documentMetadata]);
+        useEffect(() => {
+            setShareStyle(documentMetadata?.share_link_style ?? ShareStyle.NONE);
+        }, [documentMetadata]);
 
-  const handleDocumentNameChange = (event: {
-    currentTarget: { value: any };
-  }) => {
-    setInputValue(event.currentTarget.value);
-    const new_title = {
-      documentId: documentID.current,
-      documentChanges: { document_title: event.currentTarget.value },
-      writerId: getUserID(),
-    };
-    callAPI("updatePartialDocument", new_title);
-  };
-  // Handle when the user clicks the text to switch to editing mode
-  const handleEdit = () => {
-    setIsChangingName(true);
-  };
+        const handleDocumentNameChange = (event: {
+            currentTarget: { value: any };
+        }) => {
+          setInputValue(event.currentTarget.value);
+          const new_title = {
+            documentId: documentID.current,
+            documentChanges: {  document_title: event.currentTarget.value  },
+            writerId: getUserID(),
+          };
+          callAPI("updatePartialDocument", new_title);
+        };
+      // Handle when the user clicks the text to switch to editing mode
+      const handleEdit = () => {
+            if(!hasWriteAccess) return;
+        setIsChangingName(true);
+      };
 
-  // Toggle between editable and read-only states
-  const [mode, setMode] = useState<string>("Editable");
-  const handleModeChange = (value: any) => {
-    setMode(value);
-  };
+        // Toggle between editable and read-only states
+        const [mode, setMode] = useState<string>("Editable");
+        const handleModeChange = (value: any) => {
+            setMode(value);
+        };
 
-  return (
-    <AppShell.Header p="md">
-      {/* First layer (top section) PUT IF STATEMENT HERE IF READ ONLY*/}
-      <Group
-        align="center"
-        style={{ borderBottom: "1px solid #eee", paddingBottom: "10px" }}
-      >
-        {/* Need to route back to storage page */}
-        <Tooltip label="Back to Home">
-          <Link href="/storage">
-            <Image
-              // component="a"
-              // href="/storage"
-              h={50}
-              w="auto"
-              fit="contain"
-              src="TuneTracerLogo.png"
-            />
-          </Link>
-        </Tooltip>
+        return (
+            <AppShell.Header p="md">
+                <Group
+                    align="center"
+                    style={{ borderBottom: "1px solid #eee", paddingBottom: "10px" }}
+                >
+                    {/* Need to route back to storage page */}
+                    <Tooltip label="Back to Home">
+                        <Link href="/storage">
+                            <Image
+                                // component="a"
+                                // href="/storage"
+                                h={50}
+                                w="auto"
+                                fit="contain"
+                                src="TuneTracerLogo.png"
+                            />
+                        </Link>
+                    </Tooltip>
 
-        {/* Editable Document Title */}
-        {isChangingName ? (
-          <TextInput
-            size="md"
-            value={inputValue}
-            onChange={handleDocumentNameChange} // Update input value
-            onBlur={handleSave} // Save on focus loss
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                handleSave(); // Save on Enter key press
-              }
-            }}
-            placeholder="Enter Document Name"
-            autoFocus // Auto-focus when entering edit mode
-          />
-        ) : (
-          <Text
-            onClick={handleEdit}
-            style={{
-              cursor: "text",
-              padding: "3px",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.outline =
-                "2px solid rgba(128, 128, 128, 0.6)"; // Slightly dimmed gray outline
-              e.currentTarget.style.outlineOffset = "3px"; // Space between outline and text
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.outline = "none"; // Remove outline on mouse leave
-            }}
-          >
-            {inputValue || "Untitled Score"}
-          </Text>
-        )}
+                    {/* Editable Document Title */}
+                    {isChangingName ? (
+                        <TextInput
+                            size="md"
+                            value={inputValue}
+                            onChange={handleDocumentNameChange} // Update input value
+                            onBlur={handleSave} // Save on focus loss
+                            onKeyDown={(event) => {
+                                if (event.key === "Enter") {
+                                    handleSave(); // Save on Enter key press
+                                }
+                            }}
+                            placeholder="Enter Document Name"
+                            autoFocus // Auto-focus when entering edit mode
+                        />
+                    ) : (
+                        <Text
+                            onClick={handleEdit}
+                            style={{
+                                cursor: "text",
+                                padding: "3px",
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.outline =
+                                    "2px solid rgba(128, 128, 128, 0.6)"; // Slightly dimmed gray outline
+                                e.currentTarget.style.outlineOffset = "3px"; // Space between outline and text
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.outline = "none"; // Remove outline on mouse leave
+                            }}
+                        >
+                            {inputValue || "Untitled Score"}
+                        </Text>
+                    )}
 
-        {/* PlayBack UI */}
-        <Container fluid style={{ width: "20%" }}>
-          <Center>
-            <Group>
-              <ActionIcon onClick={() => playbackComposition()}>
-                <IconPlayerPlay />
-              </ActionIcon>
-              <ActionIcon>
-                <IconPlayerPause />
-              </ActionIcon>
-              <ActionIcon onClick={() => stopPlayback()}>
-                <IconPlayerStop />
-              </ActionIcon>
-            </Group>
-          </Center>
-          <Space h="xs"></Space>
-          <Slider
-            value={volume}
-            onChange={onVolumeChange}
-            thumbChildren={<IconVolume />}
-            label={(value) => `${value}%`}
-            defaultValue={50}
-            thumbSize={26}
-            styles={{ thumb: { borderWidth: rem(2), padding: rem(3) } }}
-          />
-        </Container>
+                    {/* PlayBack UI */}
+                    <Container fluid style={{ width: "20%" }}>
+                        <Center>
+                            <Group>
+                                <ActionIcon onClick={() => playbackComposition()}>
+                                    <IconPlayerPlay />
+                                </ActionIcon>
+                                <ActionIcon>
+                                    <IconPlayerPause />
+                                </ActionIcon>
+                                <ActionIcon onClick={() => stopPlayback()}>
+                                    <IconPlayerStop />
+                                </ActionIcon>
+                            </Group>
+                        </Center>
+                        <Space h="xs"></Space>
+                        <Slider
+                            value={volume}
+                            onChange={onVolumeChange}
+                            thumbChildren={<IconVolume />}
+                            label={(value) => `${value}%`}
+                            defaultValue={50}
+                            thumbSize={26}
+                            styles={{ thumb: { borderWidth: rem(2), padding: rem(3) } }}
+                        />
+                    </Container>
 
-        {/* Sharing UI */}
+                    {/* Sharing UI */}
 
-        {/* Select Dropdown should not be changable if not the owner */}
-        <Select
-          placeholder="Select Sharing Mode"
-          onChange={(value) => handleModeChange(value)}
-          allowDeselect={false}
-          withCheckIcon={false}
-          style={{ width: 125, marginLeft: "10px" }}
-        />
-        <SharingModal documentTitle={inputValue} metadata={documentMetadata} />
-      </Group>
+                    {/* Select Dropdown should not be changable if not the owner */}
+                    <Select
+                        placeholder="Select Sharing Mode"
+                        onChange={(value) => handleModeChange(value)}
+                        allowDeselect={false}
+                        withCheckIcon={false}
+                        style={{ width: 125, marginLeft: "10px" }}
+                    />
+                    <SharingModal
+                        documentTitle={inputValue}
+                        metadata={documentMetadata}
+                    />
+                </Group>
 
-      {/* Second layer (middle section) */}
-      <Group align="space-between" mt="xs" style={{ paddingBottom: "10px" }}>
-      <Tabs defaultValue="notes">
-        <Tabs.List>
-          <Tabs.Tab value="notes">Notes</Tabs.Tab>
-          <Tabs.Tab value="measure">Measure</Tabs.Tab>
-        </Tabs.List>
+                {/* Second layer (middle section) */}
+                <Group align="space-between" mt="xs" style={{ paddingBottom: "10px" }}>
+                {hasWriteAccess && <Tabs defaultValue="notes">
+                    <Tabs.List>
+                        <Tabs.Tab value="notes">Notes</Tabs.Tab>
+                        <Tabs.Tab value="measure">Measure</Tabs.Tab>
+                    </Tabs.List>
 
         {/* Notes Tab */}
         <Tabs.Panel value="notes">
@@ -286,7 +291,7 @@ export const ToolbarHeader: React.FC<{
               </Button>
             </Tooltip>
 
-            <Divider size="sm" orientation="vertical" />
+                            <Divider size="sm" orientation="vertical" />
 
             {/* Note/Rest Duration */}
             <Tooltip label="Whole Note Duration" position="top" withArrow>
@@ -419,7 +424,7 @@ export const ToolbarHeader: React.FC<{
               </Button>
             </Tooltip>
 
-            <Divider size="sm" orientation="vertical" />
+                            <Divider size="sm" orientation="vertical" />
 
             {/* Ties */}
             <Tooltip label="Add Tie" position="top" withArrow>
@@ -453,7 +458,7 @@ export const ToolbarHeader: React.FC<{
               </Button>
             </Tooltip>
 
-            <Divider size="sm" orientation="vertical" />
+                            <Divider size="sm" orientation="vertical" />
 
             {/* Signatures */}
             <Text>Set Key Signature: </Text>
@@ -467,13 +472,18 @@ export const ToolbarHeader: React.FC<{
           </Group>
         </Tabs.Panel>
 
-        <></>
-      </Tabs>
-
+                    <></>
+                </Tabs>}
+                {!hasWriteAccess && <Center style={{ width: '100%', paddingTop: '30px'}}>
+                    <Text fw={700} c = "blue" size="lg">
+                        YOU ONLY HAVE READ ACCESS TO THIS SCORE
+                    </Text>
+                </Center>}
+          
       <Tooltip label="Help" position="top" withArrow>
               <Button style={{ marginLeft: 'auto', marginTop: '20px' }}>Help</Button>
             </Tooltip>
       </Group>
-    </AppShell.Header>
-  );
-};
+            </AppShell.Header>
+        );
+    };
