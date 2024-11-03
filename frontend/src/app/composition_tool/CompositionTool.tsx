@@ -1164,9 +1164,9 @@ export default function CompositionTool() {
             if (selectedNoteId) {
                 const userInfo = {
                     documentId: documentID.current,
-                    userId: userId,
-                    user_email: email,
-                    displayName: displayName,
+                    userId: userId.current,
+                    user_email: email.current,
+                    displayName: displayName.current,
                     cursor: selectedNoteId
                 }
 

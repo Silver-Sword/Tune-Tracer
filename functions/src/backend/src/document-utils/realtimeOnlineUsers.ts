@@ -21,7 +21,6 @@ export async function subscribeUserToUserDocumentPool(
     shouldAutoDisconnectUser: boolean = true,
 ) {
     const firebase = getFirebase();
-    console.debug(`(4) Subscribing user: ${JSON.stringify(user)} to document ${documentId}`);
     await registerUserToDocument(documentId, user, shouldAutoDisconnectUser);
     await firebase.subscribeToOnlineUsers(documentId, updateOnlineUserPoolFn);
 }
@@ -83,7 +82,6 @@ async function registerUserToDocument(
         );
     }
 
-    console.debug(`(5) Subscribing user: ${JSON.stringify(user)} to document ${documentId}`);
     await firebase.registerUserToDocument( 
         documentId, 
         {

@@ -335,10 +335,6 @@ export default class FirebaseWrapper
             display_name: user.display_name,
             last_active_time: firebase.database.ServerValue.TIMESTAMP
         });
-        console.debug(`(5) Subscribing user: ${JSON.stringify({
-            user_id: user.user_id,
-            user_email: user.user_email,
-            display_name: user.display_name,})} to document ${documentId}`);
         if(shouldAutoDisconnect) {
             userReference.onDisconnect().remove();
         }

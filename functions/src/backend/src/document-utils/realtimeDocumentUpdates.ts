@@ -29,7 +29,6 @@ export async function subscribeToDocument(
   let firstAccess = true;
   const firebase = getFirebase();
 
-  console.debug(`(2) Subscribing user: ${JSON.stringify(user)} to document ${documentId}`);
   await subscribeUserToUserDocumentPool(documentId, user, onUserPoolUpdateFn, shouldAutoDisconnectUser);
   
   firebase.subscribeToDocument(documentId, (snapshot) => {

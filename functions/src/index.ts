@@ -633,7 +633,6 @@ function updateUserMap(
 async function subscribeServerToDocument(documentId: string) {
   if(!isServerSubscribed) {
     isServerSubscribed = true;
-    console.log("Subscribing server to document");
     await admin_subscribeToDocument(
       documentId,
       (updatedDocument: typeof LibDocument) => {
@@ -736,7 +735,6 @@ exports.subscribeToDocument = functions.https.onRequest(
             user_id: userId as string,
             display_name: displayName as string,
           };
-          console.log(`(1) Subscribing user: ${JSON.stringify(user)} to document ${documentId}`);
 
           isServerSubscribed = true;
           await subscribeToDocument(
@@ -833,7 +831,7 @@ exports.updateUserCursor = functions.https.onRequest(
             }`,
           });
         } else {
-          await updateUserCursor(documentId, { userId, cursor });
+          await updateUserCursor(documentId, { user_id: userId, cursor: cursor });
 
           // Send a successful response back
           response.status(StatusCode.OK).send({
