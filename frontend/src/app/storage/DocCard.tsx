@@ -28,6 +28,9 @@ import { getUserID, saveDocID } from "../cookie";
 export const DocCard: React.FC<DocumentData> = ({document_id, document_title, owner_id, last_edit_time}) => {
   const [isFavorited, setIsFavorited] = useState(false); // State to track if the card is favorited
   const [deleteModalOpened, setDeleteModalOpened] = useState(false); // State for the delete confirmation modal
+  const [loading, setLoading] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+
   const router = useRouter();
 
   // Toggle favorite state
@@ -47,7 +50,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   };
 
   // Handle card deletion (only proceed after confirmation)
-  const handleDelete = () => {
+  const handleDelete = async () => {
     console.log('Document deleted');
     
     const userId = getUserID();
@@ -56,9 +59,12 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
       userId: userId
     }
     console.log(`Delete Document Input: ${JSON.stringify(input)}`);
-    callAPI("deleteDocument", input);
-
+    setLoading(true);
+    await callAPI("deleteDocument", input);
+    setLoading(false);
+    setDeleted(true);
     setDeleteModalOpened(false); // Close modal after deletion
+    router.push("/storage");
   };
 
   const handleDocumentOpen = () => {
@@ -93,14 +99,17 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           <Button onClick={closeDeleteModal} variant="default">
             Cancel
           </Button>
-          <Button onClick={handleDelete} color="red">
+          <Button 
+          onClick={handleDelete} 
+          color="red"
+          loading = {loading}>
             Delete
           </Button>
         </Group>
       </Modal>
 
       {/* Card content */}
-      <Card
+      {!deleted && <Card
         shadow="md"
         padding="lg"
         radius="md"
@@ -167,7 +176,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           <Text size="md">Created by: {owner_id}</Text>
           <Text size="sm" c="dimmed">Last Edited: {millisecondsToFormattedDateString(last_edit_time)}</Text>
         </Stack>
-      </Card>
+      </Card>}
     </>
   );
 };

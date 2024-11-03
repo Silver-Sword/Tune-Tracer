@@ -25,7 +25,7 @@ import {
     IconVolume,
 } from "@tabler/icons-react";
 import { getUserID } from "../cookie";
-import Link from "next/link";
+import Link from 'next/link';
 import { callAPI } from "../../utils/callAPI";
 import { useSearchParams } from "next/navigation";
 
@@ -236,19 +236,12 @@ export const ToolbarHeader: React.FC<{
 
                     {/* Sharing UI */}
 
-                    {/* Select Dropdown should not be changable if not the owner */}
-                    {/* <Select
-                        placeholder="Select Sharing Mode"
-                        onChange={(value) => handleModeChange(value)}
-                        allowDeselect={false}
-                        withCheckIcon={false}
-                        style={{ width: 125, marginLeft: "10px" }}
-                    /> */}
-                    <SharingModal
-                        documentTitle={inputValue}
-                        metadata={documentMetadata}
-                    />
-                </Group>
+        {/* Select Dropdown should not be changable if not the owner */}
+        <SharingModal
+          documentTitle={inputValue}
+          metadata={documentMetadata}
+        />
+      </Group>
 
                 {/* Second layer (middle section) */}
                 <Group align="space-between" mt="xs" style={{ paddingBottom: "10px" }}>

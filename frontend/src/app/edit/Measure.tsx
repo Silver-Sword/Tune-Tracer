@@ -47,6 +47,7 @@ export class Measure {
             timeSignature = measureData.timeSignature;
             clef = measureData.clef;
             renderTimeSignature = measureData.renderTimeSignature;
+            keySignature = measureData.keySignature;
         }
         this.x = x;
         this.y = y;
@@ -104,10 +105,6 @@ export class Measure {
                 new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }),
             ];
         }
-
-        notes.forEach((note) => {
-            console.log("needed: " + new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" }).getTicks().value());
-        })
 
         this.voice1 = new this.VF.Voice({ num_beats: this.num_beats, beat_value: this.beat_value }).addTickables(notes);
     }

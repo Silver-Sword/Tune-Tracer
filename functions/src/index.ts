@@ -54,6 +54,7 @@ const {
 } = require("./backend/src/document-utils/updateUserLevelDocumentProperties");
 const {
   subscribeToDocument,
+  admin_subscribeToDocument
 } = require("./backend/src/document-utils/realtimeDocumentUpdates");
 const {
   updateUserCursor,
@@ -76,7 +77,10 @@ const {
   editCommentText,
   subscribeToComments,
 } = require("./backend/src/comment-utils/commentOperations");
-const { getUserIdFromEmail } = require("./backend/src/user-utils/getUserData");
+const { 
+  getUserIdFromEmail,
+  getUserFromId
+} = require("./backend/src/user-utils/getUserData");
 const {
   getUserAccessLevel,
 } = require("./backend/src/security-utils/getUserAccessLevel");
@@ -274,6 +278,38 @@ exports.getTrashedDocumentPreviews = functions.https.onRequest(
         response
           .status(StatusCode.GENERAL_ERROR)
           .send({ message: "Failed to get documents", data: error as Error });
+      }
+    });
+  }
+);
+
+exports.getUserFromId = functions.https.onRequest(
+  async (request: any, response: any) => {
+    corsHandler(request, response, async () => {
+      try {
+        const userId = request.body.userId;
+        if (!userId) {
+          response
+            .status(StatusCode.MISSING_ARGUMENTS)
+            .send({ message: "Missing required fields: userId" });
+        } else {
+          const apiResult = await getUserFromId(userId);
+          if(apiResult === null) {
+            response.status(StatusCode.USER_NOT_FOUND).send({
+              message: `User with id ${userId} not found in the database`,
+            });
+          } else {
+            // Send a successful response back
+            response
+              .status(StatusCode.OK)
+              .send({ message: "Here is the user", data: apiResult });
+          }
+        }
+      } catch (error) {
+        // Send an error response if something goes wrong
+        response
+          .status(StatusCode.GENERAL_ERROR)
+          .send({ message: "Failed to get user", data: error as Error });
       }
     });
   }
@@ -536,21 +572,32 @@ exports.deleteDocument = functions.https.onRequest(
   }
 );
 
+// ------------------------ START OF THE MINE FIELD ------------------------
 var documentMap = new Map<string, typeof LibDocument>();
 var userMap = new Map<string, Map<string, typeof OnlineEntity>>();
+var isServerSubscribed = false;
+const SERVER_ID = Date.now() % 1000;
 
 function updateDocumentMap(documentId: string, document: typeof LibDocument) {
   const oldDocument = documentMap.get(documentId);
 
-  if(oldDocument === undefined || oldDocument.metadata.last_modified_time < document.metadata.last_modified_time) {
+  if(
+    oldDocument === undefined || 
+    oldDocument.metadata.last_edit_time < document.metadata.last_edit_time
+  ){
     documentMap.set(documentId, document);
+    console.log(`Server id ${SERVER_ID} updated document ${documentId} with LET ${document.metadata.last_edit_time}`);
   }
 }
 
-async function getDocumentFromMap(documentId: string, userId: string) {
+async function genDocumentFromMap(documentId: string, userId: string) {
   if(!documentMap.has(documentId)) {
+    if(!isServerSubscribed) {
+      await subscribeServerToDocument(documentId);
+    }
     const doc = await getDocument(documentId, userId);
-    documentMap.set(documentId, doc);
+    console.log(`Server id ${SERVER_ID} received document ${documentId} with LET ${doc.metadata.last_edit_time}`);
+    updateDocumentMap(documentId, doc);
   }
   return documentMap.get(documentId);
 }
@@ -568,6 +615,22 @@ function updateUserMap(
     userMap.get(documentId)?.delete(onlineEntity.user_id);
   } else {
     userMap.get(documentId)?.set(onlineEntity.user_id, onlineEntity);
+  }
+}
+
+async function subscribeServerToDocument(documentId: string) {
+  if(!isServerSubscribed) {
+    isServerSubscribed = true;
+    console.log("Subscribing server to document");
+    await admin_subscribeToDocument(
+      documentId,
+      (updatedDocument: typeof LibDocument) => {
+        updateDocumentMap(documentId, updatedDocument);
+      },
+      (updateType: typeof UpdateType, onlineEntity: typeof OnlineEntity) => {
+        updateUserMap(documentId, onlineEntity, updateType === UpdateType.REMOVE);
+      }
+    );
   }
 }
 
@@ -593,7 +656,7 @@ exports.checkDocumentChanges = functions.https.onRequest(
             const documentObject: Record<string, unknown> = JSON.parse(
               JSON.stringify(documentChanges)
             );
-            const userDoc = documentMap.get(documentId);
+            const userDoc = await genDocumentFromMap(documentId, writerId);
             if(userDoc === undefined) {
               throw new Error("Document does not exist");
             }
@@ -613,13 +676,13 @@ exports.checkDocumentChanges = functions.https.onRequest(
             // const documentObject: Record<string,unknown> = currentDocument as Record<string,unknown>;
             await updatePartialDocument(documentObject, documentId, writerId);
           }
-
-          // for (se)
-          // documentMap.set(documentId, currentDocument);
+          
+          const currentDocument = await genDocumentFromMap(documentId, writerId);
+          console.log(`Server id ${SERVER_ID} served document ${documentId} with LET ${currentDocument.metadata.last_edit_time}`);
           response.status(StatusCode.OK).send({
             message: "Successfully checked document changes",
             data: {
-              document: await getDocumentFromMap(documentId, writerId), 
+              document: currentDocument, 
               onlineUsers: Array.from(userMap.values()),
             },
           });
@@ -637,7 +700,7 @@ exports.checkDocumentChanges = functions.https.onRequest(
 exports.subscribeToDocument = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
-      try {;
+      try {
         const documentId = request.body.documentId;
         const userId = request.body.userId;
         const user_email = request.body.user_email;
@@ -656,14 +719,13 @@ exports.subscribeToDocument = functions.https.onRequest(
             }`,
           });
         } else {
-          // const email = request.body.email;
-
           const user = {
             user_email: user_email as string,
             user_id: userId as string,
             display_name: displayName as string,
           };
 
+          isServerSubscribed = true;
           await subscribeToDocument(
             documentId,
             user,
@@ -674,26 +736,14 @@ exports.subscribeToDocument = functions.https.onRequest(
               updateType: typeof UpdateType,
               onlineEntity: typeof OnlineEntity
             ) => {
-              switch (updateType) {
-                case UpdateType.ADD:
-                  updateUserMap(documentId, onlineEntity, false);
-                  break;
-                case UpdateType.CHANGE:
-                  updateUserMap(documentId, onlineEntity, false);
-                  break;
-                case UpdateType.REMOVE:
-                  updateUserMap(documentId, onlineEntity, true);
-                  break;
-                  default:
-                    break;
-              }
+              updateUserMap(documentId, onlineEntity, updateType === UpdateType.REMOVE);
             }
           );
 
           response.status(StatusCode.OK).send({
             message: "Successfully subscribed to document",
             data: {
-              document: await getDocumentFromMap(documentId, userId),
+              document: await genDocumentFromMap(documentId, userId),
               onlineUsers: Array.from(userMap.values()),
             },
           });
@@ -750,6 +800,8 @@ exports.updatePartialDocument = functions.https.onRequest(
     });
   }
 ); // return!!!
+// ------------------------ START OF *THIS* MINE FIELD ------------------------
+
 
 // cursor endpoint
 
