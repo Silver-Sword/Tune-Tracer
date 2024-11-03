@@ -110,7 +110,6 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          cursor: 'pointer',
         }}
       >
         <Stack 
@@ -158,7 +157,9 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
               {document_title}
             </Text>
           </Tooltip>
-          {/* <Text size="md">Created by: {owner_id}</Text> */}
+          
+          {/* Get the display name from the ownerID */}
+          <Text size="md">Created by: {owner_id}</Text>
           <Text size="sm" c="dimmed">Date Last Edited: {millisecondsToFormattedDateString(last_edit_time)}</Text>
         </Stack>
       </Card>
