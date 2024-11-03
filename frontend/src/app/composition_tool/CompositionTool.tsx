@@ -1033,7 +1033,6 @@ export default function CompositionTool() {
             if (selectedNoteId !== -1) {
                 d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
             }
-            console.log("HIGHLIGHT noteID: " + selectedNoteId);
             // Update the user cursor on the backend
             updateUserCursor();
 
