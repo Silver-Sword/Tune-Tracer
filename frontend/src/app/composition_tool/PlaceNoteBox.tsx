@@ -174,7 +174,7 @@ export function attachMouseClickListener(
     selectedNoteId: number,
     svgBoxY: number): number {
 
-    let snapToKeyMap;
+    let snapToKeyMap: Map<number, string>;
     if (measure.getClef() == "treble") {
         snapToKeyMap = getTrebleMap();
     }
