@@ -537,9 +537,11 @@ exports.deleteDocument = functions.https.onRequest(
   }
 );
 
+// ------------------------ START OF THE MINE FIELD ------------------------
 var documentMap = new Map<string, typeof LibDocument>();
 var userMap = new Map<string, Map<string, typeof OnlineEntity>>();
 var isServerSubscribed = false;
+const SERVER_ID = Date.now() % 1000;
 
 function updateDocumentMap(documentId: string, document: typeof LibDocument) {
   const oldDocument = documentMap.get(documentId);
@@ -549,15 +551,17 @@ function updateDocumentMap(documentId: string, document: typeof LibDocument) {
     oldDocument.metadata.last_modified_time < document.metadata.last_modified_time
   ){
     documentMap.set(documentId, document);
+    console.log(`Server id ${SERVER_ID} updated document ${documentId} with LET ${document.metadata.last_edit_time}`);
   }
 }
 
-async function getDocumentFromMap(documentId: string, userId: string) {
+async function genDocumentFromMap(documentId: string, userId: string) {
   if(!documentMap.has(documentId)) {
     if(!isServerSubscribed) {
       await subscribeServerToDocument(documentId);
     }
     const doc = await getDocument(documentId, userId);
+    console.log(`Server id ${SERVER_ID} received document ${documentId} with LET ${doc.metadata.last_edit_time}`);
     updateDocumentMap(documentId, doc);
   }
   return documentMap.get(documentId);
@@ -617,7 +621,7 @@ exports.checkDocumentChanges = functions.https.onRequest(
             const documentObject: Record<string, unknown> = JSON.parse(
               JSON.stringify(documentChanges)
             );
-            const userDoc = getDocumentFromMap(documentId, writerId);
+            const userDoc = await genDocumentFromMap(documentId, writerId);
             if(userDoc === undefined) {
               throw new Error("Document does not exist");
             }
@@ -637,13 +641,13 @@ exports.checkDocumentChanges = functions.https.onRequest(
             // const documentObject: Record<string,unknown> = currentDocument as Record<string,unknown>;
             await updatePartialDocument(documentObject, documentId, writerId);
           }
-
-          // for (se)
-          // documentMap.set(documentId, currentDocument);
+          
+          const currentDocument = await genDocumentFromMap(documentId, writerId);
+          console.log(`Server id ${SERVER_ID} served document ${documentId} with LET ${currentDocument.metadata.last_edit_time}`);
           response.status(StatusCode.OK).send({
             message: "Successfully checked document changes",
             data: {
-              document: await getDocumentFromMap(documentId, writerId), 
+              document: currentDocument, 
               onlineUsers: Array.from(userMap.values()),
             },
           });
@@ -680,8 +684,6 @@ exports.subscribeToDocument = functions.https.onRequest(
             }`,
           });
         } else {
-          // const email = request.body.email;
-
           const user = {
             user_email: user_email as string,
             user_id: userId as string,
@@ -706,7 +708,7 @@ exports.subscribeToDocument = functions.https.onRequest(
           response.status(StatusCode.OK).send({
             message: "Successfully subscribed to document",
             data: {
-              document: await getDocumentFromMap(documentId, userId),
+              document: await genDocumentFromMap(documentId, userId),
               onlineUsers: Array.from(userMap.values()),
             },
           });
@@ -763,6 +765,8 @@ exports.updatePartialDocument = functions.https.onRequest(
     });
   }
 ); // return!!!
+// ------------------------ START OF *THIS* MINE FIELD ------------------------
+
 
 // cursor endpoint
 
