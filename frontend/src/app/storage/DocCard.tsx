@@ -126,7 +126,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           {/* Favorite and Delete buttons */}
           <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: '8px' }}>
             {/* Favorite button */}
-            <Button
+            {/* <Button
               variant="subtle"
               onClick={toggleFavorite}
               style={{
@@ -138,7 +138,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
               ) : (
                 <IconHeart size={18} />
               )}
-            </Button>
+            </Button> */}
 
             {/* Delete button */}
             <Button
