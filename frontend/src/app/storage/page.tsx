@@ -136,7 +136,6 @@ export default function Storage() {
     const { status, index, action, type } = data;
     console.log('data', data);
 
-
     console.log(`Joyride callback: ${status}, ${index}`);
     if (([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND] as string[]).includes(type)) {
       console.log('inside if');
@@ -148,16 +147,6 @@ export default function Storage() {
     } else {
       console.log('inside else');
     }
-    // if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-    //   console.log('inside if');
-    //   // setRun(false); // Stop tutorial
-    // } else {
-    //   console.log('inside else');
-    //   // setActions();
-    //   // setStepIndex(index); // Update to the next step
-    //   setStepIndex(index + (action === ACTIONS.PREV ? -1 : 1)); // Update to the next step
-
-    // }
   };
 
   const handleLogout = () => {
@@ -262,7 +251,11 @@ export default function Storage() {
             />
             <SearchBar />
             <Group>
+
+              
               <Button onClick={() => setRun(true)}>Help</Button>
+
+
               {/* Profile Menu */}
               <Menu shadow="md" width={200}>
                 <Menu.Target>
