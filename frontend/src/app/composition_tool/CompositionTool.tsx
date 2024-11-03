@@ -25,6 +25,7 @@ import { useSearchParams } from "next/navigation";
 import * as d3 from 'd3';
 import { Selection } from 'd3';
 import * as Tone from 'tone';
+import { useRouter } from "next/navigation";
 import { access, write } from "fs";
 import { HookCallbacks } from "async_hooks";
 import { removeAllListeners } from "process";
@@ -36,6 +37,7 @@ const DEFAULT_RENDERER_HEIGHT = 2000;
 export type SendChangesType = () => Promise<void>;
 
 export default function CompositionTool() {
+    const router = useRouter();
     const notationRef = useRef<HTMLDivElement>(null);
     const score = useRef<Score | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -781,6 +783,10 @@ export default function CompositionTool() {
                 .then((res) => res.json().then((data) => {
                     console.log(`Access Level Response: ${data.data}`);
                     const hasWriteAcces: boolean = data.data >= ShareStyle.WRITE;
+                    if(data.data <= 1)
+                    {
+                        router.push(`/no_access`);
+                    }
                 }));
         };
 

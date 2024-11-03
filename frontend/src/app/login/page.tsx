@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Title, Center, Container, Button, Stack, rem, Text, Box } from '@mantine/core';
 import { useRouter } from "next/navigation";
-import { saveUserID, saveDisplayName, saveEmail } from "../cookie";
+import { saveUserID, saveDisplayName, saveEmail, getUserID } from "../cookie";
 import { AuthInput } from "../../components/AuthInput";
 import { authStyles } from '../../styles/auth-styles';
 import { callAPI } from "../../utils/callAPI";
@@ -20,6 +20,13 @@ export default function Login() {
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 500);
     }
+
+    useEffect(() => {
+        if(getUserID() !== '-1'){
+            router.push("/storage");
+        }
+    }, []);
+
     const handleLogin = async () => {
         try {
             const loginInfo = {
@@ -27,8 +34,7 @@ export default function Login() {
                 password: password
             };
 
-            if(email === '' || password === '') 
-            {
+            if (email === '' || password === '') {
                 triggerError(`${email === '' ? "Email" : "Password"} is a required field`);
                 return;
             }
@@ -111,9 +117,9 @@ export default function Login() {
                             </Text>
                             ?
                         </Text>
-                        <Button 
-                            onClick={handleLogin} 
-                            radius="xl" 
+                        <Button
+                            onClick={handleLogin}
+                            radius="xl"
                             style={{ marginTop: '1rem' }}
                             className={`${isShaking ? 'shake-input' : ''} login-button`}
                         >
