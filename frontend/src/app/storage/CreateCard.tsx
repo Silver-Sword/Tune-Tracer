@@ -25,6 +25,7 @@ export const CreateCard: React.FC<{userId: string}> = (userId) => {
   const [inviteCode, setInviteCode] = useState("");
   const [opened, { toggle }] = useDisclosure(false);
   const [loading, setLoading] = useState(false);
+  const [joinLoading, setJoinLoading] = useState(false);
   const router = useRouter();
 
   const CREATE_DOCUMENT_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/createDocument';
@@ -88,7 +89,8 @@ export const CreateCard: React.FC<{userId: string}> = (userId) => {
       },
       body: JSON.stringify(shareCode),
     }
-    fetch(USE_SHARE_CODE, PUT_OPTION).then((res) => {
+    setJoinLoading(true);
+    await fetch(USE_SHARE_CODE, PUT_OPTION).then((res) => {
       res.json().then((value) => {
         if (res.status == 200)
           {
@@ -110,6 +112,7 @@ export const CreateCard: React.FC<{userId: string}> = (userId) => {
         setError(`${error.message}`);
       });
     });
+    setJoinLoading(false);
   };
 
   return (
@@ -148,6 +151,7 @@ export const CreateCard: React.FC<{userId: string}> = (userId) => {
           color="green"
           onClick={handleJoinWithCode}
           disabled={!inviteCode.trim()} // Disable if the invite code is empty or contains only spaces
+          loading={joinLoading}
         >
           Join with Code
         </Button>
