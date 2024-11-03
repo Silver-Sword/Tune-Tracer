@@ -93,12 +93,6 @@ var comments: Record<string, typeof LibComment> = {};
 exports.signUpUser = functions.https.onRequest(async (req, res) => {
   corsHandler(req, res, async () => {
     try {
-      // Parse user input from the request body
-      // if (!req.body)
-      // {
-      //   throw new Error('Missing any inputs');
-      // }
-
       const email: string = req.body.email;
       const password: string = req.body.password;
       const displayName: string = req.body.displayName;
@@ -574,7 +568,7 @@ exports.deleteDocument = functions.https.onRequest(
 
 // ------------------------ START OF THE MINE FIELD ------------------------
 var documentMap = new Map<string, typeof LibDocument>();
-var userMap = new Map<string, Map<string, typeof OnlineEntity>>();
+var userMap = new Map<string, Record<string, typeof OnlineEntity>>();
 var isServerSubscribed = false;
 const SERVER_ID = Date.now() % 1000;
 
@@ -602,19 +596,37 @@ async function genDocumentFromMap(documentId: string, userId: string) {
   return documentMap.get(documentId);
 }
 
+function getUsersFromMap(documentId: string) {
+  const users = userMap?.get(documentId) ?? {};
+  if("undefined" in users) {
+    delete users["undefined"];
+  } 
+  return users;
+}
+
 function updateUserMap(
   documentId: string,
   onlineEntity: typeof OnlineEntity,
   isRemove: boolean
 ) {
-  if(!userMap.has(documentId)) {
-    userMap.set(documentId, new Map<string, typeof OnlineEntity>());
+  if(onlineEntity === undefined || onlineEntity.user_id === undefined) {
+    console.error(`Invalid online entity: ${onlineEntity ? JSON.stringify(onlineEntity) : "undefined"}`);
+    return;
   }
 
+  if(!userMap.has(documentId)) {
+    userMap.set(documentId, {});
+  }
+
+  const users = userMap.get(documentId)!;
+
   if (isRemove) {
-    userMap.get(documentId)?.delete(onlineEntity.user_id);
+    delete users[onlineEntity.user_id];
   } else {
-    userMap.get(documentId)?.set(onlineEntity.user_id, onlineEntity);
+    const oldOnlineEntity = users[onlineEntity.user_id];
+    if(oldOnlineEntity === undefined || oldOnlineEntity.last_active_time < onlineEntity.last_active_time) {
+      users[onlineEntity.user_id] = onlineEntity;
+    }
   }
 }
 
@@ -683,7 +695,7 @@ exports.checkDocumentChanges = functions.https.onRequest(
             message: "Successfully checked document changes",
             data: {
               document: currentDocument, 
-              onlineUsers: Array.from(userMap.values()),
+              onlineUsers: getUsersFromMap(documentId),
             },
           });
         }
@@ -724,6 +736,7 @@ exports.subscribeToDocument = functions.https.onRequest(
             user_id: userId as string,
             display_name: displayName as string,
           };
+          console.log(`(1) Subscribing user: ${JSON.stringify(user)} to document ${documentId}`);
 
           isServerSubscribed = true;
           await subscribeToDocument(
@@ -737,14 +750,15 @@ exports.subscribeToDocument = functions.https.onRequest(
               onlineEntity: typeof OnlineEntity
             ) => {
               updateUserMap(documentId, onlineEntity, updateType === UpdateType.REMOVE);
-            }
+            },
+            false
           );
 
           response.status(StatusCode.OK).send({
             message: "Successfully subscribed to document",
             data: {
               document: await genDocumentFromMap(documentId, userId),
-              onlineUsers: Array.from(userMap.values()),
+              onlineUsers: getUsersFromMap(documentId),
             },
           });
         }

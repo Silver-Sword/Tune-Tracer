@@ -24,11 +24,13 @@ export async function subscribeToDocument(
   user: Record<string, unknown> & Required<Pick<UserEntity, 'user_id' | 'user_email' | 'display_name'>>,
   onDocumentUpdateFn: (updatedDocument: Document) => void,
   onUserPoolUpdateFn: (updateType: UpdateType, updatedUser: OnlineEntity) => void,
+  shouldAutoDisconnectUser: boolean = true,
 ) {
   let firstAccess = true;
   const firebase = getFirebase();
 
-  await subscribeUserToUserDocumentPool(documentId, user, onUserPoolUpdateFn);
+  console.debug(`(2) Subscribing user: ${JSON.stringify(user)} to document ${documentId}`);
+  await subscribeUserToUserDocumentPool(documentId, user, onUserPoolUpdateFn, shouldAutoDisconnectUser);
   
   firebase.subscribeToDocument(documentId, (snapshot) => {
     if (

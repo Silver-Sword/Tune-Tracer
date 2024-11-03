@@ -325,7 +325,9 @@ export default class FirebaseWrapper
             user_email: string, 
             user_id: string, 
             display_name: string
-    }) {
+        },
+        shouldAutoDisconnect: boolean = true
+    ) {
         const userReference = firebase.database().ref(`/presence/${documentId}/users/${user.user_id}`);
         await userReference.set({
             user_id: user.user_id,
@@ -333,7 +335,13 @@ export default class FirebaseWrapper
             display_name: user.display_name,
             last_active_time: firebase.database.ServerValue.TIMESTAMP
         });
-        userReference.onDisconnect().remove();
+        console.debug(`(5) Subscribing user: ${JSON.stringify({
+            user_id: user.user_id,
+            user_email: user.user_email,
+            display_name: user.display_name,})} to document ${documentId}`);
+        if(shouldAutoDisconnect) {
+            userReference.onDisconnect().remove();
+        }
     }
 
     // sets the user's last_active_time to "now" and can be used to edit info about an online user
