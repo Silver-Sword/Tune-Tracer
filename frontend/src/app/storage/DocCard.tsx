@@ -28,6 +28,9 @@ import { getUserID, saveDocID } from "../cookie";
 export const DocCard: React.FC<DocumentData> = ({document_id, document_title, owner_id, last_edit_time}) => {
   const [isFavorited, setIsFavorited] = useState(false); // State to track if the card is favorited
   const [deleteModalOpened, setDeleteModalOpened] = useState(false); // State for the delete confirmation modal
+  const [loading, setLoading] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+
   const router = useRouter();
 
   // Toggle favorite state
@@ -36,7 +39,8 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   };
 
   // Open delete confirmation modal
-  const openDeleteModal = () => {
+  const openDeleteModal = (event: React.MouseEvent) => {
+    event.stopPropagation();
     setDeleteModalOpened(true);
   };
 
@@ -46,7 +50,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   };
 
   // Handle card deletion (only proceed after confirmation)
-  const handleDelete = () => {
+  const handleDelete = async () => {
     console.log('Document deleted');
     
     const userId = getUserID();
@@ -55,9 +59,12 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
       userId: userId
     }
     console.log(`Delete Document Input: ${JSON.stringify(input)}`);
-    callAPI("deleteDocument", input);
-
+    setLoading(true);
+    await callAPI("deleteDocument", input);
+    setLoading(false);
+    setDeleted(true);
     setDeleteModalOpened(false); // Close modal after deletion
+    router.push("/storage");
   };
 
   const handleDocumentOpen = () => {
@@ -67,11 +74,6 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
 
     // Navigates to /document/{documentId}
   };
-
-  const returnTitle = () => {
-    if(document_title === "") document_title = "Untitled";
-    return document_title
-  }
 
   function millisecondsToFormattedDateString(ms: number): string {
     const date = new Date(ms);
@@ -97,14 +99,17 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           <Button onClick={closeDeleteModal} variant="default">
             Cancel
           </Button>
-          <Button onClick={handleDelete} color="red">
+          <Button 
+          onClick={handleDelete} 
+          color="red"
+          loading = {loading}>
             Delete
           </Button>
         </Group>
       </Modal>
 
       {/* Card content */}
-      <Card
+      {!deleted && <Card
         shadow="md"
         padding="lg"
         radius="md"
@@ -115,7 +120,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          cursor: 'pointer',
+          cursor: "pointer",
         }}
         onClick={handleDocumentOpen}
       >
@@ -127,7 +132,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           {/* Favorite and Delete buttons */}
           <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: '8px' }}>
             {/* Favorite button */}
-            <Button
+            {/* <Button
               variant="subtle"
               onClick={toggleFavorite}
               style={{
@@ -139,7 +144,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
               ) : (
                 <IconHeart size={18} />
               )}
-            </Button>
+            </Button> */}
 
             {/* Delete button */}
             <Button
@@ -154,21 +159,24 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           </div>
 
           {/* Truncate title text to prevent overflow */}
-          {/* Tooltip for the title to show full text on hover */}
-          <Tooltip label={`Open: ${document_title}`} withArrow>
-            <Text 
-              lineClamp={2}
-              style={{ cursor: 'pointer'}}
-              onClick={handleDocumentOpen}
-              >
-              {document_title}
+          <Tooltip label={`${document_title}`} withArrow>
+            <Text
+                lineClamp={2}
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => {
+                    e.stopPropagation(); // Prevents propagation to card click
+                    handleDocumentOpen();
+                }}
+            >
+                {document_title}
             </Text>
           </Tooltip>
-          <Text size="lg">{returnTitle()}</Text>
-          {/* <Text size="md">Created by: {owner_id}</Text> */}
+          
+          {/* Get the display name from the ownerID */}
+          <Text size="md">Created by: {owner_id}</Text>
           <Text size="sm" c="dimmed">Date Last Edited: {millisecondsToFormattedDateString(last_edit_time)}</Text>
         </Stack>
-      </Card>
+      </Card>}
     </>
   );
 };

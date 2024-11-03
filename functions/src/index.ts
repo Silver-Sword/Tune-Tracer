@@ -843,17 +843,23 @@ exports.shareDocumentWithUser = functions.https.onRequest(
         } else {
           const userId = await getUserIdFromEmail(invite_email);
 
-          await shareDocumentWithUser(documentId, userId, sharing, writerId);
-          // Send a successful response back
-          response.status(StatusCode.OK).send({
-            message:
-              "Successfully shared document with " +
-              userId +
-              " with " +
-              ShareStyle[sharing] +
-              " permissions.",
-            data: true,
-          });
+          if(userId === null) {
+            response.status(StatusCode.USER_NOT_FOUND).send({
+              message: `User with email ${invite_email} not found in the database`,
+            });
+          } else {
+            await shareDocumentWithUser(documentId, userId, sharing, writerId);
+            // Send a successful response back
+            response.status(StatusCode.OK).send({
+              message:
+                "Successfully shared document with " +
+                userId +
+                " with " +
+                ShareStyle[sharing] +
+                " permissions.",
+              data: true,
+            });
+          }
         }
       } catch (error) {
         // Send an error response if something goes wrong

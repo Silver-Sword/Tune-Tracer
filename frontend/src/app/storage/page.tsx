@@ -18,6 +18,8 @@ import {
   Menu,
   Divider,
   ActionIcon,
+  Center,
+  Loader,
 } from "@mantine/core";
 import StorageTutorial from "./storage-tutorial";
 import Joyride, { CallBackProps, STATUS, Step, ACTIONS, EVENTS} from "react-joyride";
@@ -33,8 +35,13 @@ const filterLabels = [
   { link: "", label: "All" },
   { link: "", label: "Shared with you" },
   { link: "", label: "Favorites" },
-  { link: "", label: "Recents" },
-  { link: "", label: "A-Z" },
+];
+
+const tutorialSteps = [
+  { target: ".search-bar", content: "Search for compositions here." },
+  { target: ".create-card", content: "Create a new score or join with an invite code." },
+  { target: ".navbar-filters", content: "Filter your compositions here." },
+  { target: ".profile-menu", content: "Access your profile settings and logout here." },
 ];
 
 // FiltersNavbar component
@@ -111,6 +118,7 @@ export default function Storage() {
   const [documents, setDocuments] = useState<DocumentData[]>([]);
   const [sortBy, setSortBy] = useState<string>("lastEdited");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
   
   const [run, setRun] = useState(false);
@@ -160,13 +168,17 @@ export default function Storage() {
 
   const useOwnedPreviews = async () => {
     const userId = getUserID();
+    setLoading(true);
     const data = await getOwnPreviews(userId);
+    setLoading(false);
     setDocuments(sortDocuments(data, sortBy, sortDirection));
   }
   
   const useSharedPreviews = async () => {
     const userId = getUserID();
+    setLoading(true);
     const data = await getSharedPreviews(userId);
+    setLoading(false);
     setDocuments(sortDocuments(data, sortBy, sortDirection));
   }
 
@@ -317,22 +329,35 @@ export default function Storage() {
             </Group>
           </Group>
           <Space h="xl" />
-          <SimpleGrid
-            cols={{ base: 1, sm: 2, md: 3, lg: 5 }}
-            spacing={{ base: "xl" }}
-          >
-            {documents.map((doc) => (
-              <DocCard 
-                key={doc.document_id} 
-                last_edit_user={doc.last_edit_user} 
-                document_id={doc.document_id} 
-                document_title={doc.document_title} 
-                owner_id={doc.owner_id} 
-                last_edit_time={doc.last_edit_time} 
-              />
-            ))}
-          </SimpleGrid>
-          <Space h="xl" />
+          {loading ? (
+        <Center style={{ height: '20vh' }}>
+          <Loader />
+        </Center>
+      ) : (
+        <>
+          {documents.length === 0 ? (
+            <Text size="lg" color="black" fw={700}>
+              No Scores Here Yet!
+            </Text>
+          ) : (
+            <SimpleGrid
+              cols={{ base: 1, sm: 2, md: 3, lg: 5 }}
+              spacing={{ base: "xl" }}
+            >
+              {documents.map((doc) => (
+                <DocCard 
+                  key={doc.document_id} 
+                  last_edit_user={doc.last_edit_user} 
+                  document_id={doc.document_id} 
+                  document_title={doc.document_title} 
+                  owner_id={doc.owner_id} 
+                  last_edit_time={doc.last_edit_time} 
+                />
+              ))}
+            </SimpleGrid>
+          )}
+        </>
+      )}
         </Container>
       </AppShell.Main>
     </AppShell>

@@ -41,7 +41,7 @@ export class Score {
     private total_width: number = 0;
     private renderer_height = 0;
     private renderer_width = 0;
-    private ID_to_MeasureIndexID: Map<number, { measureIndex: number, noteId: string, topMeasure: boolean }> = new Map();
+    public ID_to_MeasureIndexID: Map<number, { measureIndex: number, noteId: string, topMeasure: boolean }> = new Map();
     private key_signature = "C";
     private title: string = "Untitled";
 
@@ -169,11 +169,11 @@ export class Score {
         scoreData.bottomMeasures = bottomMeasures;
         scoreData.title = this.title;
 
-        console.log(printScoreData(scoreData));
+        //console.log(printScoreData(scoreData));
         return scoreData;
     }
 
-    loadScoreDataObj = (scoreData: ScoreData) => {
+    loadScoreDataObj = (scoreData: ScoreData, render: boolean = true) => {
         this.renderer_height = scoreData.rendererHeight;
         this.renderer_height = scoreData.rendererWidth;
         this.total_width = scoreData.totalWidth;
@@ -190,7 +190,7 @@ export class Score {
         // Always renderTimeSig for first measures
         this.top_measures[0].renderTimeSignature();
         this.bottom_measures[0].renderTimeSignature();
-        this.renderMeasures();
+        if(render) this.renderMeasures();
     }
 
     isTopMeasure = (
@@ -439,7 +439,8 @@ export class Score {
         });
     }
 
-    private giveIDs = (tickables: Tickable[], measureIndex: number, IDCounter: number, topMeasure: boolean) => {
+    private giveIDs = (tickables: Tickable[], measureIndex: number, IDCounter: number, topMeasure: boolean, measure: Measure) => {
+        measure.ids = [];
         tickables.forEach(tickable => {
             let staveNote = tickable as StaveNote;
             staveNote.getSVGElement()?.setAttribute('id', IDCounter + "");
@@ -447,6 +448,7 @@ export class Score {
             // Before the note is drawn, we need a way to reference that. 
             // Instead of re-inventing the wheel, I'm mapping new IDs to old IDs to not mess with logic
             // This means we can reference notes with new ID, but under the hood its still using old logic
+            measure.ids.push(IDCounter);
             this.ID_to_MeasureIndexID.set(IDCounter, { measureIndex, noteId: staveNote.getAttributes().id, topMeasure });
             IDCounter++;
         });
@@ -554,6 +556,8 @@ export class Score {
         for (let i = 0; i < measures.length; i++) {
             measures[i].getStave().setX(XCoordinate);
             measures[i].getStave().setY(YCoordinateForAllMeasuresInThisLine);
+            measures[i].getVoice1().setStave(measures[i].getStave());
+            measures[i].getVoice1().setContext(this.context);
             this.formatter.formatToStave([measures[i].getVoice1()], measures[i].getStave());
             XCoordinate += measures[i].getStave().getWidth();
             this.generateBeams(measures[i]);
@@ -821,8 +825,8 @@ export class Score {
         // With all measures rendered, we can now give them unique IDs, and Render Ties
         let IDCounter = 0;
         for (let i = 0; i < this.top_measures.length; i++) {
-            IDCounter = this.giveIDs(this.top_measures[i].getVoice1().getTickables(), i, IDCounter, true);
-            IDCounter = this.giveIDs(this.bottom_measures[i].getVoice1().getTickables(), i, IDCounter, false);
+            IDCounter = this.giveIDs(this.top_measures[i].getVoice1().getTickables(), i, IDCounter, true, this.top_measures[i]);
+            IDCounter = this.giveIDs(this.bottom_measures[i].getVoice1().getTickables(), i, IDCounter, false, this.bottom_measures[i]);
         }
         // From this point forward we render all elements that need voices to be drawn to be able to get placed
         // Render Ties/Slurs
