@@ -142,6 +142,7 @@ export const ToolbarHeader: React.FC<{
         };
         // Handle when the user clicks the text to switch to editing mode
         const handleEdit = () => {
+            if(!hasWriteAccess) return;
             setIsChangingName(true);
         };
 

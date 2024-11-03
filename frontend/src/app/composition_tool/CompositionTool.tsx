@@ -789,7 +789,7 @@ export default function CompositionTool() {
                     {
                         router.push(`/no_access`);
                     }
-                    if(notationRef.current){
+                    if(!hasWriteAccess && notationRef.current){
                         d3.select(notationRef.current)
                     .on('click', null);
                     }
