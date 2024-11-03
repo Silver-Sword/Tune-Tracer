@@ -583,7 +583,7 @@ function updateDocumentMap(documentId: string, document: typeof LibDocument) {
 
   if(
     oldDocument === undefined || 
-    oldDocument.metadata.last_modified_time < document.metadata.last_modified_time
+    oldDocument.metadata.last_edit_time < document.metadata.last_edit_time
   ){
     documentMap.set(documentId, document);
     console.log(`Server id ${SERVER_ID} updated document ${documentId} with LET ${document.metadata.last_edit_time}`);
