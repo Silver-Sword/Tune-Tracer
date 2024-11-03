@@ -3,12 +3,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Score } from "../edit/Score";
 import { createPlaceNoteBox, attachMouseMoveListener, attachMouseLeaveListener, attachMouseClickListener} from "./PlaceNoteBox";
-// We have two of these for some reason
-//import { printScoreData, ScoreData } from "../lib/src/ScoreData";
-import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
-import { Document } from "../lib/src/Document";
-import { DocumentMetadata, ShareStyle } from "../lib/src/documentProperties";
-import { Comment } from "../lib/src/Comment";
 import {
     AppShell,
     Container,
@@ -21,6 +15,14 @@ import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
 import { increasePitch, lowerPitch } from './pitch'
 import { ToolbarHeader } from './ToolbarHeader'
 import { useSearchParams } from "next/navigation";
+
+// We have two of these for some reason
+//import { printScoreData, ScoreData } from "../lib/src/ScoreData";
+import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData'; // Note this path is to a folder outside of the root directory
+import { Document } from "../lib/src/Document";
+import { DocumentMetadata, ShareStyle } from "../lib/src/documentProperties";
+import { Comment } from "../lib/src/Comment";
+import { OnlineEntity } from "../lib/src/realtimeUserTypes";
 
 import * as d3 from 'd3';
 import { Selection } from 'd3';
@@ -58,6 +60,9 @@ export default function CompositionTool() {
     const displayName = useRef<string>();
     const documentID = useRef<string>();
     const [hasWriteAccess, setHasWriteAccess] = useState<boolean>(true);
+
+    // map of user ids to their online information
+    const [onlineUsers, setOnlineUsers] = useState<Map<string, OnlineEntity>>(new Map<string, OnlineEntity>());
 
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = async (duration: string, noteId: number) => {
@@ -748,6 +753,16 @@ export default function CompositionTool() {
                 }
                 createNewNoteBox();
             }
+            
+            // Update online users
+            const receivedUsers = (res.data as any)['onlineUsers'];
+            if(receivedUsers !== undefined) {
+                console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
+                setOnlineUsers(receivedUsers);
+            } else {
+                console.error(`Something went wrong. Received online users is undefined`);
+            }
+
             setIsFetching(false);
         }).catch((error) => {
             // Getting the Error details.
@@ -819,10 +834,10 @@ export default function CompositionTool() {
 
         // THIS FETCHES CHANGES PERIODICALLY
         // UNCOMMENT below to actually do it.
-        useInterval(() => {
-            // Your custom logic here
-            fetchChanges();
-        }, 5000); // 5 seconds
+        // useInterval(() => {
+        //     // Your custom logic here
+        //     fetchChanges();
+        // }, 5000); // 5 seconds
 
         const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
             const value = event.currentTarget.value;
@@ -865,6 +880,16 @@ export default function CompositionTool() {
                     metadata: metadata,
                 };
                 setDocument(tempDocument);
+
+                // Update online users
+                const receivedUsers = (res.data as any)['onlineUsers'];
+                if(receivedUsers !== undefined) {
+
+                    console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
+                    setOnlineUsers(receivedUsers);
+                } else {
+                    console.error(`Something went wrong. Received online users is undefined`);
+                }
             }).catch((error) => {
                 // Getting the Error details.
                 const message = error.message;
@@ -872,7 +897,6 @@ export default function CompositionTool() {
                 return;
             });
         }
-
 
         // loads in background
 
@@ -886,27 +910,6 @@ export default function CompositionTool() {
                     displayName: displayName.current
                 };
                 console.log("document ID: " + documentID.current);
-
-                // if (userTemp === '1') {
-                //     userInfo = {
-                //         documentId: 'aco5tXEzQt7dSeB1WSlV',
-                //         userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
-                //         user_email: 'sophiad03@hotmail.com',
-                //         displayName: 'Sopa'
-                //     };
-                // }
-                // else if (userTemp === '2') {
-                //     userInfo = {
-                //         documentId: 'aco5tXEzQt7dSeB1WSlV',
-                //         userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
-                //         user_email: 'test-user-1@tune-tracer.com',
-                //         displayName: 'test_one'
-                //     }
-
-                // }
-                // else {
-                //     return;
-                // }
                 console.log("User Info: " + JSON.stringify(userInfo));
 
                 const POST_OPTION = {
@@ -991,6 +994,16 @@ export default function CompositionTool() {
                         metadata: metadata,
                     };
                     setDocument(tempDocument);
+
+                    // Update online users
+                    const receivedUsers = (res.data as any)['onlineUsers'];
+                    if(receivedUsers !== undefined) {
+    
+                        console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
+                        setOnlineUsers(receivedUsers);
+                    } else {
+                        console.error(`Something went wrong. Received online users is undefined`);
+                    }
                 }).catch((error) => {
                     // Getting the Error details.
                     const message = error.message;
