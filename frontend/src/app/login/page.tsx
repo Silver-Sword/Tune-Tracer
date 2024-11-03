@@ -106,7 +106,7 @@ export default function Login() {
                             onChange={(event) => setPassword(event.currentTarget.value)}
                             isShaking={isShaking}
                         />
-                        <Text size="sm" style={{ textAlign: 'right' }}>
+                        {/* <Text size="sm" style={{ textAlign: 'right' }}>
                             Forgot {' '}
                             <Text
                                 component="a"
@@ -116,7 +116,7 @@ export default function Login() {
                                 Username / Password
                             </Text>
                             ?
-                        </Text>
+                        </Text> */}
                         <Button
                             onClick={handleLogin}
                             radius="xl"
