@@ -71,7 +71,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
 
   function millisecondsToFormattedDateString(ms: number): string {
     const date = new Date(ms);
-    return format(date, 'yyyy-MM-dd'); // Customize the format as needed
+    return format(date, 'MMMM dd, yyyy');  // Customize the format as needed
 }
 
   // const documentTitle = "[DOCUMENT NAME] OVERFLOW TEST TEXT: This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum."
@@ -165,7 +165,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           
           {/* Get the display name from the ownerID */}
           <Text size="md">Created by: {owner_id}</Text>
-          <Text size="sm" c="dimmed">Date Last Edited: {millisecondsToFormattedDateString(last_edit_time)}</Text>
+          <Text size="sm" c="dimmed">Last Edited: {millisecondsToFormattedDateString(last_edit_time)}</Text>
         </Stack>
       </Card>
     </>
