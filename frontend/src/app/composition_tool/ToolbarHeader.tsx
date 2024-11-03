@@ -237,13 +237,13 @@ export const ToolbarHeader: React.FC<{
                     {/* Sharing UI */}
 
                     {/* Select Dropdown should not be changable if not the owner */}
-                    <Select
+                    {/* <Select
                         placeholder="Select Sharing Mode"
                         onChange={(value) => handleModeChange(value)}
                         allowDeselect={false}
                         withCheckIcon={false}
                         style={{ width: 125, marginLeft: "10px" }}
-                    />
+                    /> */}
                     <SharingModal
                         documentTitle={inputValue}
                         metadata={documentMetadata}
