@@ -54,6 +54,7 @@ const {
 } = require("./backend/src/document-utils/updateUserLevelDocumentProperties");
 const {
   subscribeToDocument,
+  admin_subscribeToDocument
 } = require("./backend/src/document-utils/realtimeDocumentUpdates");
 const {
   updateUserCursor,
@@ -538,19 +539,26 @@ exports.deleteDocument = functions.https.onRequest(
 
 var documentMap = new Map<string, typeof LibDocument>();
 var userMap = new Map<string, Map<string, typeof OnlineEntity>>();
+var isServerSubscribed = false;
 
 function updateDocumentMap(documentId: string, document: typeof LibDocument) {
   const oldDocument = documentMap.get(documentId);
 
-  if(oldDocument === undefined || oldDocument.metadata.last_modified_time < document.metadata.last_modified_time) {
+  if(
+    oldDocument === undefined || 
+    oldDocument.metadata.last_modified_time < document.metadata.last_modified_time
+  ){
     documentMap.set(documentId, document);
   }
 }
 
 async function getDocumentFromMap(documentId: string, userId: string) {
   if(!documentMap.has(documentId)) {
+    if(!isServerSubscribed) {
+      await subscribeServerToDocument(documentId);
+    }
     const doc = await getDocument(documentId, userId);
-    documentMap.set(documentId, doc);
+    updateDocumentMap(documentId, doc);
   }
   return documentMap.get(documentId);
 }
@@ -568,6 +576,22 @@ function updateUserMap(
     userMap.get(documentId)?.delete(onlineEntity.user_id);
   } else {
     userMap.get(documentId)?.set(onlineEntity.user_id, onlineEntity);
+  }
+}
+
+async function subscribeServerToDocument(documentId: string) {
+  if(!isServerSubscribed) {
+    isServerSubscribed = true;
+    console.log("Subscribing server to document");
+    await admin_subscribeToDocument(
+      documentId,
+      (updatedDocument: typeof LibDocument) => {
+        updateDocumentMap(documentId, updatedDocument);
+      },
+      (updateType: typeof UpdateType, onlineEntity: typeof OnlineEntity) => {
+        updateUserMap(documentId, onlineEntity, updateType === UpdateType.REMOVE);
+      }
+    );
   }
 }
 
@@ -593,7 +617,7 @@ exports.checkDocumentChanges = functions.https.onRequest(
             const documentObject: Record<string, unknown> = JSON.parse(
               JSON.stringify(documentChanges)
             );
-            const userDoc = documentMap.get(documentId);
+            const userDoc = getDocumentFromMap(documentId, writerId);
             if(userDoc === undefined) {
               throw new Error("Document does not exist");
             }
@@ -637,7 +661,7 @@ exports.checkDocumentChanges = functions.https.onRequest(
 exports.subscribeToDocument = functions.https.onRequest(
   async (request: any, response: any) => {
     corsHandler(request, response, async () => {
-      try {;
+      try {
         const documentId = request.body.documentId;
         const userId = request.body.userId;
         const user_email = request.body.user_email;
@@ -664,6 +688,7 @@ exports.subscribeToDocument = functions.https.onRequest(
             display_name: displayName as string,
           };
 
+          isServerSubscribed = true;
           await subscribeToDocument(
             documentId,
             user,
@@ -674,19 +699,7 @@ exports.subscribeToDocument = functions.https.onRequest(
               updateType: typeof UpdateType,
               onlineEntity: typeof OnlineEntity
             ) => {
-              switch (updateType) {
-                case UpdateType.ADD:
-                  updateUserMap(documentId, onlineEntity, false);
-                  break;
-                case UpdateType.CHANGE:
-                  updateUserMap(documentId, onlineEntity, false);
-                  break;
-                case UpdateType.REMOVE:
-                  updateUserMap(documentId, onlineEntity, true);
-                  break;
-                  default:
-                    break;
-              }
+              updateUserMap(documentId, onlineEntity, updateType === UpdateType.REMOVE);
             }
           );
 
