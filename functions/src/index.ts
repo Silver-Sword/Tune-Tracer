@@ -77,7 +77,10 @@ const {
   editCommentText,
   subscribeToComments,
 } = require("./backend/src/comment-utils/commentOperations");
-const { getUserIdFromEmail } = require("./backend/src/user-utils/getUserData");
+const { 
+  getUserIdFromEmail,
+  getUserFromId
+} = require("./backend/src/user-utils/getUserData");
 const {
   getUserAccessLevel,
 } = require("./backend/src/security-utils/getUserAccessLevel");
@@ -275,6 +278,38 @@ exports.getTrashedDocumentPreviews = functions.https.onRequest(
         response
           .status(StatusCode.GENERAL_ERROR)
           .send({ message: "Failed to get documents", data: error as Error });
+      }
+    });
+  }
+);
+
+exports.getUserFromId = functions.https.onRequest(
+  async (request: any, response: any) => {
+    corsHandler(request, response, async () => {
+      try {
+        const userId = request.body.userId;
+        if (!userId) {
+          response
+            .status(StatusCode.MISSING_ARGUMENTS)
+            .send({ message: "Missing required fields: userId" });
+        } else {
+          const apiResult = await getUserFromId(userId);
+          if(apiResult === null) {
+            response.status(StatusCode.USER_NOT_FOUND).send({
+              message: `User with id ${userId} not found in the database`,
+            });
+          } else {
+            // Send a successful response back
+            response
+              .status(StatusCode.OK)
+              .send({ message: "Here is the user", data: apiResult });
+          }
+        }
+      } catch (error) {
+        // Send an error response if something goes wrong
+        response
+          .status(StatusCode.GENERAL_ERROR)
+          .send({ message: "Failed to get user", data: error as Error });
       }
     });
   }

@@ -18,6 +18,8 @@ import {
   Menu,
   Divider,
   ActionIcon,
+  Center,
+  Loader,
 } from "@mantine/core";
 // import StorageTutorial from "./storage-tutorial";
 // import Joyride, { CallBackProps, STATUS, Step } from "react-joyride";
@@ -116,6 +118,7 @@ export default function Storage() {
   const [documents, setDocuments] = useState<DocumentData[]>([]);
   const [sortBy, setSortBy] = useState<string>("lastEdited");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
   // const [run, setRun] = useState(false);
   // const [stepIndex, setStepIndex] = useState(0);
@@ -139,13 +142,17 @@ export default function Storage() {
 
   const useOwnedPreviews = async () => {
     const userId = getUserID();
+    setLoading(true);
     const data = await getOwnPreviews(userId);
+    setLoading(false);
     setDocuments(sortDocuments(data, sortBy, sortDirection));
   }
   
   const useSharedPreviews = async () => {
     const userId = getUserID();
+    setLoading(true);
     const data = await getSharedPreviews(userId);
+    setLoading(false);
     setDocuments(sortDocuments(data, sortBy, sortDirection));
   }
 
@@ -295,22 +302,35 @@ export default function Storage() {
             </Group>
           </Group>
           <Space h="xl" />
-          <SimpleGrid
-            cols={{ base: 1, sm: 2, md: 3, lg: 5 }}
-            spacing={{ base: "xl" }}
-          >
-            {documents.map((doc) => (
-              <DocCard 
-                key={doc.document_id} 
-                last_edit_user={doc.last_edit_user} 
-                document_id={doc.document_id} 
-                document_title={doc.document_title} 
-                owner_id={doc.owner_id} 
-                last_edit_time={doc.last_edit_time} 
-              />
-            ))}
-          </SimpleGrid>
-          <Space h="xl" />
+          {loading ? (
+        <Center style={{ height: '20vh' }}>
+          <Loader />
+        </Center>
+      ) : (
+        <>
+          {documents.length === 0 ? (
+            <Text size="lg" color="black" fw={700}>
+              No Scores Here Yet!
+            </Text>
+          ) : (
+            <SimpleGrid
+              cols={{ base: 1, sm: 2, md: 3, lg: 5 }}
+              spacing={{ base: "xl" }}
+            >
+              {documents.map((doc) => (
+                <DocCard 
+                  key={doc.document_id} 
+                  last_edit_user={doc.last_edit_user} 
+                  document_id={doc.document_id} 
+                  document_title={doc.document_title} 
+                  owner_id={doc.owner_id} 
+                  last_edit_time={doc.last_edit_time} 
+                />
+              ))}
+            </SimpleGrid>
+          )}
+        </>
+      )}
         </Container>
       </AppShell.Main>
     </AppShell>
