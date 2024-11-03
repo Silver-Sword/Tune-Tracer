@@ -24,6 +24,7 @@ import { Collaborator } from "./sharing_types";
 import { createShareCode, updateDocumentShareStyle } from "./sharing_api";
 import { ShareStyle } from "../../lib/src/documentProperties";
 import { DocumentMetadata } from "../../lib/src/documentProperties";
+import { useSearchParams } from "next/navigation";
 interface SharingModalProps {
   documentTitle: string;
   metadata: DocumentMetadata | undefined;
@@ -45,14 +46,20 @@ export const SharingModal: React.FC<SharingModalProps> = ({
   const [shareCode, setShareCode] = useState<string>("------");
   const [shareCodeIsLoading, setShareCodeIsLoading] =
     useState<string>("Generate Code");
+    const [documentId, setDocumentId] = useState<string>("");
   const [accessType, setAccessType] = useState<"restricted" | "anyone">(
     "restricted"
   );
   const [accessLevel, setAccessLevel] = useState<"Viewer" | "Editor">("Viewer");
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     setCurrentTitle(documentTitle);
   }, [documentTitle]);
+
+  useEffect(() => {
+    setDocumentId(searchParams.get('id') || 'null');
+  }, []);
 
   // use effect when the document metadata is updated
   useEffect(() => {
@@ -83,7 +90,7 @@ export const SharingModal: React.FC<SharingModalProps> = ({
   const handleCreateCode = async () => {
     setShareCodeIsLoading("Loading...");
     try {
-      const response = await createShareCode(accessLevel);
+      const response = await createShareCode(accessLevel, documentId);
       if (response.status === 200) {
         setShareCode(response.data as string);
       } else {
@@ -131,8 +138,9 @@ export const SharingModal: React.FC<SharingModalProps> = ({
             label="Access Type"
             value={accessType}
             onChange={(value) => {
-                setAccessType(value as "restricted" | "anyone");
-                updateDocumentShareStyle(accessType, accessLevel);
+                const newAccessType = value as "restricted" | "anyone";
+                setAccessType(newAccessType);
+                updateDocumentShareStyle(newAccessType, accessLevel, documentId);
               }
             }
             data={[
@@ -146,8 +154,9 @@ export const SharingModal: React.FC<SharingModalProps> = ({
               label="Role"
               value={accessLevel}
               onChange={(value) => {
-                  setAccessLevel(value as "Viewer" | "Editor")
-                  updateDocumentShareStyle(accessType, accessLevel);
+                  const newAccessLevel = value as "Viewer" | "Editor";
+                  setAccessLevel(newAccessLevel);
+                  updateDocumentShareStyle(accessType, newAccessLevel, documentId);
                 }
               }
               data={[
