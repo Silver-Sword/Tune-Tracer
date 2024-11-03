@@ -243,11 +243,10 @@ export default class FirebaseWrapper
         await this.setDataInFirestore(USER_MAP, userEntity.user_email, {"user_id": userEntity.user_id});
     }
 
-    public async getUserIdFromEmail(userEmail: string): Promise<string> {
+    public async getUserIdFromEmail(userEmail: string): Promise<string | null> {
         const userMap = await this.getDataFromFirestore<{ user_id: string }>(USER_MAP, userEmail);
-        if(!userMap)
-        {
-            throw Error(`Could not find user with email ${userEmail}`);
+        if(!userMap) {
+            return null;
         }
         return userMap.user_id;
     }

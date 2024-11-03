@@ -24,11 +24,13 @@ import {
   IconPlayerStop,
   IconVolume,
 } from "@tabler/icons-react";
-import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
+import { getUserID } from "../cookie";
 import Link from 'next/link';
 import { callAPI } from "../../utils/callAPI";
 import { useSearchParams } from "next/navigation";
 
+import { DocumentMetadata } from "../lib/src/documentProperties";
+import { ShareStyle } from "../lib/src/documentProperties";
 
 const keySignatures = [
   { label: 'C Major', value: 'C' },
@@ -65,6 +67,7 @@ const keySignatures = [
 
 export const ToolbarHeader: React.FC<{
   documentName: string;
+  documentMetadata: DocumentMetadata;
   modifyDurationInMeasure: (duration: string, noteId: number) => void;
   selectedNoteId: number;
   playbackComposition: () => void;
@@ -83,6 +86,7 @@ export const ToolbarHeader: React.FC<{
   setKeySignature: (keySignature: string) => void;
 }> = ({
   documentName,
+  documentMetadata,
   modifyDurationInMeasure,
   selectedNoteId,
   playbackComposition,
@@ -102,6 +106,7 @@ export const ToolbarHeader: React.FC<{
 }) => {
   // State to manage the input value
   const [inputValue, setInputValue] = useState("Untitled Score");
+  const [shareStyle, setShareStyle] = useState(ShareStyle.NONE);
   const searchParams = useSearchParams();
 
   // State to toggle between edit and display modes
@@ -113,32 +118,26 @@ export const ToolbarHeader: React.FC<{
     setIsChangingName(false); // Exit edit mode and save
   };
 
-    useEffect(() => {
-        setInputValue(documentName);
-        documentID.current = searchParams.get('id') || 'null';
-    }, [documentName]);
+  useEffect(() => {
+      setInputValue(documentName);
+      documentID.current = searchParams.get('id') || 'null';
+  }, [documentName]);
+
+  useEffect(() => {
+    setShareStyle(documentMetadata?.share_link_style ?? ShareStyle.NONE);
+  }, [documentMetadata]);
 
   const handleDocumentNameChange = (event: {
     currentTarget: { value: any };
   }) => {
-    setInputValue(event.currentTarget.value);
-    const UPDATE_DOCUMENT_NAME_URL =
-      "https://us-central1-l17-tune-tracer.cloudfunctions.net/updatePartialDocument";
-
-        const new_title = {
-            documentId: documentID.current,
-            documentChanges: {document_title: event.currentTarget.value},
-            writerId: getUserID()
-        };
-        const PUT_OPTION = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(new_title)
-        }
-        fetch(UPDATE_DOCUMENT_NAME_URL, PUT_OPTION);
-    };
+      setInputValue(event.currentTarget.value);
+      const new_title = {
+          documentId: documentID.current,
+          documentChanges: {document_title: event.currentTarget.value},
+          writerId: getUserID()
+      };
+      callAPI('updatePartialDocument', new_title);
+  };
     // Handle when the user clicks the text to switch to editing mode
     const handleEdit = () => {
         setIsChangingName(true);
@@ -243,7 +242,10 @@ export const ToolbarHeader: React.FC<{
           withCheckIcon={false}
           style={{ width: 125, marginLeft: "10px" }}
         />
-        <SharingModal />
+        <SharingModal
+          documentTitle={inputValue}
+          metadata={documentMetadata}
+        />
       </Group>
 
       {/* Second layer (middle section) */}
