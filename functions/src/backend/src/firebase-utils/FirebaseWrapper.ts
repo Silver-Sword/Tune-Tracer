@@ -221,14 +221,11 @@ export default class FirebaseWrapper
         await firebase.firestore().collection(COMMENT_DATABASE_NAME).doc(documentId).delete();
     }
 
-    public async getUser(userId: string): Promise<UserEntity> {
+    public async getUser(userId: string): Promise<UserEntity | null> {
         const data = await this.getDataFromFirestore<UserEntity>(USER_DATABASE_NAME, userId);
-        
-        if(!data)
-        {
-            throw Error(`Could not find user ${userId} in database`);
+        if(!data) {
+            return null;
         } 
-
         return data;
     }
 
