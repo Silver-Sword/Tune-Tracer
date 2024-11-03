@@ -14,7 +14,7 @@ export const createShareCode = async (accessLevel: "Viewer" | "Editor", document
 };
 
 export const updateDocumentShareStyle = async (accessType: "restricted" | "anyone", accessLevel: "Viewer" | "Editor", documentId: string) => {
-  const sharing = accessType === "restricted" ? ShareStyle.NONE : accessLevel === "Viewer" ? ShareStyle.READ : ShareStyle.WRITE;
+  const sharing = accessType === "restricted" ? ShareStyle.NONE : (accessLevel === "Viewer" ? ShareStyle.READ : ShareStyle.WRITE);
   const param = {
     documentId: documentId,
     sharing: sharing,

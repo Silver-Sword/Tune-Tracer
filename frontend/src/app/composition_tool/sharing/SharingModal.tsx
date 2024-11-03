@@ -138,8 +138,9 @@ export const SharingModal: React.FC<SharingModalProps> = ({
             label="Access Type"
             value={accessType}
             onChange={(value) => {
-                setAccessType(value as "restricted" | "anyone");
-                updateDocumentShareStyle(accessType, accessLevel, documentId);
+                const newAccessType = value as "restricted" | "anyone";
+                setAccessType(newAccessType);
+                updateDocumentShareStyle(newAccessType, accessLevel, documentId);
               }
             }
             data={[
@@ -153,8 +154,9 @@ export const SharingModal: React.FC<SharingModalProps> = ({
               label="Role"
               value={accessLevel}
               onChange={(value) => {
-                  setAccessLevel(value as "Viewer" | "Editor")
-                  updateDocumentShareStyle(accessType, accessLevel, documentId);
+                  const newAccessLevel = value as "Viewer" | "Editor";
+                  setAccessLevel(newAccessLevel);
+                  updateDocumentShareStyle(accessType, newAccessLevel, documentId);
                 }
               }
               data={[
