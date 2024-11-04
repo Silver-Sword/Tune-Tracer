@@ -299,6 +299,7 @@ export class Measure {
 
 
     addNote = (keys: string[], noteId: string): StaveNote | null => {
+        if(keys.length === 0) return null;
         if (!this.voice1) return null;
 
         const VF = Vex.Flow;
