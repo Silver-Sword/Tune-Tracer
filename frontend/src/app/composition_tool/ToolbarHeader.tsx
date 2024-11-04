@@ -214,9 +214,9 @@ export const ToolbarHeader: React.FC<{
                                 <ActionIcon onClick={() => playbackComposition()}>
                                     <IconPlayerPlay />
                                 </ActionIcon>
-                                <ActionIcon>
+                                {/* <ActionIcon>
                                     <IconPlayerPause />
-                                </ActionIcon>
+                                </ActionIcon> */}
                                 <ActionIcon onClick={() => stopPlayback()}>
                                     <IconPlayerStop />
                                 </ActionIcon>
@@ -237,10 +237,10 @@ export const ToolbarHeader: React.FC<{
                     {/* Sharing UI */}
 
         {/* Select Dropdown should not be changable if not the owner */}
-        <SharingModal
+        {hasWriteAccess && <SharingModal
           documentTitle={inputValue}
           metadata={documentMetadata}
-        />
+        />}
       </Group>
 
                 {/* Second layer (middle section) */}
@@ -483,9 +483,9 @@ export const ToolbarHeader: React.FC<{
                     </Text>
                 </Center>}
           
-      <Tooltip label="Help" position="top" withArrow>
+      {hasWriteAccess && <Tooltip label="Help" position="top" withArrow>
               <Button style={{ marginLeft: 'auto', marginTop: '20px' }}>Help</Button>
-            </Tooltip>
+            </Tooltip>}
       </Group>
             </AppShell.Header>
         );

@@ -759,13 +759,14 @@ export default function CompositionTool() {
             const receivedUsers = (res.data as any)['onlineUsers'];
             if(receivedUsers !== undefined) {
                 console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
-                setOnlineUsers(receivedUsers);
+                setOnlineUsers(new Map(Object.entries(receivedUsers)) as Map<string, OnlineEntity>);
             } else {
                 console.error(`Something went wrong. Received online users is undefined`);
             }
 
             setIsFetching(false);
-        }).catch((error) => {
+        })
+        .catch((error) => {
             // Getting the Error details.
             const message = error.message;
             console.log(`Error: ${message}`);
@@ -887,7 +888,7 @@ export default function CompositionTool() {
                 if(receivedUsers !== undefined) {
 
                     console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
-                    setOnlineUsers(receivedUsers);
+                    setOnlineUsers(new Map(Object.entries(receivedUsers)) as Map<string, OnlineEntity>);
                 } else {
                     console.error(`Something went wrong. Received online users is undefined`);
                 }
@@ -1001,7 +1002,7 @@ export default function CompositionTool() {
                     if(receivedUsers !== undefined) {
     
                         console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
-                        setOnlineUsers(receivedUsers);
+                        setOnlineUsers(new Map(Object.entries(receivedUsers)) as Map<string, OnlineEntity>);
                     } else {
                         console.error(`Something went wrong. Received online users is undefined`);
                     }
