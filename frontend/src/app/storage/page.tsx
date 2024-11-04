@@ -122,7 +122,7 @@ export default function Storage() {
   const router = useRouter();
   
   const [run, setRun] = useState(false);
-  const [stepIndex, setStepIndex] = useState(0);
+  // const [stepIndex, setStepIndex] = useState(0);
   const [actions, setActions] = useState(ACTIONS);
   const [isClient, setIsClient] = useState(false);
 
@@ -133,20 +133,28 @@ export default function Storage() {
   // Something is wrong with the callback, not allowing to move forward in states
   // Handle tutorial callback to manage step progression and tutorial completion
   const handleJoyrideCallback = (data: any) => {
-    const { status, index, action, type } = data;
-    console.log('data', data);
+    // const { status, index, action, type } = data;
+    // console.log('data', data);
 
-    console.log(`Joyride callback: ${status}, ${index}`);
-    if (([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND] as string[]).includes(type)) {
-      console.log('inside if');
-      setStepIndex(index + (action === ACTIONS.PREV ? -1 : 1)); // Update to the next step
+    // console.log(`Joyride callback: ${status}, ${index}`);
+    // if (([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND] as string[]).includes(type)) {
+    //   console.log('inside if');
+    //   setStepIndex(index + (action === ACTIONS.PREV ? -1 : 1)); // Update to the next step
+    // }
+    // else if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    //   console.log('inside else if');
+    //   setRun(false); // Stop tutorial
+    // } else {
+    //   console.log('inside else');
+    // }
+
+    const { status, type } = data;
+    const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+  
+    if (finishedStatuses.includes(status)) {
+      setRun(false);
     }
-    else if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-      console.log('inside else if');
-      setRun(false); // Stop tutorial
-    } else {
-      console.log('inside else');
-    }
+
   };
 
   const handleLogout = () => {
@@ -230,7 +238,7 @@ export default function Storage() {
       {isClient && (
         <StorageTutorial
         run={run}
-        stepIndex={stepIndex}
+        // stepIndex={stepIndex}
         onCallback={handleJoyrideCallback}
       />)}
       <AppShell.Main>

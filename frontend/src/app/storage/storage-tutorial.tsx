@@ -3,7 +3,7 @@ import Joyride, { CallBackProps, STATUS, Step } from "react-joyride";
 
 interface TutorialProps {
   run: boolean;            // Whether the tutorial is running
-  stepIndex: number;       // Current step index
+  // stepIndex: number;       // Current step index
   onCallback: (data: CallBackProps) => void;  // Callback handler for step events
 }
 
@@ -14,13 +14,16 @@ const tutorialSteps: Step[] = [
   { target: ".profile-menu", content: "Access your profile settings and log out here." },
 ];
 
-const StorageTutorial: React.FC<TutorialProps> = ({ run, stepIndex, onCallback }) => {
+const StorageTutorial: React.FC<TutorialProps> = ({ run, 
+  // stepIndex, 
+  onCallback }) => {
   return (
     <Joyride
       steps={tutorialSteps}
       run={run}
-      stepIndex={stepIndex}
+      // stepIndex={stepIndex}
       continuous
+      scrollToFirstStep
       showProgress
       showSkipButton
       callback={onCallback}
