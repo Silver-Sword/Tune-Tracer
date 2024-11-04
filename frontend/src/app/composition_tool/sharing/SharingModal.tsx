@@ -101,7 +101,7 @@ export const SharingModal: React.FC<SharingModalProps> = ({
       console.error("Error creating share code:", error);
       setShareCode("ERROR");
     }
-    setShareCodeIsLoading("Generate Code");
+    setShareCodeIsLoading("Regenerate Code");
   };
 
   return (
@@ -133,9 +133,19 @@ export const SharingModal: React.FC<SharingModalProps> = ({
 
         <Title order={4}>General Access</Title>
         <Space h="sm" />
-        <Group>
+        <Group
+          justify="space-between"
+          style={{
+            padding: '15px',
+            border: '1px solid #e0e0e0',
+            borderRadius: '8px',
+            marginBottom: '10px',
+            boxShadow: '0px 2px 5px rgba(0, 0, 0, 0.1)',
+          }}
+        >
           <Select
             label="Access Type"
+            c="dimmed"
             value={accessType}
             onChange={(value) => {
                 const newAccessType = value as "restricted" | "anyone";
@@ -150,21 +160,24 @@ export const SharingModal: React.FC<SharingModalProps> = ({
             style={{ width: 200 }}
           />
           {accessType === "anyone" && (
-            <Select
-              label="Role"
-              value={accessLevel}
-              onChange={(value) => {
-                  const newAccessLevel = value as "Viewer" | "Editor";
-                  setAccessLevel(newAccessLevel);
-                  updateDocumentShareStyle(accessType, newAccessLevel, documentId);
+            <Group align="right">
+              <Select
+                label="Role"
+                c="dimmed"
+                value={accessLevel}
+                onChange={(value) => {
+                    const newAccessLevel = value as "Viewer" | "Editor";
+                    setAccessLevel(newAccessLevel);
+                    updateDocumentShareStyle(accessType, newAccessLevel, documentId);
+                  }
                 }
-              }
-              data={[
-                { value: "Viewer", label: "Viewer" },
-                { value: "Editor", label: "Editor" },
-              ]}
-              style={{ width: 150, align: "right" }}
-            />
+                data={[
+                  { value: "Viewer", label: "Viewer" },
+                  { value: "Editor", label: "Editor" },
+                ]}
+                style={{ width: 150, align: "right" }}
+              />
+            </Group>
           )}
         </Group>
 
@@ -172,12 +185,12 @@ export const SharingModal: React.FC<SharingModalProps> = ({
           <>
             <Space h="md" />
             <Grid gutter="md">
-              <Grid.Col span={6}>
+              <Grid.Col span={5}>
                 <Text fw={500} mb="xs" ta="center">
                   Link Access
                 </Text>
                 <Center>
-                  <CopyButton value="null" timeout={10000}>
+                  <CopyButton value={location.href} timeout={10000}>
                     {({ copied, copy }) => (
                       <Button
                         rightSection={
@@ -200,21 +213,45 @@ export const SharingModal: React.FC<SharingModalProps> = ({
                 <Text fw={500} mb="xs" ta="center">
                   Code Access
                 </Text>
-                <Group justify="space-between">
+                <Group >
                   <Container>
                     <Text
                       ta="left"
                       c="blue"
                       fw={700}
-                      style={{ letterSpacing: "0.5em" }}
+                      style={{ letterSpacing: "0.25em" }}
                     >
                       {shareCode}
                     </Text>
                   </Container>
-                  <Button onClick={handleCreateCode}>
-                    {shareCodeIsLoading}
-                  </Button>
-                </Group>
+                  <CopyButton value={shareCode} timeout={10000}>
+                    {({ copied, copy }) => (
+                      <Button
+                        rightSection={
+                          copied ? (
+                            <IconCheck size={16} />
+                          ) : (
+                            <IconCopy size={16} />
+                          )
+                        }
+                        variant={copied ? "filled" : "outline"}
+                        onClick={copy}
+                        disabled={shareCode === "ERROR" || shareCode === "------"}
+                      >
+                        {copied ? "Copied" : "Copy Code"}
+                      </Button>
+                    )}
+                  </CopyButton>
+                  
+                  </Group>
+                
+                  <Space h="md" />
+                  <Center>
+                    <Button onClick={handleCreateCode}>
+                      {shareCodeIsLoading}
+                    </Button>
+                    
+                  </Center>
               </Grid.Col>
             </Grid>
           </>

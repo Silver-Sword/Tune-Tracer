@@ -90,9 +90,10 @@ export class Measure {
                 notes.push(newNote);
                 if (note.dots > 0) newNote.addModifier(new this.VF.Dot());
                 if (note.dots > 1) newNote.addModifier(new this.VF.Dot());
-                note.modifiers.forEach((modifier) => {
-                    const accidental = new Accidental(modifier.modifier);
-                    newNote.addModifier(accidental, modifier.index);
+                note.modifiers.forEach((Modifier) => {
+                    if(Modifier.modifier.toLowerCase() === 'dot') return;
+                    const accidental = new Accidental(Modifier.modifier);
+                    newNote.addModifier(accidental, Modifier.index);
                 });
                 newNote.setModifierContext(new ModifierContext());
             });
@@ -295,7 +296,6 @@ export class Measure {
         if (!this.voice1) return null;
 
         const VF = Vex.Flow;
-        console.log("adding note noteID: " + noteId);
         const notes: StaveNote[] = [];
         let newNote: StaveNote | null = null;
 
@@ -389,7 +389,6 @@ export class Measure {
                         keys: [this.getRestLocation(noteDuration)],
                         duration: noteDuration,
                     });
-                    console.log("Making a new note: " + note.getKeys());
                     notes.push(note);
                 }
                 fillTicks -= count * tickValue;  // Subtract the total ticks of these notes

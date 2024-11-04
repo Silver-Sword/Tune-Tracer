@@ -3,7 +3,7 @@ import { UpdateType } from "../lib/src/UpdateType";
 
 import { UserEntity } from "../lib/src/UserEntity";
 
-import FirebaseWrapper from "../firebase-utils/FirebaseWrapper";
+import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 
 type PartialWithRequired<T, K extends keyof T> = Partial<T> & Required<Pick<T, K>>;
 type PartialWithRequiredAndWithout<T, K extends keyof T, U extends keyof T> = Partial<T> & Required<Omit<Pick<T, K>, U>>;
@@ -17,13 +17,17 @@ type PartialWithRequiredAndWithout<T, K extends keyof T, U extends keyof T> = Pa
 export async function subscribeUserToUserDocumentPool(
     documentId: string,
     user: PartialWithRequired<UserEntity, 'user_email' | 'user_id' | 'display_name'>,
-    updateOnlineUserPoolFn: (updateType: UpdateType, onlineEntity: OnlineEntity) => void
+    updateOnlineUserPoolFn: (updateType: UpdateType, onlineEntity: OnlineEntity) => void,
+    shouldAutoDisconnectUser: boolean = true,
 ) {
-    const firebase = new FirebaseWrapper();
-    firebase.initApp();
-    
-    await registerUserToDocument(documentId, user);
+    const firebase = getFirebase();
+    await registerUserToDocument(documentId, user, shouldAutoDisconnectUser);
     await firebase.subscribeToOnlineUsers(documentId, updateOnlineUserPoolFn);
+}
+
+export async function getUserPool(documentId: string): Promise<OnlineEntity[]> {
+    const firebase = getFirebase();
+    return await firebase.getAllCurrentOnlineUsers(documentId);
 }
 
 /**
@@ -37,8 +41,7 @@ export async function recordOnlineUserUpdatedDocument(
     documentId: string,
     onlineUser: PartialWithRequiredAndWithout<OnlineEntity, 'user_id', 'last_active_time'>
 ) {
-    const firebase = new FirebaseWrapper();
-    firebase.initApp();
+    const firebase = getFirebase();
     
     // check if document exists (TO DO: remove the need for this check)
     if(!firebase.doesDocumentExist(documentId)) {
@@ -72,10 +75,10 @@ export async function updateUserCursor(
  */
 async function registerUserToDocument(
     documentId: string, 
-    user: PartialWithRequired<UserEntity, 'user_email' | 'user_id' | 'display_name'>
+    user: PartialWithRequired<UserEntity, 'user_email' | 'user_id' | 'display_name'>,
+    shouldAutoDisconnectUser: boolean = true
 ){
-    const firebase = new FirebaseWrapper();
-    firebase.initApp();
+    const firebase = getFirebase();
 
     // check if document exists (TO DO: remove the need for this check)
     if(!firebase.doesDocumentExist(documentId)) {
@@ -84,9 +87,13 @@ async function registerUserToDocument(
         );
     }
 
-    await firebase.registerUserToDocument( documentId, {
-        user_email: user.user_email, 
-        user_id: user.user_id, 
-        display_name: user.display_name
-    });
+    await firebase.registerUserToDocument( 
+        documentId, 
+        {
+            user_email: user.user_email, 
+            user_id: user.user_id, 
+            display_name: user.display_name
+        }, 
+        shouldAutoDisconnectUser
+    );
 }
