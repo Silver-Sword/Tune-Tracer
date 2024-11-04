@@ -21,7 +21,7 @@ export function createPlaceNoteBox(note: StaveNote): SVGElement {
     noteBox.setAttribute("width", "20"); // Width of the rectangle
     noteBox.setAttribute("height", "250"); // Height of the rectangle
     noteBox.setAttribute("fill", "rgba(0, 0, 255, 0.0)"); // No fill color
-    noteBox.setAttribute("stroke", "blue"); // Outline color
+    noteBox.setAttribute("stroke", "rgba(0, 0, 255, 0.0)"); // Outline color
     noteBox.setAttribute("stroke-width", "2"); // Outline thickness
 
     return noteBox;
