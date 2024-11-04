@@ -154,9 +154,9 @@ export const ToolbarHeader: React.FC<{
         };
 
         const [run, setRun] = useState(false);
-  // const [stepIndex, setStepIndex] = useState(0);
-  const [actions, setActions] = useState(ACTIONS);
-  const [isClient, setIsClient] = useState(false);
+        // const [stepIndex, setStepIndex] = useState(0);
+        const [actions, setActions] = useState(ACTIONS);
+        const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
