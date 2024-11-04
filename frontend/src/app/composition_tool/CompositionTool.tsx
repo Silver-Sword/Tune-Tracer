@@ -51,7 +51,7 @@ export default function CompositionTool() {
     const [selectedNoteHeadId, setSelectedNoteHeadId] = useState<string>('');
     let selectedKey = useRef<string>('');
     const [isFetching, setIsFetching] = useState<boolean>(false);
-    const [isSending, setIsSending] = useState<boolean>(false);
+    let  isSending = useRef<boolean>(false);
     const notePlacementRectangleSVG = useRef<SVGElement | null>(null);
     const notePlacementRectangleRef = useRef<Selection<SVGElement, unknown, null, undefined> | null>(null);
     const [notationUpdated, setNotationUpdated] = useState<number>(0);
@@ -704,12 +704,6 @@ export default function CompositionTool() {
         }
     }, [volume]);
 
-    const SUBSCRIBE_TO_DOC_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToDocument';
-    const SUBSCRIBE_TO_COMMENTS_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToComments';
-    const CHECK_CHANGE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/checkDocumentChanges';
-    const UPDATE_CURSOR_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updateUserCursor';
-    const CHECK_ACCESS_LEVEL_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/getUserAccessLevel';
-
     const [currentDocument, setDocument] = useState<Document>({
         document_title: '',
         comments: [],
@@ -726,6 +720,7 @@ export default function CompositionTool() {
 
     const sendChanges: SendChangesType = async () => {
         if (score.current === null) return;
+        isSending.current = true;
         score.current.exportScoreDataObj(true);
         // Debounce the function to prevent rapid consecutive calls
         if (sendChangesTimeout) {
@@ -733,14 +728,14 @@ export default function CompositionTool() {
         }
 
         sendChangesTimeout = setTimeout(async () => {
-            while (isFetching || isSending) {
-                await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
-            }
+            // while (isFetching || isSending) {
+            //     console.log("waiting until fetching is done");
+            //     await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
+            // }
             if (score.current === null) return;
-            setIsSending(true);
+            
             let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
             //console.log("exported Object: " + printScoreData(exportedScoreDataObj));
-            const UPDATE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updatePartialDocument';
 
             const changesTemp =
             {
@@ -761,7 +756,8 @@ export default function CompositionTool() {
             // setChanges(recordTemp);
 
             await callAPI("checkDocumentChanges", changesTemp);
-            setIsSending(false);
+            // await new Promise(resolve => setTimeout(resolve, 1000)); // Adjust the delay if needed
+            isSending.current = (false);
             // await fetch(UPDATE_URL, PUT_OPTION);
         }, debounceDelay);
     }
@@ -780,7 +776,8 @@ export default function CompositionTool() {
         }
         
         sendChangesTimeout = setTimeout(async () => {
-            while (isSending || isFetching) {
+            while (isSending.current || isFetching) {
+                console.log("Waiting until send finished");
                 await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
             }
         console.log(JSON.stringify(changesTemp));
@@ -798,6 +795,8 @@ export default function CompositionTool() {
                     setIsFetching(false);
                     return;
                 }
+                console.debug(`Received document data: ${JSON.stringify(receivedDocument)}`);
+
                 //console.log("Recieved Score data: " + JSON.stringify(receivedDocument));
                 const compData: ScoreData = receivedDocument.score;
                 const document_title: string = receivedDocument.document_title;
@@ -850,31 +849,26 @@ export default function CompositionTool() {
 
     const doesUserHaveEditAccess = async () => {
         // NOTE: documentId and userId are assumed to be set (but are probably not in reality) (move this code to somewhere where they are)
-        const data = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                userId: userId.current,
-                documentId: documentID.current,
-            })
-        };
-
-        const accessLevel = await fetch(CHECK_ACCESS_LEVEL_URL, data)
-            .then((res) => res.json().then((data) => {
-                console.log(`Access Level Response: ${data.data}`);
-                const hasWriteAccess: boolean = data.data >= ShareStyle.WRITE;
-                setHasWriteAccess(hasWriteAccess);
-                if (data.data <= ShareStyle.NONE) {
-                    router.push(`/no_access`);
-                }
-                if (!hasWriteAccess && notationRef.current) {
-                    d3.select(notationRef.current)
-                        .on('click', null);
-                }
-
-            }));
+        const response = await callAPI("getUserAccessLevel", {
+            userId: userId.current,
+            documentId: documentID.current,
+        });
+        if(response.status !== 200) {
+            console.error("Error fetching access level");
+            return;
+        }  
+        const accessLevel = response.data as number;
+            
+        console.log(`Access Level Response: ${accessLevel}`);
+        const hasWriteAccess: boolean = accessLevel >= ShareStyle.WRITE;
+        setHasWriteAccess(hasWriteAccess);
+        if (accessLevel <= ShareStyle.NONE) {
+            router.push(`/no_access`);
+        }
+        if (!hasWriteAccess && notationRef.current) {
+            d3.select(notationRef.current)
+                .on('click', null);
+        }
     };
 
     function useInterval(callback: () => void, delay: number | null) {
@@ -899,10 +893,12 @@ export default function CompositionTool() {
         }, [delay]);
     }
 
-
-
     // THIS FETCHES CHANGES PERIODICALLY
     // UNCOMMENT below to actually do it.
+    useInterval(() => {
+        // Your custom logic here
+        fetchChanges();
+    }, 5000); // 5 seconds
     useInterval(() => {
         // Your custom logic here
         fetchChanges();
@@ -938,6 +934,8 @@ export default function CompositionTool() {
                     return;
                 }
                 const receivedDocument = (res.data as any)['document'];
+                console.debug(`Received document data: ${JSON.stringify(receivedDocument)}`);
+
                 const compData: ScoreData = receivedDocument.score;
                 const document_title: string = receivedDocument.document_title;
                 const comments: Comment[] = receivedDocument.comments;
@@ -982,46 +980,43 @@ export default function CompositionTool() {
                 console.log("document ID: " + documentID.current);
                 console.log("User Info: " + JSON.stringify(userInfo));
 
-            const POST_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(userInfo),
-            }
-            fetch(SUBSCRIBE_TO_DOC_URL, POST_OPTION)
-                .then((res) => {
-                    // Read result of the Cloud Function.
-                    res.json().then((data) => {
-                        const compData: ScoreData = (data.data.document).score;
-                        const document_title: string = (data.data.document).document_title;
-                        const comments: Comment[] = (data.data.document).comments;
-                        const metadata: DocumentMetadata = (data.data.document).metadata;
-                        const tempDocument: Document = {
-                            document_title: document_title,
-                            comments: comments,
-                            score: compData,
-                            metadata: metadata,
-                        };
-                        setDocument(tempDocument);
-                        // console.log("Document:" + currentDocument);
-                        setLoadState(true);
-                        // console.log("Recieved Score data: " + printScoreData(compData));
-                        // if (notationRef.current) {
-                        //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
-                        // }
-
-                        console.log("Document Loaded");
-                        var temp = !loaded;
-                        setLoadState(temp);
-                    });
-                }).catch((error) => {
-                    // Getting the Error details.
-                    const message = error.message;
-                    console.log(`Error: ${message}`);
+            callAPI("subscribeToDocument", userInfo) 
+            .then((res) => {
+                if(res.status != 200) {
+                    console.log("Error fetching changes in handleScoreNameChange");
                     return;
-                    // ...
-                });
+                }
+                // Read result of the Cloud Function.
+                const document = (res.data as any)['document'];
+                const compData: ScoreData = document.score;
+                const document_title: string = document.document_title;
+                const comments: Comment[] = document.comments;
+                const metadata: DocumentMetadata = document.metadata;
+                const tempDocument: Document = {
+                    document_title: document_title,
+                    comments: comments,
+                    score: compData,
+                    metadata: metadata,
+                };
+                setDocument(tempDocument);
+                // console.log("Document:" + currentDocument);
+                setLoadState(true);
+                // console.log("Recieved Score data: " + printScoreData(compData));
+                // if (notationRef.current) {
+                //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
+                // }
+
+                console.log("Document Loaded");
+                var temp = !loaded;
+                setLoadState(temp);
+            })
+            .catch((error) => {
+                // Getting the Error details.
+                const message = error.message;
+                console.log(`Error: ${message}`);
+                return;
+                // ...
+            });
             fetchChanges();
         }
     }, []);
@@ -1038,13 +1033,6 @@ export default function CompositionTool() {
                 documentId: documentID.current,
                 writerId: userId.current
             }
-            const POST_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(changesTemp),
-            }
             console.log(`Check Changes Input: ${JSON.stringify(changesTemp)}`);
             callAPI("checkDocumentChanges", changesTemp)
                 .then((res) => {
@@ -1053,6 +1041,7 @@ export default function CompositionTool() {
                         return;
                     }
                     const receivedDocument = (res.data as any)['document'];
+                    console.debug(`Received document data: ${JSON.stringify(receivedDocument)}`);
                     const compData: ScoreData = receivedDocument.score;
                     const document_title: string = receivedDocument.document_title;
                     const comments: Comment[] = receivedDocument.comments;
@@ -1393,26 +1382,13 @@ export default function CompositionTool() {
                 displayName: displayName.current,
                 cursor: cursor // Send the SelectedNote object
             };
-    
-            const POST_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(userInfo)
-            };
-    
-            fetch(UPDATE_CURSOR_URL, POST_OPTION)
-                .then((res) => {
-                    if (res.ok)
-                    {
-                        console.log('Successfully updated user cursor data');
-                    }
-                })
-                .catch((error) => {
-                    console.error('Error updating user cursor:', error);
-                });
-        }
+
+            callAPI("updateUserCursor", userInfo).then((res) => {
+                if(res.status !== 200) {
+                    console.log("Error updating user cursor: ", res.message);
+                    return;
+                }
+            });
     };
     
     const fetchDisplayName = async (userIdToFetch: string): Promise<string> => {
@@ -1568,7 +1544,7 @@ export default function CompositionTool() {
                         placeholder={userTemp}
                     />
                     <Button onClick={sendChanges}>Send Score change</Button>*/}
-                    {/* <Button onClick={fetchChanges}>fetch Score change</Button>  */}
+                    {/* <Button onClick={sendAndFetch}>fetch Score change</Button>  */}
                     <div>
                         <div ref={notationRef}></div>
                     </div>
@@ -1576,4 +1552,5 @@ export default function CompositionTool() {
             </AppShell.Main>
         </AppShell>
     );
+}
 }

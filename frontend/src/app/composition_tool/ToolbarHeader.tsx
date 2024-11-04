@@ -1,27 +1,26 @@
 import {
-    AppShell,
-    Group,
-    Tooltip,
-    TextInput,
-    Container,
-    Center,
-    ActionIcon,
-    Space,
-    Slider,
-    rem,
-    Select,
-    Tabs,
-    Button,
-    Divider,
-    Text,
-    Image,
+  AppShell,
+  Group,
+  Tooltip,
+  TextInput,
+  Container,
+  Center,
+  ActionIcon,
+  Space,
+  Slider,
+  rem,
+  Select,
+  Tabs,
+  Button,
+  Divider,
+  Text,
+  Image,
 } from "@mantine/core";
 import React, { useEffect, useRef, useState } from "react";
 import { SharingModal } from "./sharing/SharingModal";
 import { KeybindModal } from "./KeybindModal";
 import {
     IconPlayerPlay,
-    IconPlayerPause,
     IconPlayerStop,
     IconVolume,
 } from "@tabler/icons-react";
@@ -30,41 +29,43 @@ import Link from 'next/link';
 import { callAPI } from "../../utils/callAPI";
 import { useSearchParams } from "next/navigation";
 import UserColorsModal from './UserColorsModal';
+import { STATUS, ACTIONS} from "react-joyride"
 
 import { DocumentMetadata } from "../lib/src/documentProperties";
 import { ShareStyle } from "../lib/src/documentProperties";
+import EditorTutorial from "./editor-tutorial";
 
 const keySignatures = [
-  { label: "C Major", value: "C" },
-  { label: "G Major", value: "G" },
-  { label: "D Major", value: "D" },
-  { label: "A Major", value: "A" },
-  { label: "E Major", value: "E" },
-  { label: "B Major", value: "B" },
-  { label: "F# Major", value: "F#" },
-  { label: "C# Major", value: "C#" },
-  { label: "A Minor", value: "Am" },
-  { label: "E Minor", value: "Em" },
-  { label: "B Minor", value: "Bm" },
-  { label: "F# Minor", value: "F#m" },
-  { label: "C# Minor", value: "C#m" },
-  { label: "G# Minor", value: "G#m" },
-  { label: "D# Minor", value: "D#m" },
-  { label: "A# Minor", value: "A#m" },
-  { label: "F Major", value: "F" },
-  { label: "B♭ Major", value: "Bb" },
-  { label: "E♭ Major", value: "Eb" },
-  { label: "A♭ Major", value: "Ab" },
-  { label: "D♭ Major", value: "Db" },
-  { label: "G♭ Major", value: "Gb" },
-  { label: "C♭ Major", value: "Cb" },
-  { label: "D Minor", value: "Dm" },
-  { label: "G Minor", value: "Gm" },
-  { label: "C Minor", value: "Cm" },
-  { label: "F Minor", value: "Fm" },
-  { label: "B♭ Minor", value: "Bbm" },
-  { label: "E♭ Minor", value: "Ebm" },
-  { label: "A♭ Minor", value: "Abm" },
+{ label: "C Major", value: "C" },
+{ label: "G Major", value: "G" },
+{ label: "D Major", value: "D" },
+{ label: "A Major", value: "A" },
+{ label: "E Major", value: "E" },
+{ label: "B Major", value: "B" },
+{ label: "F# Major", value: "F#" },
+{ label: "C# Major", value: "C#" },
+{ label: "A Minor", value: "Am" },
+{ label: "E Minor", value: "Em" },
+{ label: "B Minor", value: "Bm" },
+{ label: "F# Minor", value: "F#m" },
+{ label: "C# Minor", value: "C#m" },
+{ label: "G# Minor", value: "G#m" },
+{ label: "D# Minor", value: "D#m" },
+{ label: "A# Minor", value: "A#m" },
+{ label: "F Major", value: "F" },
+{ label: "B♭ Major", value: "Bb" },
+{ label: "E♭ Major", value: "Eb" },
+{ label: "A♭ Major", value: "Ab" },
+{ label: "D♭ Major", value: "Db" },
+{ label: "G♭ Major", value: "Gb" },
+{ label: "C♭ Major", value: "Cb" },
+{ label: "D Minor", value: "Dm" },
+{ label: "G Minor", value: "Gm" },
+{ label: "C Minor", value: "Cm" },
+{ label: "F Minor", value: "Fm" },
+{ label: "B♭ Minor", value: "Bbm" },
+{ label: "E♭ Minor", value: "Ebm" },
+{ label: "A♭ Minor", value: "Abm" },
 ];
 
 export const ToolbarHeader: React.FC<{
@@ -118,50 +119,85 @@ export const ToolbarHeader: React.FC<{
         const searchParams = useSearchParams();
         const [usersModalOpened, setUsersModalOpened] = useState<boolean>(false);
 
-        // State to toggle between edit and display modes
-        const [isChangingName, setIsChangingName] = useState(false);
-        const documentID = useRef<string>();
+      // State to toggle between edit and display modes
+      const [isChangingName, setIsChangingName] = useState(false);
+      const documentID = useRef<string>();
 
-        // Handle the save action (when pressing Enter or clicking outside)
-        const handleSave = () => {
-            setIsChangingName(false); // Exit edit mode and save
-        };
-
-  useEffect(() => {
-    setInputValue(documentName);
-    documentID.current = searchParams.get("id") || "null";
-  }, [documentName]);
-
-        useEffect(() => {
-            setShareStyle(documentMetadata?.share_link_style ?? ShareStyle.NONE);
-        }, [documentMetadata]);
-
-        const handleDocumentNameChange = (event: {
-            currentTarget: { value: any };
-        }) => {
-          setInputValue(event.currentTarget.value);
+      // Handle the save action (when pressing Enter or clicking outside)
+      const handleSave = () => {
           const new_title = {
             documentId: documentID.current,
-            documentChanges: {  document_title: event.currentTarget.value  },
+            documentChanges: {  document_title: inputValue  },
             writerId: getUserID(),
           };
           callAPI("updatePartialDocument", new_title);
-        };
-      // Handle when the user clicks the text to switch to editing mode
-      const handleEdit = () => {
-            if(!hasWriteAccess) return;
-        setIsChangingName(true);
+          setIsChangingName(false); // Exit edit mode and save
       };
 
-        // Toggle between editable and read-only states
-        const [mode, setMode] = useState<string>("Editable");
-        const handleModeChange = (value: any) => {
-            setMode(value);
+useEffect(() => {
+  setInputValue(documentName);
+  documentID.current = searchParams.get("id") || "null";
+}, [documentName]);
+
+      useEffect(() => {
+          setShareStyle(documentMetadata?.share_link_style ?? ShareStyle.NONE);
+      }, [documentMetadata]);
+
+      const handleDocumentNameChange = (event: {
+          currentTarget: { value: any };
+      }) => {
+        setInputValue(event.currentTarget.value);
+      };
+
+      const handleTitleSave = () => {
+        const new_title = {
+          documentId: documentID.current,
+          documentChanges: {  document_title: inputValue  },
+          writerId: getUserID(),
         };
+        callAPI("updatePartialDocument", new_title);
+      };
+    // Handle when the user clicks the text to switch to editing mode
+    const handleEdit = () => {
+          if(!hasWriteAccess) return;
+      setIsChangingName(true);
+    };
+
+      // Toggle between editable and read-only states
+      const [mode, setMode] = useState<string>("Editable");
+      const handleModeChange = (value: any) => {
+          setMode(value);
+      };
+      const [run, setRun] = useState(false);
+        // const [stepIndex, setStepIndex] = useState(0);
+        const [actions, setActions] = useState(ACTIONS);
+        const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []); 
+
+  // Something is wrong with the callback, not allowing to move forward in states
+  // Handle tutorial callback to manage step progression and tutorial completion
+  const handleJoyrideCallback = (data: any) => {
+    const { status, type } = data;
+    const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    console.log('data', data);
+
+    if (finishedStatuses.includes(status)) {
+      setRun(false);
+    }
+  };
+
 
         return (
             <AppShell.Header p="md">
-                <Group
+                {isClient && (
+                  <EditorTutorial
+                  run={run}
+                  onCallback={handleJoyrideCallback}
+                />)}
+            <Group
                     align="center"
                     style={{ borderBottom: "1px solid #eee", paddingBottom: "10px" }}
                 >
@@ -196,6 +232,7 @@ export const ToolbarHeader: React.FC<{
                         />
                     ) : (
                         <Text
+                            className="editable-title"
                             onClick={handleEdit}
                             style={{
                                 cursor: "text",
@@ -215,7 +252,7 @@ export const ToolbarHeader: React.FC<{
                     )}
 
                     {/* PlayBack UI */}
-                    <Container fluid style={{ width: "20%" }}>
+                    <Container fluid style={{ width: "20%" }} className="playback">
                         <Center>
                             <Group>
                                 <ActionIcon onClick={() => playbackComposition()}>
@@ -257,7 +294,7 @@ export const ToolbarHeader: React.FC<{
       </Group>
 
                 {/* Second layer (middle section) */}
-                <Group align="space-between" mt="xs" style={{ paddingBottom: "10px" }}>
+                <Group className="tabs" align="space-between" mt="xs" style={{ paddingBottom: "10px" }}>
                 {hasWriteAccess && <Tabs defaultValue="notes">
                     <Tabs.List>
                         <Tabs.Tab value="notes">Notes</Tabs.Tab>
@@ -267,7 +304,7 @@ export const ToolbarHeader: React.FC<{
         {/* Notes Tab */}
         <Tabs.Panel value="notes">
           <Space h="xs" />
-          <Group>
+          <Group className="toolbar">
             {/* Accidentals */}
             <Tooltip label="Add Natural" position="top" withArrow>
               <Button
@@ -507,10 +544,10 @@ export const ToolbarHeader: React.FC<{
           
                   
                 {hasWriteAccess && (
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "45px", width: " 50%" }}>
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "45px", width: " 16%", marginLeft: "auto", flexWrap: "nowrap"}}>
                     <KeybindModal />
                     <Tooltip label="Help" position="top" withArrow>
-                      <Button>Help</Button>
+                      <Button className="tutorial-button" onClick={() => setRun(true)}>Help</Button>
                     </Tooltip>
                   </div>
                 )}

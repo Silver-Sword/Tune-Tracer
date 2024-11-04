@@ -594,6 +594,7 @@ exports.checkDocumentChanges = functions.https.onRequest(
         } else {
 
           if (documentChanges) {
+            console.info(`Server id ${getServerId()} updating document ${documentId} with with changes ${documentChanges}`);
             const documentObject: Record<string, unknown> = JSON.parse(
               JSON.stringify(documentChanges)
             );
@@ -723,8 +724,9 @@ exports.updatePartialDocument = functions.https.onRequest(
         } else {
           const documentObject: Record<string, unknown> = JSON.parse(
             JSON.stringify(documentChanges)
-          );
+          ); 
 
+          delete documentObject["metdata"];
           const apiResult = await updatePartialDocument(
             documentObject,
             documentId,
@@ -762,6 +764,10 @@ exports.updateUserCursor = functions.https.onRequest(
             message: `Missing required field: ${
               !documentId ? "documentId" : "userId"
             }`,
+          });
+        } else if(typeof userId !== "string") {
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `userId must be a string`,
           });
         } else {
           await updateUserCursor(documentId, { user_id: userId, cursor: cursor });

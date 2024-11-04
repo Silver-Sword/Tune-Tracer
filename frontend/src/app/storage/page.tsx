@@ -37,13 +37,6 @@ const filterLabels = [
   // { link: "", label: "Favorites" },
 ];
 
-const tutorialSteps = [
-  { target: ".search-bar", content: "Search for compositions here." },
-  { target: ".create-card", content: "Create a new score or join with an invite code." },
-  { target: ".navbar-filters", content: "Filter your compositions here." },
-  { target: ".profile-menu", content: "Access your profile settings and logout here." },
-];
-
 // FiltersNavbar component
 const FiltersNavbar: React.FC<{ getOwnPreviews: () => void, getSharedPreviews: () => void }> = ({ getOwnPreviews, getSharedPreviews }) => {
   const [activeFilter, setActiveFilter] = useState<string>("All");
@@ -154,7 +147,6 @@ export default function Storage() {
     if (finishedStatuses.includes(status)) {
       setRun(false);
     }
-
   };
 
   const handleLogout = () => {
@@ -260,9 +252,12 @@ export default function Storage() {
             <SearchBar />
             <Group>
 
-              
-              <Button className="tutorial-button" onClick={() => setRun(true)}>Help</Button>
-
+              <Button 
+                className="tutorial-button"
+                onClick={() => setRun(true)}
+              >
+                  Help
+              </Button>
 
               {/* Profile Menu */}
               <Menu shadow="md" width={200}>
@@ -342,7 +337,7 @@ export default function Storage() {
             </Text>
           ) : (
             <SimpleGrid
-              cols={{ base: 1, sm: 2, md: 3, lg: 5 }}
+              cols={{ base: 1, sm: 3, md: 3, lg: 5 }}
               spacing={{ base: "xl" }}
             >
               {documents.map((doc) => (
@@ -353,6 +348,7 @@ export default function Storage() {
                   document_title={doc.document_title} 
                   owner_id={doc.owner_id} 
                   last_edit_time={doc.last_edit_time} 
+                  time_created={doc.time_created}
                 />
               ))}
             </SimpleGrid>
