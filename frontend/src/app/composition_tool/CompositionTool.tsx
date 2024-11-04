@@ -277,11 +277,13 @@ export default function CompositionTool() {
         // Reset the position to the start
         Tone.getTransport().position = 0;
         Tone.getTransport().cancel();
+        // Cancel scheduled draw events
+        Tone.getDraw().cancel();
 
         // Hide the cursor
         const svg = d3.select(notationRef.current).select('svg');
         // svg.select('#playback-cursor').attr('opacity', 0);
-        svg.select('#playback-cursor').remove();
+        svg.select('#playback-cursor').interrupt().remove();
 
         setIsPlayingBack(false);
     }
@@ -291,7 +293,7 @@ export default function CompositionTool() {
         const svg = d3.select(notationRef.current).select('svg');
 
         // Remove existing cursor if any
-        svg.select('#playback-cursor').remove();
+        svg.select('#playback-cursor').interrupt().remove();
 
         // Get the dimensions of the SVG to set the cursor height
         const svgHeight = parseFloat(svg.attr('height'));
