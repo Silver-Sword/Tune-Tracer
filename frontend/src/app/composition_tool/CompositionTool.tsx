@@ -767,6 +767,7 @@ export default function CompositionTool() {
                 setDocument(tempDocument);
                 if (notationRef.current) {
                     score.current?.loadScoreDataObj(compData);
+                    score.current?.addNoteInMeasure([], 0);
                     console.log("LOADED SCORE DATA");
                     // Now add it to the currently selected note
                     if (selectedNoteId.current !== -1) {
