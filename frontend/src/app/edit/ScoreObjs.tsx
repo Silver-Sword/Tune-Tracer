@@ -23,6 +23,10 @@ function getTopMeasuresObj1(): MeasureData[] {
         index: 0,
         modifier: 'n'
     }
+    let modifier1sharp: ModifierData ={
+        index: 0,
+        modifier: '#'
+    }
     let measure1: MeasureData = {
         x: 20,
         y: 0,
@@ -44,13 +48,13 @@ function getTopMeasuresObj1(): MeasureData[] {
             },
             {
                 keys: ["b/4"],
-                duration: "qr",
-                dots: 0, modifiers: []
+                duration: "q",
+                dots: 0, modifiers: [modifier1sharp]
             },
             {
                 keys: ["b/4"],
-                duration: "qr",
-                dots: 0, modifiers: []
+                duration: "q",
+                dots: 0, modifiers: [modifier1sharp]
             }
         ]
     }
