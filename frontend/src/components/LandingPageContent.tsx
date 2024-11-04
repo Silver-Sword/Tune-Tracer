@@ -24,7 +24,8 @@ export function ContentSectionLeftText({ title, description, imageSrc, imageAlt,
         alt={imageAlt} 
         style={{
           boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
-          borderRadius: '8px', // Optional: rounded corners
+          borderRadius: '8px',
+          width: '60%',
           flex: imageWidth
         }}
         radius="md" />
@@ -41,7 +42,8 @@ export function ContentSectionRightText({ title, description, imageSrc, imageAlt
         alt={imageAlt} 
         style={{
           boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
-          borderRadius: '8px', // Optional: rounded corners
+          borderRadius: '8px', 
+          width: '60%',
           flex: imageWidth 
         }} 
         radius="md" />

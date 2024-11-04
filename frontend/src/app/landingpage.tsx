@@ -197,7 +197,7 @@ export default function LandingPage() {
               <ContentSectionLeftText
                 title="Compose"
                 description={<Text size="lg" c="dimmed">Whether you're a seasoned composer or a budding musician, our intuitive tools empower you to create, edit, and share your compositions with ease.</Text>}
-                imageSrc="/previews/compositionPreview.png"
+                imageSrc="/previews/composition.png"
                 imageAlt="Composition Interface"  
                 textWidth={7}
               />
@@ -207,7 +207,7 @@ export default function LandingPage() {
               <ContentSectionRightText
                 title="Store"
                 description={<Text size="lg" c="dimmed">Securely store your musical compositions in the cloud, accessible anywhere, anytime. Never worry about losing your creative work again.</Text>}
-                imageSrc="/previews/storagePreview.png"
+                imageSrc="/previews/Storage.png"
                 imageAlt="Cloud Storage"
                 textWidth={7}
               />
