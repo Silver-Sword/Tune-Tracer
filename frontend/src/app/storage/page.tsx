@@ -77,31 +77,26 @@ const FiltersNavbar: React.FC<{ getOwnPreviews: () => void, getSharedPreviews: (
 };
 
 // SearchBar component
-const SearchBar: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const handleSearch = (event: { currentTarget: { value: any } }) => {
-    const value = event.currentTarget.value;
-    setSearchTerm(value);
-    console.log(`Searching for: ${value}`);
-    // Add more search logic here
-  };
+const SearchBar: React.FC<{ onSearch: (term: string) => void }> = ({ onSearch }) => {
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.currentTarget.value
+    onSearch(value)
+  }
 
   return (
     <TextInput
       variant="filled"
       radius="xl"
-      size ="lg"
-      style={{ width: "50%"}}
+      size="lg"
+      style={{ width: "50%" }}
       placeholder="Search compositions"
       leftSectionPointerEvents="none"
       leftSection={<IconSearch style={{ width: rem(16), height: rem(16) }} />}
       onChange={handleSearch}
       className="search-bar"
     />
-  );
-};
-
+  )
+}
 
 // Main storage component
 export default function Storage() {
@@ -119,10 +114,17 @@ export default function Storage() {
   const [actions, setActions] = useState(ACTIONS);
   const [isClient, setIsClient] = useState(false);
 
+  const [displayedDocuments, setDisplayedDocuments] = useState<DocumentData[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+
   useEffect(() => {
     setIsClient(true);
   }, []); 
-
+  
+  useEffect(() => {
+    const visibleDocuments = documents.filter((doc) => doc.document_title.toLowerCase().includes(searchTerm.toLowerCase()));
+    setDisplayedDocuments(visibleDocuments);
+  }, [documents, searchTerm]);
   // Something is wrong with the callback, not allowing to move forward in states
   // Handle tutorial callback to manage step progression and tutorial completion
   const handleJoyrideCallback = (data: any) => {
@@ -218,6 +220,10 @@ export default function Storage() {
     return sortBy === "lastEdited" ? "Last Edited" : "Title";
   }
 
+  const handleSearch = (term: string) => {
+    setSearchTerm(term)
+  }
+
   return (
     <AppShell
       header={{ height: 60 }}
@@ -249,7 +255,9 @@ export default function Storage() {
               width={50}
               height={50}
             />
-            <SearchBar />
+            <SearchBar 
+              onSearch={handleSearch}
+            />
             <Group>
 
               <Button 
@@ -331,16 +339,24 @@ export default function Storage() {
         </Center>
       ) : (
         <>
-          {documents.length === 0 ? (
-            <Text size="lg" color="black" fw={700}>
-              No Scores Here Yet!
-            </Text>
-          ) : (
-            <SimpleGrid
-              cols={{ base: 1, sm: 3, md: 3, lg: 5 }}
-              spacing={{ base: "xl" }}
-            >
-              {documents.map((doc) => (
+          {
+            documents.length === 0 ? (
+              <Text size="lg" color="black" fw={700}>
+                No Scores Here Yet!
+              </Text>
+            ) : 
+            (
+              displayedDocuments.length === 0 ? (
+                <Text size="lg" color="black" fw={700}>
+                  No scores match your search.
+                </Text>
+            ) :
+            (
+              <SimpleGrid
+                cols={{ base: 1, sm: 3, md: 3, lg: 5 }}
+                spacing={{ base: "xl" }}
+              >
+              {displayedDocuments.map((doc) => (
                 <DocCard 
                   key={doc.document_id} 
                   last_edit_user={doc.last_edit_user} 
@@ -351,8 +367,8 @@ export default function Storage() {
                   time_created={doc.time_created}
                 />
               ))}
-            </SimpleGrid>
-          )}
+              </SimpleGrid>
+          ))}
         </>
       )}
         </Container>
