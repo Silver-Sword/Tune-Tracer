@@ -18,6 +18,7 @@ import {
 } from "@mantine/core";
 import React, { useEffect, useRef, useState } from "react";
 import { SharingModal } from "./sharing/SharingModal";
+import { KeybindModal } from "./KeybindModal";
 import {
     IconPlayerPlay,
     IconPlayerPause,
@@ -494,9 +495,16 @@ export const ToolbarHeader: React.FC<{
                     </Text>
                 </Center>}
           
-      {hasWriteAccess && <Tooltip label="Help" position="top" withArrow>
-              <Button style={{ marginLeft: 'auto', marginTop: '20px' }}>Help</Button>
-            </Tooltip>}
+                  
+
+                {hasWriteAccess && (
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "45px", width: " 50%" }}>
+                    <KeybindModal />
+                    <Tooltip label="Help" position="top" withArrow>
+                      <Button>Help</Button>
+                    </Tooltip>
+                  </div>
+                )}
       </Group>
             </AppShell.Header>
         );

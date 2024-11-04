@@ -13,7 +13,7 @@ export const KeybindModal: React.FC = () => {
   return (
     <>
       {/* Help Button */}
-      <Button onClick={openHelpModal} variant="filled" style={{ marginLeft: 'auto', marginTop: '45px' }}>
+      <Button onClick={openHelpModal} variant="filled">
         Keyboard Shortcuts
       </Button>
 
