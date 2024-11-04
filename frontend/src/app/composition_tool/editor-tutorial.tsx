@@ -7,11 +7,11 @@ interface TutorialProps {
 }
 
 const tutorialSteps: Step[] = [
-//   { target: ".search-bar", content: "Search for compositions here." },
-//   { target: ".create-card", content: "Create a new score or join with a code." },
+  { target: ".score", content: "does this work" },
+  { target: ".share-button", content: "Share your masterpiece here." },
 //   { target: ".navbar-filters", content: "Filter compositions here." },
 //   { target: ".profile-menu", content: "Access your profile settings and log out here." },
-//   { target: ".tutorial-button", content: "Click here to view the tutorial again." },
+  { target: ".tutorial-button", content: "Click here to view the tutorial again." },
 ];
 
 const EditorTutorial: React.FC<TutorialProps> = ({ run, onCallback }) => {
