@@ -167,9 +167,17 @@ export const SharingModal: React.FC<SharingModalProps> = ({
     }
   }
 
-  const handleRemove = (index: number) => {
-    const updatedCollaborators = collaborators.filter((_, i) => i !== index);
-    setCollaborators(updatedCollaborators);
+  const handleRemove = async (collaborator: Collaborator) => {
+    setIsRoleChangeInProgress(true);
+
+    const response = await removeCollaborator(collaborator.userId, documentId);
+    if(response.status === 200) {
+      updateCollaboratorsList(collaborators.filter(collab => collab.userId !== collaborator.userId));
+    } else {
+      console.error(`Failed to remove collaborator: ${response.message}`);
+    } 
+    
+    setIsRoleChangeInProgress(false);
   };
 
   const handleCreateCode = async () => {
@@ -249,7 +257,7 @@ export const SharingModal: React.FC<SharingModalProps> = ({
               email={collab.email}
               role={collab.role}
               onRoleChange={(newRole) => handleRoleChange(newRole, collab)}
-              onRemove={() => handleRemove(index)}
+              onRemove={() => handleRemove(collab)}
             />
           ))}
         </ScrollArea>
