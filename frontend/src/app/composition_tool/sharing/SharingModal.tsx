@@ -16,15 +16,17 @@ import {
   Center,
   Grid,
   Title,
+  LoadingOverlay,
 } from "@mantine/core";
 import { IconCopy, IconCheck } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 import { CollaboratorCard } from "./CollaboratorCard";
 import { Collaborator } from "./sharing_types";
-import { createShareCode, updateDocumentShareStyle } from "./sharing_api";
+import { createShareCode, updateDocumentShareStyle, upsertCollaborator, removeCollaborator, getUserDetails } from "./sharing_api";
 import { ShareStyle } from "../../lib/src/documentProperties";
 import { DocumentMetadata } from "../../lib/src/documentProperties";
 import { useSearchParams } from "next/navigation";
+
 interface SharingModalProps {
   documentTitle: string;
   metadata: DocumentMetadata | undefined;
@@ -36,22 +38,20 @@ export const SharingModal: React.FC<SharingModalProps> = ({
 }) => {
   const [openShare, { open, close }] = useDisclosure(false);
   const [currentTitle, setCurrentTitle] = useState(documentTitle);
-  const [collaborators, setCollaborators] = useState<Collaborator[]>([
-    { name: "Jose Cuyugan", email: "werhhh@gmail.com", role: "Editor" },
-    { name: "Chris Gittings", email: "asdfadf.cg@gmail.com", role: "Viewer" },
-    { name: "Jordy Valois", email: "dddddd@gmail.com", role: "Viewer" },
-    { name: "Sophia DeAngelo", email: "ssss@hotmail.com", role: "Editor" },
-  ]);
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [knownCollaborators, setKnownCollaborators] = useState<Record<string, Collaborator>>({});
 
   const [shareCode, setShareCode] = useState<string>("------");
-  const [shareCodeIsLoading, setShareCodeIsLoading] =
-    useState<string>("Generate Code");
-    const [documentId, setDocumentId] = useState<string>("");
-  const [accessType, setAccessType] = useState<"restricted" | "anyone">(
-    "restricted"
-  );
+  const [shareCodeIsLoading, setShareCodeIsLoading] = useState<string>("Generate Code");
+  const [documentId, setDocumentId] = useState<string>("");
+  const [accessType, setAccessType] = useState<"restricted" | "anyone">("restricted");
   const [accessLevel, setAccessLevel] = useState<"Viewer" | "Editor">("Viewer");
   const searchParams = useSearchParams();
+
+  // New state for email input and loading state
+  const [email, setEmail] = useState("");
+  const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
+  const [addCollaboratorMessage, setAddCollaboratorMessage] = useState("");
 
   useEffect(() => {
     setCurrentTitle(documentTitle);
@@ -61,19 +61,58 @@ export const SharingModal: React.FC<SharingModalProps> = ({
     setDocumentId(searchParams.get('id') || 'null');
   }, []);
 
-  // use effect when the document metadata is updated
+  const fetchUserDetails = async (userId: string, role: string) => {
+    try {
+      const userDetails = await getUserDetails(userId);
+      if(!userDetails) {
+        console.error(`Failed to fetch user details for ${userId}`);
+        return;
+      }
+      const newCollaborator: Collaborator = {
+        name: userDetails.name,
+        email: userDetails.email,
+        role: role as "Viewer" | "Editor",
+      };
+      setKnownCollaborators(prev => ({ ...prev, [userId]: newCollaborator }));
+      setCollaborators(prevCollaborators => {
+        if (!prevCollaborators.some(collab => collab.email === newCollaborator.email)) {
+          return [...prevCollaborators, newCollaborator];
+        }
+        return prevCollaborators;
+      });
+    } catch (error) {
+      console.error(`Failed to fetch user details for ${userId}:`, error);
+    }
+  };
+
   useEffect(() => {
-    if(metadata === undefined)
-    {
+    if(metadata === undefined) {
       console.warn("Metadata is undefined in sharing modal");
       return;
     }
 
-    // update share style
     const shareStyle = metadata.share_link_style;
     setAccessLevel(shareStyle === ShareStyle.WRITE ? "Editor" : "Viewer");
     setAccessType(shareStyle === ShareStyle.NONE ? "restricted" : "anyone");
 
+    // handle collaborators changes
+    if(metadata?.share_list !== undefined) {
+      const newCollaborators: Collaborator[] = [];
+      for (const [sharedUserId, shareValue] of Object.entries(metadata.share_list)) {
+        const sharedUserRole = shareValue === ShareStyle.WRITE ? "Editor" : "Viewer";
+        if (knownCollaborators[sharedUserId]) {
+          const existingCollaborator = knownCollaborators[sharedUserId];
+          if (!newCollaborators.some(collab => collab.email === existingCollaborator.email)) {
+            newCollaborators.push({...existingCollaborator});
+          }
+        } else {
+          fetchUserDetails(sharedUserId, sharedUserRole);
+        }
+      }
+      setCollaborators(newCollaborators);
+    } else {
+      console.warn("Metadata share_list is undefined in sharing modal");
+    }
   }, [metadata]);
 
   const handleRoleChange = (newRole: "Viewer" | "Editor", index: number) => {
@@ -104,6 +143,29 @@ export const SharingModal: React.FC<SharingModalProps> = ({
     setShareCodeIsLoading("Regenerate Code");
   };
 
+  // New function to handle adding a collaborator
+  const handleAddCollaborator = async () => {
+    if (!email) return;
+
+    setIsAddingCollaborator(true);
+    setAddCollaboratorMessage("");
+
+    try {
+      const response = await upsertCollaborator(email, documentId, "Viewer");
+      if (response.status === 200) {
+        setAddCollaboratorMessage("Collaborator added successfully!");
+        setEmail("");
+      } else {
+        setAddCollaboratorMessage(response.message || "Failed to add collaborator.");
+      }
+    } catch (error) {
+      console.error("Error adding collaborator:", error);
+      setAddCollaboratorMessage("An error occurred while adding the collaborator.");
+    } finally {
+      setIsAddingCollaborator(false);
+    }
+  };
+
   return (
     <Group>
       <Modal
@@ -113,10 +175,26 @@ export const SharingModal: React.FC<SharingModalProps> = ({
         centered
         size="lg"
       >
-        <TextInput placeholder="Add collaborators by email here" />
+        <LoadingOverlay visible={isAddingCollaborator} />
+        <TextInput
+          placeholder="Add collaborators by email here"
+          value={email}
+          onChange={(event) => setEmail(event.currentTarget.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              handleAddCollaborator();
+            }
+          }}
+          onBlur={handleAddCollaborator}
+        />
+        {addCollaboratorMessage && (
+          <Text color={addCollaboratorMessage.includes("successfully") ? "green" : "red"} size="sm" mt="xs">
+            {addCollaboratorMessage}
+          </Text>
+        )}
         <Space h="sm" />
         <Title order={4}>Collaborators</Title>
-        <ScrollArea h={250}>
+        <ScrollArea mah={250}>
           {collaborators.map((collab, index) => (
             <CollaboratorCard
               key={index}
