@@ -10,6 +10,7 @@ import {
     Stack,
     Modal,
     Tooltip,
+    Space,
   } from "@mantine/core";
 import { title } from "process";
 
@@ -193,6 +194,7 @@ useEffect(() => {
           {/* Truncate title text to prevent overflow */}
           <Tooltip label={docTitle} withArrow>
             <Text
+                size="lg"
                 lineClamp={2}
                 style={{ cursor: 'pointer', margin: 'auto' }}
                 onClick={(e) => {

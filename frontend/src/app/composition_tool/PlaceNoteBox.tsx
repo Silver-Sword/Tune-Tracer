@@ -18,10 +18,10 @@ export function createPlaceNoteBox(note: StaveNote): SVGElement {
     let stave = note.getStave();
     if (!stave) return noteBox;
     noteBox.setAttribute("y", (stave.getBoundingBox().getY() - 60) + ""); // Position y-coordinate
-    noteBox.setAttribute("width", "20"); // Width of the rectangle
+    noteBox.setAttribute("width", (note.getBoundingBox().getW() + 10) +""); // Width of the rectangle
     noteBox.setAttribute("height", "250"); // Height of the rectangle
     noteBox.setAttribute("fill", "rgba(0, 0, 255, 0.0)"); // No fill color
-    noteBox.setAttribute("stroke", "blue"); // Outline color
+    noteBox.setAttribute("stroke", "rgba(0, 0, 255, 0.0)"); // Outline color
     noteBox.setAttribute("stroke-width", "2"); // Outline thickness
 
     return noteBox;

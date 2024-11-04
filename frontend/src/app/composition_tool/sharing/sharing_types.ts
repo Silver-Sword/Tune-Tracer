@@ -2,6 +2,7 @@ export interface Collaborator {
   name: string;
   email: string;
   role: "Viewer" | "Editor";
+  userId: string;
 }
 
 export interface CollaboratorProps {
