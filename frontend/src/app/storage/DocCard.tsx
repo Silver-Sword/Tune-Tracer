@@ -10,6 +10,7 @@ import {
     Stack,
     Modal,
     Tooltip,
+    Space,
   } from "@mantine/core";
 import { title } from "process";
 
@@ -173,7 +174,9 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           </Tooltip>
           
           {/* Get the display name from the ownerID */}
-          <Text size="md">Created by: {owner_id}</Text>
+          {/* <Text size="md">Created by: {owner_id}</Text> */}
+          <Space h="xl"/>
+          
           <Text size="sm" c="dimmed">Last Edited: {millisecondsToFormattedDateString(last_edit_time)}</Text>
         </Stack>
       </Card>}
