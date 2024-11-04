@@ -763,6 +763,10 @@ exports.updateUserCursor = functions.https.onRequest(
               !documentId ? "documentId" : "userId"
             }`,
           });
+        } else if(typeof userId !== "string") {
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `userId must be a string`,
+          });
         } else {
           await updateUserCursor(documentId, { user_id: userId, cursor: cursor });
 
