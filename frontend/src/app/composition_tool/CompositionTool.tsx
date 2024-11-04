@@ -1389,6 +1389,7 @@ export default function CompositionTool() {
                     return;
                 }
             });
+        }
     };
     
     const fetchDisplayName = async (userIdToFetch: string): Promise<string> => {
@@ -1552,5 +1553,4 @@ export default function CompositionTool() {
             </AppShell.Main>
         </AppShell>
     );
-}
 }
