@@ -4,7 +4,7 @@ import { Measure } from "../edit/Measure";
 import * as d3 from 'd3';
 import { Selection } from 'd3';
 import { Vex, StaveNote, Formatter, Voice } from 'vexflow';
-import { SendChangesType } from "./CompositionTool";
+import { SendChangesType, CreateNewNoteBoxType } from "./CompositionTool";
 
 const SNAP_INTERVAL = 5;
 
@@ -21,7 +21,7 @@ export function createPlaceNoteBox(note: StaveNote): SVGElement {
     noteBox.setAttribute("width", "20"); // Width of the rectangle
     noteBox.setAttribute("height", "250"); // Height of the rectangle
     noteBox.setAttribute("fill", "rgba(0, 0, 255, 0.0)"); // No fill color
-    noteBox.setAttribute("stroke", "blue"); // Outline color
+    noteBox.setAttribute("stroke", "rgba(0, 0, 255, 0.0)"); // Outline color
     noteBox.setAttribute("stroke-width", "2"); // Outline thickness
 
     return noteBox;
@@ -69,7 +69,27 @@ function reAssignIds(voice: Voice, measure: Measure) {
     }
 }
 
-export function attachMouseMoveListener(selection: Selection<SVGElement, unknown, null, undefined>, note: StaveNote | null, measure: Measure, svgBoxY: number) {
+function reAddSelectedClasses(newNote: StaveNote, selectedKey: string, addKey: string)
+{
+    let newNoteHeads = newNote.noteHeads;
+        let newNotekeys = newNote.getKeys();
+        for (let i = 0; i < newNoteHeads.length; i++) {
+            if (newNotekeys[i] === selectedKey || newNotekeys[i] === addKey) {
+                const noteHeadId = newNoteHeads[i].getAttribute('id');
+                if (noteHeadId) {
+                    // Apply the 'selected-note' class to the notehead element
+                    d3.select(`[id="vf-${noteHeadId}"]`).classed('selected-note', true);
+                }
+            }
+        }
+}
+
+export function attachMouseMoveListener(
+    selection: Selection<SVGElement, unknown, null, undefined>, 
+    note: StaveNote | null, 
+    measure: Measure, 
+    svgBoxY: number, 
+    selectedKey: string) {
     let snapToKeyMap: Map<number, string>;
     if (measure.getClef() == "treble") {
         snapToKeyMap = getTrebleMap();
@@ -127,12 +147,18 @@ export function attachMouseMoveListener(selection: Selection<SVGElement, unknown
         // Render the voice
         newVoice.draw(context, stave);
 
+        reAddSelectedClasses(newNote, selectedKey, addKey);
+
         reAssignIds(newVoice, measure);
 
     });
 }
 
-export function attachMouseLeaveListener(selection: Selection<SVGElement, unknown, null, undefined>, note: StaveNote | null, measure: Measure) {
+export function attachMouseLeaveListener(
+    selection: Selection<SVGElement, unknown, null, undefined>, 
+    note: StaveNote | null, 
+    measure: Measure, 
+    selectedKey: string) {
     // Event listener for mouse move within the box
     selection.on("mouseleave", async function (event) {
         if (note === null) return;
@@ -162,6 +188,8 @@ export function attachMouseLeaveListener(selection: Selection<SVGElement, unknow
         // Render the voice
         newVoice.draw(context, stave);
 
+        reAddSelectedClasses(note, selectedKey, "");
+
         reAssignIds(newVoice, measure);
     });
 }
@@ -172,7 +200,8 @@ export function attachMouseClickListener(
     score: Score,
     sendChanges: SendChangesType,
     selectedNoteId: number,
-    svgBoxY: number): number {
+    svgBoxY: number,
+    createNewNoteBox: CreateNewNoteBoxType): number {
 
     let snapToKeyMap: Map<number, string>;
     if (measure.getClef() == "treble") {
@@ -187,8 +216,9 @@ export function attachMouseClickListener(
         const snapIndex = Math.floor(mouseY / SNAP_INTERVAL);
         let addKey = snapToKeyMap.get(snapIndex);
         if (addKey === undefined) return;
-        score.addNoteInMeasure([addKey],selectedNoteId);
+        score.addNoteInMeasure([addKey], selectedNoteId);
         sendChanges();
+        createNewNoteBox();
         let newNoteId = score.getAdjacentNote(selectedNoteId);
         return newNoteId;
     });

@@ -18,6 +18,7 @@ import {
 } from "@mantine/core";
 import React, { useEffect, useRef, useState } from "react";
 import { SharingModal } from "./sharing/SharingModal";
+import { KeybindModal } from "./KeybindModal";
 import {
     IconPlayerPlay,
     IconPlayerPause,
@@ -81,10 +82,11 @@ export const ToolbarHeader: React.FC<{
     addSharp: (keys: string[], noteId: number) => void;
     addNatural: (keys: string[], noteId: number) => void;
     addFlat: (keys: string[], noteId: number) => void;
+    removeAccidentals: (keys: string[], noteID: number) => void;
     handleDot: (dotType: number, noteId: number) => void;
-    // removeAccidentals: (keys: string, noteID: string) => void;
     setKeySignature: (keySignature: string) => void;
     hasWriteAccess: boolean;
+    selectedKey: string;
 }> = ({
     documentName,
     documentMetadata,
@@ -101,10 +103,11 @@ export const ToolbarHeader: React.FC<{
     addSharp,
     addNatural,
     addFlat,
+    removeAccidentals,
     handleDot,
-    // removeAccidentals,
     setKeySignature,
-    hasWriteAccess
+    hasWriteAccess,
+    selectedKey
 }) => {
         // State to manage the input value
         const [inputValue, setInputValue] = useState("Untitled Score");
@@ -260,7 +263,7 @@ export const ToolbarHeader: React.FC<{
               <Button
                 size="compact-md"
                 variant="outline"
-                onClick={() => addNatural(["a/4"], selectedNoteId)}
+                onClick={() => addNatural([selectedKey], selectedNoteId)}
               >
                 <Image h={20} w="auto" fit="contain" src="/icons/natural.jpg" />
               </Button>
@@ -269,7 +272,7 @@ export const ToolbarHeader: React.FC<{
               <Button
                 size="compact-md"
                 variant="outline"
-                onClick={() => addSharp(["a/4"], selectedNoteId)}
+                onClick={() => addSharp([selectedKey], selectedNoteId)}
               >
                 <Image h={20} w="auto" fit="contain" src="/icons/Sharp.png" />
               </Button>
@@ -278,9 +281,18 @@ export const ToolbarHeader: React.FC<{
               <Button
                 size="compact-md"
                 variant="outline"
-                onClick={() => addFlat(["a/4"], selectedNoteId)}
+                onClick={() => addFlat([selectedKey], selectedNoteId)}
               >
                 <Image h={20} w="auto" fit="contain" src="/icons/flat.jpg" />
+              </Button>
+            </Tooltip>
+            <Tooltip label="Remove Accidental" position="top" withArrow>
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => removeAccidentals([selectedKey], selectedNoteId)}
+              >
+                <Image h={20} w="auto" fit="contain" src="/icons/removeAccidentals.png" />
               </Button>
             </Tooltip>
 
@@ -483,9 +495,16 @@ export const ToolbarHeader: React.FC<{
                     </Text>
                 </Center>}
           
-      {hasWriteAccess && <Tooltip label="Help" position="top" withArrow>
-              <Button style={{ marginLeft: 'auto', marginTop: '20px' }}>Help</Button>
-            </Tooltip>}
+                  
+
+                {hasWriteAccess && (
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "45px", width: " 50%" }}>
+                    <KeybindModal />
+                    <Tooltip label="Help" position="top" withArrow>
+                      <Button>Help</Button>
+                    </Tooltip>
+                  </div>
+                )}
       </Group>
             </AppShell.Header>
         );
