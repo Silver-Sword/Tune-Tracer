@@ -11,7 +11,8 @@ import {
     keys,
 } from "@mantine/core";
 
-import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
+import { getUserID, getDisplayName, getEmail, getDocumentID, getCursorColor } from "../cookie";
+import { areUserListsEqual } from './list';
 import { increasePitch, lowerPitch, shiftNoteDown, shiftNoteUp } from './pitch'
 import { ToolbarHeader } from './ToolbarHeader'
 import { useSearchParams } from "next/navigation";
@@ -54,6 +55,7 @@ export default function CompositionTool() {
     const notePlacementRectangleSVG = useRef<SVGElement | null>(null);
     const notePlacementRectangleRef = useRef<Selection<SVGElement, unknown, null, undefined> | null>(null);
     const [notationUpdated, setNotationUpdated] = useState<number>(0);
+    const [isPlayingBack, setIsPlayingBack] = useState<boolean>(false);
 
     const [volume, setVolume] = useState<number>(50);
     let topPart: Tone.Part;
@@ -65,10 +67,13 @@ export default function CompositionTool() {
     const userId = useRef<string>();
     const displayName = useRef<string>();
     const documentID = useRef<string>();
+    const cursorColor = useRef<string>();
     const [hasWriteAccess, setHasWriteAccess] = useState<boolean>(true);
 
     // map of user ids to their online information
     const [onlineUsers, setOnlineUsers] = useState<Map<string, OnlineEntity>>(new Map<string, OnlineEntity>());
+    const [userList, setUserList] = useState<{ userId: string; displayName: string; color: string}[]>([]);
+    const displayNameCache = useRef<{ [userId: string]: string }>({});
 
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = async (duration: string, noteId: number) => {
@@ -275,11 +280,15 @@ export default function CompositionTool() {
         // Reset the position to the start
         Tone.getTransport().position = 0;
         Tone.getTransport().cancel();
+        // Cancel scheduled draw events
+        Tone.getDraw().cancel();
 
         // Hide the cursor
         const svg = d3.select(notationRef.current).select('svg');
         // svg.select('#playback-cursor').attr('opacity', 0);
-        svg.select('#playback-cursor').remove();
+        svg.select('#playback-cursor').interrupt().remove();
+
+        setIsPlayingBack(false);
     }
 
     // Create a cursor to follow notes during playback
@@ -287,7 +296,7 @@ export default function CompositionTool() {
         const svg = d3.select(notationRef.current).select('svg');
 
         // Remove existing cursor if any
-        svg.select('#playback-cursor').remove();
+        svg.select('#playback-cursor').interrupt().remove();
 
         // Get the dimensions of the SVG to set the cursor height
         const svgHeight = parseFloat(svg.attr('height'));
@@ -340,6 +349,7 @@ export default function CompositionTool() {
         await Tone.loaded();
 
         if (score && score.current) {
+            setIsPlayingBack(true);
             const scoreData = score.current.exportScoreDataObj();
             const topMeasureData = scoreData.topMeasures;
             const bottomMeasureData = scoreData.bottomMeasures;
@@ -566,6 +576,12 @@ export default function CompositionTool() {
             bottomPart.start(0);
 
             Tone.getTransport().start('+0.1');
+
+            // Schedule stoppage of playback with a small buffer
+            const totalDuration = Math.max(currentTimeBottom, currentTimeTop);
+            setTimeout(() => {
+                stopPlayback();
+            }, totalDuration * 1000 + 100);
         }
     };
 
@@ -673,6 +689,7 @@ export default function CompositionTool() {
         displayName.current = getDisplayName();
         userId.current = getUserID();
         documentID.current = searchParams.get('id') || 'null';
+        cursorColor.current = getCursorColor();
         //console.log(`Document ID: ${documentID.current}`);
 
         loadSamples();
@@ -751,6 +768,13 @@ export default function CompositionTool() {
             documentId: documentID.current,
             writerId: userId.current
         };
+
+        // Don't fetch while playing back
+        if (isPlayingBack)
+        {
+            return;
+        }
+        
         sendChangesTimeout = setTimeout(async () => {
             while (isSending.current || isFetching) {
                 console.log("Waiting until send finished");
@@ -1174,7 +1198,7 @@ export default function CompositionTool() {
         // }
 
         // Update the user cursor on the backend
-        // updateUserCursor();
+        updateUserCursor();
 
         // Keyboard shortcuts for adding notes
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -1340,14 +1364,20 @@ export default function CompositionTool() {
     }, [notationRef.current])
 
     const updateUserCursor = async () => {
-        if (selectedNoteId) {
+        if (selectedNoteId) {    
+            const cursor = {
+                userID: userId.current,
+                noteID: selectedNoteId.current, // Assuming you want to use the notehead's ID
+                color: cursorColor.current,
+            };
+    
             const userInfo = {
                 documentId: documentID.current,
                 userId: userId.current,
                 user_email: email.current,
                 displayName: displayName.current,
-                cursor: selectedNoteId
-            }
+                cursor: cursor // Send the SelectedNote object
+            };
 
             callAPI("updateUserCursor", userInfo).then((res) => {
                 if(res.status !== 200) {
@@ -1357,6 +1387,27 @@ export default function CompositionTool() {
             });
         }
     };
+    
+    const fetchDisplayName = async (userIdToFetch: string): Promise<string> => {
+        if (displayNameCache.current[userIdToFetch]) {
+          return displayNameCache.current[userIdToFetch];
+        }
+        try {
+          const response = await callAPI('getUserFromId', { userId: userIdToFetch });
+          if (response.status === 200 && response.data) {
+            console.log(response.data);
+            const displayName = response.data.display_name;
+            displayNameCache.current[userIdToFetch] = displayName;
+            return displayName;
+          } else {
+            console.error(`Failed to fetch display name for userId ${userIdToFetch}`);
+            return '';
+          }
+        } catch (error) {
+          console.error(`Error fetching display name for userId ${userIdToFetch}:`, error);
+          return '';
+        }
+      };
 
         useEffect(() => {
             // First, clear previous highlighting for other users
@@ -1375,7 +1426,7 @@ export default function CompositionTool() {
                   const color = cursor.color;
           
                   // Select the notehead element by its CSS ID
-                  const noteHeadElement = d3.select(`#${noteHeadId}`);
+                  const noteHeadElement = d3.select(`[id="${noteHeadId}"]`);
                   if (!noteHeadElement.empty()) {
                     noteHeadElement
                       .style('fill', color)
@@ -1386,7 +1437,34 @@ export default function CompositionTool() {
                 }
               }
             });
-          }, [onlineUsers]);    
+
+            const updateUserList = async () => {
+                console.log('Running updateUserList!');
+                const users: { userId: string; displayName: string; color: string }[] = [];
+              
+                const promises = [];
+              
+                onlineUsers.forEach((onlineEntity, userIdKey) => {
+                  console.log(`Is ${userIdKey} !== ${userId.current}?`);
+                  if (userIdKey !== userId.current) {
+                    const cursor = onlineEntity.cursor as SelectedNote;
+                    if (cursor && cursor.color) {
+                      const color = cursor.color;
+                      const displayNamePromise = fetchDisplayName(userIdKey).then((displayName) => {
+                        users.push({ userId: userIdKey, displayName, color });
+                      });
+                      promises.push(displayNamePromise);
+                    }
+                  }
+                });
+              
+                // await Promise.all(promises);
+                setUserList(users);
+              };
+              
+          
+            updateUserList();
+          }, [onlineUsers]);          
 
     return (
         <AppShell
@@ -1428,6 +1506,7 @@ export default function CompositionTool() {
                     handleDot={dotHandler}
                     hasWriteAccess={hasWriteAccess}
                     selectedKey = {selectedKey.current}
+                    userList = {userList}
                 />
                 {/* <CommentAside /> */}
 

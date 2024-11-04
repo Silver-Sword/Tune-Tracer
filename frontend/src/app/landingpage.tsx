@@ -217,8 +217,8 @@ export default function LandingPage() {
               <ContentSectionLeftText
                 title="Collaborate"
                 description={<Text size="lg" c="dimmed">Work together in real-time with musicians worldwide. Share ideas, provide feedback, and create beautiful music together.</Text>}
-                // imageSrc="/placeholder.svg?height=300&width=400"
-                // imageAlt="Collaboration Features"
+                imageSrc="/previews/collaboration.png"
+                imageAlt="Collaboration Features"
               />
             </Box>
 

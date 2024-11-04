@@ -28,6 +28,7 @@ import { getUserID } from "../cookie";
 import Link from 'next/link';
 import { callAPI } from "../../utils/callAPI";
 import { useSearchParams } from "next/navigation";
+import UserColorsModal from './UserColorsModal';
 import { STATUS, ACTIONS} from "react-joyride"
 
 import { DocumentMetadata } from "../lib/src/documentProperties";
@@ -88,6 +89,7 @@ export const ToolbarHeader: React.FC<{
     setKeySignature: (keySignature: string) => void;
     hasWriteAccess: boolean;
     selectedKey: string;
+    userList: { userId: string; displayName: string; color: string }[];
 }> = ({
     documentName,
     documentMetadata,
@@ -108,12 +110,14 @@ export const ToolbarHeader: React.FC<{
     handleDot,
     setKeySignature,
     hasWriteAccess,
-    selectedKey
+    selectedKey,
+    userList
 }) => {
-      // State to manage the input value
-      const [inputValue, setInputValue] = useState("Untitled Score");
-      const [shareStyle, setShareStyle] = useState(ShareStyle.NONE);
-      const searchParams = useSearchParams();
+        // State to manage the input value
+        const [inputValue, setInputValue] = useState("Untitled Score");
+        const [shareStyle, setShareStyle] = useState(ShareStyle.NONE);
+        const searchParams = useSearchParams();
+        const [usersModalOpened, setUsersModalOpened] = useState<boolean>(false);
 
       // State to toggle between edit and display modes
       const [isChangingName, setIsChangingName] = useState(false);
@@ -275,12 +279,19 @@ useEffect(() => {
                     </Container>
 
                     {/* Sharing UI */}
-                    {/* Select Dropdown should not be changable if not the owner */}
-                    {hasWriteAccess && <SharingModal
-                      documentTitle={inputValue}
-                      metadata={documentMetadata}
-                    />}
-            </Group>
+
+        {/* Select Dropdown should not be changable if not the owner */}
+        <Button onClick={() => setUsersModalOpened(true)}>Online Users</Button>
+        <UserColorsModal
+          opened={usersModalOpened}
+          onClose={() => setUsersModalOpened(false)}
+          userList={userList}
+        />
+        {hasWriteAccess && <SharingModal
+          documentTitle={inputValue}
+          metadata={documentMetadata}
+        />}
+      </Group>
 
                 {/* Second layer (middle section) */}
                 <Group className="tabs" align="space-between" mt="xs" style={{ paddingBottom: "10px" }}>
@@ -532,7 +543,6 @@ useEffect(() => {
                 </Center>}
           
                   
-
                 {hasWriteAccess && (
                   <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "45px", width: " 16%", marginLeft: "auto", flexWrap: "nowrap"}}>
                     <KeybindModal />
