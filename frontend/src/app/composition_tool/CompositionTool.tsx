@@ -687,12 +687,6 @@ export default function CompositionTool() {
         }
     }, [volume]);
 
-    const SUBSCRIBE_TO_DOC_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToDocument';
-    const SUBSCRIBE_TO_COMMENTS_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/subscribeToComments';
-    const CHECK_CHANGE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/checkDocumentChanges';
-    const UPDATE_CURSOR_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updateUserCursor';
-    const CHECK_ACCESS_LEVEL_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/getUserAccessLevel';
-
     const [currentDocument, setDocument] = useState<Document>({
         document_title: '',
         comments: [],
@@ -725,7 +719,6 @@ export default function CompositionTool() {
             
             let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
             //console.log("exported Object: " + printScoreData(exportedScoreDataObj));
-            const UPDATE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updatePartialDocument';
 
             const changesTemp =
             {
@@ -778,6 +771,8 @@ export default function CompositionTool() {
                     setIsFetching(false);
                     return;
                 }
+                console.debug(`Received document data: ${JSON.stringify(receivedDocument)}`);
+
                 //console.log("Recieved Score data: " + JSON.stringify(receivedDocument));
                 const compData: ScoreData = receivedDocument.score;
                 const document_title: string = receivedDocument.document_title;
@@ -830,31 +825,26 @@ export default function CompositionTool() {
 
     const doesUserHaveEditAccess = async () => {
         // NOTE: documentId and userId are assumed to be set (but are probably not in reality) (move this code to somewhere where they are)
-        const data = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                userId: userId.current,
-                documentId: documentID.current,
-            })
-        };
-
-        const accessLevel = await fetch(CHECK_ACCESS_LEVEL_URL, data)
-            .then((res) => res.json().then((data) => {
-                console.log(`Access Level Response: ${data.data}`);
-                const hasWriteAccess: boolean = data.data >= ShareStyle.WRITE;
-                setHasWriteAccess(hasWriteAccess);
-                if (data.data <= ShareStyle.NONE) {
-                    router.push(`/no_access`);
-                }
-                if (!hasWriteAccess && notationRef.current) {
-                    d3.select(notationRef.current)
-                        .on('click', null);
-                }
-
-            }));
+        const response = await callAPI("getUserAccessLevel", {
+            userId: userId.current,
+            documentId: documentID.current,
+        });
+        if(response.status !== 200) {
+            console.error("Error fetching access level");
+            return;
+        }  
+        const accessLevel = response.data as number;
+            
+        console.log(`Access Level Response: ${accessLevel}`);
+        const hasWriteAccess: boolean = accessLevel >= ShareStyle.WRITE;
+        setHasWriteAccess(hasWriteAccess);
+        if (accessLevel <= ShareStyle.NONE) {
+            router.push(`/no_access`);
+        }
+        if (!hasWriteAccess && notationRef.current) {
+            d3.select(notationRef.current)
+                .on('click', null);
+        }
     };
 
     function useInterval(callback: () => void, delay: number | null) {
@@ -879,14 +869,12 @@ export default function CompositionTool() {
         }, [delay]);
     }
 
-
-
     // THIS FETCHES CHANGES PERIODICALLY
     // UNCOMMENT below to actually do it.
-    // useInterval(() => {
-    //     // Your custom logic here
-    //     fetchChanges();
-    // }, 5000); // 5 seconds
+    useInterval(() => {
+        // Your custom logic here
+        fetchChanges();
+    }, 5000); // 5 seconds
 
     const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
         const value = event.currentTarget.value;
@@ -918,6 +906,8 @@ export default function CompositionTool() {
                     return;
                 }
                 const receivedDocument = (res.data as any)['document'];
+                console.debug(`Received document data: ${JSON.stringify(receivedDocument)}`);
+
                 const compData: ScoreData = receivedDocument.score;
                 const document_title: string = receivedDocument.document_title;
                 const comments: Comment[] = receivedDocument.comments;
@@ -962,46 +952,43 @@ export default function CompositionTool() {
                 console.log("document ID: " + documentID.current);
                 console.log("User Info: " + JSON.stringify(userInfo));
 
-            const POST_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(userInfo),
-            }
-            fetch(SUBSCRIBE_TO_DOC_URL, POST_OPTION)
-                .then((res) => {
-                    // Read result of the Cloud Function.
-                    res.json().then((data) => {
-                        const compData: ScoreData = (data.data.document).score;
-                        const document_title: string = (data.data.document).document_title;
-                        const comments: Comment[] = (data.data.document).comments;
-                        const metadata: DocumentMetadata = (data.data.document).metadata;
-                        const tempDocument: Document = {
-                            document_title: document_title,
-                            comments: comments,
-                            score: compData,
-                            metadata: metadata,
-                        };
-                        setDocument(tempDocument);
-                        // console.log("Document:" + currentDocument);
-                        setLoadState(true);
-                        // console.log("Recieved Score data: " + printScoreData(compData));
-                        // if (notationRef.current) {
-                        //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
-                        // }
-
-                        console.log("Document Loaded");
-                        var temp = !loaded;
-                        setLoadState(temp);
-                    });
-                }).catch((error) => {
-                    // Getting the Error details.
-                    const message = error.message;
-                    console.log(`Error: ${message}`);
+            callAPI("subscribeToDocument", userInfo) 
+            .then((res) => {
+                if(res.status != 200) {
+                    console.log("Error fetching changes in handleScoreNameChange");
                     return;
-                    // ...
-                });
+                }
+                // Read result of the Cloud Function.
+                const document = (res.data as any)['document'];
+                const compData: ScoreData = document.score;
+                const document_title: string = document.document_title;
+                const comments: Comment[] = document.comments;
+                const metadata: DocumentMetadata = document.metadata;
+                const tempDocument: Document = {
+                    document_title: document_title,
+                    comments: comments,
+                    score: compData,
+                    metadata: metadata,
+                };
+                setDocument(tempDocument);
+                // console.log("Document:" + currentDocument);
+                setLoadState(true);
+                // console.log("Recieved Score data: " + printScoreData(compData));
+                // if (notationRef.current) {
+                //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
+                // }
+
+                console.log("Document Loaded");
+                var temp = !loaded;
+                setLoadState(temp);
+            })
+            .catch((error) => {
+                // Getting the Error details.
+                const message = error.message;
+                console.log(`Error: ${message}`);
+                return;
+                // ...
+            });
             fetchChanges();
         }
     }, []);
@@ -1018,13 +1005,6 @@ export default function CompositionTool() {
                 documentId: documentID.current,
                 writerId: userId.current
             }
-            const POST_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(changesTemp),
-            }
             console.log(`Check Changes Input: ${JSON.stringify(changesTemp)}`);
             callAPI("checkDocumentChanges", changesTemp)
                 .then((res) => {
@@ -1033,6 +1013,7 @@ export default function CompositionTool() {
                         return;
                     }
                     const receivedDocument = (res.data as any)['document'];
+                    console.debug(`Received document data: ${JSON.stringify(receivedDocument)}`);
                     const compData: ScoreData = receivedDocument.score;
                     const document_title: string = receivedDocument.document_title;
                     const comments: Comment[] = receivedDocument.comments;
@@ -1368,21 +1349,12 @@ export default function CompositionTool() {
                 cursor: selectedNoteId
             }
 
-            const POST_OPTION = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(userInfo)
-            }
-
-            fetch(UPDATE_CURSOR_URL, POST_OPTION)
-                .then((res) => {
-                    res.json().then((data) => {
-                        // console.log('Successfully called updateCursor endpoint');
-                        // console.log(`User cursor data: ${data.data}`);
-                    })
-                })
+            callAPI("updateUserCursor", userInfo).then((res) => {
+                if(res.status !== 200) {
+                    console.log("Error updating user cursor: ", res.message);
+                    return;
+                }
+            });
         }
     };
 
