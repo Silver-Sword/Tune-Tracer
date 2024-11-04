@@ -594,6 +594,7 @@ exports.checkDocumentChanges = functions.https.onRequest(
         } else {
 
           if (documentChanges) {
+            console.info(`Server id ${getServerId()} updating document ${documentId} with with changes ${documentChanges}`);
             const documentObject: Record<string, unknown> = JSON.parse(
               JSON.stringify(documentChanges)
             );
@@ -723,8 +724,9 @@ exports.updatePartialDocument = functions.https.onRequest(
         } else {
           const documentObject: Record<string, unknown> = JSON.parse(
             JSON.stringify(documentChanges)
-          );
+          ); 
 
+          delete documentObject["metdata"];
           const apiResult = await updatePartialDocument(
             documentObject,
             documentId,
