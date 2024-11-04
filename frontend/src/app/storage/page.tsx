@@ -32,18 +32,18 @@ import { getSharedPreviews, getOwnPreviews } from "./documentPreviewsData";
 
 // Define filter labels for the navbar
 const filterLabels = [
-  { link: "", label: "All" },
+  { link: "", label: "My Compositions" },
   { link: "", label: "Shared with you" },
   // { link: "", label: "Favorites" },
 ];
 
 // FiltersNavbar component
 const FiltersNavbar: React.FC<{ getOwnPreviews: () => void, getSharedPreviews: () => void }> = ({ getOwnPreviews, getSharedPreviews }) => {
-  const [activeFilter, setActiveFilter] = useState<string>("All");
+  const [activeFilter, setActiveFilter] = useState<string>("My Compositions");
 
   const handleFilterClick = (label: string) => {
     setActiveFilter(label);
-    if (label == "All") {
+    if (label == "My Compositions") {
       getOwnPreviews();
     }
     else if (label == "Shared with you") {
