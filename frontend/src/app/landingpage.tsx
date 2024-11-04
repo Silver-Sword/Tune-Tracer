@@ -226,8 +226,8 @@ export default function LandingPage() {
               <ContentSectionRightText
                 title="Playback"
                 description={<Text size="lg" c="dimmed">Hear the music you create together with our playback software! Get instant feedback on your compositions with highly versatile playback. </Text>}
-                // imageSrc="/placeholder.svg?height=300&width=400"
-                // imageAlt="Playback Feature"
+                imageSrc="/previews/playback.PNG"
+                imageAlt="Playback Feature"
               />
             </Box>
 
