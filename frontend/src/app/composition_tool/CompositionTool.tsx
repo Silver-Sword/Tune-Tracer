@@ -23,6 +23,7 @@ import { Document } from "../lib/src/Document";
 import { DocumentMetadata, ShareStyle } from "../lib/src/documentProperties";
 import { Comment } from "../lib/src/Comment";
 import { OnlineEntity } from "../lib/src/realtimeUserTypes";
+import { SelectedNote } from "../lib/src/SelectedNote";
 
 import * as d3 from 'd3';
 import { Selection } from 'd3';
@@ -1187,6 +1188,36 @@ export default function CompositionTool() {
                     })
             }
         };
+
+        useEffect(() => {
+            // First, clear previous highlighting for other users
+            d3.selectAll('.other-user-highlight').each(function () {
+              d3.select(this).style('fill', null);
+              d3.select(this).classed('other-user-highlight', false);
+            });
+          
+            // Iterate over onlineUsers
+            onlineUsers.forEach((onlineEntity, user_id) => {
+              // Exclude the current user
+              if (user_id !== userId.current) {
+                const cursor = onlineEntity.cursor as SelectedNote;
+                if (cursor && cursor.noteID && cursor.color) {
+                  const noteHeadId = cursor.noteID;
+                  const color = cursor.color;
+          
+                  // Select the notehead element by its CSS ID
+                  const noteHeadElement = d3.select(`#${noteHeadId}`);
+                  if (!noteHeadElement.empty()) {
+                    noteHeadElement
+                      .style('fill', color)
+                      .classed('other-user-highlight', true);
+                  } else {
+                    console.warn(`Notehead with ID ${noteHeadId} not found`);
+                  }
+                }
+              }
+            });
+          }, [onlineUsers]);          
 
         return (
             <AppShell
