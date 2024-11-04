@@ -53,6 +53,7 @@ export default function CompositionTool() {
     const notePlacementRectangleSVG = useRef<SVGElement | null>(null);
     const notePlacementRectangleRef = useRef<Selection<SVGElement, unknown, null, undefined> | null>(null);
     const [notationUpdated, setNotationUpdated] = useState<number>(0);
+    const [isPlayingBack, setIsPlayingBack] = useState<boolean>(false);
 
     const [volume, setVolume] = useState<number>(50);
     let topPart: Tone.Part;
@@ -244,6 +245,8 @@ export default function CompositionTool() {
         const svg = d3.select(notationRef.current).select('svg');
         // svg.select('#playback-cursor').attr('opacity', 0);
         svg.select('#playback-cursor').remove();
+
+        setIsPlayingBack(false);
     }
 
     // Create a cursor to follow notes during playback
@@ -304,6 +307,7 @@ export default function CompositionTool() {
         await Tone.loaded();
 
         if (score && score.current) {
+            setIsPlayingBack(true);
             const scoreData = score.current.exportScoreDataObj();
             const topMeasureData = scoreData.topMeasures;
             const bottomMeasureData = scoreData.bottomMeasures;
@@ -530,6 +534,12 @@ export default function CompositionTool() {
             bottomPart.start(0);
 
             Tone.getTransport().start('+0.1');
+
+            // Schedule stoppage of playback with a small buffer
+            const totalDuration = Math.max(currentTimeBottom, currentTimeTop);
+            setTimeout(() => {
+                stopPlayback();
+            }, totalDuration * 1000 + 100);
         }
     };
 
@@ -716,6 +726,12 @@ export default function CompositionTool() {
             writerId: userId.current
         };
 
+        // Don't fetch while playing back
+        if (isPlayingBack)
+        {
+            return;
+        }
+
         console.log(JSON.stringify(changesTemp));
         setIsFetching(true);
         await callAPI("checkDocumentChanges", changesTemp)
@@ -833,10 +849,10 @@ export default function CompositionTool() {
 
     // THIS FETCHES CHANGES PERIODICALLY
     // UNCOMMENT below to actually do it.
-    // useInterval(() => {
-    //     // Your custom logic here
-    //     fetchChanges();
-    // }, 5000); // 5 seconds
+    useInterval(() => {
+        // Your custom logic here
+        fetchChanges();
+    }, 5000); // 5 seconds
 
     const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
         const value = event.currentTarget.value;
