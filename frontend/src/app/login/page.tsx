@@ -3,10 +3,11 @@
 import React, { useEffect, useState } from "react";
 import { Title, Center, Container, Button, Stack, rem, Text, Box } from '@mantine/core';
 import { useRouter } from "next/navigation";
-import { saveUserID, saveDisplayName, saveEmail, getUserID } from "../cookie";
+import { saveUserID, saveDisplayName, saveEmail, getUserID, saveCursorColor } from "../cookie";
 import { AuthInput } from "../../components/AuthInput";
 import { authStyles } from '../../styles/auth-styles';
 import { callAPI } from "../../utils/callAPI";
+import { getRandomColor } from './color';
 
 export default function Login() {
     const [email, setEmail] = useState<string>('');
@@ -48,6 +49,7 @@ export default function Login() {
                         saveUserID(data.user_id);
                         saveDisplayName(data.display_name);
                         saveEmail(data.user_email);
+                        saveCursorColor(getRandomColor());
                         router.push('/storage');
                     }
                 }).catch((error) => {

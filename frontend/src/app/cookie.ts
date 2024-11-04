@@ -19,6 +19,11 @@ export function saveDocID( documentID: string )
     setCookie('documentId', documentID, { maxAge: 7 * 24 * 60 * 60, sameSite: 'strict' });
 }
 
+export function saveCursorColor( color: string )
+{
+    setCookie('cursorColor', color, { maxAge: 7 * 24 * 60 * 60, sameSite: 'strict' });
+}
+
 export function getUserID() {
     const id = getCookie('userID');
     if (id) { return id.valueOf(); }
@@ -43,6 +48,13 @@ export function getDocumentID() {
     return '-1';
 }
 
+export function getCursorColor()
+{
+    const color = getCookie('cursorColor');
+    if (color) { return color.valueOf(); }
+    return '#000000';
+}
+
 export function clearUserID() {
     // Deletes the userID cookie. Useful for log out
     deleteCookie('userID', { sameSite: 'strict' });
@@ -53,6 +65,7 @@ export function clearUserCookies() {
     clearUserID();
     deleteDisplayName();
     deleteEmail();
+    deleteCursorColor();
 }
 
 export function deleteDisplayName() {
@@ -61,4 +74,8 @@ export function deleteDisplayName() {
 
 export function deleteEmail() {
     deleteCookie('email', { sameSite: 'strict' });
+}
+
+export function deleteCursorColor() {
+    deleteCookie('cursorColor', { sameSite: 'strict' });
 }

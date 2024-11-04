@@ -2,6 +2,6 @@
 export type SelectedNote =
 {
     userID: string,
-    noteID: number,
+    noteID: string,
     color: string
 }

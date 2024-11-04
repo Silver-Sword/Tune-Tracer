@@ -11,7 +11,7 @@ import {
     keys,
 } from "@mantine/core";
 
-import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
+import { getUserID, getDisplayName, getEmail, getDocumentID, getCursorColor } from "../cookie";
 import { increasePitch, lowerPitch, shiftNoteDown, shiftNoteUp } from './pitch'
 import { ToolbarHeader } from './ToolbarHeader'
 import { useSearchParams } from "next/navigation";
@@ -64,6 +64,7 @@ export default function CompositionTool() {
     const userId = useRef<string>();
     const displayName = useRef<string>();
     const documentID = useRef<string>();
+    const cursorColor = useRef<string>();
     const [hasWriteAccess, setHasWriteAccess] = useState<boolean>(true);
 
     // map of user ids to their online information
@@ -635,6 +636,7 @@ export default function CompositionTool() {
         displayName.current = getDisplayName();
         userId.current = getUserID();
         documentID.current = searchParams.get('id') || 'null';
+        cursorColor.current = getCursorColor();
         //console.log(`Document ID: ${documentID.current}`);
 
         loadSamples();
@@ -1141,7 +1143,7 @@ export default function CompositionTool() {
         // }
 
         // Update the user cursor on the backend
-        // updateUserCursor();
+        updateUserCursor();
 
         // Keyboard shortcuts for adding notes
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -1307,32 +1309,42 @@ export default function CompositionTool() {
     }, [notationRef.current])
 
     const updateUserCursor = async () => {
-        if (selectedNoteId) {
+        if (selectedNoteId) {    
+            const cursor = {
+                userID: userId.current,
+                noteID: selectedNoteId.current, // Assuming you want to use the notehead's ID
+                color: cursorColor.current,
+            };
+    
             const userInfo = {
                 documentId: documentID.current,
                 userId: userId.current,
                 user_email: email.current,
                 displayName: displayName.current,
-                cursor: selectedNoteId
-            }
-
+                cursor: cursor // Send the SelectedNote object
+            };
+    
             const POST_OPTION = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(userInfo)
-            }
-
+            };
+    
             fetch(UPDATE_CURSOR_URL, POST_OPTION)
                 .then((res) => {
-                    res.json().then((data) => {
-                        // console.log('Successfully called updateCursor endpoint');
-                        // console.log(`User cursor data: ${data.data}`);
-                    })
+                    if (res.ok)
+                    {
+                        console.log('Successfully updated user cursor data');
+                    }
                 })
+                .catch((error) => {
+                    console.error('Error updating user cursor:', error);
+                });
         }
     };
+    
 
         useEffect(() => {
             // First, clear previous highlighting for other users
@@ -1351,7 +1363,7 @@ export default function CompositionTool() {
                   const color = cursor.color;
           
                   // Select the notehead element by its CSS ID
-                  const noteHeadElement = d3.select(`#${noteHeadId}`);
+                  const noteHeadElement = d3.select(`[id="${noteHeadId}"]`);
                   if (!noteHeadElement.empty()) {
                     noteHeadElement
                       .style('fill', color)
