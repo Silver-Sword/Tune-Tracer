@@ -52,6 +52,7 @@ export const SharingModal: React.FC<SharingModalProps> = ({
   const [email, setEmail] = useState("");
   const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
   const [addCollaboratorMessage, setAddCollaboratorMessage] = useState("");
+  const [isRoleChangeInProgress, setIsRoleChangeInProgress] = useState(false);
 
   useEffect(() => {
     setCurrentTitle(documentTitle);
@@ -60,6 +61,19 @@ export const SharingModal: React.FC<SharingModalProps> = ({
   useEffect(() => {
     setDocumentId(searchParams.get('id') || 'null');
   }, []);
+
+  const updateCollaboratorsList = (collabs: Collaborator[]) => {
+    const previousList = collaborators.filter((collaborator) => {
+      return collabs.some((newCollaborator) => newCollaborator.email === collaborator.email);
+    }).map((collaborator) => {
+      return collabs.find((newCollaborator) => newCollaborator.email === collaborator.email) as Collaborator;
+    });
+    const newList = collabs.filter((collaborator) => {
+      return !collaborators.some((previousCollaborator) => previousCollaborator.email === collaborator.email);
+    })
+    const orderedList = [...previousList, ...newList];
+    setCollaborators(orderedList);
+  }
 
   const fetchUserDetails = async (userId: string, role: string) => {
     try {
@@ -72,11 +86,12 @@ export const SharingModal: React.FC<SharingModalProps> = ({
         name: userDetails.name,
         email: userDetails.email,
         role: role as "Viewer" | "Editor",
+        userId: userId,
       };
       setKnownCollaborators(prev => ({ ...prev, [userId]: newCollaborator }));
       setCollaborators(prevCollaborators => {
         if (!prevCollaborators.some(collab => collab.email === newCollaborator.email)) {
-          return [...prevCollaborators, newCollaborator];
+          return [newCollaborator, ...prevCollaborators];
         }
         return prevCollaborators;
       });
@@ -89,6 +104,8 @@ export const SharingModal: React.FC<SharingModalProps> = ({
     if(metadata === undefined) {
       console.warn("Metadata is undefined in sharing modal");
       return;
+    } else if (isRoleChangeInProgress) {
+      return; // Skip updates if a role change is in progress
     }
 
     const shareStyle = metadata.share_link_style;
@@ -98,28 +115,57 @@ export const SharingModal: React.FC<SharingModalProps> = ({
     // handle collaborators changes
     if(metadata?.share_list !== undefined) {
       const newCollaborators: Collaborator[] = [];
+      const updatedKnownCollaborators = { ...knownCollaborators };
+      let hasChanges = false;
+
       for (const [sharedUserId, shareValue] of Object.entries(metadata.share_list)) {
         const sharedUserRole = shareValue === ShareStyle.WRITE ? "Editor" : "Viewer";
         if (knownCollaborators[sharedUserId]) {
           const existingCollaborator = knownCollaborators[sharedUserId];
-          if (!newCollaborators.some(collab => collab.email === existingCollaborator.email)) {
-            newCollaborators.push({...existingCollaborator});
+          if (existingCollaborator.role !== sharedUserRole) {
+            updatedKnownCollaborators[sharedUserId] = { ...existingCollaborator, role: sharedUserRole };
+            hasChanges = true;
           }
+          newCollaborators.push({ ...updatedKnownCollaborators[sharedUserId] });
         } else {
           fetchUserDetails(sharedUserId, sharedUserRole);
         }
       }
-      setCollaborators(newCollaborators);
+
+      if (hasChanges) {
+        setKnownCollaborators(updatedKnownCollaborators);
+      }
+      updateCollaboratorsList(newCollaborators);
     } else {
       console.warn("Metadata share_list is undefined in sharing modal");
     }
   }, [metadata]);
 
-  const handleRoleChange = (newRole: "Viewer" | "Editor", index: number) => {
-    const updatedCollaborators = [...collaborators];
-    updatedCollaborators[index].role = newRole;
-    setCollaborators(updatedCollaborators);
-  };
+  const handleRoleChange = async (newRole: "Viewer" | "Editor", collaborator: Collaborator) => {
+    setIsRoleChangeInProgress(true);
+    collaborator.role = newRole;
+  
+    try {
+      const response = await upsertCollaborator(collaborator.email, documentId, newRole);
+      if(response.status === 200) {
+        setKnownCollaborators(prev => ({
+          ...prev,
+          [collaborator.userId]: { ...collaborator, role: newRole }
+        }));
+        setCollaborators(prevCollaborators =>
+          prevCollaborators.map(collab =>
+            collab.userId === collaborator.userId ? { ...collab, role: newRole } : collab
+          )
+        );
+      } else {
+        console.error(`Failed to update collaborator role: ${response.message}`);
+      }
+    } catch (error) {
+      console.error("Error updating collaborator role:", error);
+    } finally {
+      setIsRoleChangeInProgress(false);
+    }
+  }
 
   const handleRemove = (index: number) => {
     const updatedCollaborators = collaborators.filter((_, i) => i !== index);
@@ -176,6 +222,8 @@ export const SharingModal: React.FC<SharingModalProps> = ({
         size="lg"
       >
         <LoadingOverlay visible={isAddingCollaborator} />
+        <Title order={4}>Collaborators</Title>
+        <Space h="sm" />
         <TextInput
           placeholder="Add collaborators by email here"
           value={email}
@@ -193,15 +241,14 @@ export const SharingModal: React.FC<SharingModalProps> = ({
           </Text>
         )}
         <Space h="sm" />
-        <Title order={4}>Collaborators</Title>
         <ScrollArea mah={250}>
           {collaborators.map((collab, index) => (
             <CollaboratorCard
-              key={index}
+              key={collab.userId}
               name={collab.name}
               email={collab.email}
               role={collab.role}
-              onRoleChange={(newRole) => handleRoleChange(newRole, index)}
+              onRoleChange={(newRole) => handleRoleChange(newRole, collab)}
               onRemove={() => handleRemove(index)}
             />
           ))}

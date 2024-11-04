@@ -1,7 +1,6 @@
 import { getUserID } from "../../cookie";
 import { callAPI } from "../../../utils/callAPI";
 import { ShareStyle } from "../../lib/src/documentProperties";
-import { Collaborator } from "./sharing_types";
 
 export const createShareCode = async (
   accessLevel: "Viewer" | "Editor",
