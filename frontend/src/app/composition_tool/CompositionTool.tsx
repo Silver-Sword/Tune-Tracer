@@ -899,7 +899,7 @@ export default function CompositionTool() {
     useInterval(() => {
         // Your custom logic here
         fetchChanges();
-    }, 5000); // 5 seconds
+    }, 2000); // 5 seconds
 
     const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
         const value = event.currentTarget.value;
@@ -1397,7 +1397,8 @@ export default function CompositionTool() {
           const response = await callAPI('getUserFromId', { userId: userIdToFetch });
           if (response.status === 200 && response.data) {
             console.log(response.data);
-            const displayName = response.data.display_name;
+
+            const displayName = (response.data as any)['display_name'];
             displayNameCache.current[userIdToFetch] = displayName;
             return displayName;
           } else {
