@@ -52,7 +52,7 @@ export function getCursorColor()
 {
     const color = getCookie('cursorColor');
     if (color) { return color.valueOf(); }
-    return '#000000';
+    return '#FFFF00';
 }
 
 export function clearUserID() {
