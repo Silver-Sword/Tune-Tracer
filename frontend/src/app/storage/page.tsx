@@ -21,8 +21,8 @@ import {
   Center,
   Loader,
 } from "@mantine/core";
-// import StorageTutorial from "./storage-tutorial";
-// import Joyride, { CallBackProps, STATUS, Step } from "react-joyride";
+import StorageTutorial from "./storage-tutorial";
+import Joyride, { CallBackProps, STATUS, Step, ACTIONS, EVENTS} from "react-joyride";
 import { IconSearch, IconSortDescending, IconArrowUp, IconArrowDown} from "@tabler/icons-react";
 import { getUserID, getDisplayName, getEmail, clearUserCookies, saveDocID } from "../cookie";
 import { useRouter } from "next/navigation";
@@ -34,7 +34,7 @@ import { getSharedPreviews, getOwnPreviews } from "./documentPreviewsData";
 const filterLabels = [
   { link: "", label: "All" },
   { link: "", label: "Shared with you" },
-  { link: "", label: "Favorites" },
+  // { link: "", label: "Favorites" },
 ];
 
 const tutorialSteps = [
@@ -120,19 +120,42 @@ export default function Storage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
-  // const [run, setRun] = useState(false);
+  
+  const [run, setRun] = useState(false);
   // const [stepIndex, setStepIndex] = useState(0);
+  const [actions, setActions] = useState(ACTIONS);
+  const [isClient, setIsClient] = useState(false);
 
-  // // Something is wrong with the callback, not allowing to move forward in states
-  // // Handle tutorial callback to manage step progression and tutorial completion
-  // const handleJoyrideCallback = (data: any) => {
-  //   const { status, index } = data;
-  //   if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-  //     setRun(false); // Stop tutorial
-  //   } else {
-  //     setStepIndex(index); // Update to the next step
-  //   }
-  // };
+  useEffect(() => {
+    setIsClient(true);
+  }, []); 
+
+  // Something is wrong with the callback, not allowing to move forward in states
+  // Handle tutorial callback to manage step progression and tutorial completion
+  const handleJoyrideCallback = (data: any) => {
+    // const { status, index, action, type } = data;
+    // console.log('data', data);
+
+    // console.log(`Joyride callback: ${status}, ${index}`);
+    // if (([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND] as string[]).includes(type)) {
+    //   console.log('inside if');
+    //   setStepIndex(index + (action === ACTIONS.PREV ? -1 : 1)); // Update to the next step
+    // }
+    // else if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    //   console.log('inside else if');
+    //   setRun(false); // Stop tutorial
+    // } else {
+    //   console.log('inside else');
+    // }
+
+    const { status, type } = data;
+    const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+  
+    if (finishedStatuses.includes(status)) {
+      setRun(false);
+    }
+
+  };
 
   const handleLogout = () => {
     console.log(`Successfully logged out of: ${email}`);
@@ -212,11 +235,12 @@ export default function Storage() {
       }}
       padding="md"
     >
-      {/* <StorageTutorial
+      {isClient && (
+        <StorageTutorial
         run={run}
-        stepIndex={stepIndex}
+        // stepIndex={stepIndex}
         onCallback={handleJoyrideCallback}
-      /> */}
+      />)}
       <AppShell.Main>
         <AppShell.Header
           style={{
@@ -235,7 +259,11 @@ export default function Storage() {
             />
             <SearchBar />
             <Group>
-              {/* <Button onClick={() => setRun(true)}>Help</Button> */}
+
+              
+              <Button className="tutorial-button" onClick={() => setRun(true)}>Help</Button>
+
+
               {/* Profile Menu */}
               <Menu shadow="md" width={200}>
                 <Menu.Target>

@@ -87,9 +87,11 @@ export async function updatePartialDocument(
 }
 
 // DO NOT DIRECTLY CALL THIS FUNCTION IN THE APIs
+// ADDED A SKETCHY ADMIN CALL FOR SERVER READS
 // returns a promise containing the Document associated with the documentId
 // throws an error if document retrieval failed or if the user lacks appropriate permissions
 // readerId is the user id of the user attempting to get the document
+const SERVER_PASS = "server";
 export async function getDocument(documentId: string, readerId: string): Promise<Document>
 {
     const firebase = getFirebase();
@@ -99,7 +101,11 @@ export async function getDocument(documentId: string, readerId: string): Promise
     {
         throw Error(`Error retrieving firebase document ${documentId}. Make sure the document associated with the id and the internet connection is good.`)
     }
-        
+    
+    if(readerId === SERVER_PASS) {
+        console.warn(`[WARNING] Server is accessing document ${documentId} without permission checks`);
+        return firebaseDocument;
+    }
     if(!userHasReadAccess(readerId, firebaseDocument))
     {
         throw Error(`User with id ${readerId} does not have read access to document with id ${documentId}`);

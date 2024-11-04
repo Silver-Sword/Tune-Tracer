@@ -9,8 +9,6 @@
 
 "use strict";
 
-import { getDocument } from "./backend/src/document-utils/documentOperations";
-
 // [START all]
 // [START import]
 // The Cloud Functions for Firebase SDK to setup triggers and logging.
@@ -85,6 +83,16 @@ const {
   getUserAccessLevel,
 } = require("./backend/src/security-utils/getUserAccessLevel");
 
+const {
+  genDocumentFromMap,
+  genUpdateDocumentMap,
+  genUsersFromMap,
+  genUpdateUserMap,
+  subscribeServerToDocument,
+  getServerId,
+  ensureMapData
+} = require("./manageServerData");
+
 const cors = require("cors");
 const corsHandler = cors({ origin: true });
 
@@ -93,12 +101,6 @@ var comments: Record<string, typeof LibComment> = {};
 exports.signUpUser = functions.https.onRequest(async (req, res) => {
   corsHandler(req, res, async () => {
     try {
-      // Parse user input from the request body
-      // if (!req.body)
-      // {
-      //   throw new Error('Missing any inputs');
-      // }
-
       const email: string = req.body.email;
       const password: string = req.body.password;
       const displayName: string = req.body.displayName;
@@ -572,68 +574,7 @@ exports.deleteDocument = functions.https.onRequest(
   }
 );
 
-// ------------------------ START OF THE MINE FIELD ------------------------
-var documentMap = new Map<string, typeof LibDocument>();
-var userMap = new Map<string, Map<string, typeof OnlineEntity>>();
-var isServerSubscribed = false;
-const SERVER_ID = Date.now() % 1000;
-
-function updateDocumentMap(documentId: string, document: typeof LibDocument) {
-  const oldDocument = documentMap.get(documentId);
-
-  if(
-    oldDocument === undefined || 
-    oldDocument.metadata.last_edit_time < document.metadata.last_edit_time
-  ){
-    documentMap.set(documentId, document);
-    console.log(`Server id ${SERVER_ID} updated document ${documentId} with LET ${document.metadata.last_edit_time}`);
-  }
-}
-
-async function genDocumentFromMap(documentId: string, userId: string) {
-  if(!documentMap.has(documentId)) {
-    if(!isServerSubscribed) {
-      await subscribeServerToDocument(documentId);
-    }
-    const doc = await getDocument(documentId, userId);
-    console.log(`Server id ${SERVER_ID} received document ${documentId} with LET ${doc.metadata.last_edit_time}`);
-    updateDocumentMap(documentId, doc);
-  }
-  return documentMap.get(documentId);
-}
-
-function updateUserMap(
-  documentId: string,
-  onlineEntity: typeof OnlineEntity,
-  isRemove: boolean
-) {
-  if(!userMap.has(documentId)) {
-    userMap.set(documentId, new Map<string, typeof OnlineEntity>());
-  }
-
-  if (isRemove) {
-    userMap.get(documentId)?.delete(onlineEntity.user_id);
-  } else {
-    userMap.get(documentId)?.set(onlineEntity.user_id, onlineEntity);
-  }
-}
-
-async function subscribeServerToDocument(documentId: string) {
-  if(!isServerSubscribed) {
-    isServerSubscribed = true;
-    console.log("Subscribing server to document");
-    await admin_subscribeToDocument(
-      documentId,
-      (updatedDocument: typeof LibDocument) => {
-        updateDocumentMap(documentId, updatedDocument);
-      },
-      (updateType: typeof UpdateType, onlineEntity: typeof OnlineEntity) => {
-        updateUserMap(documentId, onlineEntity, updateType === UpdateType.REMOVE);
-      }
-    );
-  }
-}
-
+// ------------------------ START OF THE MINE FIELD ------------------------ 
 // assumes that subscribeToDocument is called first
 exports.checkDocumentChanges = functions.https.onRequest(
   async (request: any, response: any) => {
@@ -678,12 +619,14 @@ exports.checkDocumentChanges = functions.https.onRequest(
           }
           
           const currentDocument = await genDocumentFromMap(documentId, writerId);
-          console.log(`Server id ${SERVER_ID} served document ${documentId} with LET ${currentDocument.metadata.last_edit_time}`);
+          const currentUsers = await genUsersFromMap(documentId);
+
+          console.log(`Server id ${getServerId()} served document ${documentId} with LET ${currentDocument.metadata.last_edit_time}`);
           response.status(StatusCode.OK).send({
             message: "Successfully checked document changes",
             data: {
               document: currentDocument, 
-              onlineUsers: Array.from(userMap.values()),
+              onlineUsers: currentUsers,
             },
           });
         }
@@ -725,26 +668,28 @@ exports.subscribeToDocument = functions.https.onRequest(
             display_name: displayName as string,
           };
 
-          isServerSubscribed = true;
+          await ensureMapData(documentId, true);
+          console.log(`Server id ${getServerId()} subscribed to document ${documentId}`);
           await subscribeToDocument(
             documentId,
             user,
             (updatedDocument: typeof LibDocument) => {
-              updateDocumentMap(documentId, updatedDocument);
+              genUpdateDocumentMap(documentId, updatedDocument);
             },
             (
               updateType: typeof UpdateType,
               onlineEntity: typeof OnlineEntity
             ) => {
-              updateUserMap(documentId, onlineEntity, updateType === UpdateType.REMOVE);
-            }
+              genUpdateUserMap(documentId, onlineEntity, updateType === UpdateType.REMOVE);
+            },
+            false
           );
 
           response.status(StatusCode.OK).send({
             message: "Successfully subscribed to document",
             data: {
               document: await genDocumentFromMap(documentId, userId),
-              onlineUsers: Array.from(userMap.values()),
+              onlineUsers: await genUsersFromMap(documentId),
             },
           });
         }
@@ -819,12 +764,12 @@ exports.updateUserCursor = functions.https.onRequest(
             }`,
           });
         } else {
-          await updateUserCursor(documentId, { userId, cursor });
+          await updateUserCursor(documentId, { user_id: userId, cursor: cursor });
 
           // Send a successful response back
           response.status(StatusCode.OK).send({
             message: "Updated user cursor",
-            data: Array.from(userMap.values()),
+            data: true,
           });
         }
       } catch (error) {
