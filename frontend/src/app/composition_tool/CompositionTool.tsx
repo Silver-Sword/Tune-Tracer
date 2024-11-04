@@ -50,7 +50,7 @@ export default function CompositionTool() {
     const [selectedNoteHeadId, setSelectedNoteHeadId] = useState<string>('');
     let selectedKey = useRef<string>('');
     const [isFetching, setIsFetching] = useState<boolean>(false);
-    const [isSending, setIsSending] = useState<boolean>(false);
+    let  isSending = useRef<boolean>(false);
     const notePlacementRectangleSVG = useRef<SVGElement | null>(null);
     const notePlacementRectangleRef = useRef<Selection<SVGElement, unknown, null, undefined> | null>(null);
     const [notationUpdated, setNotationUpdated] = useState<number>(0);
@@ -709,6 +709,7 @@ export default function CompositionTool() {
 
     const sendChanges: SendChangesType = async () => {
         if (score.current === null) return;
+        isSending.current = true;
         score.current.exportScoreDataObj(true);
         // Debounce the function to prevent rapid consecutive calls
         if (sendChangesTimeout) {
@@ -716,11 +717,12 @@ export default function CompositionTool() {
         }
 
         sendChangesTimeout = setTimeout(async () => {
-            while (isFetching || isSending) {
-                await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
-            }
+            // while (isFetching || isSending) {
+            //     console.log("waiting until fetching is done");
+            //     await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
+            // }
             if (score.current === null) return;
-            setIsSending(true);
+            
             let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
             //console.log("exported Object: " + printScoreData(exportedScoreDataObj));
             const UPDATE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updatePartialDocument';
@@ -744,7 +746,8 @@ export default function CompositionTool() {
             // setChanges(recordTemp);
 
             await callAPI("checkDocumentChanges", changesTemp);
-            setIsSending(false);
+            // await new Promise(resolve => setTimeout(resolve, 1000)); // Adjust the delay if needed
+            isSending.current = (false);
             // await fetch(UPDATE_URL, PUT_OPTION);
         }, debounceDelay);
     }
@@ -756,7 +759,8 @@ export default function CompositionTool() {
             writerId: userId.current
         };
         sendChangesTimeout = setTimeout(async () => {
-            while (isSending || isFetching) {
+            while (isSending.current || isFetching) {
+                console.log("Waiting until send finished");
                 await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
             }
         console.log(JSON.stringify(changesTemp));
@@ -1410,7 +1414,7 @@ export default function CompositionTool() {
                 }
               }
             });
-          }, [onlineUsers]);          
+          }, [onlineUsers]);    
 
     return (
         <AppShell
@@ -1486,7 +1490,7 @@ export default function CompositionTool() {
                         placeholder={userTemp}
                     />
                     <Button onClick={sendChanges}>Send Score change</Button>*/}
-                    {/* <Button onClick={fetchChanges}>fetch Score change</Button>  */}
+                    {/* <Button onClick={sendAndFetch}>fetch Score change</Button>  */}
                     <div>
                         <div ref={notationRef}></div>
                     </div>
