@@ -81,8 +81,8 @@ export const ToolbarHeader: React.FC<{
     addSharp: (keys: string[], noteId: number) => void;
     addNatural: (keys: string[], noteId: number) => void;
     addFlat: (keys: string[], noteId: number) => void;
+    removeAccidentals: (keys: string[], noteID: number) => void;
     handleDot: (dotType: number, noteId: number) => void;
-    // removeAccidentals: (keys: string, noteID: string) => void;
     setKeySignature: (keySignature: string) => void;
     hasWriteAccess: boolean;
     selectedKey: string;
@@ -102,8 +102,8 @@ export const ToolbarHeader: React.FC<{
     addSharp,
     addNatural,
     addFlat,
+    removeAccidentals,
     handleDot,
-    // removeAccidentals,
     setKeySignature,
     hasWriteAccess,
     selectedKey
@@ -283,6 +283,15 @@ export const ToolbarHeader: React.FC<{
                 onClick={() => addFlat([selectedKey], selectedNoteId)}
               >
                 <Image h={20} w="auto" fit="contain" src="/icons/flat.jpg" />
+              </Button>
+            </Tooltip>
+            <Tooltip label="Remove Accidental" position="top" withArrow>
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => removeAccidentals([selectedKey], selectedNoteId)}
+              >
+                <Image h={20} w="auto" fit="contain" src="/icons/removeAccidentals.png" />
               </Button>
             </Tooltip>
 

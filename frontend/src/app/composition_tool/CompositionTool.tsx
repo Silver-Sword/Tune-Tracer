@@ -92,13 +92,17 @@ export default function CompositionTool() {
     // Wrapper functions to call modifyDuration specifically for dots
     const dotHandler = async (dotType: number, noteId: number) => {
         if (score && score.current) {
-            const duration = score.current.findNote(noteId)?.getDuration();
-
+            const staveNote = score.current.findNote(noteId);
+            if(!staveNote) return;
+            const duration = staveNote?.getDuration();
+            const countDots = staveNote.getModifiersByType('Dot').length;
             if (dotType == 1) {
-                score.current.modifyDurationInMeasure(duration + "d", noteId);
+                if(countDots == 1) score.current.modifyDurationInMeasure(duration, noteId);
+                else score.current.modifyDurationInMeasure(duration + "d", noteId);
             }
             if (dotType == 2) {
-                score.current.modifyDurationInMeasure(duration + "dd", noteId);
+                if(countDots == 2) score.current.modifyDurationInMeasure(duration, noteId);
+                else score.current.modifyDurationInMeasure(duration + "dd", noteId);
             }
 
             selectedNoteId.current = noteId;
@@ -208,6 +212,23 @@ export default function CompositionTool() {
     const addFlatHandler = async (keys: string[], noteId: number) => {
         if (score && score.current) {
             score.current.addFlat(keys, noteId);
+            selectedNoteId.current = noteId;
+            setNotationUpdated(prev => prev + 1);
+            sendChanges();
+            // setTimeout(() => {
+            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+            //     const noteElement = document.getElementById(noteId.toString());
+            //     if (noteElement) {
+            //         noteElement.classList.add('selected-note');
+            //     }
+            // }, 0);
+        }
+    }
+
+    const removeAccidentalsHandler = async (keys: string[], noteId: number) => {
+        if (score && score.current) {
+            score.current.removeAccidentals(keys, noteId);
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
@@ -773,6 +794,7 @@ export default function CompositionTool() {
                     if (selectedNoteId.current !== -1) {
                         d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
                     }
+                    setNotationUpdated(prev => prev + 1);
                     createNewNoteBox();
                 }
                 
@@ -1425,7 +1447,7 @@ export default function CompositionTool() {
                     addSharp={addSharpHandler}
                     addNatural={addNaturalHandler}
                     addFlat={addFlatHandler}
-                    // removeAccidentals={removeAccidentalsHandler}
+                    removeAccidentals={removeAccidentalsHandler}
                     setKeySignature={setKeySignatureHandler}
                     handleDot={dotHandler}
                     hasWriteAccess={hasWriteAccess}
