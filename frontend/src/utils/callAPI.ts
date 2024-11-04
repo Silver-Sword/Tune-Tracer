@@ -14,6 +14,11 @@ export async function callAPI(
   message: string 
   data?: unknown | undefined; 
 }> {
+  const inputCheck = validateInput(inputData);
+  if(inputCheck) {
+    console.error(`Invalid input: ${inputCheck.message} to callAPI`);
+    return inputCheck;
+  }
   const requestOptions = {
     method: "POST",
     headers: {
@@ -36,4 +41,30 @@ export async function callAPI(
   const data = (responseJSON)["data"];
   const message = (responseJSON)["message"];
   return { status: response.status, message: message, data: data };
+}
+
+function validateInput(inputData: JSON|Record<string, unknown>): { 
+  status: number; 
+  message: string 
+  data?: unknown | undefined; 
+} | undefined {
+  const input = JSON.parse(JSON.stringify(inputData));
+  if(input['userId'] && typeof input['userId'] !== 'string') {
+    return {
+      status: 400,
+      message: "userId must be a string"
+    }
+  } else if(input['writerId'] && typeof input['writerId'] !== 'string') {
+    return {
+      status: 400,
+      message: "writerId must be a string"
+    }
+  } else if(input['documentId'] && typeof input['documentId'] !== 'string') {
+    return {
+      status: 400,
+      message: "documentId must be a string"
+    }
+  }
+
+  return undefined;
 }

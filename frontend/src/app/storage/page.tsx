@@ -37,13 +37,6 @@ const filterLabels = [
   // { link: "", label: "Favorites" },
 ];
 
-const tutorialSteps = [
-  { target: ".search-bar", content: "Search for compositions here." },
-  { target: ".create-card", content: "Create a new score or join with an invite code." },
-  { target: ".navbar-filters", content: "Filter your compositions here." },
-  { target: ".profile-menu", content: "Access your profile settings and logout here." },
-];
-
 // FiltersNavbar component
 const FiltersNavbar: React.FC<{ getOwnPreviews: () => void, getSharedPreviews: () => void }> = ({ getOwnPreviews, getSharedPreviews }) => {
   const [activeFilter, setActiveFilter] = useState<string>("All");
@@ -154,7 +147,6 @@ export default function Storage() {
     if (finishedStatuses.includes(status)) {
       setRun(false);
     }
-
   };
 
   const handleLogout = () => {
@@ -260,9 +252,12 @@ export default function Storage() {
             <SearchBar />
             <Group>
 
-              
-              <Button className="tutorial-button" onClick={() => setRun(true)}>Help</Button>
-
+              <Button 
+                className="tutorial-button"
+                onClick={() => setRun(true)}
+              >
+                  Help
+              </Button>
 
               {/* Profile Menu */}
               <Menu shadow="md" width={200}>
