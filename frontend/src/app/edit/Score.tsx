@@ -187,6 +187,7 @@ export class Score {
         scoreData.bottomMeasures.forEach((bottomMeasure) => {
             this.bottom_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, undefined, bottomMeasure));
         });
+        console.log("score data: " + printScoreData(scoreData));
         // Always renderTimeSig for first measures
         this.top_measures[0].renderTimeSignature();
         this.bottom_measures[0].renderTimeSignature();
