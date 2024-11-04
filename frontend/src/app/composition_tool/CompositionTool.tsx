@@ -560,7 +560,6 @@ export default function CompositionTool() {
     // Wrapper function to call addNoteInMeasure
     const addNoteHandler = async (notes: string[], noteId: number, sendNetworkChanges: boolean = true) => {
         if (score && score.current) {
-
             score.current.addNoteInMeasure(notes, noteId);
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
@@ -689,6 +688,7 @@ export default function CompositionTool() {
 
     const sendChanges: SendChangesType = async () => {
         if (score.current === null) return;
+        score.current.exportScoreDataObj(true);
         // Debounce the function to prevent rapid consecutive calls
         if (sendChangesTimeout) {
             clearTimeout(sendChangesTimeout);
@@ -701,7 +701,7 @@ export default function CompositionTool() {
             if (score.current === null) return;
             setIsSending(true);
             let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
-            console.log("exported Object: " + printScoreData(exportedScoreDataObj));
+            //console.log("exported Object: " + printScoreData(exportedScoreDataObj));
             const UPDATE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updatePartialDocument';
 
             const changesTemp =
@@ -857,10 +857,10 @@ export default function CompositionTool() {
 
     // THIS FETCHES CHANGES PERIODICALLY
     // UNCOMMENT below to actually do it.
-    useInterval(() => {
-        // Your custom logic here
-        fetchChanges();
-    }, 5000); // 5 seconds
+    // useInterval(() => {
+    //     // Your custom logic here
+    //     fetchChanges();
+    // }, 5000); // 5 seconds
 
     const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
         const value = event.currentTarget.value;
@@ -1464,7 +1464,7 @@ export default function CompositionTool() {
                         placeholder={userTemp}
                     />
                     <Button onClick={sendChanges}>Send Score change</Button>*/}
-                    <Button onClick={fetchChanges}>fetch Score change</Button> 
+                    {/* <Button onClick={fetchChanges}>fetch Score change</Button>  */}
                     <div>
                         <div ref={notationRef}></div>
                     </div>

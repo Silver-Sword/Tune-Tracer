@@ -148,7 +148,7 @@ export class Score {
         this.renderMeasures();
     }
 
-    exportScoreDataObj = (): ScoreData => {
+    exportScoreDataObj = (render: boolean = false): ScoreData => {
         let scoreData: ScoreData = getDefaultScoreData();
         scoreData.rendererHeight = this.renderer_height;
         scoreData.rendererWidth = this.renderer_width;
@@ -170,6 +170,7 @@ export class Score {
         scoreData.title = this.title;
 
         //console.log(printScoreData(scoreData));
+        if(render) this.renderMeasures();
         return scoreData;
     }
 
@@ -539,8 +540,6 @@ export class Score {
             //     staveBoundingBox.getW(), staveBoundingBox.getH());
             //     this.context.stroke();
             // }
-
-
             if (!voiceBoundingBox) continue;
             smallestY = Math.min(smallestY, Math.min(voiceBoundingBox.getY(), staveBoundingBox.getY()));
             largestY = Math.max(largestY, Math.max(voiceBoundingBox.getY() + voiceBoundingBox.getH(), staveBoundingBox.getY() + staveBoundingBox.getH()));
@@ -585,7 +584,6 @@ export class Score {
     private calculateMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], ceiling: number): number => {
         const topResult = this.calculateALineOfMeasures(topMeasures, ceiling);
         const bottomResult = this.calculateALineOfMeasures(bottomMeasures, topResult.bottomY);
-
         // Render the stave connectors
         this.renderMeasureLine(topMeasures, bottomMeasures);
 
@@ -775,7 +773,7 @@ export class Score {
 
     // Figure out how many measures in a line, then put all this logic into a function to be called
     // for each line, pass in an array of top and bottom measures, as well as a ceiling value
-    private renderMeasures = (): void => {
+    renderMeasures = (): void => {
         this.context.clear();
 
         this.systems = [];
@@ -814,7 +812,6 @@ export class Score {
             }
             currentWidth += topMeasure.getStave().getWidth();
         }
-
         // Process the last line of measures
         const newCeiling = this.calculateMeasureLine(
             this.top_measures.slice(firstLineIndex, this.top_measures.length),

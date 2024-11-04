@@ -188,7 +188,6 @@ export class Measure {
                 index: modifier.checkIndex(),
                 modifier: modifier.getAttribute("mod")
                }
-               console.log("MODIFIER TYPE: " + modifier.getAttribute("mod"));
                if(modifier.getAttribute("mod") === undefined)return;
                modifierDataArray.push(modifierData);
             });
