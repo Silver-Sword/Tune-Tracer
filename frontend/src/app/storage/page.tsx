@@ -34,7 +34,7 @@ import { getSharedPreviews, getOwnPreviews } from "./documentPreviewsData";
 const filterLabels = [
   { link: "", label: "All" },
   { link: "", label: "Shared with you" },
-  { link: "", label: "Favorites" },
+  // { link: "", label: "Favorites" },
 ];
 
 const tutorialSteps = [
