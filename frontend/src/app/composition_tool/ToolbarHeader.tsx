@@ -29,6 +29,7 @@ import { getUserID } from "../cookie";
 import Link from 'next/link';
 import { callAPI } from "../../utils/callAPI";
 import { useSearchParams } from "next/navigation";
+import UserColorsModal from './UserColorsModal';
 
 import { DocumentMetadata } from "../lib/src/documentProperties";
 import { ShareStyle } from "../lib/src/documentProperties";
@@ -87,6 +88,7 @@ export const ToolbarHeader: React.FC<{
     setKeySignature: (keySignature: string) => void;
     hasWriteAccess: boolean;
     selectedKey: string;
+    userList: { userId: string; displayName: string; color: string }[];
 }> = ({
     documentName,
     documentMetadata,
@@ -107,12 +109,14 @@ export const ToolbarHeader: React.FC<{
     handleDot,
     setKeySignature,
     hasWriteAccess,
-    selectedKey
+    selectedKey,
+    userList
 }) => {
         // State to manage the input value
         const [inputValue, setInputValue] = useState("Untitled Score");
         const [shareStyle, setShareStyle] = useState(ShareStyle.NONE);
         const searchParams = useSearchParams();
+        const [usersModalOpened, setUsersModalOpened] = useState<boolean>(false);
 
         // State to toggle between edit and display modes
         const [isChangingName, setIsChangingName] = useState(false);
@@ -240,6 +244,12 @@ export const ToolbarHeader: React.FC<{
                     {/* Sharing UI */}
 
         {/* Select Dropdown should not be changable if not the owner */}
+        <Button onClick={() => setUsersModalOpened(true)}>Online Users</Button>
+        <UserColorsModal
+          opened={usersModalOpened}
+          onClose={() => setUsersModalOpened(false)}
+          userList={userList}
+        />
         {hasWriteAccess && <SharingModal
           documentTitle={inputValue}
           metadata={documentMetadata}
@@ -496,7 +506,6 @@ export const ToolbarHeader: React.FC<{
                 </Center>}
           
                   
-
                 {hasWriteAccess && (
                   <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "45px", width: " 50%" }}>
                     <KeybindModal />

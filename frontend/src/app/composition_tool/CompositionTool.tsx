@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 
 import { getUserID, getDisplayName, getEmail, getDocumentID, getCursorColor } from "../cookie";
+import { areUserListsEqual } from './list';
 import { increasePitch, lowerPitch, shiftNoteDown, shiftNoteUp } from './pitch'
 import { ToolbarHeader } from './ToolbarHeader'
 import { useSearchParams } from "next/navigation";
@@ -71,6 +72,8 @@ export default function CompositionTool() {
 
     // map of user ids to their online information
     const [onlineUsers, setOnlineUsers] = useState<Map<string, OnlineEntity>>(new Map<string, OnlineEntity>());
+    const [userList, setUserList] = useState<{ userId: string; displayName: string; color: string}[]>([]);
+    const displayNameCache = useRef<{ [userId: string]: string }>({});
 
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = async (duration: string, noteId: number) => {
@@ -1412,6 +1415,26 @@ export default function CompositionTool() {
         }
     };
     
+    const fetchDisplayName = async (userIdToFetch: string): Promise<string> => {
+        if (displayNameCache.current[userIdToFetch]) {
+          return displayNameCache.current[userIdToFetch];
+        }
+        try {
+          const response = await callAPI('getUserFromId', { userId: userIdToFetch });
+          if (response.status === 200 && response.data) {
+            console.log(response.data);
+            const displayName = response.data.display_name;
+            displayNameCache.current[userIdToFetch] = displayName;
+            return displayName;
+          } else {
+            console.error(`Failed to fetch display name for userId ${userIdToFetch}`);
+            return '';
+          }
+        } catch (error) {
+          console.error(`Error fetching display name for userId ${userIdToFetch}:`, error);
+          return '';
+        }
+      };
 
         useEffect(() => {
             // First, clear previous highlighting for other users
@@ -1441,6 +1464,33 @@ export default function CompositionTool() {
                 }
               }
             });
+
+            const updateUserList = async () => {
+                console.log('Running updateUserList!');
+                const users: { userId: string; displayName: string; color: string }[] = [];
+              
+                const promises = [];
+              
+                onlineUsers.forEach((onlineEntity, userIdKey) => {
+                  console.log(`Is ${userIdKey} !== ${userId.current}?`);
+                  if (userIdKey !== userId.current) {
+                    const cursor = onlineEntity.cursor as SelectedNote;
+                    if (cursor && cursor.color) {
+                      const color = cursor.color;
+                      const displayNamePromise = fetchDisplayName(userIdKey).then((displayName) => {
+                        users.push({ userId: userIdKey, displayName, color });
+                      });
+                      promises.push(displayNamePromise);
+                    }
+                  }
+                });
+              
+                // await Promise.all(promises);
+                setUserList(users);
+              };
+              
+          
+            updateUserList();
           }, [onlineUsers]);          
 
     return (
@@ -1483,6 +1533,7 @@ export default function CompositionTool() {
                     handleDot={dotHandler}
                     hasWriteAccess={hasWriteAccess}
                     selectedKey = {selectedKey.current}
+                    userList = {userList}
                 />
                 {/* <CommentAside /> */}
 
