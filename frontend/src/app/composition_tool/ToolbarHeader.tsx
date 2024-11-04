@@ -422,7 +422,12 @@ export const ToolbarHeader: React.FC<{
             {/* Ties */}
             <Tooltip label="Add Tie" position="top" withArrow>
               <Button variant="outline" onClick={() => addTie(selectedNoteId)}>
-                Add Tie
+              <Image
+                  h={25}
+                  w="auto"
+                  fit="contain"
+                  src="/icons/tie.png"
+                />
               </Button>
             </Tooltip>
             <Tooltip label="Remove Tie" position="top" withArrow>
@@ -430,7 +435,12 @@ export const ToolbarHeader: React.FC<{
                 variant="outline"
                 onClick={() => removeTie(selectedNoteId)}
               >
-                Remove Tie
+                <Image
+                  h={25}
+                  w="auto"
+                  fit="contain"
+                  src="/icons/noTie.png"
+                />
               </Button>
             </Tooltip>
           </Group>
