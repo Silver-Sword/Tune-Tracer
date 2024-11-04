@@ -12,6 +12,7 @@ const tutorialSteps: Step[] = [
   { target: ".create-card", content: "Create a new score or join with a code." },
   { target: ".navbar-filters", content: "Filter compositions here." },
   { target: ".profile-menu", content: "Access your profile settings and log out here." },
+  { target: ".tutorial-button", content: "Click here to view the tutorial again." },
 ];
 
 const StorageTutorial: React.FC<TutorialProps> = ({ run, 

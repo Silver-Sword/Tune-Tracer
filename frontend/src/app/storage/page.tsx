@@ -261,7 +261,7 @@ export default function Storage() {
             <Group>
 
               
-              <Button onClick={() => setRun(true)}>Help</Button>
+              <Button className="tutorial-button" onClick={() => setRun(true)}>Help</Button>
 
 
               {/* Profile Menu */}
