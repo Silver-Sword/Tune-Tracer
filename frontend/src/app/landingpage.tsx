@@ -62,7 +62,7 @@ const sections = [
   { id: 'store', label: 'Store' },
   { id: 'collaborate', label: 'Collaborate' },
   { id: 'playback', label: 'Playback' },
-  { id: 'security', label: 'Security' },
+  // { id: 'security', label: 'Security' },
   { id: 'faqs', label: 'FAQs' },
 ]
 
@@ -153,12 +153,12 @@ export default function LandingPage() {
                     </Button>
                   </Group>
                 </div>
-                <Image
+                {/* <Image
                   src="/placeholder.svg?height=400&width=500"
                   alt="Tune Tracer Interface"
                   style={{ flex: 1 }}
                   radius="md"
-                />
+                /> */}
               </Flex>
             </Box>
 
@@ -231,14 +231,14 @@ export default function LandingPage() {
               />
             </Box>
 
-            <Box id="security" py={120}>
+            {/* <Box id="security" py={120}>
               <ContentSectionVertical
                 title="Security"
                 description={<Text size="lg" c="dimmed">Your compositions are protected with enterprise-grade security. Control access and maintain the privacy of your musical creations.</Text>}
                 imageSrc="/placeholder.svg?height=300&width=400"
                 imageAlt="Security Features"
               />
-            </Box>
+            </Box> */}
 
             
 
