@@ -444,6 +444,12 @@ export class Score {
         measure.ids = [];
         tickables.forEach(tickable => {
             let staveNote = tickable as StaveNote;
+            if(staveNote.getModifiers().length !== 0)
+            {
+                staveNote.getModifiers().forEach((modifier) => {
+                    //console.log("ATTRIBBUTE: " + modifier.getAttribute("mod"));
+                });
+            }
             staveNote.getSVGElement()?.setAttribute('id', IDCounter + "");
             // We map our generated ID to the ID vexflow generates. This is because we don't have access to the SVG ID before note is drawn
             // Before the note is drawn, we need a way to reference that. 

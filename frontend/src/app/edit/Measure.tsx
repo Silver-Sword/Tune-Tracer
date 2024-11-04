@@ -95,7 +95,8 @@ export class Measure {
                     let modifierType = Modifier.modifier.toLowerCase();
                     if(modifierType !== '#' && modifierType !== 'b' && modifierType !== 'n') return;
                     const accidental = new Accidental(Modifier.modifier);
-                    newNote.addModifier(accidental, Modifier.index).setAttribute("mod", modifierType);
+                    newNote.addModifier(accidental, Modifier.index);
+                    newNote.getModifiers()[newNote.getModifiers().length - 1].setAttribute("mod", Modifier.modifier);
                 });
                 newNote.setModifierContext(new ModifierContext());
             });
@@ -289,6 +290,7 @@ export class Measure {
     addModifiers = (newNote: StaveNote, modifiers: Modifier[], modifierContext: ModifierContext | undefined) => {
         modifiers.forEach((modifier) => {
             newNote?.addModifier(modifier);
+            let attribute = modifier.getAttribute("mod");
         });
         // Associate the ModifierContext with the note
         newNote.setModifierContext(modifierContext);
@@ -658,8 +660,8 @@ export class Measure {
                         // Create Accidental
                         const accidental = new Accidental(modifier);
                         
-                        staveNote.addModifier(accidental, i).setAttribute("mod", modifier);
-                        //
+                        staveNote.addModifier(accidental, i);
+                        staveNote.getModifiers()[staveNote.getModifiers().length - 1].setAttribute("mod", modifier);
                     }
                 }
 
