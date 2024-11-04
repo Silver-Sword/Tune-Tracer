@@ -116,7 +116,15 @@ export default function LandingPage() {
         <AppShell.Header style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <Flex h={60} px="md" align="center" justify="space-between">
             <Group style={{ textDecoration: 'none', color: 'inherit' }}>
-              <IconMusic size={30} style={{ color: '#228be6' }} />
+              {/* <IconMusic size={30} style={{ color: '#228be6' }} /> */}
+              <Image
+                  src="/logo192.png"
+                  alt="Tune Tracer Logo"
+                  h={40}
+                  w="auto"
+                  // style={{ flex: 1 }}
+                  // radius="md"
+                />
               <Text size="xl" fw={700}>
                 Tune Tracer
               </Text>
