@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import React, {useState } from "react";
+import React, {useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
 import {
@@ -18,6 +18,7 @@ import { getUserID, saveDocID } from "../cookie";
 
  export interface DocumentData {
     last_edit_time: number;
+    time_created: number;
     owner_id: string;
     last_edit_user: string;
     document_id: string;
@@ -25,11 +26,13 @@ import { getUserID, saveDocID } from "../cookie";
   }
 
 // DocCard Component
-export const DocCard: React.FC<DocumentData> = ({document_id, document_title, owner_id, last_edit_time}) => {
+export const DocCard: React.FC<DocumentData> = ({document_id, document_title, owner_id, last_edit_time, time_created}) => {
   const [isFavorited, setIsFavorited] = useState(false); // State to track if the card is favorited
   const [deleteModalOpened, setDeleteModalOpened] = useState(false); // State for the delete confirmation modal
   const [loading, setLoading] = useState(false);
   const [deleted, setDeleted] = useState(false);
+  const [displayName, setDisplayName] = useState("Unknown User");
+  const [docTitle, setDocTitle] = useState("Untitled Document");
 
   const router = useRouter();
 
@@ -80,6 +83,35 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
     return format(date, 'MMMM dd, yyyy');  // Customize the format as needed
 }
 
+const getUserName = async () => {
+  await callAPI("getUserFromId", {userId: owner_id})
+    .then((res) => {
+      if (res.status !== 200) {
+          console.log("Error getting user data");
+          return;
+      }
+      const user = (res.data as any);
+            if(user === undefined) {
+                console.error(`Something went wrong. user is undefined`);
+            }
+            else {
+              setDisplayName(user.display_name);
+            }
+    }).catch((error) => {
+      console.error(`Error getting user data: ${error}`);
+      return;
+    });;
+}
+
+useEffect(() => {
+  getUserName();
+  if (document_title !== "")
+  {
+    setDocTitle(document_title);
+  }
+});
+
+
   // const documentTitle = "[DOCUMENT NAME] OVERFLOW TEST TEXT: This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum."
 
   return (
@@ -91,7 +123,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
         title="Confirm Deletion"
         centered
       >
-        <Text>Are you sure you want to delete {document_title}?</Text>
+        <Text>Are you sure you want to delete {docTitle}?</Text>
         <Group 
           justify="flex-end" 
           mt="md"
@@ -159,22 +191,23 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           </div>
 
           {/* Truncate title text to prevent overflow */}
-          <Tooltip label={`${document_title}`} withArrow>
+          <Tooltip label={docTitle} withArrow>
             <Text
                 lineClamp={2}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', margin: 'auto' }}
                 onClick={(e) => {
                     e.stopPropagation(); // Prevents propagation to card click
                     handleDocumentOpen();
                 }}
             >
-                {document_title}
+                {docTitle}
             </Text>
           </Tooltip>
           
           {/* Get the display name from the ownerID */}
-          <Text size="md">Created by: {owner_id}</Text>
-          <Text size="sm" c="dimmed">Last Edited: {millisecondsToFormattedDateString(last_edit_time)}</Text>
+          <Text size="md" style = {{margin: 'auto'}}>Created by: {displayName}</Text>
+          <Text size="sm" c="dimmed" style = {{margin: 'auto'}}>Last Edited: {millisecondsToFormattedDateString(last_edit_time)}</Text>
+          <Text size="sm" c="dimmed" style = {{margin: 'auto'}}>Created On: {millisecondsToFormattedDateString(last_edit_time)}</Text>
         </Stack>
       </Card>}
     </>

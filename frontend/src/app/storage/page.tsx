@@ -342,7 +342,7 @@ export default function Storage() {
             </Text>
           ) : (
             <SimpleGrid
-              cols={{ base: 1, sm: 2, md: 3, lg: 5 }}
+              cols={{ base: 1, sm: 3, md: 3, lg: 5 }}
               spacing={{ base: "xl" }}
             >
               {documents.map((doc) => (
@@ -353,6 +353,7 @@ export default function Storage() {
                   document_title={doc.document_title} 
                   owner_id={doc.owner_id} 
                   last_edit_time={doc.last_edit_time} 
+                  time_created={doc.time_created}
                 />
               ))}
             </SimpleGrid>
