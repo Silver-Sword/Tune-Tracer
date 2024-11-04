@@ -3,12 +3,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Score } from "../edit/Score";
 import { createPlaceNoteBox, attachMouseMoveListener, attachMouseLeaveListener, attachMouseClickListener} from "./PlaceNoteBox";
-// We have two of these for some reason
-//import { printScoreData, ScoreData } from "../lib/src/ScoreData";
-import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
-import { Document } from "../lib/src/Document";
-import { DocumentMetadata, ShareStyle } from "../lib/src/documentProperties";
-import { Comment } from "../lib/src/Comment";
 import {
     AppShell,
     Container,
@@ -21,6 +15,15 @@ import { getUserID, getDisplayName, getEmail, getDocumentID } from "../cookie";
 import { increasePitch, lowerPitch } from './pitch'
 import { ToolbarHeader } from './ToolbarHeader'
 import { useSearchParams } from "next/navigation";
+
+// We have two of these for some reason
+//import { printScoreData, ScoreData } from "../lib/src/ScoreData";
+import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData'; // Note this path is to a folder outside of the root directory
+import { Document } from "../lib/src/Document";
+import { DocumentMetadata, ShareStyle } from "../lib/src/documentProperties";
+import { Comment } from "../lib/src/Comment";
+import { OnlineEntity } from "../lib/src/realtimeUserTypes";
+import { SelectedNote } from "../lib/src/SelectedNote";
 
 import * as d3 from 'd3';
 import { Selection } from 'd3';
@@ -58,6 +61,9 @@ export default function CompositionTool() {
     const displayName = useRef<string>();
     const documentID = useRef<string>();
     const [hasWriteAccess, setHasWriteAccess] = useState<boolean>(true);
+
+    // map of user ids to their online information
+    const [onlineUsers, setOnlineUsers] = useState<Map<string, OnlineEntity>>(new Map<string, OnlineEntity>());
 
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = async (duration: string, noteId: number) => {
@@ -748,6 +754,16 @@ export default function CompositionTool() {
                 }
                 createNewNoteBox();
             }
+            
+            // Update online users
+            const receivedUsers = (res.data as any)['onlineUsers'];
+            if(receivedUsers !== undefined) {
+                console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
+                setOnlineUsers(receivedUsers);
+            } else {
+                console.error(`Something went wrong. Received online users is undefined`);
+            }
+
             setIsFetching(false);
         }).catch((error) => {
             // Getting the Error details.
@@ -865,6 +881,16 @@ export default function CompositionTool() {
                     metadata: metadata,
                 };
                 setDocument(tempDocument);
+
+                // Update online users
+                const receivedUsers = (res.data as any)['onlineUsers'];
+                if(receivedUsers !== undefined) {
+
+                    console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
+                    setOnlineUsers(receivedUsers);
+                } else {
+                    console.error(`Something went wrong. Received online users is undefined`);
+                }
             }).catch((error) => {
                 // Getting the Error details.
                 const message = error.message;
@@ -872,7 +898,6 @@ export default function CompositionTool() {
                 return;
             });
         }
-
 
         // loads in background
 
@@ -886,27 +911,6 @@ export default function CompositionTool() {
                     displayName: displayName.current
                 };
                 console.log("document ID: " + documentID.current);
-
-                // if (userTemp === '1') {
-                //     userInfo = {
-                //         documentId: 'aco5tXEzQt7dSeB1WSlV',
-                //         userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
-                //         user_email: 'sophiad03@hotmail.com',
-                //         displayName: 'Sopa'
-                //     };
-                // }
-                // else if (userTemp === '2') {
-                //     userInfo = {
-                //         documentId: 'aco5tXEzQt7dSeB1WSlV',
-                //         userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
-                //         user_email: 'test-user-1@tune-tracer.com',
-                //         displayName: 'test_one'
-                //     }
-
-                // }
-                // else {
-                //     return;
-                // }
                 console.log("User Info: " + JSON.stringify(userInfo));
 
                 const POST_OPTION = {
@@ -991,6 +995,16 @@ export default function CompositionTool() {
                         metadata: metadata,
                     };
                     setDocument(tempDocument);
+
+                    // Update online users
+                    const receivedUsers = (res.data as any)['onlineUsers'];
+                    if(receivedUsers !== undefined) {
+    
+                        console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
+                        setOnlineUsers(receivedUsers);
+                    } else {
+                        console.error(`Something went wrong. Received online users is undefined`);
+                    }
                 }).catch((error) => {
                     // Getting the Error details.
                     const message = error.message;
@@ -1151,9 +1165,9 @@ export default function CompositionTool() {
             if (selectedNoteId) {
                 const userInfo = {
                     documentId: documentID.current,
-                    userId: userId,
-                    user_email: email,
-                    displayName: displayName,
+                    userId: userId.current,
+                    user_email: email.current,
+                    displayName: displayName.current,
                     cursor: selectedNoteId
                 }
 
@@ -1174,6 +1188,36 @@ export default function CompositionTool() {
                     })
             }
         };
+
+        useEffect(() => {
+            // First, clear previous highlighting for other users
+            d3.selectAll('.other-user-highlight').each(function () {
+              d3.select(this).style('fill', null);
+              d3.select(this).classed('other-user-highlight', false);
+            });
+          
+            // Iterate over onlineUsers
+            onlineUsers.forEach((onlineEntity, user_id) => {
+              // Exclude the current user
+              if (user_id !== userId.current) {
+                const cursor = onlineEntity.cursor as SelectedNote;
+                if (cursor && cursor.noteID && cursor.color) {
+                  const noteHeadId = cursor.noteID;
+                  const color = cursor.color;
+          
+                  // Select the notehead element by its CSS ID
+                  const noteHeadElement = d3.select(`#${noteHeadId}`);
+                  if (!noteHeadElement.empty()) {
+                    noteHeadElement
+                      .style('fill', color)
+                      .classed('other-user-highlight', true);
+                  } else {
+                    console.warn(`Notehead with ID ${noteHeadId} not found`);
+                  }
+                }
+              }
+            });
+          }, [onlineUsers]);          
 
         return (
             <AppShell
