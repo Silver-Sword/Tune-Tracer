@@ -483,9 +483,9 @@ export const ToolbarHeader: React.FC<{
                     </Text>
                 </Center>}
           
-      <Tooltip label="Help" position="top" withArrow>
+      {hasWriteAccess && <Tooltip label="Help" position="top" withArrow>
               <Button style={{ marginLeft: 'auto', marginTop: '20px' }}>Help</Button>
-            </Tooltip>
+            </Tooltip>}
       </Group>
             </AppShell.Header>
         );
