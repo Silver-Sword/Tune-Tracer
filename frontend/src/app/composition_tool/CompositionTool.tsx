@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Score } from "../edit/Score";
-import { createPlaceNoteBox, attachMouseMoveListener, attachMouseLeaveListener, attachMouseClickListener} from "./PlaceNoteBox";
+import { createPlaceNoteBox, attachMouseMoveListener, attachMouseLeaveListener, attachMouseClickListener } from "./PlaceNoteBox";
 // We have two of these for some reason
 //import { printScoreData, ScoreData } from "../lib/src/ScoreData";
 import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
@@ -685,7 +685,7 @@ export default function CompositionTool() {
                 writerId: userId.current,
             }
             console.log("Exporting Score data ------------------------------- ");
-            
+
             // var recordTemp: Record<string, unknown> = changes;
             // if (!('score' in recordTemp)) {
             //     recordTemp['score'] = exportedScoreDataObj;
@@ -711,139 +711,138 @@ export default function CompositionTool() {
         console.log(JSON.stringify(changesTemp));
         setIsFetching(true);
         await callAPI("checkDocumentChanges", changesTemp)
-        .then((res) => {
-            if(res.status !== 200) {
-                console.log("Error fetching changes");
-                setIsFetching(false);
-                return;
-            }
-            const receivedDocument = (res.data as any)['document'];
-            if(receivedDocument === undefined) {
-                console.error(`Something went wrong. Received document is undefined`);
-                setIsFetching(false);
-                return;
-            }
-            //console.log("Recieved Score data: " + JSON.stringify(receivedDocument));
-            const compData: ScoreData = receivedDocument.score;
-            const document_title: string = receivedDocument.document_title;
-            const comments: Comment[] = receivedDocument.comments;
-            const metadata: DocumentMetadata = receivedDocument.metadata;
-            const tempDocument: Document = {
-                document_title: document_title,
-                comments: comments,
-                score: compData,
-                metadata: metadata,
-            };
-            setDocument(tempDocument);
-            if (notationRef.current) {
-                score.current?.loadScoreDataObj(compData, render);
-                console.log("LOADED SCORE DATA");
-                // Now add it to the currently selected note
-                if (selectedNoteId !== -1) {
-                    d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
+            .then((res) => {
+                if (res.status !== 200) {
+                    console.log("Error fetching changes");
+                    setIsFetching(false);
+                    return;
                 }
-                createNewNoteBox();
-            }
-            setIsFetching(false);
-        }).catch((error) => {
-            // Getting the Error details.
-            const message = error.message;
-            console.log(`Error: ${message}`);
-            setIsFetching(false);
-            return;
-        });
+                const receivedDocument = (res.data as any)['document'];
+                if (receivedDocument === undefined) {
+                    console.error(`Something went wrong. Received document is undefined`);
+                    setIsFetching(false);
+                    return;
+                }
+                //console.log("Recieved Score data: " + JSON.stringify(receivedDocument));
+                const compData: ScoreData = receivedDocument.score;
+                const document_title: string = receivedDocument.document_title;
+                const comments: Comment[] = receivedDocument.comments;
+                const metadata: DocumentMetadata = receivedDocument.metadata;
+                const tempDocument: Document = {
+                    document_title: document_title,
+                    comments: comments,
+                    score: compData,
+                    metadata: metadata,
+                };
+                setDocument(tempDocument);
+                if (notationRef.current) {
+                    score.current?.loadScoreDataObj(compData, render);
+                    console.log("LOADED SCORE DATA");
+                    // Now add it to the currently selected note
+                    if (selectedNoteId !== -1) {
+                        d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
+                    }
+                    createNewNoteBox();
+                }
+                setIsFetching(false);
+            }).catch((error) => {
+                // Getting the Error details.
+                const message = error.message;
+                console.log(`Error: ${message}`);
+                setIsFetching(false);
+                return;
+            });
     }
 
-        // check if the user has edit access and update tools accordingly
-        useEffect(() => {
-            doesUserHaveEditAccess();
-        }, []);
+    // check if the user has edit access and update tools accordingly
+    useEffect(() => {
+        doesUserHaveEditAccess();
+    }, []);
 
-        const doesUserHaveEditAccess = async () => {
-            // NOTE: documentId and userId are assumed to be set (but are probably not in reality) (move this code to somewhere where they are)
-            const data = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userId: userId.current,
-                    documentId: documentID.current,
-                })
-            };
-
-            const accessLevel = await fetch(CHECK_ACCESS_LEVEL_URL, data)
-                .then((res) => res.json().then((data) => {
-                    console.log(`Access Level Response: ${data.data}`);
-                    const hasWriteAccess: boolean = data.data >= ShareStyle.WRITE;
-                    setHasWriteAccess(hasWriteAccess);
-                    if(data.data <= ShareStyle.NONE)
-                    {
-                        router.push(`/no_access`);
-                    }
-                    if(!hasWriteAccess && notationRef.current){
-                        d3.select(notationRef.current)
-                    .on('click', null);
-                    }
-                    
-                }));
+    const doesUserHaveEditAccess = async () => {
+        // NOTE: documentId and userId are assumed to be set (but are probably not in reality) (move this code to somewhere where they are)
+        const data = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId: userId.current,
+                documentId: documentID.current,
+            })
         };
 
-        function useInterval(callback: () => void, delay: number | null) {
-            const savedCallback = useRef<() => void>();
-
-            // Remember the latest callback.
-            useEffect(() => {
-                savedCallback.current = callback;
-            }, [callback]);
-
-            // Set up the interval.
-            useEffect(() => {
-                function tick() {
-                    if (savedCallback.current) {
-                        savedCallback.current();
-                    }
+        const accessLevel = await fetch(CHECK_ACCESS_LEVEL_URL, data)
+            .then((res) => res.json().then((data) => {
+                console.log(`Access Level Response: ${data.data}`);
+                const hasWriteAccess: boolean = data.data >= ShareStyle.WRITE;
+                setHasWriteAccess(hasWriteAccess);
+                if (data.data <= ShareStyle.NONE) {
+                    router.push(`/no_access`);
                 }
-                if (delay !== null) {
-                    const id = setInterval(tick, delay);
-                    return () => clearInterval(id);
+                if (!hasWriteAccess && notationRef.current) {
+                    d3.select(notationRef.current)
+                        .on('click', null);
                 }
-            }, [delay]);
+
+            }));
+    };
+
+    function useInterval(callback: () => void, delay: number | null) {
+        const savedCallback = useRef<() => void>();
+
+        // Remember the latest callback.
+        useEffect(() => {
+            savedCallback.current = callback;
+        }, [callback]);
+
+        // Set up the interval.
+        useEffect(() => {
+            function tick() {
+                if (savedCallback.current) {
+                    savedCallback.current();
+                }
+            }
+            if (delay !== null) {
+                const id = setInterval(tick, delay);
+                return () => clearInterval(id);
+            }
+        }, [delay]);
+    }
+
+
+
+    // THIS FETCHES CHANGES PERIODICALLY
+    // UNCOMMENT below to actually do it.
+    // useInterval(() => {
+    //     // Your custom logic here
+    //     fetchChanges();
+    // }, 5000); // 5 seconds
+
+    const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
+        const value = event.currentTarget.value;
+        if (score.current === null) return;
+
+        score.current.setTitle(value);
+        let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
+
+        const changesTemp =
+        {
+            documentChanges: { score: exportedScoreDataObj },
+            documentId: documentID.current,
+            userId: userId.current
         }
-        
+        //console.log("Exporting Score data: " + printScoreData(exportedScoreDataObj));
+        var recordTemp: Record<string, unknown> = changes;
+        if (!('score' in recordTemp)) {
+            recordTemp['score'] = exportedScoreDataObj;
+        }
+        else {
+            (recordTemp['score'] as ScoreData) = exportedScoreDataObj;
+        }
+        setChanges(recordTemp);
 
-
-        // THIS FETCHES CHANGES PERIODICALLY
-        // UNCOMMENT below to actually do it.
-        // useInterval(() => {
-        //     // Your custom logic here
-        //     fetchChanges();
-        // }, 5000); // 5 seconds
-
-        const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
-            const value = event.currentTarget.value;
-            if (score.current === null) return;
-
-            score.current.setTitle(value);
-            let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
-
-            const changesTemp =
-            {
-                documentChanges: { score: exportedScoreDataObj },
-                documentId: documentID.current,
-                userId: userId.current
-            }
-            //console.log("Exporting Score data: " + printScoreData(exportedScoreDataObj));
-            var recordTemp: Record<string, unknown> = changes;
-            if (!('score' in recordTemp)) {
-                recordTemp['score'] = exportedScoreDataObj;
-            }
-            else {
-                (recordTemp['score'] as ScoreData) = exportedScoreDataObj;
-            }
-            setChanges(recordTemp);
-
-            await callAPI("checkDocumentChanges", changesTemp)
+        await callAPI("checkDocumentChanges", changesTemp)
             .then((res) => {
                 if (res.status !== 200) {
                     console.log("Error fetching changes");
@@ -867,109 +866,109 @@ export default function CompositionTool() {
                 console.log(`Error: ${message}`);
                 return;
             });
-        }
+    }
 
 
-        // loads in background
+    // loads in background
 
-        // for networking
-        useEffect(() => {
-            if (!loaded && userId.current !== '') {
-                var userInfo = {
-                    documentId: documentID.current,
-                    userId: userId.current,
-                    user_email: email.current,
-                    displayName: displayName.current
-                };
-                //console.log("document ID: " + documentID.current);
+    // for networking
+    useEffect(() => {
+        if (!loaded && userId.current !== '') {
+            var userInfo = {
+                documentId: documentID.current,
+                userId: userId.current,
+                user_email: email.current,
+                displayName: displayName.current
+            };
+            //console.log("document ID: " + documentID.current);
 
-                // if (userTemp === '1') {
-                //     userInfo = {
-                //         documentId: 'aco5tXEzQt7dSeB1WSlV',
-                //         userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
-                //         user_email: 'sophiad03@hotmail.com',
-                //         displayName: 'Sopa'
-                //     };
-                // }
-                // else if (userTemp === '2') {
-                //     userInfo = {
-                //         documentId: 'aco5tXEzQt7dSeB1WSlV',
-                //         userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
-                //         user_email: 'test-user-1@tune-tracer.com',
-                //         displayName: 'test_one'
-                //     }
+            // if (userTemp === '1') {
+            //     userInfo = {
+            //         documentId: 'aco5tXEzQt7dSeB1WSlV',
+            //         userId: '70E8YqG5IUMJ9DNMHtEukbhfwJn2',
+            //         user_email: 'sophiad03@hotmail.com',
+            //         displayName: 'Sopa'
+            //     };
+            // }
+            // else if (userTemp === '2') {
+            //     userInfo = {
+            //         documentId: 'aco5tXEzQt7dSeB1WSlV',
+            //         userId: 'OgGilSJwqCW3qMuHWlChEYka9js1',
+            //         user_email: 'test-user-1@tune-tracer.com',
+            //         displayName: 'test_one'
+            //     }
 
-                // }
-                // else {
-                //     return;
-                // }
-                //console.log("User Info: " + JSON.stringify(userInfo));
+            // }
+            // else {
+            //     return;
+            // }
+            //console.log("User Info: " + JSON.stringify(userInfo));
 
-                const POST_OPTION = {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(userInfo),
-                }
-                fetch(SUBSCRIBE_TO_DOC_URL, POST_OPTION)
-                    .then((res) => {
-                        // Read result of the Cloud Function.
-                        res.json().then((data) => {
-                            const compData: ScoreData = (data.data.document).score;
-                            const document_title: string = (data.data.document).document_title;
-                            const comments: Comment[] = (data.data.document).comments;
-                            const metadata: DocumentMetadata = (data.data.document).metadata;
-                            const tempDocument: Document = {
-                                document_title: document_title,
-                                comments: comments,
-                                score: compData,
-                                metadata: metadata,
-                            };
-                            setDocument(tempDocument);
-                            // console.log("Document:" + currentDocument);
-                            setLoadState(true);
-                            // console.log("Recieved Score data: " + printScoreData(compData));
-                            // if (notationRef.current) {
-                            //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
-                            // }
+            const POST_OPTION = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userInfo),
+            }
+            fetch(SUBSCRIBE_TO_DOC_URL, POST_OPTION)
+                .then((res) => {
+                    // Read result of the Cloud Function.
+                    res.json().then((data) => {
+                        const compData: ScoreData = (data.data.document).score;
+                        const document_title: string = (data.data.document).document_title;
+                        const comments: Comment[] = (data.data.document).comments;
+                        const metadata: DocumentMetadata = (data.data.document).metadata;
+                        const tempDocument: Document = {
+                            document_title: document_title,
+                            comments: comments,
+                            score: compData,
+                            metadata: metadata,
+                        };
+                        setDocument(tempDocument);
+                        // console.log("Document:" + currentDocument);
+                        setLoadState(true);
+                        // console.log("Recieved Score data: " + printScoreData(compData));
+                        // if (notationRef.current) {
+                        //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
+                        // }
 
-                            console.log("Document Loaded");
-                            var temp = !loaded;
-                            setLoadState(temp);
-                        });
-                    }).catch((error) => {
-                        // Getting the Error details.
-                        const message = error.message;
-                        console.log(`Error: ${message}`);
-                        return;
-                        // ...
+                        console.log("Document Loaded");
+                        var temp = !loaded;
+                        setLoadState(temp);
                     });
-                fetchChanges();
-            }
-        }, []);
+                }).catch((error) => {
+                    // Getting the Error details.
+                    const message = error.message;
+                    console.log(`Error: ${message}`);
+                    return;
+                    // ...
+                });
+            fetchChanges();
+        }
+    }, []);
 
-        useEffect(() => {
-            if (userTemp !== '1') {
-                console.log("No user");
-                return;
-            }
-            const intervalID = setInterval(() => {
+    useEffect(() => {
+        if (userTemp !== '1') {
+            console.log("No user");
+            return;
+        }
+        const intervalID = setInterval(() => {
 
-                const changesTemp =
-                {
-                    documentId: documentID.current,
-                    writerId: userId.current
-                }
-                const POST_OPTION = {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(changesTemp),
-                }
-                console.log(`Check Changes Input: ${JSON.stringify(changesTemp)}`);
-                callAPI("checkDocumentChanges", changesTemp)
+            const changesTemp =
+            {
+                documentId: documentID.current,
+                writerId: userId.current
+            }
+            const POST_OPTION = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(changesTemp),
+            }
+            console.log(`Check Changes Input: ${JSON.stringify(changesTemp)}`);
+            callAPI("checkDocumentChanges", changesTemp)
                 .then((res) => {
                     if (res.status !== 200) {
                         console.log("Error fetching changes");
@@ -993,381 +992,393 @@ export default function CompositionTool() {
                     console.log(`Error: ${message}`);
                     return;
                 });
-            }, 1000);
+        }, 1000);
 
-            return function stopChecking() {
-                clearInterval(intervalID);
-            }
-        }, [userTemp]);
-        useEffect(() => {
-            const svg = d3.select(notationRef.current).select('svg');
-        
-            svg.on('click', function (event) {
-                const targetElement = event.target as HTMLElement;
-        
-                const noteheadElement = targetElement.closest('.vf-notehead');
-        
-                if (noteheadElement) {
-                    const noteHeadId = noteheadElement.getAttribute('id');
-                    let newSelectedNoteHeadId = '';
-                    if (noteHeadId) {
-                        newSelectedNoteHeadId = noteHeadId;
-                        setSelectedNoteHeadId(noteHeadId);
+        return function stopChecking() {
+            clearInterval(intervalID);
+        }
+    }, [userTemp]);
+    useEffect(() => {
+        const svg = d3.select(notationRef.current).select('svg');
+
+        svg.on('click', function (event) {
+            const targetElement = event.target as HTMLElement;
+
+            const noteheadElement = targetElement.closest('.vf-notehead');
+
+            if (noteheadElement) {
+                const noteHeadId = noteheadElement.getAttribute('id');
+                let newSelectedNoteHeadId = '';
+                if (noteHeadId) {
+                    newSelectedNoteHeadId = noteHeadId;
+                    setSelectedNoteHeadId(noteHeadId);
+                }
+
+                const stavenoteElement = noteheadElement.closest('.vf-stavenote') as HTMLElement;
+
+                if (stavenoteElement) {
+                    const stavenoteId = stavenoteElement.getAttribute('id');
+                    let newSelectedNoteId = -1;
+                    if (stavenoteId) {
+                        newSelectedNoteId = parseInt(stavenoteId);
+                        setSelectedNoteId(newSelectedNoteId);
                     }
-        
-                    const stavenoteElement = noteheadElement.closest('.vf-stavenote') as HTMLElement;
-        
-                    if (stavenoteElement) {
-                        const stavenoteId = stavenoteElement.getAttribute('id');
-                        let newSelectedNoteId = -1;
-                        if (stavenoteId) {
-                            newSelectedNoteId = parseInt(stavenoteId);
-                            setSelectedNoteId(newSelectedNoteId);
-                        }
-        
-                        // Call getKeyFromNoteHead with the new values
-                        getKeyFromNoteHead(newSelectedNoteId, newSelectedNoteHeadId);
-                    } else {
-                        console.warn('Parent vf-stavenote element not found');
-                        setSelectedNoteId(-1);
-                        setSelectedNoteHeadId('');
-                        selectedKey.current = ''
-                    }
+
+                    // Call getKeyFromNoteHead with the new values
+                    getKeyFromNoteHead(newSelectedNoteId, newSelectedNoteHeadId);
                 } else {
-                    console.log('Clicked elsewhere');
-                    // Optionally reset selections
+                    console.warn('Parent vf-stavenote element not found');
                     setSelectedNoteId(-1);
                     setSelectedNoteHeadId('');
                     selectedKey.current = ''
                 }
-            });
-        
-            return () => {
-                svg.on('click', null);
-            };
-        }, [notationRef.current]);
-        
-        
-        // Gets the key of a note head
-        const getKeyFromNoteHead = (noteId: number, noteHeadId: string) => {
-            if (noteId !== -1 && noteHeadId !== '' && score.current) {
-                const staveNote = score.current.findNote(noteId);
-        
-                if (staveNote) {
-                    const noteHeads = staveNote.noteHeads;
-                    const keys = staveNote.getKeys();
-        
-                    for (let i = 0; i < noteHeads.length; i++) {
-                        const noteHeadElement = noteHeads[i].getSVGElement();
-                        const currentNoteHeadId = noteHeadElement?.getAttribute('id');
-                        if (currentNoteHeadId === noteHeadId) {
-                            const key = keys[i];
-                            selectedKey.current = key;
-                            return;
-                        }
-                    }
-                    console.warn('Note head ID not found in staveNote.noteHeads');
-                    selectedKey.current = ''
-                } else {
-                    console.warn('StaveNote not found for selectedNoteId');
-                    selectedKey.current = ''
-                }
             } else {
-                console.warn('Setting selected key to an empty string');
+                console.log('Clicked elsewhere');
+                // Optionally reset selections
+                setSelectedNoteId(-1);
+                setSelectedNoteHeadId('');
                 selectedKey.current = ''
             }
+        });
+
+        return () => {
+            svg.on('click', null);
         };
+    }, [notationRef.current]);
 
-        useEffect(() => {
-            console.log(`selectedKey is: ${selectedKey}`);
-        }, [selectedKey])
 
-        useEffect(() => {
-            // Clear existing highlighting
-            d3.selectAll('.vf-notehead').classed('selected-note', false);
-            d3.selectAll('.vf-stavenote').classed('selected-note', false);
-            
-            if (selectedNoteId !== null && selectedKey !== null && score.current) {
-                const staveNote = score.current.findNote(selectedNoteId);
-                createNewNoteBox();
-                if (staveNote) {
-                    const keys = staveNote.getKeys();
-                    const noteHeads = staveNote.noteHeads;
-        
-                    // Find the index of the selectedKey
-                    const index = keys.indexOf(selectedKey.current);
-        
-                    if (index !== -1 && index < noteHeads.length) {
-                        const noteHead = noteHeads[index];
-                        const noteHeadId = noteHead.getAttribute('id');
-        
-                        if (noteHeadId) {
-                            // Apply the 'selected-note' class to the notehead element
-                            d3.select(`[id="vf-${noteHeadId}"]`).classed('selected-note', true);
-                        }
-                    } else {
-                        console.warn('Selected key not found in keys');
+    // Gets the key of a note head
+    const getKeyFromNoteHead = (noteId: number, noteHeadId: string) => {
+        if (noteId !== -1 && noteHeadId !== '' && score.current) {
+            const staveNote = score.current.findNote(noteId);
+
+            if (staveNote) {
+                const noteHeads = staveNote.noteHeads;
+                const keys = staveNote.getKeys();
+
+                for (let i = 0; i < noteHeads.length; i++) {
+                    const noteHeadElement = noteHeads[i].getSVGElement();
+                    const currentNoteHeadId = noteHeadElement?.getAttribute('id');
+                    if (currentNoteHeadId === noteHeadId) {
+                        const key = keys[i];
+                        selectedKey.current = key;
+                        return;
+                    }
+                }
+                console.warn('Note head ID not found in staveNote.noteHeads');
+                selectedKey.current = ''
+            } else {
+                console.warn('StaveNote not found for selectedNoteId');
+                selectedKey.current = ''
+            }
+        } else {
+            console.warn('Setting selected key to an empty string');
+            selectedKey.current = ''
+        }
+    };
+
+    useEffect(() => {
+        console.log(`selectedKey is: ${selectedKey}`);
+    }, [selectedKey])
+
+    useEffect(() => {
+        // Clear existing highlighting
+        d3.selectAll('.vf-notehead').classed('selected-note', false);
+        d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+        if (selectedNoteId !== null && selectedKey !== null && score.current) {
+            const staveNote = score.current.findNote(selectedNoteId);
+            createNewNoteBox();
+            if (staveNote) {
+                const keys = staveNote.getKeys();
+                const noteHeads = staveNote.noteHeads;
+
+                // Find the index of the selectedKey
+                const index = keys.indexOf(selectedKey.current);
+
+                if (index !== -1 && index < noteHeads.length) {
+                    const noteHead = noteHeads[index];
+                    const noteHeadId = noteHead.getAttribute('id');
+
+                    if (noteHeadId) {
+                        // Apply the 'selected-note' class to the notehead element
+                        d3.select(`[id="vf-${noteHeadId}"]`).classed('selected-note', true);
                     }
                 } else {
-                    console.warn('StaveNote not found for selectedNoteId');
+                    console.warn('Selected key not found in keys');
                 }
+            } else {
+                console.warn('StaveNote not found for selectedNoteId');
             }
-            
-        }, [selectedNoteId, selectedKey.current, notationUpdated]);
-        
-
-        useEffect(() => {
-            // // First remove the selectd note class from previously selected note
-            // d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            // // Now add it to the currently selected note
-            // if (selectedNoteId !== -1) {
-            //     d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
-            // }
-
-            // Update the user cursor on the backend
-            // updateUserCursor();
-
-            // Keyboard shortcuts for adding notes
-            const handleKeyDown = (event: KeyboardEvent) => {
-                // Mapping of keyboard letters to note string
-                const trebleKeyToNoteMap: { [key: string]: string } = {
-                    'a': 'a/4',
-                    'b': 'b/4',
-                    'c': 'c/5',
-                    'd': 'd/5',
-                    'e': 'e/5',
-                    'f': 'f/5',
-                    'g': 'g/5',
-                };
-                const bassKeyToNoteMap: { [key: string]: string } = {
-                    'a': 'a/3',
-                    'b': 'b/3',
-                    'c': 'c/4',
-                    'd': 'd/4',
-                    'e': 'e/4',
-                    'f': 'f/4',
-                    'g': 'g/4',
-                }
-
-                let isTopNote: boolean = false;
-                if (score && score.current) {
-                    isTopNote = score.current.isTopMeasure(selectedNoteId);
-                }
-                const key = event.key.toLowerCase();
-                const note = (isTopNote ? trebleKeyToNoteMap[key] : bassKeyToNoteMap[key]);
-
-                // If a valid note was pressed and we have a note selected
-                if (note && selectedNoteId !== -1) {
-                    addNoteHandler([note], selectedNoteId);
-                    selectedKey.current = note;
-                }
-
-                // // If we press the up arrow, raise the pitch
-                // if (key === 'w') {
-                //     const newNotes = increasePitch(score, selectedNoteId);
-                //     const staveNote = score.current?.findNote(selectedNoteId);
-                //     if (staveNote) {
-                //         removeNoteHandler(staveNote.keys, selectedNoteId);
-                //         addNoteHandler(newNotes, selectedNoteId);
-                //         setNotationUpdated(prev => prev + 1);
-                //     }
-                // }
-                // If we press the w key, raise the pitch
-                if (key === 'w') {
-                    if (selectedNoteId !== null && selectedKey !== null) {
-                        const newKeys = increasePitch(score, selectedNoteId, selectedKey.current);
-                        const staveNote = score.current?.findNote(selectedNoteId);
-                        if (staveNote) {
-                            removeNoteHandler(staveNote.keys, selectedNoteId);
-                            addNoteHandler(newKeys, selectedNoteId);
-                            // Update selectedKey to the new pitch
-                            const newSelectedKey = shiftNoteUp(selectedKey.current);
-                            selectedKey.current = newSelectedKey;
-                            setNotationUpdated(prev => prev + 1);
-                        }
-                    }
-                }
-                
-
-                // If we press the down arrow, lower the pitch
-                if (key === 's') {
-                    if (selectedNoteId !== null && selectedKey !== null) {
-                        const newKeys = lowerPitch(score, selectedNoteId, selectedKey.current);
-                        const staveNote = score.current?.findNote(selectedNoteId);
-                        if (staveNote) {
-                            removeNoteHandler(staveNote.keys, selectedNoteId);
-                            addNoteHandler(newKeys, selectedNoteId);
-                            // Update selectedKey to the new pitch
-                            const newSelectedKey = shiftNoteDown(selectedKey.current);
-                            selectedKey.current = newSelectedKey;
-                            setNotationUpdated(prev => prev + 1);
-                        }
-                    }
-                }
-
-                // Remove a note if backspace if pressed
-                if (key === 'backspace') {
-                    removeNoteHandler([''], selectedNoteId);
-                }
-            };
-
-            // Attach the keydown event listener
-            const notationDiv = notationRef.current;
-            if (notationDiv) {
-                notationDiv.addEventListener('keydown', handleKeyDown);
-                // Make the div focusable to capture keyboard input
-                notationDiv.setAttribute('tabindex', '0');
-            }
-
-            // Clean up listener on ummount
-            return () => {
-                if (notationDiv) {
-                    notationDiv.removeEventListener('keydown', handleKeyDown);
-                }
-            }
-        }, [selectedNoteId]);
-
-        const createNewNoteBox: CreateNewNoteBoxType = () => {
-            if(!hasWriteAccess) return;
-            if(!notationRef.current || !score.current) return;
-            if(selectedNoteId === -1) return;
-            let note = score.current?.findNote(selectedNoteId);
-            let measure = score.current?.getMeasureFromNoteId(selectedNoteId);
-            if(!note || !measure) return;
-
-            notePlacementRectangleSVG.current?.remove();
-            notePlacementRectangleSVG.current = createPlaceNoteBox(note);
-            if(!notePlacementRectangleSVG.current) return;
-            notationRef.current.querySelector("svg")?.appendChild(notePlacementRectangleSVG.current);
-            notePlacementRectangleRef.current = d3.select(notePlacementRectangleSVG.current);
-
-            let svgBoxY = notePlacementRectangleSVG.current.getBoundingClientRect().top + 10;
-            attachMouseMoveListener(notePlacementRectangleRef.current, note, measure, svgBoxY, selectedKey.current);
-            attachMouseLeaveListener(notePlacementRectangleRef.current, note, measure);
-            setSelectedNoteId(attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId,svgBoxY, createNewNoteBox));
         }
-        
-        // Create PlaceNoteBox
-        // useEffect (() => {
-        //     createNewNoteBox();
-        // }, [selectedNoteId]);
 
-        useEffect(() => {
-            
-            // Attach the note selection handler to the notationRef container
-            d3.select(notationRef.current)
-                .on('click', function (event) {
-                    // Grab a reference to what we click on
-                    let targetElement = event.target;
+    }, [selectedNoteId, selectedKey.current, notationUpdated]);
 
-                    // Keep going up the DOM to look for an element that has the VF note class
-                    while (targetElement && !targetElement.classList.contains('vf-stavenote')) {
-                        targetElement = targetElement.parentElement;
-                    }
 
-                    // Check to see if we've found an element in the DOM with the class we're looking for
-                    if (targetElement && targetElement.classList.contains('vf-stavenote')) {
-                        const selectId = d3.select(targetElement).attr('id');
-                        setSelectedNoteId(parseInt(selectId));
-                    }
-                });
+    useEffect(() => {
+        // // First remove the selectd note class from previously selected note
+        // d3.selectAll('.vf-stavenote').classed('selected-note', false);
 
-            // Clean up the event listener when notationRef unmounts
-            return () => {
-                d3.select(notationRef.current).on('click', null);
+        // // Now add it to the currently selected note
+        // if (selectedNoteId !== -1) {
+        //     d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
+        // }
+
+        // Update the user cursor on the backend
+        // updateUserCursor();
+
+        // Keyboard shortcuts for adding notes
+        const handleKeyDown = (event: KeyboardEvent) => {
+            // Mapping of keyboard letters to note string
+            const trebleKeyToNoteMap: { [key: string]: string } = {
+                'a': 'a/4',
+                'b': 'b/4',
+                'c': 'c/5',
+                'd': 'd/5',
+                'e': 'e/5',
+                'f': 'f/5',
+                'g': 'g/5',
+            };
+            const bassKeyToNoteMap: { [key: string]: string } = {
+                'a': 'a/3',
+                'b': 'b/3',
+                'c': 'c/4',
+                'd': 'd/4',
+                'e': 'e/4',
+                'f': 'f/4',
+                'g': 'g/4',
             }
-        }, [notationRef.current])
 
-        const updateUserCursor = async () => {
-            if (selectedNoteId) {
-                const userInfo = {
-                    documentId: documentID.current,
-                    userId: userId,
-                    user_email: email,
-                    displayName: displayName,
-                    cursor: selectedNoteId
+            let isTopNote: boolean = false;
+            if (score && score.current) {
+                isTopNote = score.current.isTopMeasure(selectedNoteId);
+            }
+            const key = event.key.toLowerCase();
+            const note = (isTopNote ? trebleKeyToNoteMap[key] : bassKeyToNoteMap[key]);
+
+            // If a valid note was pressed and we have a note selected
+            if (note && selectedNoteId !== -1) {
+                addNoteHandler([note], selectedNoteId);
+                selectedKey.current = note;
+            }
+
+            // // If we press the up arrow, raise the pitch
+            // if (key === 'w') {
+            //     const newNotes = increasePitch(score, selectedNoteId);
+            //     const staveNote = score.current?.findNote(selectedNoteId);
+            //     if (staveNote) {
+            //         removeNoteHandler(staveNote.keys, selectedNoteId);
+            //         addNoteHandler(newNotes, selectedNoteId);
+            //         setNotationUpdated(prev => prev + 1);
+            //     }
+            // }
+            // If we press the w key, raise the pitch
+            if (key === 'w') {
+                if (selectedNoteId !== null && selectedKey !== null) {
+                    const staveNote = score.current?.findNote(selectedNoteId);
+                    if (staveNote) {
+                        let newSelectedKey = shiftNoteUp(selectedKey.current);
+                        let secondToLastKey = selectedKey.current;
+                        while (staveNote.getKeys().includes(newSelectedKey)) {
+                            secondToLastKey = newSelectedKey;
+                            newSelectedKey = shiftNoteUp(newSelectedKey);
+                        }
+                        const newKeys = increasePitch(score, selectedNoteId, secondToLastKey);
+                        selectedKey.current = newSelectedKey;
+                        removeNoteHandler(staveNote.keys, selectedNoteId);
+                        addNoteHandler(newKeys, selectedNoteId);
+                        // Update selectedKey to the new pitch
+
+                        setNotationUpdated(prev => prev + 1);
+                    }
                 }
+            }
 
-                const POST_OPTION = {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(userInfo)
+
+            // If we press the down arrow, lower the pitch
+            if (key === 's') {
+                if (selectedNoteId !== null && selectedKey !== null) {
+                    const staveNote = score.current?.findNote(selectedNoteId);
+                    if (staveNote) {
+                        let newSelectedKey = shiftNoteDown(selectedKey.current);
+                        let secondToLastKey = selectedKey.current;
+                        while (staveNote.getKeys().includes(newSelectedKey)) {
+                            secondToLastKey = newSelectedKey;
+                            newSelectedKey = shiftNoteDown(newSelectedKey);
+                        }
+                        const newKeys = lowerPitch(score, selectedNoteId, secondToLastKey);
+                        selectedKey.current = newSelectedKey;
+                        removeNoteHandler(staveNote.keys, selectedNoteId);
+                        addNoteHandler(newKeys, selectedNoteId);
+                        // Update selectedKey to the new pitch
+
+                        setNotationUpdated(prev => prev + 1);
+                    }
                 }
+            }
 
-                fetch(UPDATE_CURSOR_URL, POST_OPTION)
-                    .then((res) => {
-                        res.json().then((data) => {
-                            // console.log('Successfully called updateCursor endpoint');
-                            // console.log(`User cursor data: ${data.data}`);
-                        })
-                    })
+            // Remove a note if backspace if pressed
+            if (key === 'backspace') {
+                removeNoteHandler([''], selectedNoteId);
             }
         };
 
-        return (
-            <AppShell
-                header={{ height: 180 }}
-                // navbar={{
-                //     width: 150,
-                //     breakpoint: "sm",
-                // }}
-                // aside={{
-                //     width: 300,
-                //     breakpoint: "sm",
-                // }}
-                padding="md"
-                styles={{
-                    main: {
-                        backgroundColor: '#fafafa',
-                    },
-                }}
-            >
-                <AppShell.Main>
-                    <ToolbarHeader
-                        documentName={currentDocument.document_title}
-                        documentMetadata={currentDocument.metadata}
-                        modifyDurationInMeasure={modifyDurationHandler}
-                        selectedNoteId={selectedNoteId}
-                        playbackComposition={playbackAwaiter}
-                        stopPlayback={stopPlayback}
-                        volume={volume}
-                        onVolumeChange={setVolume}
-                        addMeasure={addMeasureHandler}
-                        removeMeasure={removeMeasureHandler}
-                        addTie={addTieHandler}
-                        removeTie={removeTieHandler}
-                        addSharp={addSharpHandler}
-                        addNatural={addNaturalHandler}
-                        addFlat={addFlatHandler}
-                        // removeAccidentals={removeAccidentalsHandler}
-                        setKeySignature={setKeySignatureHandler}
-                        handleDot={dotHandler}
-                        hasWriteAccess = {hasWriteAccess}
-                    />
-                    {/* <CommentAside /> */}
+        // Attach the keydown event listener
+        const notationDiv = notationRef.current;
+        if (notationDiv) {
+            notationDiv.addEventListener('keydown', handleKeyDown);
+            // Make the div focusable to capture keyboard input
+            notationDiv.setAttribute('tabindex', '0');
+        }
 
-                    {/* get rid of the background later, use it for formatting */}
-                    <Container
-                        fluid
-                        size="responsive"
-                        style={{
-                            justifyContent: "center",
-                            display: "flex",
-                            flexDirection: "column",
-                            textAlign: "center",
-                            background:
-                                "#FFFFFF",
-                            boxShadow: '0 0px 5px rgba(0, 0, 0, 0.3)', // Shadow effect
-                            borderRadius: '4px', // Rounded corners for a more "page" look
-                            margin: '20px', // Space around AppShell to enhance the effect
-                            border: '1px solid #e0e0e0', // Border around the AppShell
-                        }}
-                    >
-                        <Space h="xl"></Space>
-                        {/* <input
+        // Clean up listener on ummount
+        return () => {
+            if (notationDiv) {
+                notationDiv.removeEventListener('keydown', handleKeyDown);
+            }
+        }
+    }, [selectedNoteId]);
+
+    const createNewNoteBox: CreateNewNoteBoxType = () => {
+        if (!hasWriteAccess) return;
+        if (!notationRef.current || !score.current) return;
+        if (selectedNoteId === -1) return;
+        let note = score.current?.findNote(selectedNoteId);
+        let measure = score.current?.getMeasureFromNoteId(selectedNoteId);
+        if (!note || !measure) return;
+
+        notePlacementRectangleSVG.current?.remove();
+        notePlacementRectangleSVG.current = createPlaceNoteBox(note);
+        if (!notePlacementRectangleSVG.current) return;
+        notationRef.current.querySelector("svg")?.appendChild(notePlacementRectangleSVG.current);
+        notePlacementRectangleRef.current = d3.select(notePlacementRectangleSVG.current);
+
+        let svgBoxY = notePlacementRectangleSVG.current.getBoundingClientRect().top + 10;
+        attachMouseMoveListener(notePlacementRectangleRef.current, note, measure, svgBoxY, selectedKey.current);
+        attachMouseLeaveListener(notePlacementRectangleRef.current, note, measure);
+        setSelectedNoteId(attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId, svgBoxY, createNewNoteBox));
+    }
+
+    // Create PlaceNoteBox
+    // useEffect (() => {
+    //     createNewNoteBox();
+    // }, [selectedNoteId]);
+
+    useEffect(() => {
+
+        // Attach the note selection handler to the notationRef container
+        d3.select(notationRef.current)
+            .on('click', function (event) {
+                // Grab a reference to what we click on
+                let targetElement = event.target;
+
+                // Keep going up the DOM to look for an element that has the VF note class
+                while (targetElement && !targetElement.classList.contains('vf-stavenote')) {
+                    targetElement = targetElement.parentElement;
+                }
+
+                // Check to see if we've found an element in the DOM with the class we're looking for
+                if (targetElement && targetElement.classList.contains('vf-stavenote')) {
+                    const selectId = d3.select(targetElement).attr('id');
+                    setSelectedNoteId(parseInt(selectId));
+                }
+            });
+
+        // Clean up the event listener when notationRef unmounts
+        return () => {
+            d3.select(notationRef.current).on('click', null);
+        }
+    }, [notationRef.current])
+
+    const updateUserCursor = async () => {
+        if (selectedNoteId) {
+            const userInfo = {
+                documentId: documentID.current,
+                userId: userId,
+                user_email: email,
+                displayName: displayName,
+                cursor: selectedNoteId
+            }
+
+            const POST_OPTION = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userInfo)
+            }
+
+            fetch(UPDATE_CURSOR_URL, POST_OPTION)
+                .then((res) => {
+                    res.json().then((data) => {
+                        // console.log('Successfully called updateCursor endpoint');
+                        // console.log(`User cursor data: ${data.data}`);
+                    })
+                })
+        }
+    };
+
+    return (
+        <AppShell
+            header={{ height: 180 }}
+            // navbar={{
+            //     width: 150,
+            //     breakpoint: "sm",
+            // }}
+            // aside={{
+            //     width: 300,
+            //     breakpoint: "sm",
+            // }}
+            padding="md"
+            styles={{
+                main: {
+                    backgroundColor: '#fafafa',
+                },
+            }}
+        >
+            <AppShell.Main>
+                <ToolbarHeader
+                    documentName={currentDocument.document_title}
+                    documentMetadata={currentDocument.metadata}
+                    modifyDurationInMeasure={modifyDurationHandler}
+                    selectedNoteId={selectedNoteId}
+                    playbackComposition={playbackAwaiter}
+                    stopPlayback={stopPlayback}
+                    volume={volume}
+                    onVolumeChange={setVolume}
+                    addMeasure={addMeasureHandler}
+                    removeMeasure={removeMeasureHandler}
+                    addTie={addTieHandler}
+                    removeTie={removeTieHandler}
+                    addSharp={addSharpHandler}
+                    addNatural={addNaturalHandler}
+                    addFlat={addFlatHandler}
+                    // removeAccidentals={removeAccidentalsHandler}
+                    setKeySignature={setKeySignatureHandler}
+                    handleDot={dotHandler}
+                    hasWriteAccess={hasWriteAccess}
+                />
+                {/* <CommentAside /> */}
+
+                {/* get rid of the background later, use it for formatting */}
+                <Container
+                    fluid
+                    size="responsive"
+                    style={{
+                        justifyContent: "center",
+                        display: "flex",
+                        flexDirection: "column",
+                        textAlign: "center",
+                        background:
+                            "#FFFFFF",
+                        boxShadow: '0 0px 5px rgba(0, 0, 0, 0.3)', // Shadow effect
+                        borderRadius: '4px', // Rounded corners for a more "page" look
+                        margin: '20px', // Space around AppShell to enhance the effect
+                        border: '1px solid #e0e0e0', // Border around the AppShell
+                    }}
+                >
+                    <Space h="xl"></Space>
+                    {/* <input
                         type="text"
                         value={currentDocument?.score?.title}
                         onChange={handleScoreNameChange}
@@ -1380,12 +1391,12 @@ export default function CompositionTool() {
                         placeholder={userTemp}
                     />
                     <Button onClick={sendChanges}>Send Score change</Button>*/}
-                        {/* <Button onClick={fetchChanges}>fetch Score change</Button>  */}
-                        <div>
-                            <div ref={notationRef}></div>
-                        </div>
-                    </Container>
-                </AppShell.Main>
-            </AppShell>
-        );
-    }
+                    {/* <Button onClick={fetchChanges}>fetch Score change</Button>  */}
+                    <div>
+                        <div ref={notationRef}></div>
+                    </div>
+                </Container>
+            </AppShell.Main>
+        </AppShell>
+    );
+}
