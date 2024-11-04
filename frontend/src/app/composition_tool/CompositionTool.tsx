@@ -72,7 +72,8 @@ export default function CompositionTool() {
 
     // map of user ids to their online information
     const [onlineUsers, setOnlineUsers] = useState<Map<string, OnlineEntity>>(new Map<string, OnlineEntity>());
-    const [userList, setUserList] = useState<{ userId: string; displayName: string; color: string}[]>([]);
+    // const [userList, setUserList] = useState<{ userId: string; displayName: string; color: string}[]>([]);
+    const userList = useRef<{ userId: string; displayName: string; color: string }[]>();
     const displayNameCache = useRef<{ [userId: string]: string }>({});
 
     // Wrapper function to call modifyDurationInMeasure with the score object
@@ -1463,7 +1464,8 @@ export default function CompositionTool() {
                 });
               
                 // await Promise.all(promises);
-                setUserList(users);
+                // setUserList(users);
+                userList.current = users;
               };
               
           
@@ -1510,7 +1512,7 @@ export default function CompositionTool() {
                     handleDot={dotHandler}
                     hasWriteAccess={hasWriteAccess}
                     selectedKey = {selectedKey.current}
-                    userList = {userList}
+                    userList = {userList.current ? userList.current : []}
                 />
                 {/* <CommentAside /> */}
 
