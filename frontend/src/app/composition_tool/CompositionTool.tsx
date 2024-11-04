@@ -1488,7 +1488,7 @@ export default function CompositionTool() {
                     <Button onClick={sendChanges}>Send Score change</Button>*/}
                     {/* <Button onClick={fetchChanges}>fetch Score change</Button>  */}
                     <div>
-                        <div className="score" ref={notationRef}></div>
+                        <div ref={notationRef}></div>
                     </div>
                 </Container>
             </AppShell.Main>

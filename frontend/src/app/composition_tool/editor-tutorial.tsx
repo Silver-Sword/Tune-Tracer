@@ -7,10 +7,12 @@ interface TutorialProps {
 }
 
 const tutorialSteps: Step[] = [
-  { target: ".score", content: "does this work" },
+  { target: ".editable-title", content: "Click here to edit the title of your composition." },
+  { target: ".tabs", content: "Navigate between note and measure tools." },
+  { target: ".toolbar", content: "You can find your composing tools here from note durations, ties, and accidentals." },
+  { target: ".playback", content: "Listen to your composition using our playback tools." },
+  { target: ".keybinds", content: "Stuck on keybinds? No problem, supported keybinds are made visible here." },
   { target: ".share-button", content: "Share your masterpiece here." },
-//   { target: ".navbar-filters", content: "Filter compositions here." },
-//   { target: ".profile-menu", content: "Access your profile settings and log out here." },
   { target: ".tutorial-button", content: "Click here to view the tutorial again." },
 ];
 

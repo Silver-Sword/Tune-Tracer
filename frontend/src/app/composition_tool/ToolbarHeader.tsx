@@ -170,7 +170,8 @@ export const ToolbarHeader: React.FC<{
   const handleJoyrideCallback = (data: any) => {
     const { status, type } = data;
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
-  
+    console.log('data', data);
+
     if (finishedStatuses.includes(status)) {
       setRun(false);
     }
@@ -274,7 +275,7 @@ export const ToolbarHeader: React.FC<{
             </Group>
 
                 {/* Second layer (middle section) */}
-                <Group align="space-between" mt="xs" style={{ paddingBottom: "10px" }}>
+                <Group className="tabs" align="space-between" mt="xs" style={{ paddingBottom: "10px" }}>
                 {hasWriteAccess && <Tabs defaultValue="notes">
                     <Tabs.List>
                         <Tabs.Tab value="notes">Notes</Tabs.Tab>
@@ -284,7 +285,7 @@ export const ToolbarHeader: React.FC<{
         {/* Notes Tab */}
         <Tabs.Panel value="notes">
           <Space h="xs" />
-          <Group className="accidentals">
+          <Group className="toolbar">
             {/* Accidentals */}
             <Tooltip label="Add Natural" position="top" withArrow>
               <Button
@@ -528,7 +529,7 @@ export const ToolbarHeader: React.FC<{
                   <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "45px", width: " 50%" }}>
                     <KeybindModal />
                     <Tooltip label="Help" position="top" withArrow>
-                      <Button>Help</Button>
+                      <Button className="tutorial-button" onClick={() => setRun(true)}>Help</Button>
                     </Tooltip>
                   </div>
                 )}
