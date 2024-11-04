@@ -390,7 +390,7 @@ export const SharingModal: React.FC<SharingModalProps> = ({
           </>
         )}
       </Modal>
-      <Button onClick={open}>Share</Button>
+      <Button className="share-button" onClick={open}>Share</Button>
     </Group>
   );
 };
