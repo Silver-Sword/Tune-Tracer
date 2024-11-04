@@ -85,6 +85,7 @@ export const ToolbarHeader: React.FC<{
     // removeAccidentals: (keys: string, noteID: string) => void;
     setKeySignature: (keySignature: string) => void;
     hasWriteAccess: boolean;
+    selectedKey: string;
 }> = ({
     documentName,
     documentMetadata,
@@ -104,7 +105,8 @@ export const ToolbarHeader: React.FC<{
     handleDot,
     // removeAccidentals,
     setKeySignature,
-    hasWriteAccess
+    hasWriteAccess,
+    selectedKey
 }) => {
         // State to manage the input value
         const [inputValue, setInputValue] = useState("Untitled Score");
@@ -260,7 +262,7 @@ export const ToolbarHeader: React.FC<{
               <Button
                 size="compact-md"
                 variant="outline"
-                onClick={() => addNatural(["a/4"], selectedNoteId)}
+                onClick={() => addNatural([selectedKey], selectedNoteId)}
               >
                 <Image h={20} w="auto" fit="contain" src="/icons/natural.jpg" />
               </Button>
@@ -269,7 +271,7 @@ export const ToolbarHeader: React.FC<{
               <Button
                 size="compact-md"
                 variant="outline"
-                onClick={() => addSharp(["a/4"], selectedNoteId)}
+                onClick={() => addSharp([selectedKey], selectedNoteId)}
               >
                 <Image h={20} w="auto" fit="contain" src="/icons/Sharp.png" />
               </Button>
@@ -278,7 +280,7 @@ export const ToolbarHeader: React.FC<{
               <Button
                 size="compact-md"
                 variant="outline"
-                onClick={() => addFlat(["a/4"], selectedNoteId)}
+                onClick={() => addFlat([selectedKey], selectedNoteId)}
               >
                 <Image h={20} w="auto" fit="contain" src="/icons/flat.jpg" />
               </Button>

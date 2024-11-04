@@ -91,9 +91,11 @@ export class Measure {
                 if (note.dots > 0) newNote.addModifier(new this.VF.Dot());
                 if (note.dots > 1) newNote.addModifier(new this.VF.Dot());
                 note.modifiers.forEach((Modifier) => {
-                    if(Modifier.modifier.toLowerCase() === 'dot') return;
+                    if(!Modifier.modifier) return;
+                    let modifierType = Modifier.modifier.toLowerCase();
+                    if(modifierType !== '#' && modifierType !== 'b' && modifierType !== 'n') return;
                     const accidental = new Accidental(Modifier.modifier);
-                    newNote.addModifier(accidental, Modifier.index);
+                    newNote.addModifier(accidental, Modifier.index).setAttribute("mod", modifierType);
                 });
                 newNote.setModifierContext(new ModifierContext());
             });
@@ -183,8 +185,10 @@ export class Measure {
             modifiers.forEach((modifier) => {
                let modifierData: ModifierData = {
                 index: modifier.checkIndex(),
-                modifier: modifier.getAttribute("type")
+                modifier: modifier.getAttribute("mod")
                }
+               console.log("MODIFIER TYPE: " + modifier.getAttribute("mod"));
+               if(modifier.getAttribute("mod") === undefined)return;
                modifierDataArray.push(modifierData);
             });
 
@@ -301,10 +305,11 @@ export class Measure {
 
         this.voice1.getTickables().forEach(tickable => {
             let staveNote = tickable as StaveNote;
+            let modifiers = staveNote.getModifiers();
             if (staveNote.getAttributes().id === noteId) {
                 let countDots = staveNote.getModifiersByType('Dot').length;
                 let duration = staveNote.getDuration();
-                let modifiers = staveNote.getModifiers();
+                
                 let modiferContext = staveNote.getModifierContext();
                 if (countDots > 0) duration += "d";
                 if (countDots > 1) duration += "d";
@@ -653,8 +658,8 @@ export class Measure {
                         // Create Accidental
                         const accidental = new Accidental(modifier);
                         
-                        staveNote.addModifier(accidental, i);
-                        staveNote.getModifiers()[staveNote.getModifiers().length - 1].setAttribute("type",modifier);
+                        staveNote.addModifier(accidental, i).setAttribute("mod", modifier);
+                        //
                     }
                 }
 

@@ -50,6 +50,7 @@ export default function CompositionTool() {
     const [selectedNoteHeadId, setSelectedNoteHeadId] = useState<string>('');
     let selectedKey = useRef<string>('');
     const [isFetching, setIsFetching] = useState<boolean>(false);
+    const [isSending, setIsSending] = useState<boolean>(false);
     const notePlacementRectangleSVG = useRef<SVGElement | null>(null);
     const notePlacementRectangleRef = useRef<Selection<SVGElement, unknown, null, undefined> | null>(null);
     const [notationUpdated, setNotationUpdated] = useState<number>(0);
@@ -74,6 +75,8 @@ export default function CompositionTool() {
         if (score && score.current) {
 
             score.current.modifyDurationInMeasure(duration, noteId);
+            selectedNoteId.current = noteId;
+            setNotationUpdated(prev => prev + 1);
             sendChanges();
             // setTimeout(() => {
             //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
@@ -97,6 +100,9 @@ export default function CompositionTool() {
             if (dotType == 2) {
                 score.current.modifyDurationInMeasure(duration + "dd", noteId);
             }
+
+            selectedNoteId.current = noteId;
+            setNotationUpdated(prev => prev + 1);
 
             sendChanges();
             // setTimeout(() => {
@@ -130,6 +136,8 @@ export default function CompositionTool() {
     const addTieHandler = async (noteId: number) => {
         if (score && score.current) {
             score.current.addTie(noteId);
+            selectedNoteId.current = noteId;
+            setNotationUpdated(prev => prev + 1);
             sendChanges();
             // setTimeout(() => {
             //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
@@ -146,6 +154,8 @@ export default function CompositionTool() {
     const removeTieHandler = async (noteId: number) => {
         if (score && score.current) {
             score.current.removeTie(noteId);
+            selectedNoteId.current = noteId;
+            setNotationUpdated(prev => prev + 1);
             sendChanges();
             // setTimeout(() => {
             //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
@@ -162,6 +172,8 @@ export default function CompositionTool() {
     const addNaturalHandler = async (keys: string[], noteId: number) => {
         if (score && score.current) {
             score.current.addNatural(keys, noteId);
+            selectedNoteId.current = noteId;
+            setNotationUpdated(prev => prev + 1);
             sendChanges();
             // setTimeout(() => {
             //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
@@ -178,6 +190,8 @@ export default function CompositionTool() {
     const addSharpHandler = async (keys: string[], noteId: number) => {
         if (score && score.current) {
             score.current.addSharp(keys, noteId);
+            selectedNoteId.current = noteId;
+            setNotationUpdated(prev => prev + 1);
             sendChanges();
             // setTimeout(() => {
             //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
@@ -194,6 +208,8 @@ export default function CompositionTool() {
     const addFlatHandler = async (keys: string[], noteId: number) => {
         if (score && score.current) {
             score.current.addFlat(keys, noteId);
+            selectedNoteId.current = noteId;
+            setNotationUpdated(prev => prev + 1);
             sendChanges();
             // setTimeout(() => {
             //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
@@ -563,6 +579,8 @@ export default function CompositionTool() {
         if (score && score.current) {
 
             score.current.removeNote(keys, noteId);
+            selectedNoteId.current = noteId;
+            setNotationUpdated(prev => prev + 1);
             sendChanges();
 
             // setTimeout(() => {
@@ -677,11 +695,13 @@ export default function CompositionTool() {
         }
 
         sendChangesTimeout = setTimeout(async () => {
-            while (isFetching) {
+            while (isFetching || isSending) {
                 await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
             }
             if (score.current === null) return;
+            setIsSending(true);
             let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
+            console.log("exported Object: " + printScoreData(exportedScoreDataObj));
             const UPDATE_URL = 'https://us-central1-l17-tune-tracer.cloudfunctions.net/updatePartialDocument';
 
             const changesTemp =
@@ -703,17 +723,21 @@ export default function CompositionTool() {
             // setChanges(recordTemp);
 
             await callAPI("checkDocumentChanges", changesTemp);
+            setIsSending(false);
             // await fetch(UPDATE_URL, PUT_OPTION);
         }, debounceDelay);
     }
 
-    const fetchChanges = async (render: boolean = true) => {
+    const fetchChanges = async () => {
         const changesTemp =
         {
             documentId: documentID.current,
             writerId: userId.current
         };
-
+        sendChangesTimeout = setTimeout(async () => {
+            while (isSending || isFetching) {
+                await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
+            }
         console.log(JSON.stringify(changesTemp));
         setIsFetching(true);
         await callAPI("checkDocumentChanges", changesTemp)
@@ -742,7 +766,7 @@ export default function CompositionTool() {
                 };
                 setDocument(tempDocument);
                 if (notationRef.current) {
-                    score.current?.loadScoreDataObj(compData, render);
+                    score.current?.loadScoreDataObj(compData);
                     console.log("LOADED SCORE DATA");
                     // Now add it to the currently selected note
                     if (selectedNoteId.current !== -1) {
@@ -762,6 +786,7 @@ export default function CompositionTool() {
 
             setIsFetching(false);
             });
+        });
         // .catch((error) => {
         //         // Getting the Error details.
         //         const message = error.message;
@@ -831,10 +856,10 @@ export default function CompositionTool() {
 
     // THIS FETCHES CHANGES PERIODICALLY
     // UNCOMMENT below to actually do it.
-    useInterval(() => {
-        // Your custom logic here
-        fetchChanges();
-    }, 5000); // 5 seconds
+    // useInterval(() => {
+    //     // Your custom logic here
+    //     fetchChanges();
+    // }, 5000); // 5 seconds
 
     const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
         const value = event.currentTarget.value;
@@ -1403,6 +1428,7 @@ export default function CompositionTool() {
                     setKeySignature={setKeySignatureHandler}
                     handleDot={dotHandler}
                     hasWriteAccess={hasWriteAccess}
+                    selectedKey = {selectedKey.current}
                 />
                 {/* <CommentAside /> */}
 
@@ -1437,7 +1463,7 @@ export default function CompositionTool() {
                         placeholder={userTemp}
                     />
                     <Button onClick={sendChanges}>Send Score change</Button>*/}
-                    {/* <Button onClick={fetchChanges}>fetch Score change</Button>  */}
+                    <Button onClick={fetchChanges}>fetch Score change</Button> 
                     <div>
                         <div ref={notationRef}></div>
                     </div>
