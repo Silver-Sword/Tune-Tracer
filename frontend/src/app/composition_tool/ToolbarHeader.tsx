@@ -21,7 +21,6 @@ import { SharingModal } from "./sharing/SharingModal";
 import { KeybindModal } from "./KeybindModal";
 import {
     IconPlayerPlay,
-    IconPlayerPause,
     IconPlayerStop,
     IconVolume,
 } from "@tabler/icons-react";
@@ -29,9 +28,11 @@ import { getUserID } from "../cookie";
 import Link from 'next/link';
 import { callAPI } from "../../utils/callAPI";
 import { useSearchParams } from "next/navigation";
+import { STATUS, ACTIONS} from "react-joyride"
 
 import { DocumentMetadata } from "../lib/src/documentProperties";
 import { ShareStyle } from "../lib/src/documentProperties";
+import EditorTutorial from "./editor-tutorial";
 
 const keySignatures = [
   { label: "C Major", value: "C" },
@@ -155,9 +156,36 @@ export const ToolbarHeader: React.FC<{
             setMode(value);
         };
 
+        const [run, setRun] = useState(false);
+        // const [stepIndex, setStepIndex] = useState(0);
+        const [actions, setActions] = useState(ACTIONS);
+        const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []); 
+
+  // Something is wrong with the callback, not allowing to move forward in states
+  // Handle tutorial callback to manage step progression and tutorial completion
+  const handleJoyrideCallback = (data: any) => {
+    const { status, type } = data;
+    const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    console.log('data', data);
+
+    if (finishedStatuses.includes(status)) {
+      setRun(false);
+    }
+  };
+
+
         return (
             <AppShell.Header p="md">
-                <Group
+                {isClient && (
+                  <EditorTutorial
+                  run={run}
+                  onCallback={handleJoyrideCallback}
+                />)}
+            <Group
                     align="center"
                     style={{ borderBottom: "1px solid #eee", paddingBottom: "10px" }}
                 >
@@ -192,6 +220,7 @@ export const ToolbarHeader: React.FC<{
                         />
                     ) : (
                         <Text
+                            className="editable-title"
                             onClick={handleEdit}
                             style={{
                                 cursor: "text",
@@ -211,7 +240,7 @@ export const ToolbarHeader: React.FC<{
                     )}
 
                     {/* PlayBack UI */}
-                    <Container fluid style={{ width: "20%" }}>
+                    <Container fluid style={{ width: "20%" }} className="playback">
                         <Center>
                             <Group>
                                 <ActionIcon onClick={() => playbackComposition()}>
@@ -238,16 +267,15 @@ export const ToolbarHeader: React.FC<{
                     </Container>
 
                     {/* Sharing UI */}
-
-        {/* Select Dropdown should not be changable if not the owner */}
-        {hasWriteAccess && <SharingModal
-          documentTitle={inputValue}
-          metadata={documentMetadata}
-        />}
-      </Group>
+                    {/* Select Dropdown should not be changable if not the owner */}
+                    {hasWriteAccess && <SharingModal
+                      documentTitle={inputValue}
+                      metadata={documentMetadata}
+                    />}
+            </Group>
 
                 {/* Second layer (middle section) */}
-                <Group align="space-between" mt="xs" style={{ paddingBottom: "10px" }}>
+                <Group className="tabs" align="space-between" mt="xs" style={{ paddingBottom: "10px" }}>
                 {hasWriteAccess && <Tabs defaultValue="notes">
                     <Tabs.List>
                         <Tabs.Tab value="notes">Notes</Tabs.Tab>
@@ -257,7 +285,7 @@ export const ToolbarHeader: React.FC<{
         {/* Notes Tab */}
         <Tabs.Panel value="notes">
           <Space h="xs" />
-          <Group>
+          <Group className="toolbar">
             {/* Accidentals */}
             <Tooltip label="Add Natural" position="top" withArrow>
               <Button
@@ -501,7 +529,7 @@ export const ToolbarHeader: React.FC<{
                   <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "45px", width: " 16%", marginLeft: "auto", flexWrap: "nowrap"}}>
                     <KeybindModal />
                     <Tooltip label="Help" position="top" withArrow>
-                      <Button>Help</Button>
+                      <Button className="tutorial-button" onClick={() => setRun(true)}>Help</Button>
                     </Tooltip>
                   </div>
                 )}
