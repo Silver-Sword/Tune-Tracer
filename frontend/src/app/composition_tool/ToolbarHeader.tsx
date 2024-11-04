@@ -544,7 +544,7 @@ useEffect(() => {
           
                   
                 {hasWriteAccess && (
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "45px", width: " 16%", marginLeft: "auto", flexWrap: "nowrap"}}>
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "45px", width: " 30%", marginLeft: "auto", flexWrap: "nowrap"}}>
                     <KeybindModal />
                     <Tooltip label="Help" position="top" withArrow>
                       <Button className="tutorial-button" onClick={() => setRun(true)}>Help</Button>

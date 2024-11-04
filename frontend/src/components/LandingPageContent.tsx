@@ -19,7 +19,15 @@ export function ContentSectionLeftText({ title, description, imageSrc, imageAlt,
         </Title>
         {description}
       </Box>
-      <Image src={imageSrc} alt={imageAlt} style={{ flex: imageWidth }} radius="md" />
+      <Image 
+        src={imageSrc} 
+        alt={imageAlt} 
+        style={{
+          boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
+          borderRadius: '8px', // Optional: rounded corners
+          flex: imageWidth
+        }}
+        radius="md" />
     </Flex>
   )
 }
@@ -28,7 +36,15 @@ export function ContentSectionRightText({ title, description, imageSrc, imageAlt
   const imageWidth = 12 - textWidth
   return (
     <Flex gap={50} align="center">
-      <Image src={imageSrc} alt={imageAlt} style={{ flex: imageWidth }} radius="md" />
+      <Image 
+        src={imageSrc} 
+        alt={imageAlt} 
+        style={{
+          boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
+          borderRadius: '8px', // Optional: rounded corners
+          flex: imageWidth 
+        }} 
+        radius="md" />
       <Box style={{ flex: textWidth }}>
         <Title order={2} size={36} mb="xl">
           {title}
