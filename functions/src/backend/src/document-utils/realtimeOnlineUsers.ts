@@ -25,6 +25,11 @@ export async function subscribeUserToUserDocumentPool(
     await firebase.subscribeToOnlineUsers(documentId, updateOnlineUserPoolFn);
 }
 
+export async function getUserPool(documentId: string): Promise<OnlineEntity[]> {
+    const firebase = getFirebase();
+    return await firebase.getAllCurrentOnlineUsers(documentId);
+}
+
 /**
  * Records an update to the online user. Useful for updating the cursor information or 
  * updating the last time a user was active.

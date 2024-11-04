@@ -3,6 +3,7 @@ import { Document } from "./backend/src/lib/src/Document";
 import { UpdateType } from "./backend/src/lib/src/UpdateType";
 import { admin_subscribeToDocument } from "./backend/src/document-utils/realtimeDocumentUpdates";
 import { getDocument } from "./backend/src/document-utils/documentOperations";
+import { getUserPool } from "./backend/src/document-utils/realtimeOnlineUsers";
 
 type DocumentMapData = {
   document: Document | undefined;
@@ -19,13 +20,13 @@ export function getServerId() {
 
 export async function ensureMapData(
   documentId: string,
-  alreadySubscribed: boolean = false
+  isAlreadySubscribed: boolean = false
 ) {
   if (!documentDataMap[documentId]) {
     documentDataMap[documentId] = {
       document: undefined,
-      onlineUsers: {},
-      isServerSubscribed: alreadySubscribed,
+      onlineUsers: undefined,
+      isServerSubscribed: isAlreadySubscribed,
     };
   }
 
@@ -36,7 +37,16 @@ export async function ensureMapData(
     );
   }
   if (!documentDataMap[documentId].onlineUsers) {
-    documentDataMap[documentId].onlineUsers = {}; // TO DO: populate this
+    const currentPool: OnlineEntity[] = await getUserPool(documentId);
+    documentDataMap[documentId].onlineUsers = currentPool.reduce(
+      (acc: Record<string, OnlineEntity>, onlineEntity: OnlineEntity) => {
+        if (onlineEntity.user_id) {
+          acc[onlineEntity.user_id] = onlineEntity;
+        }
+        return acc;
+      },
+      {}
+    );
   }
   if (!documentDataMap[documentId].isServerSubscribed) {
     await subscribeServerToDocument(documentId);

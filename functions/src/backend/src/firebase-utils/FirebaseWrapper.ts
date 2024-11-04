@@ -377,6 +377,20 @@ export default class FirebaseWrapper
         });
     }
 
+    public async getAllCurrentOnlineUsers(documentId: string): Promise<OnlineEntity[]> {
+        const presenceReference = firebase.database().ref(`/presence/${documentId}/users`);
+    
+        const snapshot = await presenceReference.once('value');
+        const users: OnlineEntity[] = [];
+    
+        snapshot.forEach((childSnapshot) => {
+            const user = childSnapshot.val();
+            users.push(user);
+        });
+    
+        return users;
+    }
+
     public async getShareCodeEntity(shareCode: string): Promise<ShareCodeEntity | null>
     {
         return this.getDataFromFirestore(SHARE_CODE_DATABASE, shareCode);
