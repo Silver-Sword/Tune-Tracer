@@ -62,7 +62,7 @@ const sections = [
   { id: 'store', label: 'Store' },
   { id: 'collaborate', label: 'Collaborate' },
   { id: 'playback', label: 'Playback' },
-  { id: 'security', label: 'Security' },
+  // { id: 'security', label: 'Security' },
   { id: 'faqs', label: 'FAQs' },
 ]
 
@@ -116,7 +116,15 @@ export default function LandingPage() {
         <AppShell.Header style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <Flex h={60} px="md" align="center" justify="space-between">
             <Group style={{ textDecoration: 'none', color: 'inherit' }}>
-              <IconMusic size={30} style={{ color: '#228be6' }} />
+              {/* <IconMusic size={30} style={{ color: '#228be6' }} /> */}
+              <Image
+                  src="/logo192.png"
+                  alt="Tune Tracer Logo"
+                  h={40}
+                  w="auto"
+                  // style={{ flex: 1 }}
+                  // radius="md"
+                />
               <Text size="xl" fw={700}>
                 Tune Tracer
               </Text>
@@ -153,12 +161,12 @@ export default function LandingPage() {
                     </Button>
                   </Group>
                 </div>
-                <Image
+                {/* <Image
                   src="/placeholder.svg?height=400&width=500"
                   alt="Tune Tracer Interface"
                   style={{ flex: 1 }}
                   radius="md"
-                />
+                /> */}
               </Flex>
             </Box>
 
@@ -231,14 +239,14 @@ export default function LandingPage() {
               />
             </Box>
 
-            <Box id="security" py={120}>
+            {/* <Box id="security" py={120}>
               <ContentSectionVertical
                 title="Security"
                 description={<Text size="lg" c="dimmed">Your compositions are protected with enterprise-grade security. Control access and maintain the privacy of your musical creations.</Text>}
                 imageSrc="/placeholder.svg?height=300&width=400"
                 imageAlt="Security Features"
               />
-            </Box>
+            </Box> */}
 
             
 
