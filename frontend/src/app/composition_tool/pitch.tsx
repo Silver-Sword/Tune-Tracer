@@ -3,7 +3,6 @@
 import { Score } from "../edit/Score";
 
 export const shiftNoteUp = (note: string) => {
-    console.log(`The note ${note} was passed to shiftNoteUp`);
     const noteSequence = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
     const [noteLetter, octave] = note.split('/');  // Example: 'C/4' -> 'C' and '4'
     let noteIndex = noteSequence.indexOf(noteLetter);

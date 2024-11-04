@@ -295,7 +295,6 @@ export class Measure {
         if (!this.voice1) return null;
 
         const VF = Vex.Flow;
-        console.log("adding note noteID: " + noteId);
         const notes: StaveNote[] = [];
         let newNote: StaveNote | null = null;
 
@@ -389,7 +388,6 @@ export class Measure {
                         keys: [this.getRestLocation(noteDuration)],
                         duration: noteDuration,
                     });
-                    console.log("Making a new note: " + note.getKeys());
                     notes.push(note);
                 }
                 fillTicks -= count * tickValue;  // Subtract the total ticks of these notes

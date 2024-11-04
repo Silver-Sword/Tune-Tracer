@@ -36,6 +36,7 @@ const DEFAULT_RENDERER_HEIGHT = 2000;
 
 // Define the type
 export type SendChangesType = () => Promise<void>;
+export type CreateNewNoteBoxType = () => void;
 
 export default function CompositionTool() {
     const router = useRouter();
@@ -628,7 +629,7 @@ export default function CompositionTool() {
         displayName.current = getDisplayName();
         userId.current = getUserID();
         documentID.current = searchParams.get('id') || 'null';
-        console.log(`Document ID: ${documentID.current}`);
+        //console.log(`Document ID: ${documentID.current}`);
 
         loadSamples();
         clearSVG();
@@ -696,7 +697,6 @@ export default function CompositionTool() {
             // setChanges(recordTemp);
 
             await callAPI("checkDocumentChanges", changesTemp);
-            console.log("Selected KEy after export: " + selectedKey);
             // await fetch(UPDATE_URL, PUT_OPTION);
         }, debounceDelay);
     }
@@ -723,7 +723,7 @@ export default function CompositionTool() {
                 setIsFetching(false);
                 return;
             }
-            console.log("Recieved Score data: " + JSON.stringify(receivedDocument));
+            //console.log("Recieved Score data: " + JSON.stringify(receivedDocument));
             const compData: ScoreData = receivedDocument.score;
             const document_title: string = receivedDocument.document_title;
             const comments: Comment[] = receivedDocument.comments;
@@ -738,10 +738,8 @@ export default function CompositionTool() {
             if (notationRef.current) {
                 score.current?.loadScoreDataObj(compData, render);
                 console.log("LOADED SCORE DATA");
-                console.log("asd selectedNoteId: " + selectedNoteId);
                 // Now add it to the currently selected note
                 if (selectedNoteId !== -1) {
-                    console.log("Reached selectedNoteId: " + selectedNoteId);
                     d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
                 }
                 createNewNoteBox();
@@ -883,7 +881,7 @@ export default function CompositionTool() {
                     user_email: email.current,
                     displayName: displayName.current
                 };
-                console.log("document ID: " + documentID.current);
+                //console.log("document ID: " + documentID.current);
 
                 // if (userTemp === '1') {
                 //     userInfo = {
@@ -905,7 +903,7 @@ export default function CompositionTool() {
                 // else {
                 //     return;
                 // }
-                console.log("User Info: " + JSON.stringify(userInfo));
+                //console.log("User Info: " + JSON.stringify(userInfo));
 
                 const POST_OPTION = {
                     method: 'POST',
@@ -1088,18 +1086,16 @@ export default function CompositionTool() {
             // Clear existing highlighting
             d3.selectAll('.vf-notehead').classed('selected-note', false);
             d3.selectAll('.vf-stavenote').classed('selected-note', false);
-        
+            
             if (selectedNoteId !== null && selectedKey !== null && score.current) {
                 const staveNote = score.current.findNote(selectedNoteId);
-        
+                createNewNoteBox();
                 if (staveNote) {
                     const keys = staveNote.getKeys();
                     const noteHeads = staveNote.noteHeads;
         
                     // Find the index of the selectedKey
-                    console.log(`Trying to find the indexOf: **${selectedKey}**`);
                     const index = keys.indexOf(selectedKey.current);
-                    console.log(`Index of selectedKey is: ${index}`);
         
                     if (index !== -1 && index < noteHeads.length) {
                         const noteHead = noteHeads[index];
@@ -1115,9 +1111,9 @@ export default function CompositionTool() {
                 } else {
                     console.warn('StaveNote not found for selectedNoteId');
                 }
-                console.log(`After all is said and done. Selected Key: ${selectedKey}`);
             }
-        }, [selectedNoteId, selectedKey, notationUpdated]);
+            
+        }, [selectedNoteId, selectedKey.current, notationUpdated]);
         
 
         useEffect(() => {
@@ -1164,7 +1160,6 @@ export default function CompositionTool() {
                 // If a valid note was pressed and we have a note selected
                 if (note && selectedNoteId !== -1) {
                     addNoteHandler([note], selectedNoteId);
-                    console.log("this thingamabob rann");
                     selectedKey.current = note;
                 }
 
@@ -1233,8 +1228,7 @@ export default function CompositionTool() {
             }
         }, [selectedNoteId]);
 
-        function createNewNoteBox()
-        {
+        const createNewNoteBox: CreateNewNoteBoxType = () => {
             if(!hasWriteAccess) return;
             if(!notationRef.current || !score.current) return;
             if(selectedNoteId === -1) return;
@@ -1249,15 +1243,15 @@ export default function CompositionTool() {
             notePlacementRectangleRef.current = d3.select(notePlacementRectangleSVG.current);
 
             let svgBoxY = notePlacementRectangleSVG.current.getBoundingClientRect().top + 10;
-            attachMouseMoveListener(notePlacementRectangleRef.current, note, measure, svgBoxY);
+            attachMouseMoveListener(notePlacementRectangleRef.current, note, measure, svgBoxY, selectedKey.current);
             attachMouseLeaveListener(notePlacementRectangleRef.current, note, measure);
-            setSelectedNoteId(attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId,svgBoxY));
+            setSelectedNoteId(attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId,svgBoxY, createNewNoteBox));
         }
         
         // Create PlaceNoteBox
-        useEffect (() => {
-            createNewNoteBox();
-        }, [selectedNoteId]);
+        // useEffect (() => {
+        //     createNewNoteBox();
+        // }, [selectedNoteId]);
 
         useEffect(() => {
             
