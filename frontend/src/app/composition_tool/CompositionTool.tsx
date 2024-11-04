@@ -765,7 +765,8 @@ export default function CompositionTool() {
             }
 
             setIsFetching(false);
-        }).catch((error) => {
+        })
+        .catch((error) => {
             // Getting the Error details.
             const message = error.message;
             console.log(`Error: ${message}`);
