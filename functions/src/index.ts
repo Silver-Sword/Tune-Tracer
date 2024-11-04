@@ -9,8 +9,6 @@
 
 "use strict";
 
-import { getDocument } from "./backend/src/document-utils/documentOperations";
-
 // [START all]
 // [START import]
 // The Cloud Functions for Firebase SDK to setup triggers and logging.
@@ -84,6 +82,16 @@ const {
 const {
   getUserAccessLevel,
 } = require("./backend/src/security-utils/getUserAccessLevel");
+
+const {
+  genDocumentFromMap,
+  genUpdateDocumentMap,
+  genUsersFromMap,
+  genUpdateUserMap,
+  subscribeServerToDocument,
+  getServerId,
+  ensureMapData
+} = require("./manageServerData");
 
 const cors = require("cors");
 const corsHandler = cors({ origin: true });
@@ -566,85 +574,7 @@ exports.deleteDocument = functions.https.onRequest(
   }
 );
 
-// ------------------------ START OF THE MINE FIELD ------------------------
-var documentMap = new Map<string, typeof LibDocument>();
-var userMap = new Map<string, Record<string, typeof OnlineEntity>>();
-var isServerSubscribed = false;
-const SERVER_ID = Date.now() % 1000;
-
-function updateDocumentMap(documentId: string, document: typeof LibDocument) {
-  const oldDocument = documentMap.get(documentId);
-
-  if(
-    oldDocument === undefined || 
-    oldDocument.metadata.last_edit_time < document.metadata.last_edit_time
-  ){
-    documentMap.set(documentId, document);
-    console.log(`Server id ${SERVER_ID} updated document ${documentId} with LET ${document.metadata.last_edit_time}`);
-  }
-}
-
-async function genDocumentFromMap(documentId: string, userId: string) {
-  if(!documentMap.has(documentId)) {
-    if(!isServerSubscribed) {
-      await subscribeServerToDocument(documentId);
-    }
-    const doc = await getDocument(documentId, userId);
-    console.log(`Server id ${SERVER_ID} received document ${documentId} with LET ${doc.metadata.last_edit_time}`);
-    updateDocumentMap(documentId, doc);
-  }
-  return documentMap.get(documentId);
-}
-
-function getUsersFromMap(documentId: string) {
-  const users = userMap?.get(documentId) ?? {};
-  if("undefined" in users) {
-    delete users["undefined"];
-  } 
-  return users;
-}
-
-function updateUserMap(
-  documentId: string,
-  onlineEntity: typeof OnlineEntity,
-  isRemove: boolean
-) {
-  if(onlineEntity === undefined || onlineEntity.user_id === undefined) {
-    console.error(`Invalid online entity: ${onlineEntity ? JSON.stringify(onlineEntity) : "undefined"}`);
-    return;
-  }
-
-  if(!userMap.has(documentId)) {
-    userMap.set(documentId, {});
-  }
-
-  const users = userMap.get(documentId)!;
-
-  if (isRemove) {
-    delete users[onlineEntity.user_id];
-  } else {
-    const oldOnlineEntity = users[onlineEntity.user_id];
-    if(oldOnlineEntity === undefined || oldOnlineEntity.last_active_time < onlineEntity.last_active_time) {
-      users[onlineEntity.user_id] = onlineEntity;
-    }
-  }
-}
-
-async function subscribeServerToDocument(documentId: string) {
-  if(!isServerSubscribed) {
-    isServerSubscribed = true;
-    await admin_subscribeToDocument(
-      documentId,
-      (updatedDocument: typeof LibDocument) => {
-        updateDocumentMap(documentId, updatedDocument);
-      },
-      (updateType: typeof UpdateType, onlineEntity: typeof OnlineEntity) => {
-        updateUserMap(documentId, onlineEntity, updateType === UpdateType.REMOVE);
-      }
-    );
-  }
-}
-
+// ------------------------ START OF THE MINE FIELD ------------------------ 
 // assumes that subscribeToDocument is called first
 exports.checkDocumentChanges = functions.https.onRequest(
   async (request: any, response: any) => {
@@ -689,12 +619,14 @@ exports.checkDocumentChanges = functions.https.onRequest(
           }
           
           const currentDocument = await genDocumentFromMap(documentId, writerId);
-          console.log(`Server id ${SERVER_ID} served document ${documentId} with LET ${currentDocument.metadata.last_edit_time}`);
+          const currentUsers = await genUsersFromMap(documentId);
+
+          console.log(`Server id ${getServerId()} served document ${documentId} with LET ${currentDocument.metadata.last_edit_time}`);
           response.status(StatusCode.OK).send({
             message: "Successfully checked document changes",
             data: {
               document: currentDocument, 
-              onlineUsers: getUsersFromMap(documentId),
+              onlineUsers: currentUsers,
             },
           });
         }
@@ -736,18 +668,19 @@ exports.subscribeToDocument = functions.https.onRequest(
             display_name: displayName as string,
           };
 
-          isServerSubscribed = true;
+          await ensureMapData(documentId, true);
+          console.log(`Server id ${getServerId()} subscribed to document ${documentId}`);
           await subscribeToDocument(
             documentId,
             user,
             (updatedDocument: typeof LibDocument) => {
-              updateDocumentMap(documentId, updatedDocument);
+              genUpdateDocumentMap(documentId, updatedDocument);
             },
             (
               updateType: typeof UpdateType,
               onlineEntity: typeof OnlineEntity
             ) => {
-              updateUserMap(documentId, onlineEntity, updateType === UpdateType.REMOVE);
+              genUpdateUserMap(documentId, onlineEntity, updateType === UpdateType.REMOVE);
             },
             false
           );
@@ -756,7 +689,7 @@ exports.subscribeToDocument = functions.https.onRequest(
             message: "Successfully subscribed to document",
             data: {
               document: await genDocumentFromMap(documentId, userId),
-              onlineUsers: getUsersFromMap(documentId),
+              onlineUsers: await genUsersFromMap(documentId),
             },
           });
         }
@@ -836,7 +769,7 @@ exports.updateUserCursor = functions.https.onRequest(
           // Send a successful response back
           response.status(StatusCode.OK).send({
             message: "Updated user cursor",
-            data: Array.from(userMap.values()),
+            data: true,
           });
         }
       } catch (error) {
