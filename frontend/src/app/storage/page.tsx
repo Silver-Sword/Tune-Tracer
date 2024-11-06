@@ -251,9 +251,9 @@ export default function Storage() {
             <Image
               src="/TuneTracerLogo.png"
               alt="TuneTracer Logo"
+              h={50}
+              w="auto"
               fit="contain"
-              width={50}
-              height={50}
             />
             <SearchBar 
               onSearch={handleSearch}
