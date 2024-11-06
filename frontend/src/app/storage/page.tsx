@@ -33,7 +33,7 @@ import { getSharedPreviews, getOwnPreviews } from "./documentPreviewsData";
 // Define filter labels for the navbar
 const filterLabels = [
   { link: "", label: "My Compositions" },
-  { link: "", label: "Shared with you" },
+  { link: "", label: "Shared with me" },
   // { link: "", label: "Favorites" },
 ];
 
@@ -46,7 +46,7 @@ const FiltersNavbar: React.FC<{ getOwnPreviews: () => void, getSharedPreviews: (
     if (label == "My Compositions") {
       getOwnPreviews();
     }
-    else if (label == "Shared with you") {
+    else if (label == "Shared with me") {
       getSharedPreviews();
     }
     console.log(`Filter selected: ${label}`);
