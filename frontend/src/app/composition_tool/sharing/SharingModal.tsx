@@ -256,6 +256,20 @@ export const SharingModal: React.FC<SharingModalProps> = ({
     }
   };
 
+  const handleShareStyleUpdate = async (newAccessType: "restricted" | "anyone", newAccessLevel: "Viewer" | "Editor", documentId: string) => {
+    setIsUpdating(true);
+    try {
+      const response = await updateDocumentShareStyle(newAccessType, newAccessLevel, documentId);
+      if(response.status !== 200) {
+        console.error(`Failed to update share style: ${response.message}`);
+      }
+    } catch (error) {
+      console.error("Error updating share style:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
   return (
     <Group>
       <Modal
@@ -326,15 +340,16 @@ export const SharingModal: React.FC<SharingModalProps> = ({
             onChange={(value) => {
                 const newAccessType = value as "restricted" | "anyone";
                 setAccessType(newAccessType);
-                updateDocumentShareStyle(newAccessType, accessLevel, documentId);
+                handleShareStyleUpdate(newAccessType, accessLevel, documentId);
               }
             }
             data={[
               { value: "restricted", label: "Restricted" },
               { value: "anyone", label: "Anyone with link/code" },
             ]}
-            disabled={metadata?.owner_id !== getUserID()}
             style={{ width: 200 }}
+            disabled={metadata?.owner_id !== getUserID()}
+            allowDeselect={false}
           />
           {accessType === "anyone" && (
             <Group align="right">
@@ -345,7 +360,7 @@ export const SharingModal: React.FC<SharingModalProps> = ({
                 onChange={(value) => {
                     const newAccessLevel = value as "Viewer" | "Editor";
                     setAccessLevel(newAccessLevel);
-                    updateDocumentShareStyle(accessType, newAccessLevel, documentId);
+                    handleShareStyleUpdate(accessType, newAccessLevel, documentId);
                   }
                 }
                 data={[
@@ -354,6 +369,7 @@ export const SharingModal: React.FC<SharingModalProps> = ({
                 ]}
                 disabled={metadata?.owner_id !== getUserID()}
                 style={{ width: 150, align: "right" }}
+                allowDeselect={false}
               />
             </Group>
           )}

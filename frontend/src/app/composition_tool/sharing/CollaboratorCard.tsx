@@ -43,6 +43,7 @@ export const CollaboratorCard: React.FC<CollaboratorProps> = ({ name, email, rol
         ]}
         style={{ width: 150 }}
         disabled={isDisabled}
+        allowDeselect={false}
       />
     </Group>
   );
