@@ -7,6 +7,7 @@ export const shiftNoteUp = (note: string) => {
     const [noteLetter, octave] = note.split('/');  // Example: 'C/4' -> 'C' and '4'
     let noteIndex = noteSequence.indexOf(noteLetter);
     let newOctave = parseInt(octave);
+    if(newOctave >= 8) return `${noteLetter}/${newOctave}`;
 
     // Move to the next note in the sequence
     if (noteIndex < noteSequence.length - 1) {
@@ -28,6 +29,8 @@ export const shiftNoteDown = (note: string) => {
     const [noteLetter, octave] = note.split('/');
     let noteIndex = noteSequence.indexOf(noteLetter);
     let newOctave = parseInt(octave);
+
+    if(newOctave <= 0) return `${noteLetter}/${newOctave}`;
 
     // Move to the previous note in the sequence
     if (noteIndex > 0) {
