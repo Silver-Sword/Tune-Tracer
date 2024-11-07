@@ -15,10 +15,12 @@ export default function Login() {
     const [error, setError] = useState<string>('');
     const [isShaking, setIsShaking] = useState(false);
     const router = useRouter();
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
 
     const triggerError = async (errorMessage: string) => {
         setError(errorMessage);
         setIsShaking(true);
+        setIsLoggingIn(false);
         setTimeout(() => setIsShaking(false), 500);
     }
 
@@ -34,6 +36,7 @@ export default function Login() {
                 email: email,
                 password: password
             };
+            setIsLoggingIn(true);
 
             if (email === '' || password === '') {
                 triggerError(`${email === '' ? "Email" : "Password"} is a required field`);
@@ -120,6 +123,7 @@ export default function Login() {
                             ?
                         </Text> */}
                         <Button
+                            loading = {isLoggingIn}
                             onClick={handleLogin}
                             radius="xl"
                             style={{ marginTop: '1rem' }}
