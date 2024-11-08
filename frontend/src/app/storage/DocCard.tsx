@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import React, {useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
+import {IconHeart, IconHeartFilled, IconTrash, IconDotsVertical } from "@tabler/icons-react";
 import {
     Text,
     Button,
@@ -11,6 +11,7 @@ import {
     Modal,
     Tooltip,
     Space,
+    Popover
   } from "@mantine/core";
 import { title } from "process";
 
@@ -26,6 +27,13 @@ import { getUserID, saveDocID } from "../cookie";
     document_title: string;
   }
 
+  const colorPresets = [
+    "#f44336", "#e91e63", "#9c27b0", "#673ab7", 
+    "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4", 
+    "#009688", "#4caf50", "#8bc34a", "#cddc39",
+    "#ffeb3b", "#ffc107", "#ff9800", "#ff5722"
+  ];
+
 // DocCard Component
 export const DocCard: React.FC<DocumentData> = ({document_id, document_title, owner_id, last_edit_time, time_created}) => {
   
@@ -34,14 +42,26 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   const [deleted, setDeleted] = useState(false);
   const [displayName, setDisplayName] = useState("Unknown User");
   const [docTitle, setDocTitle] = useState("Untitled Document");
-
   const router = useRouter();
+  
+  const [popoverOpened, setPopoverOpened] = useState(false);
+  const [backgroundColor, setBackgroundColor] = useState("#0b9be3");
+
+  const openPopover = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setPopoverOpened((o) => !o);
+  };
+
+  // Function to handle background color change
+  const handleColorChange = (color: string) => {
+    setBackgroundColor(color);
+  };
 
   // Toggle favorite state
   const [isFavorited, setIsFavorited] = useState(false); // State to track if the card is favorited (modify to take apis maybe)
-  const toggleFavorite = () => {
+  const toggleFavorite = (event: React.MouseEvent) => {
+    event.stopPropagation();
     setIsFavorited((prev) => !prev);
-
     // Call API to update favorite status (Sophia)
   };
 
@@ -151,7 +171,7 @@ useEffect(() => {
         radius="md"
         withBorder
         style={{
-          minWidth: 375,
+          minWidth: 200,
           minHeight: 200, // Ensures consistent height with CreateCard
           display: "flex",
           flexDirection: "column",
@@ -165,6 +185,7 @@ useEffect(() => {
           gap="xs"
           align="flex-start"
         >
+          
           {/* Favorite and Delete buttons */}
           <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: '8px' }}>
             {/* Favorite button */}
@@ -192,6 +213,29 @@ useEffect(() => {
             >
               <IconTrash size={18} />
             </Button>
+
+            {/* Popover for options */}            
+            <Popover withArrow>
+              <Popover.Target>
+                <Button
+                  variant="subtle"
+                  onClick={openPopover}
+                >
+                  <IconDotsVertical size={18} />
+                </Button>
+              </Popover.Target>
+              
+              {/* Popover content
+                  Color Picker
+                  Title editor
+              */}
+              <Popover.Dropdown>
+                Test does this work
+              </Popover.Dropdown>
+
+            </Popover>
+
+
           </div>
 
 
@@ -203,10 +247,6 @@ useEffect(() => {
                 size="lg"
                 lineClamp={1}
                 style={{ cursor: 'pointer', margin: 'auto' }}
-                onClick={(e) => {
-                    e.stopPropagation(); // Prevents propagation to card click
-                    handleDocumentOpen();
-                }}
             >
                 {docTitle}
             </Text>

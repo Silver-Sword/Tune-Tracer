@@ -122,7 +122,7 @@ export const CreateCard: React.FC<{userId: string}> = (userId) => {
       radius="md"
       withBorder
       style={{
-        minWidth: 375,
+        minWidth: 200,
         minHeight: 200, // Ensures minimum height matches DocCard
         display: "flex",
         flexDirection: "column",
