@@ -215,11 +215,14 @@ useEffect(() => {
             </Button>
 
             {/* Popover for options */}            
-            <Popover withArrow>
+            <Popover opened={popoverOpened} onChange={setPopoverOpened} withArrow>
               <Popover.Target>
                 <Button
                   variant="subtle"
                   onClick={openPopover}
+                  style={{
+                    padding: 0, // Remove padding to make the button size smaller
+                  }}
                 >
                   <IconDotsVertical size={18} />
                 </Button>
