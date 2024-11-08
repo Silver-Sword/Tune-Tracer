@@ -234,20 +234,12 @@ useEffect(() => {
                   [X] Color Picker 
                   [] Title editor
               */}
-              {/* FIX STUPID PROPAGATION ERROR */}
-              <Popover.Dropdown>
+              <Popover.Dropdown onClick={(e) => e.stopPropagation()}>
                 <Text size="sm">Color</Text>
-                {/* <Group gap="xs" mt="xs">
-                  {colorPresets.map((color) => (
-                    <Button
-                      key={color}
-                      style={{ backgroundColor: color, width: 24, height: 24, padding: 0 }}
-                      onClick={() => handleColorChange(color)}
-                    />
-                  ))}
-                </Group> */}
                 <ColorPicker
-                  onColorSwatchClick={handleColorChange}
+                  onColorSwatchClick={(color) => {
+                    handleColorChange(color);  // Your color change handler
+                  }}
                   size='sm'
                   format='hex'
                   swatchesPerRow={5}
