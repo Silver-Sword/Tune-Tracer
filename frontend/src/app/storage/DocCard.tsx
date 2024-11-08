@@ -151,7 +151,7 @@ useEffect(() => {
         radius="md"
         withBorder
         style={{
-          maxWidth: 375,
+          minWidth: 375,
           minHeight: 200, // Ensures consistent height with CreateCard
           display: "flex",
           flexDirection: "column",
