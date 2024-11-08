@@ -40,6 +40,8 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   // Toggle favorite state
   const toggleFavorite = () => {
     setIsFavorited((prev) => !prev);
+
+    // Call API to update favorite status (Sophia)
   };
 
   // Open delete confirmation modal
@@ -165,7 +167,7 @@ useEffect(() => {
           {/* Favorite and Delete buttons */}
           <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: '8px' }}>
             {/* Favorite button */}
-            {/* <Button
+            <Button
               variant="subtle"
               onClick={toggleFavorite}
               style={{
@@ -177,7 +179,7 @@ useEffect(() => {
               ) : (
                 <IconHeart size={18} />
               )}
-            </Button> */}
+            </Button>
 
             {/* Delete button */}
             <Button
@@ -191,11 +193,14 @@ useEffect(() => {
             </Button>
           </div>
 
+
+          {/* Displaying document data */}
+
           {/* Truncate title text to prevent overflow */}
           <Tooltip label={docTitle} withArrow>
             <Text
                 size="lg"
-                lineClamp={2}
+                lineClamp={1}
                 style={{ cursor: 'pointer', margin: 'auto' }}
                 onClick={(e) => {
                     e.stopPropagation(); // Prevents propagation to card click
