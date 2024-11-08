@@ -13,6 +13,7 @@ import {
     Space,
     Popover,
     ColorPicker,
+    TextInput,
   } from "@mantine/core";
 import { title } from "process";
 
@@ -54,11 +55,8 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   };
 
   // Function to handle background color change
-  const handleColorChange = (color: string) => {
-    stopPropagation();
-    setBackgroundColor(color);
-  };
-
+  const [color, handleColorChange] = useState('rgba(47, 119, 150, 0.7)');
+  
   // Toggle favorite state
   const [isFavorited, setIsFavorited] = useState(false); // State to track if the card is favorited (modify to take apis maybe)
   const toggleFavorite = (event: React.MouseEvent) => {
@@ -232,21 +230,29 @@ useEffect(() => {
               
               {/* Popover content
                   [X] Color Picker 
-                  [] Title editor
+                    NEED TO ACTUALLY DISPLAY THE COLOR ON THE CARD (think banner)
+                  [X] Title editor
               */}
-              <Popover.Dropdown onClick={(e) => e.stopPropagation()}>
+              <Popover.Dropdown onClick={(e) => e.stopPropagation()}>               
+                <TextInput
+                  label="Document Title"
+                  value={docTitle}
+                  onChange={(e) => setDocTitle(e?.target.value)}
+                />
+
+                <Space h="sm"/>
                 <Text size="sm">Color</Text>
                 <ColorPicker
-                  onColorSwatchClick={(color) => {
-                    handleColorChange(color);  // Your color change handler
-                  }}
                   size='sm'
                   format='hex'
                   swatchesPerRow={5}
                   swatches={colorPresets}
+                  value={color}
+                  onColorSwatchClick={(color) => {
+                    handleColorChange(color);  
+                  }}
                 />
               </Popover.Dropdown>
-
             </Popover>
 
 
