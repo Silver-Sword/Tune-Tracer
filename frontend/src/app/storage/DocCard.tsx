@@ -11,7 +11,8 @@ import {
     Modal,
     Tooltip,
     Space,
-    Popover
+    Popover,
+    ColorPicker,
   } from "@mantine/core";
 import { title } from "process";
 
@@ -54,6 +55,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
 
   // Function to handle background color change
   const handleColorChange = (color: string) => {
+    stopPropagation();
     setBackgroundColor(color);
   };
 
@@ -229,11 +231,28 @@ useEffect(() => {
               </Popover.Target>
               
               {/* Popover content
-                  Color Picker
-                  Title editor
+                  [X] Color Picker 
+                  [] Title editor
               */}
+              {/* FIX STUPID PROPAGATION ERROR */}
               <Popover.Dropdown>
-                Test does this work
+                <Text size="sm">Color</Text>
+                {/* <Group gap="xs" mt="xs">
+                  {colorPresets.map((color) => (
+                    <Button
+                      key={color}
+                      style={{ backgroundColor: color, width: 24, height: 24, padding: 0 }}
+                      onClick={() => handleColorChange(color)}
+                    />
+                  ))}
+                </Group> */}
+                <ColorPicker
+                  onColorSwatchClick={handleColorChange}
+                  size='sm'
+                  format='hex'
+                  swatchesPerRow={5}
+                  swatches={colorPresets}
+                />
               </Popover.Dropdown>
 
             </Popover>
