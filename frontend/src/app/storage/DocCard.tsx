@@ -28,7 +28,7 @@ import { getUserID, saveDocID } from "../cookie";
 
 // DocCard Component
 export const DocCard: React.FC<DocumentData> = ({document_id, document_title, owner_id, last_edit_time, time_created}) => {
-  const [isFavorited, setIsFavorited] = useState(false); // State to track if the card is favorited
+  
   const [deleteModalOpened, setDeleteModalOpened] = useState(false); // State for the delete confirmation modal
   const [loading, setLoading] = useState(false);
   const [deleted, setDeleted] = useState(false);
@@ -38,6 +38,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   const router = useRouter();
 
   // Toggle favorite state
+  const [isFavorited, setIsFavorited] = useState(false); // State to track if the card is favorited (modify to take apis maybe)
   const toggleFavorite = () => {
     setIsFavorited((prev) => !prev);
 
