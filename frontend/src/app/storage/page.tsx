@@ -34,7 +34,7 @@ import { getSharedPreviews, getOwnPreviews } from "./documentPreviewsData";
 const filterLabels = [
   { link: "", label: "My Compositions" },
   { link: "", label: "Shared with me" },
-  // { link: "", label: "Favorites" },
+  { link: "", label: "Favorites" },
 ];
 
 // FiltersNavbar component
@@ -49,8 +49,12 @@ const FiltersNavbar: React.FC<{ getOwnPreviews: () => void, getSharedPreviews: (
     else if (label == "Shared with me") {
       getSharedPreviews();
     }
+    else if (label == "Favorites") {
+      // getFavoritePreviews();
+      // ADD API CALL FOR FAVORITES
+      console.log("Favorites filter clicked");
+    }
     console.log(`Filter selected: ${label}`);
-    // Add more filtering logic here
   };
 
   return (
@@ -125,6 +129,7 @@ export default function Storage() {
     const visibleDocuments = documents.filter((doc) => doc.document_title.toLowerCase().includes(searchTerm.toLowerCase()));
     setDisplayedDocuments(visibleDocuments);
   }, [documents, searchTerm]);
+
   // Something is wrong with the callback, not allowing to move forward in states
   // Handle tutorial callback to manage step progression and tutorial completion
   const handleJoyrideCallback = (data: any) => {
