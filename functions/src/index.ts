@@ -183,11 +183,11 @@ exports.updateUserDisplayName = functions.https.onRequest(async (req, res) => {
         });
       } else {
         // Call the signUpAPI and await the result
-        const apiResult = await updateUserDisplayName(userId, displayName)
-          .then(() => {
+        await updateUserDisplayName(userId, displayName)
+          .then((ret) => {
             res.status(StatusCode.OK).send({
               message: "User display name updated successfully",
-              data: apiResult,
+              data: ret,
             });
           })
           .catch((error) => {
