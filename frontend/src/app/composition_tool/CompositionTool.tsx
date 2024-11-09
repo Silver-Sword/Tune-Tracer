@@ -1256,6 +1256,7 @@ export default function CompositionTool() {
                         while (staveNote.getKeys().includes(newSelectedKey)) {
                             secondToLastKey = newSelectedKey;
                             newSelectedKey = shiftNoteUp(newSelectedKey);
+                            if(secondToLastKey == newSelectedKey) break;
                         }
                         const newKeys = increasePitch(score, selectedNoteId.current, secondToLastKey);
                         selectedKey.current = newSelectedKey;
@@ -1279,6 +1280,7 @@ export default function CompositionTool() {
                         while (staveNote.getKeys().includes(newSelectedKey)) {
                             secondToLastKey = newSelectedKey;
                             newSelectedKey = shiftNoteDown(newSelectedKey);
+                            if(secondToLastKey == newSelectedKey) break;
                         }
                         const newKeys = lowerPitch(score, selectedNoteId.current, secondToLastKey);
                         selectedKey.current = newSelectedKey;

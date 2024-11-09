@@ -106,7 +106,7 @@ export default function Storage() {
   const [documents, setDocuments] = useState<DocumentData[]>([]);
   const [sortBy, setSortBy] = useState<string>("lastEdited");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
   
   const [run, setRun] = useState(false);
@@ -161,16 +161,16 @@ export default function Storage() {
     const userId = getUserID();
     setLoading(true);
     const data = await getOwnPreviews(userId);
-    setLoading(false);
     setDocuments(sortDocuments(data, sortBy, sortDirection));
+    setLoading(false);
   }
   
   const useSharedPreviews = async () => {
     const userId = getUserID();
     setLoading(true);
     const data = await getSharedPreviews(userId);
-    setLoading(false);
     setDocuments(sortDocuments(data, sortBy, sortDirection));
+    setLoading(false);
   }
 
   const sortDocuments = (docs: DocumentData[], sortType: string, direction: "asc" | "desc") => {
@@ -211,8 +211,10 @@ export default function Storage() {
     setEmail(emailCookie);
     setUID(userIdCookie);
     setTimeout(async () => {
+      setLoading(true);
       const data = await getOwnPreviews(userIdCookie);
       setDocuments(sortDocuments(data, sortBy, sortDirection));
+      setLoading(false);
     }, 0);
   }, []);
 
