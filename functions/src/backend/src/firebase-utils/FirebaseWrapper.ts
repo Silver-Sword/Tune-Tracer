@@ -240,6 +240,11 @@ export default class FirebaseWrapper
         await this.setDataInFirestore(USER_MAP, userEntity.user_email, {"user_id": userEntity.user_id});
     }
 
+    public async updateDisplayName(userId: string, displayName: string)
+    {
+        await this.updateDataInFirestore(USER_DATABASE_NAME, userId, {display_name: displayName});
+    }
+
     public async getUserIdFromEmail(userEmail: string): Promise<string | null> {
         const userMap = await this.getDataFromFirestore<{ user_id: string }>(USER_MAP, userEmail);
         if(!userMap) {
