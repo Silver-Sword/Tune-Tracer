@@ -52,6 +52,7 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleDisplayNameChange = async () => {
+    if(newDisplayName == displayName) return;
     setDisplayNameLoading(true);
     const displayNameObj = {
       userId: userId,
