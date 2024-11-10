@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Group, Text, Select } from '@mantine/core';
 import { CollaboratorProps } from './sharing_types';
 
-export const CollaboratorCard: React.FC<CollaboratorProps> = ({ name, email, role, onRoleChange, onRemove }) => {
+export const CollaboratorCard: React.FC<CollaboratorProps> = ({ name, email, role, onRoleChange, onRemove, isDisabled=false }) => {
   const [currentRole, setCurrentRole] = useState<'Viewer' | 'Editor' | 'Remove access'>(role);
 
   const handleRoleChange = (newRole: 'Viewer' | 'Editor' | 'Remove access') => {
@@ -42,6 +42,8 @@ export const CollaboratorCard: React.FC<CollaboratorProps> = ({ name, email, rol
           { value: 'Remove access', label: 'Remove access' }
         ]}
         style={{ width: 150 }}
+        disabled={isDisabled}
+        allowDeselect={false}
       />
     </Group>
   );
