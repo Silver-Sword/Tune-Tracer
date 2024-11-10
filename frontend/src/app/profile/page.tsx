@@ -2,8 +2,9 @@
 
 // pages/profile.tsx
 import React, { useState, useEffect } from 'react';
-import { getUserID, getDisplayName } from "../cookie";
+import { getUserID, getDisplayName, saveDisplayName } from "../cookie";
 import { useRouter } from "next/navigation";
+import { callAPI } from "../../utils/callAPI";
 import Link from 'next/link';
 import {
   AppShell,
@@ -26,7 +27,9 @@ const ProfilePage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [userId, setUID] = useState<string>('');
   const router = useRouter();
-
+  const [displayNameLoading, setDisplayNameLoading] = useState<boolean>(false);
+  const [response, setResponse] = useState<string>('');
+  const [error, setError] = useState<string>('');
   useEffect(() => {
     let displayCookie = getDisplayName();
     let userIdCookie = getUserID();
@@ -46,6 +49,30 @@ const ProfilePage: React.FC = () => {
     setDisplayName(newDisplayName);
     setCurrentPassword('');
     setNewPassword('');
+  };
+
+  const handleDisplayNameChange = async () => {
+    setDisplayNameLoading(true);
+    const displayNameObj = {
+      userId: userId,
+      displayName: newDisplayName
+    }
+    let response = await callAPI("updateUserDisplayName", displayNameObj);
+    if(response.status !== 200)
+    {
+      setDisplayNameLoading(false);
+      setError("Something went wrong");
+      return;
+    }
+
+  setDisplayNameLoading(false);
+  setDisplayName(newDisplayName);
+  saveDisplayName(newDisplayName);
+  setResponse("Display name changed!");
+  setTimeout(() => {
+    setResponse("");
+  }, 5000);
+
   };
 
   return (
@@ -116,6 +143,25 @@ const ProfilePage: React.FC = () => {
             onChange={(event) => setNewDisplayName(event.currentTarget.value)}
             mt="md"
           />
+          <Group
+            mt="md"
+            style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}
+          >
+            <Button type="submit" color="blue" loading={displayNameLoading} onClick={handleDisplayNameChange}>
+              Save New Display Name
+            </Button>
+            {response && (
+              <Text size="sm" style={{ marginTop: "0.25rem" }}>
+                {response}
+              </Text>
+            )}
+
+            {error && (
+              <Text color="red" size="sm" style={{ marginTop: "0.25rem" }}>
+                {error}
+              </Text>
+            )}
+          </Group>
 
           <PasswordInput
             label="Current Password"
@@ -138,7 +184,7 @@ const ProfilePage: React.FC = () => {
             style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}
           >
             <Button type="submit" color="blue">
-              Save Changes
+              Change Password
             </Button>
             <Button variant="subtle" color="gray" onClick={() => alert('Forgot Password?')}>
               Forgot Password
