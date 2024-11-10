@@ -1,7 +1,10 @@
 'use client'
 
 // pages/profile.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getUserID, getDisplayName } from "../cookie";
+import { useRouter } from "next/navigation";
+import Link from 'next/link';
 import {
   AppShell,
   Container,
@@ -11,7 +14,8 @@ import {
   TextInput,
   Image,
   Avatar,
-  PasswordInput
+  PasswordInput,
+  Tooltip
 } from '@mantine/core';
 
 const ProfilePage: React.FC = () => {
@@ -19,6 +23,18 @@ const ProfilePage: React.FC = () => {
   const [newDisplayName, setNewDisplayName] = useState(displayName);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [email, setEmail] = useState<string>('');
+  const [userId, setUID] = useState<string>('');
+  const router = useRouter();
+
+  useEffect(() => {
+    let displayCookie = getDisplayName();
+    let userIdCookie = getUserID();
+    if (userIdCookie == '-1') router.push('/');
+    setDisplayName(displayCookie);
+    setNewDisplayName(displayCookie);
+    setUID(userIdCookie);
+  }, []);
 
   const initials = displayName
     .split(' ')
@@ -37,7 +53,7 @@ const ProfilePage: React.FC = () => {
       navbar={{
         width: 350,
         breakpoint: 'sm',
-        
+
       }}
       padding="md"
     >
@@ -51,13 +67,19 @@ const ProfilePage: React.FC = () => {
         }}
       >
         <Group justify="space-between" px="lg">
-          <Image
-            src="/TuneTracerLogo.png"
-            alt="TuneTracer Logo"
-            fit="contain"
-            width={50}
-            height={50}
-          />
+          {/* Need to route back to storage page */}
+          <Tooltip label="Back to Home">
+            <Link href="/storage">
+              <Image
+                // component="a"
+                // href="/storage"
+                h={50}
+                w="auto"
+                fit="contain"
+                src="TuneTracerLogo.png"
+              />
+            </Link>
+          </Tooltip>
         </Group>
       </AppShell.Header>
 

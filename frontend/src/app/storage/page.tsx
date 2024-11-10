@@ -156,6 +156,10 @@ export default function Storage() {
     clearUserCookies();
     router.push(`/`);
   }
+  
+  const routeToProfilePage = () => {
+    router.push(`/profile`);
+  }
 
   const useOwnedPreviews = async () => {
     const userId = getUserID();
@@ -278,6 +282,11 @@ export default function Storage() {
                 <Menu.Dropdown>
                   <Menu.Label style={{ fontSize: rem(13), fontWeight: 'bold' }}>{email}</Menu.Label>
                   <Menu.Divider />
+                  <Menu.Item
+                    onClick={routeToProfilePage}
+                  >
+                    Profile
+                  </Menu.Item>
                   <Menu.Item
                     color="red"
                     onClick={handleLogout}
