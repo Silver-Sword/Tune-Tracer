@@ -92,6 +92,8 @@ const {
   ensureMapData,
 } = require("./manageServerData");
 
+const { updateUserPassword } = require("./backend/src/endpoints/updateUserPassword");
+
 const cors = require("cors");
 const corsHandler = cors({ origin: true });
 
@@ -1174,6 +1176,36 @@ exports.getUserAccessLevel = functions.https.onRequest(
         // Send an error response if something goes wrong
         response.status(StatusCode.GENERAL_ERROR).send({
           message: "Failed to get highest user access level.",
+          data: error as Error,
+        });
+      }
+    });
+  }
+);
+
+exports.resetUserPassword = functions.https.onRequest(
+  async (request: any, response: any) => {
+    corsHandler(request, response, async () => {
+      try {
+        const email = request.body.email;
+        if (!email) {
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              "email"
+            }`,
+          });
+        } else {
+           await updateUserPassword(email);
+           response.status(StatusCode.OK).send({
+            message: "The user has been sent a password reset email",
+            data: true,
+          });
+        }
+        // Send a successful response back
+      } catch (error) {
+        // Send an error response if something goes wrong
+        response.status(StatusCode.GENERAL_ERROR).send({
+          message: "Could not send reset password email." + error,
           data: error as Error,
         });
       }
