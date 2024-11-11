@@ -130,18 +130,18 @@ function getTopMeasuresObj1(): MeasureData[] {
         renderTimeSignature: true,
         notes: [
             {
-                keys: ["b/4"],
-                duration: "qr",
+                keys: ["c/5"],
+                duration: "q",
                 dots: 0, modifiers: []
             },
             {
-                keys: ["b/4"],
-                duration: "qr",
-                dots: 0, modifiers: []
+                keys: ["c/5"],
+                duration: "qdd",
+                dots: 2, modifiers: []
             },
             {
                 keys: ["b/4"],
-                duration: "qr",
+                duration: "16r",
                 dots: 0, modifiers: []
             },
             {
