@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 
 import { getUserID, getDisplayName, getEmail, getDocumentID, getCursorColor } from "../cookie";
+import { addNoteHandler, removeNoteHandler, playNote } from "./Notes";
 import { areUserListsEqual } from './list';
 import { increasePitch, lowerPitch, shiftNoteDown, shiftNoteUp } from './pitch'
 import { ToolbarHeader } from './ToolbarHeader'
@@ -84,14 +85,6 @@ export default function CompositionTool() {
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -115,14 +108,6 @@ export default function CompositionTool() {
             setNotationUpdated(prev => prev + 1);
 
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -149,14 +134,6 @@ export default function CompositionTool() {
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -167,14 +144,6 @@ export default function CompositionTool() {
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -185,14 +154,6 @@ export default function CompositionTool() {
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -203,14 +164,6 @@ export default function CompositionTool() {
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -221,14 +174,6 @@ export default function CompositionTool() {
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -238,14 +183,6 @@ export default function CompositionTool() {
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -258,6 +195,10 @@ export default function CompositionTool() {
     }
 
     const playbackAwaiter = async () => {
+        if (isPlayingBack)
+        {
+            return;
+        }
         await Tone.start();
         console.log('Context started');
         playbackComposition();
@@ -322,9 +263,6 @@ export default function CompositionTool() {
 
         // Set cursor opacity to 100 to make it visible
         cursor.attr('opacity', 100);
-
-        // cursor.attr('x1', xPosition)
-        //     .attr('x2', xPosition);
 
         cursor.transition()
             .duration(duration * 1000)
@@ -609,41 +547,7 @@ export default function CompositionTool() {
         d3.select(`[id="${noteId}"]`).classed('highlighted', false);
     }
 
-    // Wrapper function to call addNoteInMeasure
-    const addNoteHandler = async (notes: string[], noteId: number, sendNetworkChanges: boolean = true) => {
-        if (score && score.current) {
-            score.current.addNoteInMeasure(notes, noteId);
-            selectedNoteId.current = noteId;
-            setNotationUpdated(prev => prev + 1);
-            sendChanges();
 
-            // Manually reapply the 'selected-note' class
-            // const noteElement = document.getElementById(noteId.toString());
-            // if (noteElement) {
-            //     noteElement.classList.add('selected-note');
-            // }
-        }
-    }
-
-    // Wrapper function to call removeNote
-    const removeNoteHandler = async (keys: string[], noteId: number) => {
-        if (score && score.current) {
-
-            score.current.removeNote(keys, noteId);
-            selectedNoteId.current = noteId;
-            setNotationUpdated(prev => prev + 1);
-            sendChanges();
-
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
-        }
-    }
 
     useEffect(() => {
         const loadSamples = async () => {
@@ -1245,20 +1149,15 @@ export default function CompositionTool() {
 
             // If a valid note was pressed and we have a note selected
             if (note && selectedNoteId.current !== -1) {
-                addNoteHandler([note], selectedNoteId.current);
+                addNoteHandler(score, selectedNoteId, [note], selectedNoteId.current);
+                if (piano)
+                {
+                    playNote(note, piano);
+                }
+                sendChanges();
                 selectedKey.current = note;
             }
 
-            // // If we press the up arrow, raise the pitch
-            // if (key === 'w') {
-            //     const newNotes = increasePitch(score, selectedNoteId);
-            //     const staveNote = score.current?.findNote(selectedNoteId);
-            //     if (staveNote) {
-            //         removeNoteHandler(staveNote.keys, selectedNoteId);
-            //         addNoteHandler(newNotes, selectedNoteId);
-            //         setNotationUpdated(prev => prev + 1);
-            //     }
-            // }
             // If we press the w key, raise the pitch
             if (key === 'w') {
                 if (selectedNoteId !== null && selectedKey !== null) {
@@ -1273,15 +1172,16 @@ export default function CompositionTool() {
                         }
                         const newKeys = increasePitch(score, selectedNoteId.current, secondToLastKey);
                         selectedKey.current = newSelectedKey;
-                        removeNoteHandler(staveNote.keys, selectedNoteId.current);
-                        addNoteHandler(newKeys, selectedNoteId.current);
+                        // removeNoteHandler(staveNote.keys, selectedNoteId.current);
+                        removeNoteHandler(score, selectedNoteId, staveNote.keys, selectedNoteId.current);
+                        addNoteHandler(score, selectedNoteId, newKeys, selectedNoteId.current);
+                        sendChanges();
                         // Update selectedKey to the new pitch
 
                         setNotationUpdated(prev => prev + 1);
                     }
                 }
             }
-
 
             // If we press the down arrow, lower the pitch
             if (key === 's') {
@@ -1297,8 +1197,10 @@ export default function CompositionTool() {
                         }
                         const newKeys = lowerPitch(score, selectedNoteId.current, secondToLastKey);
                         selectedKey.current = newSelectedKey;
-                        removeNoteHandler(staveNote.keys, selectedNoteId.current);
-                        addNoteHandler(newKeys, selectedNoteId.current);
+                        // removeNoteHandler(staveNote.keys, selectedNoteId.current);
+                        removeNoteHandler(score, selectedNoteId, staveNote.keys, selectedNoteId.current);
+                        addNoteHandler(score, selectedNoteId, newKeys, selectedNoteId.current);
+                        sendChanges();
                         // Update selectedKey to the new pitch
 
                         setNotationUpdated(prev => prev + 1);
@@ -1308,7 +1210,16 @@ export default function CompositionTool() {
 
             // Remove a note if backspace if pressed
             if (key === 'backspace') {
-                removeNoteHandler([''], selectedNoteId.current);
+                // removeNoteHandler([''], selectedNoteId.current);
+                if (selectedKey.current)
+                {
+                    removeNoteHandler(score, selectedNoteId, [selectedKey.current], selectedNoteId.current);
+                }
+                else
+                {
+                    removeNoteHandler(score, selectedNoteId, [''], selectedNoteId.current);
+                }
+                
             }
         };
 
