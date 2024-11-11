@@ -216,6 +216,18 @@ useEffect(() => {
         }}
         onClick={handleDocumentOpen}
       >
+        <div
+          style={{
+            width: "100%",
+            height: "8px", // Height of the banner at the top
+            backgroundColor: color, // Apply the selected color
+            position: "absolute",
+            top: 0,
+            left: 0,
+            borderTopLeftRadius: "4px", // Match card border radius
+            borderTopRightRadius: "4px", // Match card border radius
+          }}
+        />
         <Stack 
           style={{ paddingTop: '25px' /* Add padding to avoid button overlap */ }}
           gap="xs"
@@ -284,6 +296,7 @@ useEffect(() => {
                   swatchesPerRow={5}
                   swatches={colorPresets}
                   value={color}
+                  onChange={(color) => handleColorChange(color)}
                   onColorSwatchClick={(color) => {
                     handleColorChange(color);  
                     console.log(color);
