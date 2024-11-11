@@ -53,8 +53,7 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
 
   const openPopover = async (event: React.MouseEvent) => {
     event.stopPropagation();
-    setPopoverOpened((o) => !o);
-    // whenever it is closed
+    // whenever it is ab to be closed
     if (popoverOpened) {
       // there has been a change
       if (preview_color !== color)
@@ -77,10 +76,11 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
           documentChanges: {document_title: docTitle},
           writerId: getUserID()
         }
-        await callAPI("updatePartialDocument", {documentId: document_id});
+        await callAPI("updatePartialDocument", titleUpdate);
         document_title = docTitle;
       }
     }
+    setPopoverOpened((o) => !o);
   };
 
   // Function to handle background color change
@@ -164,12 +164,11 @@ const getUserName = async () => {
 
 useEffect(() => {
   getUserName();
-  console.log
   if (document_title !== "")
   {
     setDocTitle(document_title);
   }
-});
+}, []);
 
 
   // const documentTitle = "[DOCUMENT NAME] OVERFLOW TEST TEXT: This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum."
@@ -285,7 +284,7 @@ useEffect(() => {
                 <TextInput
                   label="Document Title"
                   value={docTitle}
-                  onChange={(e) => {setDocTitle(e.target.value); console.log(e.target.value);} }
+                  onChange={(e) => {setDocTitle(e.target.value)} }
                 />
 
                 <Space h="sm"/>
@@ -298,8 +297,7 @@ useEffect(() => {
                   value={color}
                   onChange={(color) => handleColorChange(color)}
                   onColorSwatchClick={(color) => {
-                    handleColorChange(color);  
-                    console.log(color);
+                    handleColorChange(color);
                   }}
                 />
               </Popover.Dropdown>

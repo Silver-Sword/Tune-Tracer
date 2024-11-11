@@ -371,8 +371,8 @@ export default function Storage() {
                   owner_id={doc.owner_id} 
                   last_edit_time={doc.last_edit_time} 
                   time_created={doc.time_created}
-                  is_favorited={doc.is_favorited ? doc.is_favorited : false}
-                  preview_color={doc.preview_color ? doc.preview_color : "#FFFF00"}
+                  is_favorited={doc.is_favorited}
+                  preview_color={doc.preview_color}
                 />
               ))}
               </SimpleGrid>
