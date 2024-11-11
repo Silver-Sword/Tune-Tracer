@@ -1256,7 +1256,10 @@ export default function CompositionTool() {
         let svgBoxY = notePlacementRectangleSVG.current.getBoundingClientRect().top + 10;
         attachMouseMoveListener(notePlacementRectangleRef.current, note, measure, svgBoxY, selectedKey.current);
         attachMouseLeaveListener(notePlacementRectangleRef.current, note, measure, selectedKey.current);
-        selectedNoteId.current = (attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId.current, svgBoxY, createNewNoteBox));
+        if (piano)
+        {
+            selectedNoteId.current = (attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId.current, svgBoxY, createNewNoteBox, piano));
+        }
     }
 
     // Create PlaceNoteBox

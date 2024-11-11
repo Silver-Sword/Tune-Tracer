@@ -5,7 +5,8 @@ import * as d3 from 'd3';
 import { Selection } from 'd3';
 import { Vex, StaveNote, Formatter, Voice } from 'vexflow';
 import { SendChangesType, CreateNewNoteBoxType } from "./CompositionTool";
-import { playNoteMouse } from "./Notes";
+import { playNote } from "./Notes";
+import * as Tone from 'tone';
 
 const SNAP_INTERVAL = 5;
 
@@ -202,8 +203,8 @@ export function attachMouseClickListener(
     sendChanges: SendChangesType,
     selectedNoteId: number,
     svgBoxY: number,
-    createNewNoteBox: CreateNewNoteBoxType): number {
-
+    createNewNoteBox: CreateNewNoteBoxType,
+    piano: Tone.Sampler): number {
     let snapToKeyMap: Map<number, string>;
     if (measure.getClef() == "treble") {
         snapToKeyMap = getTrebleMap();
@@ -218,7 +219,7 @@ export function attachMouseClickListener(
         let addKey = snapToKeyMap.get(snapIndex);
         if (addKey === undefined) return;
         score.addNoteInMeasure([addKey], selectedNoteId);
-        playNoteMouse(addKey);
+        playNote(addKey, piano);
         sendChanges();
         createNewNoteBox();
         let newNoteId = score.getAdjacentNote(selectedNoteId);
