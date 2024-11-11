@@ -90,14 +90,14 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   const [isFavorited, setIsFavorited] = useState(is_favorited); // State to track if the card is favorited (modify to take apis maybe)
   const toggleFavorite = async (event: React.MouseEvent) => {
     event.stopPropagation();
-    setIsFavorited((prev) => !prev);
     const API_info = 
     {
       documentId: document_id,
-      isFavorited: isFavorited,
+      isFavorited: !isFavorited,
       writerId: getUserID()
     }
     await callAPI("updateDocumentFavoritedStatus", API_info);
+    setIsFavorited((prev) => !prev);
   };
 
   // Open delete confirmation modal
