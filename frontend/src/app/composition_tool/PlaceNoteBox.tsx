@@ -5,6 +5,7 @@ import * as d3 from 'd3';
 import { Selection } from 'd3';
 import { Vex, StaveNote, Formatter, Voice } from 'vexflow';
 import { SendChangesType, CreateNewNoteBoxType } from "./CompositionTool";
+import { playNoteMouse } from "./Notes";
 
 const SNAP_INTERVAL = 5;
 
@@ -217,6 +218,7 @@ export function attachMouseClickListener(
         let addKey = snapToKeyMap.get(snapIndex);
         if (addKey === undefined) return;
         score.addNoteInMeasure([addKey], selectedNoteId);
+        playNoteMouse(addKey);
         sendChanges();
         createNewNoteBox();
         let newNoteId = score.getAdjacentNote(selectedNoteId);
