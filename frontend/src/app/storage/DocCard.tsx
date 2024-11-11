@@ -74,7 +74,8 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   const handleDocumentOpen = () => {
     saveDocID(document_id);
     console.log(`Document opened: ${document_id}`);
-    router.push(`/composition_tool?id=${document_id}`);
+    // router.push(`/composition_tool?id=${document_id}`);
+    window.open(`/composition_tool?id=${document_id}`, '_blank', 'noopener,noreferrer');
 
     // Navigates to /document/{documentId}
   };
