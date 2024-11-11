@@ -166,6 +166,7 @@ export default function Storage() {
     const userId = getUserID();
     setLoading(true);
     const data = await getOwnPreviews(userId);
+    console.log(`Data:` + JSON.stringify(data));
     setLoading(false);
     setDocuments(sortDocuments(data, sortBy, sortDirection));
   }
@@ -370,6 +371,8 @@ export default function Storage() {
                   owner_id={doc.owner_id} 
                   last_edit_time={doc.last_edit_time} 
                   time_created={doc.time_created}
+                  is_favorited={doc.is_favorited ? doc.is_favorited : false}
+                  preview_color={doc.preview_color ? doc.preview_color : "#FFFF00"}
                 />
               ))}
               </SimpleGrid>

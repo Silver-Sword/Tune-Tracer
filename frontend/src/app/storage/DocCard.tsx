@@ -21,6 +21,8 @@ import { callAPI } from "../../utils/callAPI";
 import { getUserID, saveDocID } from "../cookie";
 
  export interface DocumentData {
+    preview_color: string;
+    is_favorited: boolean;
     last_edit_time: number;
     time_created: number;
     owner_id: string;
@@ -37,7 +39,7 @@ import { getUserID, saveDocID } from "../cookie";
   ];
 
 // DocCard Component
-export const DocCard: React.FC<DocumentData> = ({document_id, document_title, owner_id, last_edit_time, time_created}) => {
+export const DocCard: React.FC<DocumentData> = ({document_id, document_title, owner_id, last_edit_time, time_created, is_favorited, preview_color}) => {
   
   const [deleteModalOpened, setDeleteModalOpened] = useState(false); // State for the delete confirmation modal
   const [loading, setLoading] = useState(false);
@@ -49,20 +51,53 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   const [popoverOpened, setPopoverOpened] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState("#0b9be3");
 
-  const openPopover = (event: React.MouseEvent) => {
+  const openPopover = async (event: React.MouseEvent) => {
     event.stopPropagation();
     setPopoverOpened((o) => !o);
+    // whenever it is closed
+    if (popoverOpened) {
+      // there has been a change
+      if (preview_color !== color)
+      {
+        const colorUpdate =
+        {
+          documentId: document_id,
+          newColor: color,
+          writerId: getUserID()
+        }
+        await callAPI("updateDocumentColor", colorUpdate);
+        preview_color = color;
+      }
+      // there has been a change
+      if (docTitle !== document_title) 
+      {
+        const titleUpdate =
+        {
+          documentId: document_id,
+          documentChanges: {document_title: docTitle},
+          writerId: getUserID()
+        }
+        await callAPI("updatePartialDocument", {documentId: document_id});
+        document_title = docTitle;
+      }
+    }
   };
 
   // Function to handle background color change
-  const [color, handleColorChange] = useState('rgba(47, 119, 150, 0.7)');
+  const [color, handleColorChange] = useState(preview_color);
   
   // Toggle favorite state
-  const [isFavorited, setIsFavorited] = useState(false); // State to track if the card is favorited (modify to take apis maybe)
-  const toggleFavorite = (event: React.MouseEvent) => {
+  const [isFavorited, setIsFavorited] = useState(is_favorited); // State to track if the card is favorited (modify to take apis maybe)
+  const toggleFavorite = async (event: React.MouseEvent) => {
     event.stopPropagation();
     setIsFavorited((prev) => !prev);
-    // Call API to update favorite status (Sophia)
+    const API_info = 
+    {
+      documentId: document_id,
+      isFavorited: isFavorited,
+      writerId: getUserID()
+    }
+    await callAPI("updateDocumentFavoritedStatus", API_info);
   };
 
   // Open delete confirmation modal
@@ -129,6 +164,7 @@ const getUserName = async () => {
 
 useEffect(() => {
   getUserName();
+  console.log
   if (document_title !== "")
   {
     setDocTitle(document_title);
@@ -237,7 +273,7 @@ useEffect(() => {
                 <TextInput
                   label="Document Title"
                   value={docTitle}
-                  onChange={(e) => setDocTitle(e?.target.value)}
+                  onChange={(e) => {setDocTitle(e.target.value); console.log(e.target.value);} }
                 />
 
                 <Space h="sm"/>
@@ -250,6 +286,7 @@ useEffect(() => {
                   value={color}
                   onColorSwatchClick={(color) => {
                     handleColorChange(color);  
+                    console.log(color);
                   }}
                 />
               </Popover.Dropdown>
