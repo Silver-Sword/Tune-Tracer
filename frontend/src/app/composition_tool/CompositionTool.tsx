@@ -1176,6 +1176,8 @@ export default function CompositionTool() {
         d3.selectAll('.vf-notehead').classed('selected-note', false);
         d3.selectAll('.vf-stavenote').classed('selected-note', false);
 
+        if (!hasWriteAccess) return;
+
         if (selectedNoteId !== null && selectedKey !== null && score.current) {
             const staveNote = score.current.findNote(selectedNoteId.current);
             createNewNoteBox();
@@ -1219,6 +1221,7 @@ export default function CompositionTool() {
 
         // Keyboard shortcuts for adding notes
         const handleKeyDown = (event: KeyboardEvent) => {
+            if (!hasWriteAccess) return;
             // Mapping of keyboard letters to note string
             const trebleKeyToNoteMap: { [key: string]: string } = {
                 'a': 'a/4',
