@@ -340,31 +340,33 @@ useEffect(() => {
         />}
 
         {/* Profile Menu */}
-        <Menu shadow="md" width={200}>
+        <Menu shadow="md">
           <Menu.Target>
             <Button className="profile-menu" size="sm">{displayName}</Button>
           </Menu.Target>
 
-          <Menu.Dropdown>
-            <Menu.Label style={{ fontSize: rem(13), fontWeight: 'bold' }}>{email}</Menu.Label>
-            <Menu.Divider />
-            <Menu.Item
-              onClick={routeToProfilePage}
-            >
-              Profile
-            </Menu.Item>
-            <Menu.Item
-              color="red"
-              onClick={handleResetOpen}
-            >
-              Reset Password
-            </Menu.Item>
-            <Menu.Item
-              color="red"
-              onClick={handleLogout}
-            >
-              Logout
-            </Menu.Item>
+          <Menu.Dropdown style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+          
+              <Menu.Label style={{ fontSize: rem(13), fontWeight: 'bold' }}>{email}</Menu.Label>
+              <Menu.Divider />
+              <Menu.Item
+                onClick={routeToProfilePage}
+              >
+                Profile
+              </Menu.Item>
+              <Menu.Item
+                color="red"
+                onClick={handleResetOpen}
+              >
+                Reset Password
+              </Menu.Item>
+              <Menu.Item
+                color="red"
+                onClick={handleLogout}
+              >
+                Logout
+              </Menu.Item>
+        
           </Menu.Dropdown>
         </Menu>
       </Group>
