@@ -51,12 +51,8 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   const [popoverOpened, setPopoverOpened] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState("#0b9be3");
 
-  const openPopover = async (event: React.MouseEvent) => {
-    event.stopPropagation();
-    // whenever it is ab to be closed
-    if (popoverOpened) {
-      // there has been a change
-      if (preview_color !== color)
+  const updateDocumentColor = async () => {
+    if (preview_color !== color)
       {
         const colorUpdate =
         {
@@ -67,8 +63,10 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
         await callAPI("updateDocumentColor", colorUpdate);
         preview_color = color;
       }
-      // there has been a change
-      if (docTitle !== document_title) 
+  }
+
+  const updateDocumentTitle = async () => {
+    if (docTitle !== document_title) 
       {
         const titleUpdate =
         {
@@ -79,6 +77,14 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
         await callAPI("updatePartialDocument", titleUpdate);
         document_title = docTitle;
       }
+  }
+  const openPopover = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    // whenever it is ab to be closed
+    if (popoverOpened) {
+      await updateDocumentColor();
+      // there has been a change
+      await updateDocumentTitle();
     }
     setPopoverOpened((o) => !o);
   };
@@ -285,6 +291,7 @@ useEffect(() => {
                   label="Document Title"
                   value={docTitle}
                   onChange={(e) => {setDocTitle(e.target.value)} }
+                  onBlur={updateDocumentTitle}
                 />
 
                 <Space h="sm"/>
@@ -295,6 +302,7 @@ useEffect(() => {
                   swatchesPerRow={5}
                   swatches={colorPresets}
                   value={color}
+                  onBlur={updateDocumentColor}
                   onChange={(color) => handleColorChange(color)}
                   onColorSwatchClick={(color) => {
                     handleColorChange(color);
