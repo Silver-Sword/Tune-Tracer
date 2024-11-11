@@ -7,6 +7,7 @@ export async function getOwnPreviews(userId: string): Promise<DocumentData[]> {
   };
   const response = await callAPI("getOwnedPreviews", userInfo2);
   if (response.status == 200) {
+    console.log(response.data);
     return response.data as DocumentData[];
   }
   return [];

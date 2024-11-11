@@ -35,8 +35,8 @@ import { callAPI } from "../../utils/callAPI";
 // Define filter labels for the navbar
 const filterLabels = [
   { link: "", label: "My Compositions" },
-  { link: "", label: "Shared with you" },
-  // { link: "", label: "Favorites" },
+  { link: "", label: "Shared with me" },
+  { link: "", label: "Favorites" },
 ];
 
 // FiltersNavbar component
@@ -48,11 +48,15 @@ const FiltersNavbar: React.FC<{ getOwnPreviews: () => void, getSharedPreviews: (
     if (label == "My Compositions") {
       getOwnPreviews();
     }
-    else if (label == "Shared with you") {
+    else if (label == "Shared with me") {
       getSharedPreviews();
     }
+    else if (label == "Favorites") {
+      // getFavoritePreviews();
+      // ADD API CALL FOR FAVORITES
+      console.log("Favorites filter clicked");
+    }
     console.log(`Filter selected: ${label}`);
-    // Add more filtering logic here
   };
 
   return (
@@ -176,6 +180,7 @@ export default function Storage() {
     const userId = getUserID();
     setLoading(true);
     const data = await getOwnPreviews(userId);
+    console.log(`Data:` + JSON.stringify(data));
     setDocuments(sortDocuments(data, sortBy, sortDirection));
     setLoading(false);
   }
@@ -268,9 +273,9 @@ export default function Storage() {
             <Image
               src="/TuneTracerLogo.png"
               alt="TuneTracer Logo"
+              h={50}
+              w="auto"
               fit="contain"
-              width={50}
-              height={50}
             />
             <SearchBar 
               onSearch={handleSearch}
@@ -415,6 +420,8 @@ export default function Storage() {
                   owner_id={doc.owner_id} 
                   last_edit_time={doc.last_edit_time} 
                   time_created={doc.time_created}
+                  is_favorited={doc.is_favorited}
+                  preview_color={doc.preview_color}
                 />
               ))}
               </SimpleGrid>

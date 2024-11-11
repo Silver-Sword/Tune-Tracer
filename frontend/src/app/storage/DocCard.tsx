@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import React, {useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {IconHeart, IconHeartFilled, IconTrash } from "@tabler/icons-react";
+import {IconHeart, IconHeartFilled, IconTrash, IconDotsVertical } from "@tabler/icons-react";
 import {
     Text,
     Button,
@@ -11,6 +11,9 @@ import {
     Modal,
     Tooltip,
     Space,
+    Popover,
+    ColorPicker,
+    TextInput,
   } from "@mantine/core";
 import { title } from "process";
 
@@ -18,6 +21,8 @@ import { callAPI } from "../../utils/callAPI";
 import { getUserID, saveDocID } from "../cookie";
 
  export interface DocumentData {
+    preview_color: string;
+    is_favorited: boolean;
     last_edit_time: number;
     time_created: number;
     owner_id: string;
@@ -26,19 +31,78 @@ import { getUserID, saveDocID } from "../cookie";
     document_title: string;
   }
 
+  const colorPresets = [
+    "#f44336", "#e91e63", "#9c27b0", "#673ab7", 
+    "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4", 
+    "#009688", "#4caf50", "#8bc34a", "#cddc39",
+    "#ffeb3b", "#ffc107", "#ff9800", "#ff5722"
+  ];
+
 // DocCard Component
-export const DocCard: React.FC<DocumentData> = ({document_id, document_title, owner_id, last_edit_time, time_created}) => {
-  const [isFavorited, setIsFavorited] = useState(false); // State to track if the card is favorited
+export const DocCard: React.FC<DocumentData> = ({document_id, document_title, owner_id, last_edit_time, time_created, is_favorited, preview_color}) => {
+  
   const [deleteModalOpened, setDeleteModalOpened] = useState(false); // State for the delete confirmation modal
   const [loading, setLoading] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [displayName, setDisplayName] = useState("Unknown User");
   const [docTitle, setDocTitle] = useState("Untitled Document");
-
   const router = useRouter();
+  
+  const [popoverOpened, setPopoverOpened] = useState(false);
+  const [backgroundColor, setBackgroundColor] = useState("#0b9be3");
 
+  const updateDocumentColor = async () => {
+    if (preview_color !== color)
+      {
+        const colorUpdate =
+        {
+          documentId: document_id,
+          newColor: color,
+          writerId: getUserID()
+        }
+        await callAPI("updateDocumentColor", colorUpdate);
+        preview_color = color;
+      }
+  }
+
+  const updateDocumentTitle = async () => {
+    if (docTitle !== document_title) 
+      {
+        const titleUpdate =
+        {
+          documentId: document_id,
+          documentChanges: {document_title: docTitle},
+          writerId: getUserID()
+        }
+        await callAPI("updatePartialDocument", titleUpdate);
+        document_title = docTitle;
+      }
+  }
+  const openPopover = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    // whenever it is ab to be closed
+    if (popoverOpened) {
+      await updateDocumentColor();
+      // there has been a change
+      await updateDocumentTitle();
+    }
+    setPopoverOpened((o) => !o);
+  };
+
+  // Function to handle background color change
+  const [color, handleColorChange] = useState(preview_color);
+  
   // Toggle favorite state
-  const toggleFavorite = () => {
+  const [isFavorited, setIsFavorited] = useState(is_favorited); // State to track if the card is favorited (modify to take apis maybe)
+  const toggleFavorite = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    const API_info = 
+    {
+      documentId: document_id,
+      isFavorited: !isFavorited,
+      writerId: getUserID()
+    }
+    await callAPI("updateDocumentFavoritedStatus", API_info);
     setIsFavorited((prev) => !prev);
   };
 
@@ -110,7 +174,7 @@ useEffect(() => {
   {
     setDocTitle(document_title);
   }
-});
+}, []);
 
 
   // const documentTitle = "[DOCUMENT NAME] OVERFLOW TEST TEXT: This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum."
@@ -148,7 +212,7 @@ useEffect(() => {
         radius="md"
         withBorder
         style={{
-          maxWidth: 375,
+          minWidth: 200,
           minHeight: 200, // Ensures consistent height with CreateCard
           display: "flex",
           flexDirection: "column",
@@ -157,15 +221,28 @@ useEffect(() => {
         }}
         onClick={handleDocumentOpen}
       >
+        <div
+          style={{
+            width: "100%",
+            height: "8px", // Height of the banner at the top
+            backgroundColor: color, // Apply the selected color
+            position: "absolute",
+            top: 0,
+            left: 0,
+            borderTopLeftRadius: "4px", // Match card border radius
+            borderTopRightRadius: "4px", // Match card border radius
+          }}
+        />
         <Stack 
           style={{ paddingTop: '25px' /* Add padding to avoid button overlap */ }}
           gap="xs"
           align="flex-start"
         >
+          
           {/* Favorite and Delete buttons */}
           <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: '8px' }}>
             {/* Favorite button */}
-            {/* <Button
+            <Button
               variant="subtle"
               onClick={toggleFavorite}
               style={{
@@ -177,7 +254,7 @@ useEffect(() => {
               ) : (
                 <IconHeart size={18} />
               )}
-            </Button> */}
+            </Button>
 
             {/* Delete button */}
             <Button
@@ -189,18 +266,63 @@ useEffect(() => {
             >
               <IconTrash size={18} />
             </Button>
+
+            {/* Popover for options */}            
+            <Popover opened={popoverOpened} onChange={setPopoverOpened} withArrow>
+              <Popover.Target>
+                <Button
+                  variant="subtle"
+                  onClick={openPopover}
+                  style={{
+                    padding: 0, // Remove padding to make the button size smaller
+                  }}
+                >
+                  <IconDotsVertical size={18} />
+                </Button>
+              </Popover.Target>
+              
+              {/* Popover content
+                  [X] Color Picker 
+                    NEED TO ACTUALLY DISPLAY THE COLOR ON THE CARD (think banner)
+                  [X] Title editor
+              */}
+              <Popover.Dropdown onClick={(e) => e.stopPropagation()}>               
+                <TextInput
+                  label="Document Title"
+                  value={docTitle}
+                  onChange={(e) => {setDocTitle(e.target.value)} }
+                  onBlur={updateDocumentTitle}
+                />
+
+                <Space h="sm"/>
+                <Text size="sm">Color</Text>
+                <ColorPicker
+                  size='sm'
+                  format='hex'
+                  swatchesPerRow={5}
+                  swatches={colorPresets}
+                  value={color}
+                  onBlur={updateDocumentColor}
+                  onChange={(color) => handleColorChange(color)}
+                  onColorSwatchClick={(color) => {
+                    handleColorChange(color);
+                  }}
+                />
+              </Popover.Dropdown>
+            </Popover>
+
+
           </div>
+
+
+          {/* Displaying document data */}
 
           {/* Truncate title text to prevent overflow */}
           <Tooltip label={docTitle} withArrow>
             <Text
                 size="lg"
-                lineClamp={2}
+                lineClamp={1}
                 style={{ cursor: 'pointer', margin: 'auto' }}
-                onClick={(e) => {
-                    e.stopPropagation(); // Prevents propagation to card click
-                    handleDocumentOpen();
-                }}
             >
                 {docTitle}
             </Text>
