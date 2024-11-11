@@ -29,6 +29,8 @@ import { useRouter } from "next/navigation";
 import { CreateCard } from "./CreateCard";
 import { DocCard, DocumentData } from "./DocCard";
 import { getSharedPreviews, getOwnPreviews } from "./documentPreviewsData";
+import { set } from "date-fns";
+import { callAPI } from "../../utils/callAPI";
 
 // Define filter labels for the navbar
 const filterLabels = [
@@ -110,7 +112,8 @@ export default function Storage() {
   const [documents, setDocuments] = useState<DocumentData[]>([]);
   const [sortBy, setSortBy] = useState<string>("lastEdited");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [passwordModalOpened, setPasswordModalOpened] = useState(false);
   const router = useRouter();
   
   const [run, setRun] = useState(false);
@@ -130,23 +133,8 @@ export default function Storage() {
     setDisplayedDocuments(visibleDocuments);
   }, [documents, searchTerm]);
 
-  // Something is wrong with the callback, not allowing to move forward in states
   // Handle tutorial callback to manage step progression and tutorial completion
   const handleJoyrideCallback = (data: any) => {
-    // const { status, index, action, type } = data;
-    // console.log('data', data);
-
-    // console.log(`Joyride callback: ${status}, ${index}`);
-    // if (([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND] as string[]).includes(type)) {
-    //   console.log('inside if');
-    //   setStepIndex(index + (action === ACTIONS.PREV ? -1 : 1)); // Update to the next step
-    // }
-    // else if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-    //   console.log('inside else if');
-    //   setRun(false); // Stop tutorial
-    // } else {
-    //   console.log('inside else');
-    // }
 
     const { status, type } = data;
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
@@ -161,22 +149,48 @@ export default function Storage() {
     clearUserCookies();
     router.push(`/`);
   }
+  
+  const routeToProfilePage = () => {
+    router.push(`/profile`);
+  }
+
+  const handleResetOpen = () => {
+    setPasswordModalOpened(true);
+  }
+
+  const handleReset = async () => {
+    const email = getEmail();
+    console.log(`Resetting password for: ${email}`);
+    try
+    {
+      await callAPI("resetUserPassword", {email: email});
+    }
+    catch (error)
+    {
+      console.log(`Error resetting password for: ${email}`);
+    }
+    setPasswordModalOpened(false);
+  }
+
+  const closePasswordModal = () => {
+    setPasswordModalOpened(false);
+  }
 
   const useOwnedPreviews = async () => {
     const userId = getUserID();
     setLoading(true);
     const data = await getOwnPreviews(userId);
     console.log(`Data:` + JSON.stringify(data));
-    setLoading(false);
     setDocuments(sortDocuments(data, sortBy, sortDirection));
+    setLoading(false);
   }
   
   const useSharedPreviews = async () => {
     const userId = getUserID();
     setLoading(true);
     const data = await getSharedPreviews(userId);
-    setLoading(false);
     setDocuments(sortDocuments(data, sortBy, sortDirection));
+    setLoading(false);
   }
 
   const sortDocuments = (docs: DocumentData[], sortType: string, direction: "asc" | "desc") => {
@@ -217,8 +231,10 @@ export default function Storage() {
     setEmail(emailCookie);
     setUID(userIdCookie);
     setTimeout(async () => {
+      setLoading(true);
       const data = await getOwnPreviews(userIdCookie);
       setDocuments(sortDocuments(data, sortBy, sortDirection));
+      setLoading(false);
     }, 0);
   }, []);
 
@@ -274,14 +290,25 @@ export default function Storage() {
               </Button>
 
               {/* Profile Menu */}
-              <Menu shadow="md" width={200}>
+              <Menu shadow="md">
                 <Menu.Target>
                   <Button className="profile-menu" size="sm">{displayName}</Button>
                 </Menu.Target>
 
-                <Menu.Dropdown>
+                <Menu.Dropdown style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                   <Menu.Label style={{ fontSize: rem(13), fontWeight: 'bold' }}>{email}</Menu.Label>
                   <Menu.Divider />
+                  <Menu.Item
+                    onClick={routeToProfilePage}
+                  >
+                    Profile
+                  </Menu.Item>
+                  <Menu.Item
+                    color="red"
+                    onClick={handleResetOpen}
+                  >
+                    Reset Password
+                  </Menu.Item>
                   <Menu.Item
                     color="red"
                     onClick={handleLogout}
@@ -293,6 +320,28 @@ export default function Storage() {
             </Group>
           </Group>
         </AppShell.Header>
+        <Modal
+          opened={passwordModalOpened}
+          onClose={closePasswordModal}
+          title="Confirm Password Reset"
+          centered
+        >
+          <Text>Are you sure you want a password reset email?</Text>
+          <Group 
+            justify="flex-end" 
+            mt="md"
+            >
+            <Button onClick={closePasswordModal} variant="default">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleReset} 
+              color="blue"
+              loading = {loading}>
+              Confirm
+            </Button>
+          </Group>
+        </Modal>
         <FiltersNavbar getOwnPreviews={useOwnedPreviews} getSharedPreviews={useSharedPreviews} />
 
         <Container

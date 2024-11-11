@@ -42,7 +42,7 @@ async function getDocumentPreviewsByUser(
     accessTypes: AccessType[]
 ): Promise<DocumentPreview[]> {
   const firebase = getFirebase();
-  const documentIdList = await getDocumentIdsByUser(userId, accessTypes);
+  const documentIdList = [... new Set(await getDocumentIdsByUser(userId, accessTypes))];
   const user = await firebase.getUser(userId);
 
   if(user === null)

@@ -26,6 +26,7 @@ import { createShareCode, updateDocumentShareStyle, upsertCollaborator, removeCo
 import { ShareStyle } from "../../lib/src/documentProperties";
 import { DocumentMetadata } from "../../lib/src/documentProperties";
 import { useSearchParams } from "next/navigation";
+import { getUserID } from "../../cookie";
 
 interface SharingModalProps {
   documentTitle: string;
@@ -53,6 +54,9 @@ export const SharingModal: React.FC<SharingModalProps> = ({
   const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
   const [addCollaboratorMessage, setAddCollaboratorMessage] = useState("");
   const [isRoleChangeInProgress, setIsRoleChangeInProgress] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const [authorEmail, setAuthorEmail] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrentTitle(documentTitle);
@@ -61,6 +65,10 @@ export const SharingModal: React.FC<SharingModalProps> = ({
   useEffect(() => {
     setDocumentId(searchParams.get('id') || 'null');
   }, []);
+
+  useEffect (() => {
+    setIsUpdating(isRoleChangeInProgress || isAddingCollaborator);
+  }, [isRoleChangeInProgress, isAddingCollaborator]);
 
   const updateCollaboratorsList = (collabs: Collaborator[]) => {
     const previousList = collaborators.filter((collaborator) => {
@@ -100,13 +108,31 @@ export const SharingModal: React.FC<SharingModalProps> = ({
     }
   };
 
+  const updateAuthorEmail = async (userId: string) => {
+    try {
+      const userDetails = await getUserDetails(userId);
+      if(!userDetails) {
+        console.error(`Failed to fetch user details for author ${userId}`);
+        return;
+      }
+      setAuthorEmail(userDetails.email);
+    } catch (error) {
+      console.error(`Failed to fetch user details for author ${userId}:`, error);
+    }
+  };
+
   useEffect(() => {
     if(metadata === undefined) {
-      console.warn("Metadata is undefined in sharing modal");
       return;
-    } else if (isRoleChangeInProgress) {
+    } else if (isUpdating) {
+      console.warn(`Skipping update while a role change is in progress`);
       return; // Skip updates if a role change is in progress
     }
+    console.debug(`Current collaborators: ${collaborators.map(collab => collab.email).join(", ")}`);
+
+    if(authorEmail === null) {
+      updateAuthorEmail(metadata.owner_id);
+    };
 
     const shareStyle = metadata.share_link_style;
     setAccessLevel(shareStyle === ShareStyle.WRITE ? "Editor" : "Viewer");
@@ -143,9 +169,9 @@ export const SharingModal: React.FC<SharingModalProps> = ({
 
   const handleRoleChange = async (newRole: "Viewer" | "Editor", collaborator: Collaborator) => {
     setIsRoleChangeInProgress(true);
-    collaborator.role = newRole;
-  
+    
     try {
+      collaborator.role = newRole;
       const response = await upsertCollaborator(collaborator.email, documentId, newRole);
       if(response.status === 200) {
         setKnownCollaborators(prev => ({
@@ -199,7 +225,15 @@ export const SharingModal: React.FC<SharingModalProps> = ({
 
   // New function to handle adding a collaborator
   const handleAddCollaborator = async () => {
-    if (!email) return;
+    if (!email) {
+      return;
+    } else if(email === authorEmail) {
+      setAddCollaboratorMessage("You cannot add the author as a collaborator.");
+      return;
+    } else if(collaborators.some(collab => collab.email === email)) {
+      setAddCollaboratorMessage("Collaborator already added.");
+      return;
+    }
 
     setIsAddingCollaborator(true);
     setAddCollaboratorMessage("");
@@ -209,6 +243,8 @@ export const SharingModal: React.FC<SharingModalProps> = ({
       if (response.status === 200) {
         setAddCollaboratorMessage("Collaborator added successfully!");
         setEmail("");
+      } else if(response.status === 410) {
+        setAddCollaboratorMessage("User not found.");
       } else {
         setAddCollaboratorMessage(response.message || "Failed to add collaborator.");
       }
@@ -219,6 +255,20 @@ export const SharingModal: React.FC<SharingModalProps> = ({
       setIsAddingCollaborator(false);
     }
   };
+
+  const handleShareStyleUpdate = async (newAccessType: "restricted" | "anyone", newAccessLevel: "Viewer" | "Editor", documentId: string) => {
+    setIsUpdating(true);
+    try {
+      const response = await updateDocumentShareStyle(newAccessType, newAccessLevel, documentId);
+      if(response.status !== 200) {
+        console.error(`Failed to update share style: ${response.message}`);
+      }
+    } catch (error) {
+      console.error("Error updating share style:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  }
 
   return (
     <Group>
@@ -232,6 +282,7 @@ export const SharingModal: React.FC<SharingModalProps> = ({
         <LoadingOverlay visible={isAddingCollaborator} />
         <Title order={4}>Collaborators</Title>
         <Space h="sm" />
+        { metadata?.owner_id === getUserID() && 
         <TextInput
           placeholder="Add collaborators by email here"
           value={email}
@@ -242,7 +293,7 @@ export const SharingModal: React.FC<SharingModalProps> = ({
             }
           }}
           onBlur={handleAddCollaborator}
-        />
+        /> }
         {addCollaboratorMessage && (
           <Text color={addCollaboratorMessage.includes("successfully") ? "green" : "red"} size="sm" mt="xs">
             {addCollaboratorMessage}
@@ -250,16 +301,22 @@ export const SharingModal: React.FC<SharingModalProps> = ({
         )}
         <Space h="sm" />
         <ScrollArea mah={250}>
-          {collaborators.map((collab, index) => (
-            <CollaboratorCard
-              key={collab.userId}
-              name={collab.name}
-              email={collab.email}
-              role={collab.role}
-              onRoleChange={(newRole) => handleRoleChange(newRole, collab)}
-              onRemove={() => handleRemove(collab)}
-            />
-          ))}
+          {
+            collaborators.length === 0 ? (
+                <Text c="dimmed" ta="center">No collaborators added yet</Text>
+            ) :
+            collaborators.map((collab, index) => (
+              <CollaboratorCard
+                key={collab.userId}
+                name={collab.name}
+                email={collab.email}
+                role={collab.role}
+                isDisabled={getUserID() !== metadata?.owner_id}
+                onRoleChange={(newRole) => handleRoleChange(newRole, collab)}
+                onRemove={() => handleRemove(collab)}
+              />
+            ))
+          }
         </ScrollArea>
 
         <Divider size="sm" my="sm" />
@@ -283,7 +340,7 @@ export const SharingModal: React.FC<SharingModalProps> = ({
             onChange={(value) => {
                 const newAccessType = value as "restricted" | "anyone";
                 setAccessType(newAccessType);
-                updateDocumentShareStyle(newAccessType, accessLevel, documentId);
+                handleShareStyleUpdate(newAccessType, accessLevel, documentId);
               }
             }
             data={[
@@ -291,6 +348,8 @@ export const SharingModal: React.FC<SharingModalProps> = ({
               { value: "anyone", label: "Anyone with link/code" },
             ]}
             style={{ width: 200 }}
+            disabled={metadata?.owner_id !== getUserID()}
+            allowDeselect={false}
           />
           {accessType === "anyone" && (
             <Group align="right">
@@ -301,14 +360,16 @@ export const SharingModal: React.FC<SharingModalProps> = ({
                 onChange={(value) => {
                     const newAccessLevel = value as "Viewer" | "Editor";
                     setAccessLevel(newAccessLevel);
-                    updateDocumentShareStyle(accessType, newAccessLevel, documentId);
+                    handleShareStyleUpdate(accessType, newAccessLevel, documentId);
                   }
                 }
                 data={[
                   { value: "Viewer", label: "Viewer" },
                   { value: "Editor", label: "Editor" },
                 ]}
+                disabled={metadata?.owner_id !== getUserID()}
                 style={{ width: 150, align: "right" }}
+                allowDeselect={false}
               />
             </Group>
           )}

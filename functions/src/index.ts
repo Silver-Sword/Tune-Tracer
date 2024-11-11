@@ -18,15 +18,11 @@ const functions = require("firebase-functions/v1");
 
 const { StatusCode } = require("./backend/src/lib/src/StatusCode");
 const { ShareStyle } = require("./backend/src/lib/src/documentProperties");
-const {
-  Document: LibDocument,
-} = require("./backend/src/lib/src/Document");
+const { Document: LibDocument } = require("./backend/src/lib/src/Document");
 const { UpdateType } = require("./backend/src/lib/src/UpdateType");
-const {
-  UserEntity,
-} = require("./backend/src/lib/src/UserEntity");
+const { UserEntity } = require("./backend/src/lib/src/UserEntity");
 const { Comment: LibComment } = require("./backend/src/lib/src/Comment");
-const {  OnlineEntity } = require("./backend/src/lib/src/realtimeUserTypes");
+const { OnlineEntity } = require("./backend/src/lib/src/realtimeUserTypes");
 
 const { signUpAPI, login } = require("./backend/src/endpoints/loginEndpoints");
 const {
@@ -52,7 +48,7 @@ const {
 } = require("./backend/src/document-utils/updateUserLevelDocumentProperties");
 const {
   subscribeToDocument,
-  admin_subscribeToDocument
+  admin_subscribeToDocument,
 } = require("./backend/src/document-utils/realtimeDocumentUpdates");
 const {
   updateUserCursor,
@@ -75,10 +71,13 @@ const {
   editCommentText,
   subscribeToComments,
 } = require("./backend/src/comment-utils/commentOperations");
-const { 
+const {
   getUserIdFromEmail,
-  getUserFromId
+  getUserFromId,
 } = require("./backend/src/user-utils/getUserData");
+const {
+  updateUserDisplayName,
+} = require("./backend/src/user-utils/updateUser");
 const {
   getUserAccessLevel,
 } = require("./backend/src/security-utils/getUserAccessLevel");
@@ -90,8 +89,10 @@ const {
   genUpdateUserMap,
   subscribeServerToDocument,
   getServerId,
-  ensureMapData
+  ensureMapData,
 } = require("./manageServerData");
+
+const { updateUserPassword } = require("./backend/src/endpoints/updateUserPassword");
 
 const cors = require("cors");
 const corsHandler = cors({ origin: true });
@@ -170,6 +171,42 @@ exports.logInUser = functions.https.onRequest(
   }
 );
 
+exports.updateUserDisplayName = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    try {
+      const userId: string = req.body.userId;
+      const displayName: string = req.body.displayName;
+
+      if (!userId || !displayName) {
+        res.status(StatusCode.MISSING_ARGUMENTS).send({
+          message: `Missing required fields: ${
+            !userId ? "userId" : "displayName"
+          }`,
+        });
+      } else {
+        // Call the signUpAPI and await the result
+        const apiResult = await updateUserDisplayName(userId, displayName)
+          .then(() => {
+            res.status(StatusCode.OK).send({
+              message: "User display name updated successfully",
+              data: apiResult,
+            });
+          })
+          .catch((error) => {
+            res.status(StatusCode.USER_NOT_FOUND).send({
+              message: (error as Error).message,
+            });
+          });
+      }
+    } catch (error) {
+      res.status(StatusCode.GENERAL_ERROR).send({
+        message: "Failed to sign up user: " + (error as Error).message,
+        data: (error as Error).message,
+      });
+    }
+  });
+});
+
 // document preview endpoints
 
 exports.getAllPreviews = functions.https.onRequest(
@@ -191,12 +228,10 @@ exports.getAllPreviews = functions.https.onRequest(
         }
       } catch (error) {
         // Send an error response if something goes wrong
-        response
-          .status(StatusCode.GENERAL_ERROR)
-          .send({
-            message: "Error: Failed to get documents",
-            data: error as Error,
-          });
+        response.status(StatusCode.GENERAL_ERROR).send({
+          message: "Error: Failed to get documents",
+          data: error as Error,
+        });
       }
     });
   }
@@ -296,7 +331,7 @@ exports.getUserFromId = functions.https.onRequest(
             .send({ message: "Missing required fields: userId" });
         } else {
           const apiResult = await getUserFromId(userId);
-          if(apiResult === null) {
+          if (apiResult === null) {
             response.status(StatusCode.USER_NOT_FOUND).send({
               message: `User with id ${userId} not found in the database`,
             });
@@ -464,12 +499,10 @@ exports.updateDocumentColor = functions.https.onRequest(
         }
       } catch (error) {
         // Send an error response if something goes wrong
-        response
-          .status(StatusCode.GENERAL_ERROR)
-          .send({
-            message: "Failed to update document color",
-            data: error as Error,
-          });
+        response.status(StatusCode.GENERAL_ERROR).send({
+          message: "Failed to update document color",
+          data: error as Error,
+        });
       }
     });
   }
@@ -574,7 +607,7 @@ exports.deleteDocument = functions.https.onRequest(
   }
 );
 
-// ------------------------ START OF THE MINE FIELD ------------------------ 
+// ------------------------ START OF THE MINE FIELD ------------------------
 // assumes that subscribeToDocument is called first
 exports.checkDocumentChanges = functions.https.onRequest(
   async (request: any, response: any) => {
@@ -584,22 +617,21 @@ exports.checkDocumentChanges = functions.https.onRequest(
         const writerId = request.body.writerId;
         const documentChanges = request.body.documentChanges;
         if (!documentId || !writerId) {
-          response
-            .status(StatusCode.MISSING_ARGUMENTS)
-            .send({
-              message: `Missing required field: ${
-                !documentId ? "documentId" : "writerId"
-              }`,
-            });
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !documentId ? "documentId" : "writerId"
+            }`,
+          });
         } else {
-
           if (documentChanges) {
-            console.info(`Server id ${getServerId()} updating document ${documentId} with with changes ${documentChanges}`);
+            console.info(
+              `Server id ${getServerId()} updating document ${documentId} with with changes ${documentChanges}`
+            );
             const documentObject: Record<string, unknown> = JSON.parse(
               JSON.stringify(documentChanges)
             );
             const userDoc = await genDocumentFromMap(documentId, writerId);
-            if(userDoc === undefined) {
+            if (userDoc === undefined) {
               throw new Error("Document does not exist");
             }
             for (const [key, value] of Object.entries(documentObject)) {
@@ -618,15 +650,22 @@ exports.checkDocumentChanges = functions.https.onRequest(
             // const documentObject: Record<string,unknown> = currentDocument as Record<string,unknown>;
             await updatePartialDocument(documentObject, documentId, writerId);
           }
-          
-          const currentDocument = await genDocumentFromMap(documentId, writerId);
+
+          const currentDocument = await genDocumentFromMap(
+            documentId,
+            writerId
+          );
           const currentUsers = await genUsersFromMap(documentId);
 
-          console.log(`Server id ${getServerId()} served document ${documentId} with LET ${currentDocument.metadata.last_edit_time}`);
+          console.log(
+            `Server id ${getServerId()} served document ${documentId} with LET ${
+              currentDocument.metadata.last_edit_time
+            }`
+          );
           response.status(StatusCode.OK).send({
             message: "Successfully checked document changes",
             data: {
-              document: currentDocument, 
+              document: currentDocument,
               onlineUsers: currentUsers,
             },
           });
@@ -670,7 +709,9 @@ exports.subscribeToDocument = functions.https.onRequest(
           };
 
           await ensureMapData(documentId, true);
-          console.log(`Server id ${getServerId()} subscribed to document ${documentId}`);
+          console.log(
+            `Server id ${getServerId()} subscribed to document ${documentId}`
+          );
           await subscribeToDocument(
             documentId,
             user,
@@ -681,7 +722,11 @@ exports.subscribeToDocument = functions.https.onRequest(
               updateType: typeof UpdateType,
               onlineEntity: typeof OnlineEntity
             ) => {
-              genUpdateUserMap(documentId, onlineEntity, updateType === UpdateType.REMOVE);
+              genUpdateUserMap(
+                documentId,
+                onlineEntity,
+                updateType === UpdateType.REMOVE
+              );
             },
             false
           );
@@ -724,7 +769,7 @@ exports.updatePartialDocument = functions.https.onRequest(
         } else {
           const documentObject: Record<string, unknown> = JSON.parse(
             JSON.stringify(documentChanges)
-          ); 
+          );
 
           delete documentObject["metdata"];
           const apiResult = await updatePartialDocument(
@@ -749,7 +794,6 @@ exports.updatePartialDocument = functions.https.onRequest(
 ); // return!!!
 // ------------------------ START OF *THIS* MINE FIELD ------------------------
 
-
 // cursor endpoint
 
 exports.updateUserCursor = functions.https.onRequest(
@@ -765,12 +809,15 @@ exports.updateUserCursor = functions.https.onRequest(
               !documentId ? "documentId" : "userId"
             }`,
           });
-        } else if(typeof userId !== "string") {
+        } else if (typeof userId !== "string") {
           response.status(StatusCode.MISSING_ARGUMENTS).send({
             message: `userId must be a string`,
           });
         } else {
-          await updateUserCursor(documentId, { user_id: userId, cursor: cursor });
+          await updateUserCursor(documentId, {
+            user_id: userId,
+            cursor: cursor,
+          });
 
           // Send a successful response back
           response.status(StatusCode.OK).send({
@@ -846,7 +893,7 @@ exports.shareDocumentWithUser = functions.https.onRequest(
         } else {
           const userId = await getUserIdFromEmail(invite_email);
 
-          if(userId === null) {
+          if (userId === null) {
             response.status(StatusCode.USER_NOT_FOUND).send({
               message: `User with email ${invite_email} not found in the database`,
             });
@@ -1096,12 +1143,10 @@ exports.subscribeToComments = functions.https.onRequest(
         // Send a successful response back
       } catch (error) {
         // Send an error response if something goes wrong
-        response
-          .status(StatusCode.GENERAL_ERROR)
-          .send({
-            message: "Failed to subscribe to comments.",
-            data: error as Error,
-          });
+        response.status(StatusCode.GENERAL_ERROR).send({
+          message: "Failed to subscribe to comments.",
+          data: error as Error,
+        });
       }
     });
   }
@@ -1131,6 +1176,36 @@ exports.getUserAccessLevel = functions.https.onRequest(
         // Send an error response if something goes wrong
         response.status(StatusCode.GENERAL_ERROR).send({
           message: "Failed to get highest user access level.",
+          data: error as Error,
+        });
+      }
+    });
+  }
+);
+
+exports.resetUserPassword = functions.https.onRequest(
+  async (request: any, response: any) => {
+    corsHandler(request, response, async () => {
+      try {
+        const email = request.body.email;
+        if (!email) {
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              "email"
+            }`,
+          });
+        } else {
+           await updateUserPassword(email);
+           response.status(StatusCode.OK).send({
+            message: "The user has been sent a password reset email",
+            data: true,
+          });
+        }
+        // Send a successful response back
+      } catch (error) {
+        // Send an error response if something goes wrong
+        response.status(StatusCode.GENERAL_ERROR).send({
+          message: "Could not send reset password email." + error,
           data: error as Error,
         });
       }
