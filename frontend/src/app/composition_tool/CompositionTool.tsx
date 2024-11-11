@@ -1493,14 +1493,6 @@ export default function CompositionTool() {
     return (
         <AppShell
             header={{ height: 180 }}
-            // navbar={{
-            //     width: 150,
-            //     breakpoint: "sm",
-            // }}
-            // aside={{
-            //     width: 300,
-            //     breakpoint: "sm",
-            // }}
             padding="md"
             styles={{
                 main: {
@@ -1532,9 +1524,8 @@ export default function CompositionTool() {
                     selectedKey={selectedKey.current}
                     userList={userList.current ? userList.current : []}
                 />
-                {/* <CommentAside /> */}
 
-                {/* get rid of the background later, use it for formatting */}
+
                 <Container
                     fluid
                     size="responsive"
@@ -1547,25 +1538,11 @@ export default function CompositionTool() {
                             "#FFFFFF",
                         boxShadow: '0 0px 5px rgba(0, 0, 0, 0.3)', // Shadow effect
                         borderRadius: '4px', // Rounded corners for a more "page" look
-                        margin: '20px', // Space around AppShell to enhance the effect
-                        border: '1px solid #e0e0e0', // Border around the AppShell
+                        margin: '20px', 
+                        border: '1px solid #e0e0e0', 
                     }}
                 >
                     <Space h="xl"></Space>
-                    {/* <input
-                        type="text"
-                        value={currentDocument?.score?.title}
-                        onChange={handleScoreNameChange}
-                        placeholder={currentDocument?.score?.title}
-                    />
-                    <input
-                        type="text"
-                        value={userTemp}
-                        onChange={handleUserIdChange}
-                        placeholder={userTemp}
-                    />
-                    <Button onClick={sendChanges}>Send Score change</Button>*/}
-                    {/* <Button onClick={sendAndFetch}>fetch Score change</Button>  */}
                     <div>
                         <div ref={notationRef}></div>
                     </div>
