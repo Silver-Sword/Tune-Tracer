@@ -15,6 +15,7 @@ import {
   Divider,
   Text,
   Image,
+  Menu,
 } from "@mantine/core";
 import React, { useEffect, useRef, useState } from "react";
 import { SharingModal } from "./sharing/SharingModal";
@@ -24,12 +25,13 @@ import {
     IconPlayerStop,
     IconVolume,
 } from "@tabler/icons-react";
-import { getUserID } from "../cookie";
+import { getUserID, getDisplayName, getEmail, clearUserCookies } from "../cookie";
 import Link from 'next/link';
 import { callAPI } from "../../utils/callAPI";
 import { useSearchParams } from "next/navigation";
 import UserColorsModal from './UserColorsModal';
 import { STATUS, ACTIONS} from "react-joyride"
+import { useRouter } from "next/navigation";
 
 import { DocumentMetadata } from "../lib/src/documentProperties";
 import { ShareStyle } from "../lib/src/documentProperties";
@@ -133,6 +135,10 @@ export const ToolbarHeader: React.FC<{
           callAPI("updatePartialDocument", new_title);
           setIsChangingName(false); // Exit edit mode and save
       };
+      const [passwordModalOpened, setPasswordModalOpened] = useState(false);
+      const router = useRouter();
+      const [displayName, setDisplayName] = useState<string>('');
+      const [email, setEmail] = useState<string>('');
 
 useEffect(() => {
   setInputValue(documentName);
@@ -176,6 +182,47 @@ useEffect(() => {
   useEffect(() => {
     setIsClient(true);
   }, []); 
+
+  useEffect(() => {
+    let displayCookie = getDisplayName();
+    let emailCookie = getEmail();
+    let userIdCookie = getUserID();
+    console.log(`userIdCookie: ${userIdCookie}`);
+    setDisplayName(displayCookie);
+    setEmail(emailCookie);    
+  }, []);
+
+  const handleLogout = () => {
+    console.log(`Successfully logged out of: ${email}`);
+    clearUserCookies();
+    router.push(`/`);
+  }
+  
+  const routeToProfilePage = () => {
+    router.push(`/profile`);
+  }
+
+  const handleResetOpen = () => {
+    setPasswordModalOpened(true);
+  }
+
+  const handleReset = async () => {
+    const email = getEmail();
+    console.log(`Resetting password for: ${email}`);
+    try
+    {
+      await callAPI("resetUserPassword", {email: email});
+    }
+    catch (error)
+    {
+      console.log(`Error resetting password for: ${email}`);
+    }
+    setPasswordModalOpened(false);
+  }
+
+  const closePasswordModal = () => {
+    setPasswordModalOpened(false);
+  }
 
   // Something is wrong with the callback, not allowing to move forward in states
   // Handle tutorial callback to manage step progression and tutorial completion
@@ -291,6 +338,35 @@ useEffect(() => {
           documentTitle={inputValue}
           metadata={documentMetadata}
         />}
+
+        {/* Profile Menu */}
+        <Menu shadow="md" width={200}>
+          <Menu.Target>
+            <Button className="profile-menu" size="sm">{displayName}</Button>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label style={{ fontSize: rem(13), fontWeight: 'bold' }}>{email}</Menu.Label>
+            <Menu.Divider />
+            <Menu.Item
+              onClick={routeToProfilePage}
+            >
+              Profile
+            </Menu.Item>
+            <Menu.Item
+              color="red"
+              onClick={handleResetOpen}
+            >
+              Reset Password
+            </Menu.Item>
+            <Menu.Item
+              color="red"
+              onClick={handleLogout}
+            >
+              Logout
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       </Group>
 
                 {/* Second layer (middle section) */}
