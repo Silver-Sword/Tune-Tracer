@@ -475,6 +475,15 @@ useEffect(() => {
                 />
               </Button>
             </Tooltip>
+            <Tooltip label="Remove Dots" position="top" withArrow>
+              <Button
+                size="compact-md"
+                variant="outline"
+                onClick={() => handleDot(-1, selectedNoteId)}
+              >
+                <Image h={20} w="auto" fit="contain" src="/icons/removeDot.png" />
+              </Button>
+            </Tooltip>
 
                             <Divider size="sm" orientation="vertical" />
 

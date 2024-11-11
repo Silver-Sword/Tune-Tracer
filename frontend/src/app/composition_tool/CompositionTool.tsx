@@ -50,8 +50,8 @@ export default function CompositionTool() {
     let selectedNoteId = useRef<number>(-1);
     const [selectedNoteHeadId, setSelectedNoteHeadId] = useState<string>('');
     let selectedKey = useRef<string>('');
-    const [isFetching, setIsFetching] = useState<boolean>(false);
     let isSending = useRef<boolean>(false);
+    let isFetching = useRef<boolean>(false);
     const notePlacementRectangleSVG = useRef<SVGElement | null>(null);
     const notePlacementRectangleRef = useRef<Selection<SVGElement, unknown, null, undefined> | null>(null);
     const [notationUpdated, setNotationUpdated] = useState<number>(0);
@@ -101,14 +101,15 @@ export default function CompositionTool() {
             const staveNote = score.current.findNote(noteId);
             if (!staveNote) return;
             const duration = staveNote?.getDuration();
-            const countDots = staveNote.getModifiersByType('Dot').length;
+
             if (dotType == 1) {
-                if (countDots == 1) score.current.modifyDurationInMeasure(duration, noteId);
-                else score.current.modifyDurationInMeasure(duration + "d", noteId);
+                score.current.modifyDurationInMeasure(duration + "d", noteId);
             }
-            if (dotType == 2) {
-                if (countDots == 2) score.current.modifyDurationInMeasure(duration, noteId);
-                else score.current.modifyDurationInMeasure(duration + "dd", noteId);
+            else if (dotType == 2) {
+                score.current.modifyDurationInMeasure(duration + "dd", noteId); 
+            }
+            else if (dotType == -1) {
+                score.current.modifyDurationInMeasure(duration, noteId);
             }
 
             selectedNoteId.current = noteId;
@@ -730,7 +731,7 @@ export default function CompositionTool() {
 
     const [userTemp, setUserTemp] = useState("");
 
-    let sendChangesTimeout: NodeJS.Timeout | null = null;
+    let changesTimeout: NodeJS.Timeout | null = null;
     const debounceDelay = 500; // Delay in ms, adjust as needed
 
     const sendChanges: SendChangesType = async () => {
@@ -738,11 +739,11 @@ export default function CompositionTool() {
         isSending.current = true;
         score.current.exportScoreDataObj(true);
         // Debounce the function to prevent rapid consecutive calls
-        if (sendChangesTimeout) {
-            clearTimeout(sendChangesTimeout);
+        if (changesTimeout) {
+            clearTimeout(changesTimeout);
         }
 
-        sendChangesTimeout = setTimeout(async () => {
+        changesTimeout = setTimeout(async () => {
             // while (isFetching || isSending) {
             //     console.log("waiting until fetching is done");
             //     await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
@@ -750,7 +751,7 @@ export default function CompositionTool() {
             if (score.current === null) return;
 
             let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
-            //console.log("exported Object: " + printScoreData(exportedScoreDataObj));
+            
 
             const changesTemp =
             {
@@ -759,6 +760,7 @@ export default function CompositionTool() {
                 writerId: userId.current,
             }
             console.log("Exporting Score data ------------------------------- ");
+            console.log("exported Object: " + printScoreData(exportedScoreDataObj));
 
             // var recordTemp: Record<string, unknown> = changes;
             // if (!('score' in recordTemp)) {
@@ -789,28 +791,28 @@ export default function CompositionTool() {
             return;
         }
 
-        sendChangesTimeout = setTimeout(async () => {
-            while (isSending.current || isFetching) {
+        changesTimeout = setTimeout(async () => {
+            while (isSending.current || isFetching.current) {
                 console.log("Waiting until send finished");
+                console.log("isSending: " + isSending.current);
+                console.log("isFetching: " + isFetching.current);
                 await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
             }
             console.log(JSON.stringify(changesTemp));
-            setIsFetching(true);
+            isFetching.current = true;
             await callAPI("checkDocumentChanges", changesTemp)
                 .then((res) => {
                     if (res.status !== 200) {
                         console.log("Error fetching changes");
-                        setIsFetching(false);
+                        isFetching.current = false;
                         return;
                     }
                     const receivedDocument = (res.data as any)['document'];
                     if (receivedDocument === undefined) {
                         console.error(`Something went wrong. Received document is undefined`);
-                        setIsFetching(false);
+                        isFetching.current = false;
                         return;
                     }
-                    console.debug(`Received document data: ${JSON.stringify(receivedDocument)}`);
-
                     //console.log("Recieved Score data: " + JSON.stringify(receivedDocument));
                     const compData: ScoreData = receivedDocument.score;
                     const document_title: string = receivedDocument.document_title;
@@ -827,6 +829,7 @@ export default function CompositionTool() {
                         score.current?.loadScoreDataObj(compData);
                         score.current?.addNoteInMeasure([], 0);
                         console.log("LOADED SCORE DATA");
+                        console.log("loaded Object: " + printScoreData(compData));
                         // Now add it to the currently selected note
                         if (selectedNoteId.current !== -1) {
                             d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
@@ -844,7 +847,7 @@ export default function CompositionTool() {
                         console.error(`Something went wrong. Received online users is undefined`);
                     }
 
-                    setIsFetching(false);
+                    isFetching.current = false;
                 });
         });
         // .catch((error) => {
@@ -1155,7 +1158,7 @@ export default function CompositionTool() {
                 console.warn('Note head ID not found in staveNote.noteHeads');
                 selectedKey.current = ''
             } else {
-                console.warn('StaveNote not found for selectedNoteId');
+                //console.warn('StaveNote not found for selectedNoteId');
                 selectedKey.current = ''
             }
         } else {
@@ -1195,7 +1198,7 @@ export default function CompositionTool() {
                     console.warn('Selected key not found in keys');
                 }
             } else {
-                console.warn('StaveNote not found for selectedNoteId');
+                //console.warn('StaveNote not found for selectedNoteId');
             }
         }
 
