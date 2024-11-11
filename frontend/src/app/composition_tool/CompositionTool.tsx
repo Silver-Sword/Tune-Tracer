@@ -1178,6 +1178,12 @@ export default function CompositionTool() {
                         // removeNoteHandler(staveNote.keys, selectedNoteId.current);
                         removeNoteHandler(score, selectedNoteId, staveNote.keys, selectedNoteId.current);
                         addNoteHandler(score, selectedNoteId, newKeys, selectedNoteId.current);
+                        newKeys.forEach((key) => {
+                            if (piano)
+                            {
+                                playNote(key, piano);
+                            }
+                        })
                         sendChanges();
                         // Update selectedKey to the new pitch
 
@@ -1203,6 +1209,12 @@ export default function CompositionTool() {
                         // removeNoteHandler(staveNote.keys, selectedNoteId.current);
                         removeNoteHandler(score, selectedNoteId, staveNote.keys, selectedNoteId.current);
                         addNoteHandler(score, selectedNoteId, newKeys, selectedNoteId.current);
+                        newKeys.forEach((key) => {
+                            if (piano)
+                            {
+                                playNote(key, piano);
+                            }
+                        })
                         sendChanges();
                         // Update selectedKey to the new pitch
 
