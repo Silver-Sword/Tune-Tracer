@@ -22,7 +22,7 @@ import { DocumentMetadata, ShareStyle } from "../lib/src/documentProperties";
 import { Comment } from "../lib/src/Comment";
 import { OnlineEntity } from "../lib/src/realtimeUserTypes";
 import { SelectedNote } from "../lib/src/SelectedNote";
-import { processOnlineUsersCursors } from './onlineUsers/updateUserCursors';
+import { processOnlineUsersUpdate } from './onlineUsers/updateUserCursors';
 
 import * as d3 from 'd3';
 import { Selection } from 'd3';
@@ -67,9 +67,7 @@ export default function CompositionTool() {
 
     // map of user ids to their online information
     const [onlineUsers, setOnlineUsers] = useState<Map<string, OnlineEntity>>(new Map<string, OnlineEntity>());
-    // const [userList, setUserList] = useState<{ userId: string; displayName: string; color: string}[]>([]);
-    const userList = useRef<{ userId: string; displayName: string; color: string }[]>();
-    const displayNameCache = useRef<{ [userId: string]: string }>({});
+    const userList = useRef<{ userId: string; displayName: string; color: string }[]>([]);
 
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = async (duration: string, noteId: number) => {
@@ -906,11 +904,9 @@ export default function CompositionTool() {
     }
 
     // THIS FETCHES CHANGES PERIODICALLY
-    // UNCOMMENT below to actually do it.
     useInterval(() => {
-        // Your custom logic here
         fetchChanges();
-    }, 2000); // 5 seconds
+    }, 2000); // 2 seconds
 
     const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
         const value = event.currentTarget.value;
@@ -1083,6 +1079,15 @@ export default function CompositionTool() {
             clearInterval(intervalID);
         }
     }, [userTemp]);
+
+    useEffect(() => {
+        processOnlineUsersUpdate(
+            userId.current, 
+            onlineUsers, 
+            userList
+        );
+    }, [score, currentDocument]);
+
     useEffect(() => {
         const svg = d3.select(notationRef.current).select('svg');
 
@@ -1405,34 +1410,12 @@ export default function CompositionTool() {
         }
     };
 
-    const fetchDisplayName = async (userIdToFetch: string): Promise<string> => {
-        if (displayNameCache.current[userIdToFetch]) {
-            return displayNameCache.current[userIdToFetch];
-        }
-        try {
-            const response = await callAPI('getUserFromId', { userId: userIdToFetch });
-            if (response.status === 200 && response.data) {
-                console.log(response.data);
-
-                const displayName = (response.data as any)['display_name'];
-                displayNameCache.current[userIdToFetch] = displayName;
-                return displayName;
-            } else {
-                console.error(`Failed to fetch display name for userId ${userIdToFetch}`);
-                return '';
-            }
-        } catch (error) {
-            console.error(`Error fetching display name for userId ${userIdToFetch}:`, error);
-            return '';
-        }
-    };
-
+    // update online user cursors
     useEffect(() => {
-        processOnlineUsersCursors(
+        processOnlineUsersUpdate(
             userId.current,
             onlineUsers,
             userList,
-            fetchDisplayName
         )
     }, [onlineUsers]);
 
@@ -1468,7 +1451,7 @@ export default function CompositionTool() {
                     handleDot={dotHandler}
                     hasWriteAccess={hasWriteAccess}
                     selectedKey={selectedKey.current}
-                    userList={userList.current ? userList.current : []}
+                    userList={userList.current}
                 />
 
 
