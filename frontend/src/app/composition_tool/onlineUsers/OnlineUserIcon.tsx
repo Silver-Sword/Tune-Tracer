@@ -2,7 +2,6 @@ import React from "react";
 import { Avatar, MantineTheme, Tooltip } from "@mantine/core";
 
 interface OnlineUserIconProps {
-  user_id: string;
   display_name: string;
   color: string;
   size?: number;
@@ -19,7 +18,6 @@ function isLightColor(color: string): boolean {
 }
 
 export default function OnlineUserIcon({
-  user_id,
   display_name,
   color,
   size = 40,
@@ -28,10 +26,6 @@ export default function OnlineUserIcon({
   const initial = display_name.charAt(0).toUpperCase();
 
   return (
-    <Tooltip 
-      label={display_name}
-      withArrow
-    >
       <Avatar
         size={size}
         radius="xl"
@@ -39,12 +33,11 @@ export default function OnlineUserIcon({
           root: {
             backgroundColor: color,
             color: isLightColor(color) ? theme.colors.dark[9] : theme.white,
-            border: `2px solid "black"`,
+            border: '3px solid #222222',
           },
         })}
       >
         {initial}
       </Avatar>
-    </Tooltip>
   );
 }

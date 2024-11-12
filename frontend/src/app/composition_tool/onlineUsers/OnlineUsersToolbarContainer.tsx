@@ -3,7 +3,7 @@ import React from "react";
 import UserColorsModal from "./UserColorsModal";
 import OnlineUserIcon from "./OnlineUserIcon";
 
-import { Button, Group } from "@mantine/core";
+import { Button, Group, Tooltip } from "@mantine/core";
 
 interface OnlineUsersToolbarContainerProps {
   modalOpened: boolean;
@@ -17,22 +17,21 @@ export const OnlineUsersToolbarContainer: React.FC<
 > = ({ modalOpened, onModalOpen, onModalClose, userList }) => {
   return (
     <Group>
-        {userList.slice(0, 2).map((user) => (
-            <OnlineUserIcon
-                user_id={user.userId}
-                display_name={user.displayName}
-                color={user.color}
-                size={40}
-            />
-        ))
-        }
-        <Button onClick={onModalOpen}>Online Users</Button>
-        <UserColorsModal
-            opened={modalOpened}
-            onClose={onModalClose}
-            userList={userList}
-        />
-
+      {userList.slice(0, 2).map((user) => (
+        <Tooltip label={user.displayName} withArrow>
+          <OnlineUserIcon
+            color={user.color}
+            size={40}
+            display_name={user.displayName}
+          />
+        </Tooltip>
+      ))}
+      <Button onClick={onModalOpen}>Online Users</Button>
+      <UserColorsModal
+        opened={modalOpened}
+        onClose={onModalClose}
+        userList={userList}
+      />
     </Group>
   );
 };

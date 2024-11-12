@@ -327,7 +327,6 @@ useEffect(() => {
 
                     {/* Sharing UI */}
 
-        {/* Select Dropdown should not be changable if not the owner */}
         <OnlineUsersToolbarContainer
           modalOpened={usersModalOpened}
           onModalOpen={() => setUsersModalOpened(true)}
