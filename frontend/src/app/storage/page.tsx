@@ -24,7 +24,7 @@ import {
 import StorageTutorial from "./storage-tutorial";
 import Joyride, { CallBackProps, STATUS, Step, ACTIONS, EVENTS} from "react-joyride";
 import { IconSearch, IconSortDescending, IconArrowUp, IconArrowDown} from "@tabler/icons-react";
-import { getUserID, getDisplayName, getEmail, clearUserCookies, saveDocID } from "../cookie";
+import { getUserID, getEmail, clearUserCookies, saveDocID } from "../cookie";
 import { useRouter } from "next/navigation";
 import { CreateCard } from "./CreateCard";
 import { DocCard, DocumentData } from "./DocCard";
@@ -221,15 +221,33 @@ export default function Storage() {
     setDocuments(sortDocuments(documents, sortBy, newDirection));
   }
 
+  const getUserName = async () => {
+    await callAPI("getUserFromId", {userId: getUserID()})
+      .then((res) => {
+        if (res.status !== 200) {
+            console.log("Error getting user data");
+            return;
+        }
+        const user = (res.data as any);
+              if(user === undefined) {
+                  console.error(`Something went wrong. user is undefined`);
+              }
+              else {
+                setDisplayName(user.display_name);
+              }
+      }).catch((error) => {
+        console.error(`Error getting user data: ${error}`);
+        return;
+      });;
+  }
 
   useEffect(() => {
-    let displayCookie = getDisplayName();
     let emailCookie = getEmail();
     let userIdCookie = getUserID();
     console.log(`userIdCookie: ${userIdCookie}`);
-    setDisplayName(displayCookie);
     setEmail(emailCookie);
     setUID(userIdCookie);
+    getUserName(); 
     setTimeout(async () => {
       setLoading(true);
       const data = await getOwnPreviews(userIdCookie);
