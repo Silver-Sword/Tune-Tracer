@@ -1,4 +1,4 @@
-import { Vex, Stave, StaveNote, Voice, Tickable, Accidental, Modifier, ModifierContext, Category } from 'vexflow';
+import { Vex, Stave, StaveNote, Voice, Tickable, Accidental, Modifier, ModifierContext, Category, Formatter, SVGContext } from 'vexflow';
 import { getDefaultMeasureData, MeasureData, printMeasureData } from '../../../../lib/src/MeasureData'; // edit the tsconfig file to include this import
 import { getDefaultStaveNoteData, ModifierData, StaveNoteData } from '../../../../lib/src/StaveNoteData';
 
@@ -28,7 +28,7 @@ export class Measure {
     private x: number;
     private y: number;
     private width: number;
-    public ids: number[] =[];
+    public ids: number[] = [];
 
     constructor(
         x: number = 0,
@@ -80,25 +80,42 @@ export class Measure {
             this.setClef(clef);
             this.stave.setKeySignature(keySignature);
         }
-        
+
 
 
         let notes: StaveNote[] = [];
+        let saveNote: StaveNote = new this.VF.StaveNote({ clef: this.clef, keys: [this.getRestLocation("qr")], duration: "qr" });
         if (measureData !== undefined && measureData.notes.length > 0) {
             measureData.notes.forEach((note) => {
-                let newNote: StaveNote = new this.VF.StaveNote({ clef: this.clef, keys: note.keys, duration: note.duration });
-                notes.push(newNote);
-                if (note.dots > 0) newNote.addModifier(new this.VF.Dot());
-                if (note.dots > 1) newNote.addModifier(new this.VF.Dot());
+                let newStaveNote: StaveNote = new this.VF.StaveNote({ clef: this.clef, keys: note.keys, duration: note.duration });
+                let modiferContext = new ModifierContext();
+
+                if (note.dots > 0) {
+                    let dot = new this.VF.Dot();
+                    modiferContext.addModifier(dot);
+                    newStaveNote.addModifier(dot);
+                }
+                if (note.dots > 1) {
+                    let dot = new this.VF.Dot();
+                    modiferContext.addModifier(dot);
+                    newStaveNote.addModifier(dot);
+                }
+
+                newStaveNote.setModifierContext(modiferContext);
+                notes.push(newStaveNote);
+                if (note.dots == 2) {
+                    saveNote = newStaveNote;
+                }
+                // Runs through modifiers in network object
                 note.modifiers.forEach((Modifier) => {
-                    if(!Modifier.modifier) return;
+                    if (!Modifier.modifier) return;
                     let modifierType = Modifier.modifier.toLowerCase();
-                    if(modifierType !== '#' && modifierType !== 'b' && modifierType !== 'n') return;
+                    if (modifierType !== '#' && modifierType !== 'b' && modifierType !== 'n') return;
                     const accidental = new Accidental(Modifier.modifier);
-                    newNote.addModifier(accidental, Modifier.index);
-                    newNote.getModifiers()[newNote.getModifiers().length - 1].setAttribute("mod", Modifier.modifier);
+                    newStaveNote.addModifier(accidental, Modifier.index);
+                    newStaveNote.getModifiers()[newStaveNote.getModifiers().length - 1].setAttribute("mod", Modifier.modifier);
                 });
-                newNote.setModifierContext(new ModifierContext());
+
             });
         }
         else {
@@ -173,7 +190,7 @@ export class Measure {
             // getDuration doesn't include dots, so we have to manually do it ourselves, yay!
             let newDuration = staveNote.getDuration();
             const modifiers = staveNote.getModifiers();
-            
+
 
             // Filter the modifiers to count how many are dots
             const dotCount = modifiers.filter(modifier => modifier.getCategory() === 'Dot').length;
@@ -182,14 +199,14 @@ export class Measure {
             if (staveNote.isRest()) newDuration += "r";
 
             let modifierDataArray: ModifierData[] = [];
-            
+
             modifiers.forEach((modifier) => {
-               let modifierData: ModifierData = {
-                index: modifier.checkIndex(),
-                modifier: modifier.getAttribute("mod")
-               }
-               if(modifier.getAttribute("mod") === undefined)return;
-               modifierDataArray.push(modifierData);
+                let modifierData: ModifierData = {
+                    index: modifier.checkIndex(),
+                    modifier: modifier.getAttribute("mod")
+                }
+                if (modifier.getAttribute("mod") === undefined) return;
+                modifierDataArray.push(modifierData);
             });
 
             staveNoteData.modifiers = modifierDataArray;
@@ -298,7 +315,7 @@ export class Measure {
 
 
     addNote = (keys: string[], noteId: string): StaveNote | null => {
-        if(keys.length === 0) return null;
+        if (keys.length === 0) return null;
         if (!this.voice1) return null;
 
         const VF = Vex.Flow;
@@ -311,7 +328,7 @@ export class Measure {
             if (staveNote.getAttributes().id === noteId) {
                 let countDots = staveNote.getModifiersByType('Dot').length;
                 let duration = staveNote.getDuration();
-                
+
                 let modiferContext = staveNote.getModifierContext();
                 if (countDots > 0) duration += "d";
                 if (countDots > 1) duration += "d";
@@ -377,7 +394,7 @@ export class Measure {
         return this.voice1.getTickables()[0] as StaveNote;
     }
 
-    private fillInTicks = (fillTicks: number): StaveNote[] => {
+    private fillInTicks = (fillTicks: number): StaveNote[] | null => {
         let notes: StaveNote[] = [];
         const RES = Vex.Flow.RESOLUTION;
         // Step 2: Possible tick values in descending order
@@ -407,7 +424,7 @@ export class Measure {
 
         // This should never happen!
         if (fillTicks != 0) {
-            throw new Error('Cannot exactly match the requested number of ticks with available durations.');
+            return null;
         }
 
         return notes;
@@ -423,7 +440,9 @@ export class Measure {
             if (desiredTicks < 0) {
                 // Too may ticks in this note, we'll need to replace it with smaller notes
                 // The negative value of desiredTicks (fillTicks) is the amount of ticks we need to create with smaller durations
-                return { replaceNotes: this.fillInTicks(desiredTicks * - 1), index: i };
+                let replaceNotes: StaveNote[] | null = this.fillInTicks(desiredTicks * - 1);
+                if(!replaceNotes) return { replaceNotes: [], index: -1 }
+                return { replaceNotes, index: i };
             }
             // If desiredTicks == 0 after subtraction, it was a clean cut
             else if (desiredTicks === 0) {
@@ -475,14 +494,15 @@ export class Measure {
             if (staveNote.getAttributes().id === noteId) {
                 found = true;
                 const currentNoteTicks = staveNote.getTicks().value();
-                let modifiersNoDots = staveNote.getModifiers().filter(modifier => !(modifier instanceof this.VF.Dot));
                 let modifierContext = staveNote.getModifierContext();
+                let newNote: StaveNote | null = null; 
                 // if we want each note duration to be less, then we'll need to pad with rests
                 if (newDesiredTicks < currentNoteTicks) {
                     // Calculates how many rests we can fit based on the old rest
                     const numberOfNewRests = Math.floor(currentNoteTicks / newDesiredTicks);
                     // Add our note with the new duration
-                    notes.push(this.createNote(this.clef, staveNote.getKeys(), duration, staveNote.isRest()));
+                    newNote = this.createNote(this.clef, staveNote.getKeys(), duration, staveNote.isRest());
+                    notes.push(newNote);
                     // Start at 1 since we already added one
                     for (let i = 1; i < numberOfNewRests; i++) {
                         notes.push(this.createNote(this.clef, staveNote.getKeys(), duration, true))
@@ -492,7 +512,9 @@ export class Measure {
                     // We can put in one quarter left, but there is .75 of a quarter note left in ticks
                     let leftOverTicks = currentNoteTicks - (numberOfNewRests * newDesiredTicks);
                     if (leftOverTicks > 0) {
-                        this.fillInTicks(leftOverTicks).forEach(staveNote => {
+                        let fillNotes = this.fillInTicks(leftOverTicks);
+                        if(!fillNotes) return false;
+                        fillNotes.forEach(staveNote => {
                             notes.push(staveNote);
                         });
                     }
@@ -509,12 +531,8 @@ export class Measure {
                         return false;
                     }
                     // First we'll replace our current note with the new duration
-                    console.log("staveNote.isRest(): " + staveNote.isRest());
-                    let newNote = this.createNote(this.clef, staveNote.getKeys(), duration, staveNote.isRest());
-                    if (countDots > 0) newNote.addModifier(new Vex.Flow.Dot());
-                    if (countDots > 1) newNote.addModifier(new Vex.Flow.Dot());
-
-                    this.addModifiers(newNote, modifiersNoDots, modifierContext);
+                    newNote = this.createNote(this.clef, staveNote.getKeys(), duration, staveNote.isRest());
+                                   
                     notes.push(newNote);
                     // Our new duration is bigger, we'll need to eat Ticks
                     let returnFromEating: { replaceNotes: StaveNote[], index: number } = this.eatTicks(i, newDesiredTicks, tickables);
@@ -526,6 +544,19 @@ export class Measure {
                     // Since we increment, we'll skip that last 'eaten' note
                     i = returnFromEating.index;
                 }
+                if(!newNote) return false;
+                let modifiersNoDots = staveNote.getModifiers().filter(modifier => !(modifier instanceof this.VF.Dot));
+                if (countDots > 0) {
+                    let dot = new Vex.Flow.Dot();
+                    modifierContext?.addModifier(dot)
+                    newNote.addModifier(dot);
+                }
+                if (countDots > 1) {
+                    let dot = new Vex.Flow.Dot();
+                    modifierContext?.addModifier(dot)
+                    newNote.addModifier(dot);
+                }      
+                this.addModifiers(newNote, modifiersNoDots, modifierContext);
             }
             else {
 
@@ -573,8 +604,10 @@ export class Measure {
                     });
                     // We've removed all the keys, fill in with appropriate rests
                     if (newKeys.length == 0) {
+                        let fillNotes = this.fillInTicks(ticksToFill);
+                        if(!fillNotes) return {staveNote: null, found:false};
                         // We need to fill ticks here in case its a dotted note
-                        this.fillInTicks(ticksToFill).forEach(staveNote => {
+                        fillNotes.forEach(staveNote => {
                             notes.push(staveNote);
                         });
                     }
@@ -600,7 +633,9 @@ export class Measure {
         });
 
         if (fillInBack) {
-            this.fillInTicks(ticksToFill).forEach(staveNote => {
+            let fillNotes = this.fillInTicks(ticksToFill);
+            if(!fillNotes) return {staveNote: null, found:false};
+            fillNotes.forEach(staveNote => {
                 notes.push(staveNote);
             });
         }
@@ -643,7 +678,7 @@ export class Measure {
             let staveNoteData = getDefaultStaveNoteData();
 
             if (staveNote.getAttributes().id === noteId) {
-                if(staveNote.isRest()) return;
+                if (staveNote.isRest()) return;
                 let notekeys = staveNote.getKeys();
                 let inputKeySet = new Set(keys);
                 let indsWithAccidentals = this.getIndicesWithAccidentalsNoDots(staveNote);
@@ -656,10 +691,10 @@ export class Measure {
                             }
 
                         }
-                        if(modifier === "") continue;
+                        if (modifier === "") continue;
                         // Create Accidental
                         const accidental = new Accidental(modifier);
-                        
+
                         staveNote.addModifier(accidental, i);
                         staveNote.getModifiers()[staveNote.getModifiers().length - 1].setAttribute("mod", modifier);
                     }

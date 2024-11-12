@@ -566,8 +566,8 @@ export class Score {
             measures[i].getVoice1().setContext(this.context);
             this.formatter.formatToStave([measures[i].getVoice1()], measures[i].getStave());
             XCoordinate += measures[i].getStave().getWidth();
-            this.generateBeams(measures[i]);
             measures[i].getStave().setContext(this.context).draw();
+            this.generateBeams(measures[i]);
             measures[i].getVoice1().draw(this.context);
 
             this.formatter.postFormat();

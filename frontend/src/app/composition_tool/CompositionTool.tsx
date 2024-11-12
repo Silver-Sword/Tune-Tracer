@@ -50,8 +50,8 @@ export default function CompositionTool() {
     let selectedNoteId = useRef<number>(-1);
     const [selectedNoteHeadId, setSelectedNoteHeadId] = useState<string>('');
     let selectedKey = useRef<string>('');
-    const [isFetching, setIsFetching] = useState<boolean>(false);
-    let  isSending = useRef<boolean>(false);
+    let isSending = useRef<boolean>(false);
+    let isFetching = useRef<boolean>(false);
     const notePlacementRectangleSVG = useRef<SVGElement | null>(null);
     const notePlacementRectangleRef = useRef<Selection<SVGElement, unknown, null, undefined> | null>(null);
     const [notationUpdated, setNotationUpdated] = useState<number>(0);
@@ -99,16 +99,17 @@ export default function CompositionTool() {
     const dotHandler = async (dotType: number, noteId: number) => {
         if (score && score.current) {
             const staveNote = score.current.findNote(noteId);
-            if(!staveNote) return;
+            if (!staveNote) return;
             const duration = staveNote?.getDuration();
-            const countDots = staveNote.getModifiersByType('Dot').length;
+
             if (dotType == 1) {
-                if(countDots == 1) score.current.modifyDurationInMeasure(duration, noteId);
-                else score.current.modifyDurationInMeasure(duration + "d", noteId);
+                score.current.modifyDurationInMeasure(duration + "d", noteId);
             }
-            if (dotType == 2) {
-                if(countDots == 2) score.current.modifyDurationInMeasure(duration, noteId);
-                else score.current.modifyDurationInMeasure(duration + "dd", noteId);
+            else if (dotType == 2) {
+                score.current.modifyDurationInMeasure(duration + "dd", noteId); 
+            }
+            else if (dotType == -1) {
+                score.current.modifyDurationInMeasure(duration, noteId);
             }
 
             selectedNoteId.current = noteId;
@@ -397,6 +398,10 @@ export default function CompositionTool() {
                     const isRest = note.duration.includes('r');
                     const baseDurationKey = note.duration.replace('r', '').replaceAll('d', '');
                     const baseDuration = durationMap[baseDurationKey];
+                    const indexToModifierMap: Map<number, string> = new Map();
+                    note.modifiers.forEach((modifier) => {
+                        indexToModifierMap.set(modifier.index, modifier.modifier);
+                    });
 
                     if (!baseDuration) {
                         console.warn(`Unknown duration: ${note.duration}`);
@@ -416,8 +421,11 @@ export default function CompositionTool() {
                     const noteId = noteIdTracker++;
 
                     for (let k = 0; k < note.keys.length; k++) {
-                        const sanitizedKey = note.keys[k].replace('/', '');
+                        let sanitizedKey;
                         const noteElement = document.getElementById(noteId.toString());
+                        let modifier = indexToModifierMap.get(k);
+                        if (modifier === "b" || modifier === "#") sanitizedKey = note.keys[k].replace('/', modifier);
+                        else sanitizedKey = note.keys[k].replace('/', '');
 
                         // Since these coordinates are viewport based at first,
                         // we have to make them relative to the SVG container
@@ -455,6 +463,10 @@ export default function CompositionTool() {
                     const isRest = note.duration.includes('r');
                     const baseDurationKey = note.duration.replace('r', '').replaceAll('d', '');
                     const baseDuration = durationMap[baseDurationKey];
+                    const indexToModifierMap: Map<number, string> = new Map();
+                    note.modifiers.forEach((modifier) => {
+                        indexToModifierMap.set(modifier.index, modifier.modifier);
+                    });
 
                     if (!baseDuration) {
                         console.warn(`Unknown duration: ${note.duration}`);
@@ -472,8 +484,11 @@ export default function CompositionTool() {
                     const noteId = noteIdTracker++;
 
                     for (let k = 0; k < note.keys.length; k++) {
-                        const sanitizedKey = note.keys[k].replace('/', '');
+                        let sanitizedKey;
                         const noteElement = document.getElementById(noteId.toString());
+                        let modifier = indexToModifierMap.get(k);
+                        if (modifier === "b" || modifier === "#") sanitizedKey = note.keys[k].replace('/', modifier);
+                        else sanitizedKey = note.keys[k].replace('/', '');
 
                         let noteX = 0;
                         if (noteElement && svgRect?.left) {
@@ -716,7 +731,7 @@ export default function CompositionTool() {
 
     const [userTemp, setUserTemp] = useState("");
 
-    let sendChangesTimeout: NodeJS.Timeout | null = null;
+    let changesTimeout: NodeJS.Timeout | null = null;
     const debounceDelay = 500; // Delay in ms, adjust as needed
 
     const sendChanges: SendChangesType = async () => {
@@ -724,19 +739,19 @@ export default function CompositionTool() {
         isSending.current = true;
         score.current.exportScoreDataObj(true);
         // Debounce the function to prevent rapid consecutive calls
-        if (sendChangesTimeout) {
-            clearTimeout(sendChangesTimeout);
+        if (changesTimeout) {
+            clearTimeout(changesTimeout);
         }
 
-        sendChangesTimeout = setTimeout(async () => {
+        changesTimeout = setTimeout(async () => {
             // while (isFetching || isSending) {
             //     console.log("waiting until fetching is done");
             //     await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
             // }
             if (score.current === null) return;
-            
+
             let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
-            //console.log("exported Object: " + printScoreData(exportedScoreDataObj));
+            
 
             const changesTemp =
             {
@@ -745,6 +760,7 @@ export default function CompositionTool() {
                 writerId: userId.current,
             }
             console.log("Exporting Score data ------------------------------- ");
+            console.log("exported Object: " + printScoreData(exportedScoreDataObj));
 
             // var recordTemp: Record<string, unknown> = changes;
             // if (!('score' in recordTemp)) {
@@ -771,68 +787,68 @@ export default function CompositionTool() {
         };
 
         // Don't fetch while playing back
-        if (isPlayingBack)
-        {
+        if (isPlayingBack) {
             return;
         }
-        
-        sendChangesTimeout = setTimeout(async () => {
-            while (isSending.current || isFetching) {
+
+        changesTimeout = setTimeout(async () => {
+            while (isSending.current || isFetching.current) {
                 console.log("Waiting until send finished");
+                console.log("isSending: " + isSending.current);
+                console.log("isFetching: " + isFetching.current);
                 await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
             }
-        console.log(JSON.stringify(changesTemp));
-        setIsFetching(true);
-        await callAPI("checkDocumentChanges", changesTemp)
-            .then((res) => {
-                if (res.status !== 200) {
-                    console.log("Error fetching changes");
-                    setIsFetching(false);
-                    return;
-                }
-                const receivedDocument = (res.data as any)['document'];
-                if (receivedDocument === undefined) {
-                    console.error(`Something went wrong. Received document is undefined`);
-                    setIsFetching(false);
-                    return;
-                }
-                console.debug(`Received document data: ${JSON.stringify(receivedDocument)}`);
-
-                //console.log("Recieved Score data: " + JSON.stringify(receivedDocument));
-                const compData: ScoreData = receivedDocument.score;
-                const document_title: string = receivedDocument.document_title;
-                const comments: Comment[] = receivedDocument.comments;
-                const metadata: DocumentMetadata = receivedDocument.metadata;
-                const tempDocument: Document = {
-                    document_title: document_title,
-                    comments: comments,
-                    score: compData,
-                    metadata: metadata,
-                };
-                setDocument(tempDocument);
-                if (notationRef.current) {
-                    score.current?.loadScoreDataObj(compData);
-                    score.current?.addNoteInMeasure([], 0);
-                    console.log("LOADED SCORE DATA");
-                    // Now add it to the currently selected note
-                    if (selectedNoteId.current !== -1) {
-                        d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
+            console.log(JSON.stringify(changesTemp));
+            isFetching.current = true;
+            await callAPI("checkDocumentChanges", changesTemp)
+                .then((res) => {
+                    if (res.status !== 200) {
+                        console.log("Error fetching changes");
+                        isFetching.current = false;
+                        return;
                     }
-                    setNotationUpdated(prev => prev + 1);
-                    createNewNoteBox();
-                }
-                
-            // Update online users
-            const receivedUsers = (res.data as any)['onlineUsers'];
-            if(receivedUsers !== undefined) {
-                console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
-                setOnlineUsers(new Map(Object.entries(receivedUsers)) as Map<string, OnlineEntity>);
-            } else {
-                console.error(`Something went wrong. Received online users is undefined`);
-            }
+                    const receivedDocument = (res.data as any)['document'];
+                    if (receivedDocument === undefined) {
+                        console.error(`Something went wrong. Received document is undefined`);
+                        isFetching.current = false;
+                        return;
+                    }
+                    //console.log("Recieved Score data: " + JSON.stringify(receivedDocument));
+                    const compData: ScoreData = receivedDocument.score;
+                    const document_title: string = receivedDocument.document_title;
+                    const comments: Comment[] = receivedDocument.comments;
+                    const metadata: DocumentMetadata = receivedDocument.metadata;
+                    const tempDocument: Document = {
+                        document_title: document_title,
+                        comments: comments,
+                        score: compData,
+                        metadata: metadata,
+                    };
+                    setDocument(tempDocument);
+                    if (notationRef.current) {
+                        score.current?.loadScoreDataObj(compData);
+                        score.current?.addNoteInMeasure([], 0);
+                        console.log("LOADED SCORE DATA");
+                        console.log("loaded Object: " + printScoreData(compData));
+                        // Now add it to the currently selected note
+                        if (selectedNoteId.current !== -1) {
+                            d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
+                        }
+                        setNotationUpdated(prev => prev + 1);
+                        createNewNoteBox();
+                    }
 
-            setIsFetching(false);
-            });
+                    // Update online users
+                    const receivedUsers = (res.data as any)['onlineUsers'];
+                    if (receivedUsers !== undefined) {
+                        console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
+                        setOnlineUsers(new Map(Object.entries(receivedUsers)) as Map<string, OnlineEntity>);
+                    } else {
+                        console.error(`Something went wrong. Received online users is undefined`);
+                    }
+
+                    isFetching.current = false;
+                });
         });
         // .catch((error) => {
         //         // Getting the Error details.
@@ -854,12 +870,12 @@ export default function CompositionTool() {
             userId: userId.current,
             documentId: documentID.current,
         });
-        if(response.status !== 200) {
+        if (response.status !== 200) {
             console.error("Error fetching access level");
             return;
-        }  
+        }
         const accessLevel = response.data as number;
-            
+
         console.log(`Access Level Response: ${accessLevel}`);
         const hasWriteAccess: boolean = accessLevel >= ShareStyle.WRITE;
         setHasWriteAccess(hasWriteAccess);
@@ -947,7 +963,7 @@ export default function CompositionTool() {
 
                 // Update online users
                 const receivedUsers = (res.data as any)['onlineUsers'];
-                if(receivedUsers !== undefined) {
+                if (receivedUsers !== undefined) {
 
                     console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
                     setOnlineUsers(new Map(Object.entries(receivedUsers)) as Map<string, OnlineEntity>);
@@ -965,55 +981,55 @@ export default function CompositionTool() {
 
     // loads in background
 
-        // for networking
-        useEffect(() => {
-            if (!loaded && userId.current !== '') {
-                var userInfo = {
-                    documentId: documentID.current,
-                    userId: userId.current,
-                    user_email: email.current,
-                    displayName: displayName.current
-                };
-                console.log("document ID: " + documentID.current);
-                console.log("User Info: " + JSON.stringify(userInfo));
+    // for networking
+    useEffect(() => {
+        if (!loaded && userId.current !== '') {
+            var userInfo = {
+                documentId: documentID.current,
+                userId: userId.current,
+                user_email: email.current,
+                displayName: displayName.current
+            };
+            console.log("document ID: " + documentID.current);
+            console.log("User Info: " + JSON.stringify(userInfo));
 
-            callAPI("subscribeToDocument", userInfo) 
-            .then((res) => {
-                if(res.status != 200) {
-                    console.log("Error fetching changes in handleScoreNameChange");
+            callAPI("subscribeToDocument", userInfo)
+                .then((res) => {
+                    if (res.status != 200) {
+                        console.log("Error fetching changes in handleScoreNameChange");
+                        return;
+                    }
+                    // Read result of the Cloud Function.
+                    const document = (res.data as any)['document'];
+                    const compData: ScoreData = document.score;
+                    const document_title: string = document.document_title;
+                    const comments: Comment[] = document.comments;
+                    const metadata: DocumentMetadata = document.metadata;
+                    const tempDocument: Document = {
+                        document_title: document_title,
+                        comments: comments,
+                        score: compData,
+                        metadata: metadata,
+                    };
+                    setDocument(tempDocument);
+                    // console.log("Document:" + currentDocument);
+                    setLoadState(true);
+                    // console.log("Recieved Score data: " + printScoreData(compData));
+                    // if (notationRef.current) {
+                    //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
+                    // }
+
+                    console.log("Document Loaded");
+                    var temp = !loaded;
+                    setLoadState(temp);
+                })
+                .catch((error) => {
+                    // Getting the Error details.
+                    const message = error.message;
+                    console.log(`Error: ${message}`);
                     return;
-                }
-                // Read result of the Cloud Function.
-                const document = (res.data as any)['document'];
-                const compData: ScoreData = document.score;
-                const document_title: string = document.document_title;
-                const comments: Comment[] = document.comments;
-                const metadata: DocumentMetadata = document.metadata;
-                const tempDocument: Document = {
-                    document_title: document_title,
-                    comments: comments,
-                    score: compData,
-                    metadata: metadata,
-                };
-                setDocument(tempDocument);
-                // console.log("Document:" + currentDocument);
-                setLoadState(true);
-                // console.log("Recieved Score data: " + printScoreData(compData));
-                // if (notationRef.current) {
-                //     score.current = new Score(notationRef.current, DEFAULT_RENDERER_HEIGHT, DEFAULT_RENDERER_WIDTH, undefined, undefined, compData);
-                // }
-
-                console.log("Document Loaded");
-                var temp = !loaded;
-                setLoadState(temp);
-            })
-            .catch((error) => {
-                // Getting the Error details.
-                const message = error.message;
-                console.log(`Error: ${message}`);
-                return;
-                // ...
-            });
+                    // ...
+                });
             fetchChanges();
         }
     }, []);
@@ -1053,8 +1069,8 @@ export default function CompositionTool() {
 
                     // Update online users
                     const receivedUsers = (res.data as any)['onlineUsers'];
-                    if(receivedUsers !== undefined) {
-    
+                    if (receivedUsers !== undefined) {
+
                         console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
                         setOnlineUsers(new Map(Object.entries(receivedUsers)) as Map<string, OnlineEntity>);
                     } else {
@@ -1142,7 +1158,7 @@ export default function CompositionTool() {
                 console.warn('Note head ID not found in staveNote.noteHeads');
                 selectedKey.current = ''
             } else {
-                console.warn('StaveNote not found for selectedNoteId');
+                //console.warn('StaveNote not found for selectedNoteId');
                 selectedKey.current = ''
             }
         } else {
@@ -1159,6 +1175,8 @@ export default function CompositionTool() {
         // Clear existing highlighting
         d3.selectAll('.vf-notehead').classed('selected-note', false);
         d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+        if (!hasWriteAccess) return;
 
         if (selectedNoteId !== null && selectedKey !== null && score.current) {
             const staveNote = score.current.findNote(selectedNoteId.current);
@@ -1182,7 +1200,7 @@ export default function CompositionTool() {
                     console.warn('Selected key not found in keys');
                 }
             } else {
-                console.warn('StaveNote not found for selectedNoteId');
+                //console.warn('StaveNote not found for selectedNoteId');
             }
         }
 
@@ -1203,6 +1221,7 @@ export default function CompositionTool() {
 
         // Keyboard shortcuts for adding notes
         const handleKeyDown = (event: KeyboardEvent) => {
+            if (!hasWriteAccess) return;
             // Mapping of keyboard letters to note string
             const trebleKeyToNoteMap: { [key: string]: string } = {
                 'a': 'a/4',
@@ -1256,7 +1275,7 @@ export default function CompositionTool() {
                         while (staveNote.getKeys().includes(newSelectedKey)) {
                             secondToLastKey = newSelectedKey;
                             newSelectedKey = shiftNoteUp(newSelectedKey);
-                            if(secondToLastKey == newSelectedKey) break;
+                            if (secondToLastKey == newSelectedKey) break;
                         }
                         const newKeys = increasePitch(score, selectedNoteId.current, secondToLastKey);
                         selectedKey.current = newSelectedKey;
@@ -1280,7 +1299,7 @@ export default function CompositionTool() {
                         while (staveNote.getKeys().includes(newSelectedKey)) {
                             secondToLastKey = newSelectedKey;
                             newSelectedKey = shiftNoteDown(newSelectedKey);
-                            if(secondToLastKey == newSelectedKey) break;
+                            if (secondToLastKey == newSelectedKey) break;
                         }
                         const newKeys = lowerPitch(score, selectedNoteId.current, secondToLastKey);
                         selectedKey.current = newSelectedKey;
@@ -1367,13 +1386,13 @@ export default function CompositionTool() {
     }, [notationRef.current])
 
     const updateUserCursor = async () => {
-        if (selectedNoteId) {    
+        if (selectedNoteId) {
             const cursor = {
                 userID: userId.current,
                 noteID: selectedNoteId.current, // Assuming you want to use the notehead's ID
                 color: cursorColor.current,
             };
-    
+
             const userInfo = {
                 documentId: documentID.current,
                 userId: userId.current,
@@ -1383,105 +1402,97 @@ export default function CompositionTool() {
             };
 
             callAPI("updateUserCursor", userInfo).then((res) => {
-                if(res.status !== 200) {
+                if (res.status !== 200) {
                     console.log("Error updating user cursor: ", res.message);
                     return;
                 }
             });
         }
     };
-    
+
     const fetchDisplayName = async (userIdToFetch: string): Promise<string> => {
         if (displayNameCache.current[userIdToFetch]) {
-          return displayNameCache.current[userIdToFetch];
+            return displayNameCache.current[userIdToFetch];
         }
         try {
-          const response = await callAPI('getUserFromId', { userId: userIdToFetch });
-          if (response.status === 200 && response.data) {
-            console.log(response.data);
+            const response = await callAPI('getUserFromId', { userId: userIdToFetch });
+            if (response.status === 200 && response.data) {
+                console.log(response.data);
 
-            const displayName = (response.data as any)['display_name'];
-            displayNameCache.current[userIdToFetch] = displayName;
-            return displayName;
-          } else {
-            console.error(`Failed to fetch display name for userId ${userIdToFetch}`);
-            return '';
-          }
+                const displayName = (response.data as any)['display_name'];
+                displayNameCache.current[userIdToFetch] = displayName;
+                return displayName;
+            } else {
+                console.error(`Failed to fetch display name for userId ${userIdToFetch}`);
+                return '';
+            }
         } catch (error) {
-          console.error(`Error fetching display name for userId ${userIdToFetch}:`, error);
-          return '';
+            console.error(`Error fetching display name for userId ${userIdToFetch}:`, error);
+            return '';
         }
-      };
+    };
 
-        useEffect(() => {
-            // First, clear previous highlighting for other users
-            d3.selectAll('.other-user-highlight').each(function () {
-              d3.select(this).style('fill', null);
-              d3.select(this).classed('other-user-highlight', false);
-            });
-          
-            // Iterate over onlineUsers
-            onlineUsers.forEach((onlineEntity, user_id) => {
-              // Exclude the current user
-              if (user_id !== userId.current) {
+    useEffect(() => {
+        // First, clear previous highlighting for other users
+        d3.selectAll('.other-user-highlight').each(function () {
+            d3.select(this).style('fill', null);
+            d3.select(this).classed('other-user-highlight', false);
+        });
+
+        // Iterate over onlineUsers
+        onlineUsers.forEach((onlineEntity, user_id) => {
+            // Exclude the current user
+            if (user_id !== userId.current) {
                 const cursor = onlineEntity.cursor as SelectedNote;
                 if (cursor && cursor.noteID && cursor.color) {
-                  const noteHeadId = cursor.noteID;
-                  const color = cursor.color;
-          
-                  // Select the notehead element by its CSS ID
-                  const noteHeadElement = d3.select(`[id="${noteHeadId}"]`);
-                  if (!noteHeadElement.empty()) {
-                    noteHeadElement
-                      .style('fill', color)
-                      .classed('other-user-highlight', true);
-                  } else {
-                    console.warn(`Notehead with ID ${noteHeadId} not found`);
-                  }
-                }
-              }
-            });
+                    const noteHeadId = cursor.noteID;
+                    const color = cursor.color;
 
-            const updateUserList = async () => {
-                console.log('Running updateUserList!');
-                const users: { userId: string; displayName: string; color: string }[] = [];
-              
-                const promises = [];
-              
-                onlineUsers.forEach((onlineEntity, userIdKey) => {
-                  console.log(`Is ${userIdKey} !== ${userId.current}?`);
-                  if (userIdKey !== userId.current) {
+                    // Select the notehead element by its CSS ID
+                    const noteHeadElement = d3.select(`[id="${noteHeadId}"]`);
+                    if (!noteHeadElement.empty()) {
+                        noteHeadElement
+                            .style('fill', color)
+                            .classed('other-user-highlight', true);
+                    } else {
+                        console.warn(`Notehead with ID ${noteHeadId} not found`);
+                    }
+                }
+            }
+        });
+
+        const updateUserList = async () => {
+            console.log('Running updateUserList!');
+            const users: { userId: string; displayName: string; color: string }[] = [];
+
+            const promises = [];
+
+            onlineUsers.forEach((onlineEntity, userIdKey) => {
+                console.log(`Is ${userIdKey} !== ${userId.current}?`);
+                if (userIdKey !== userId.current) {
                     const cursor = onlineEntity.cursor as SelectedNote;
                     if (cursor && cursor.color) {
-                      const color = cursor.color;
-                      const displayNamePromise = fetchDisplayName(userIdKey).then((displayName) => {
-                        users.push({ userId: userIdKey, displayName, color });
-                      });
-                      promises.push(displayNamePromise);
+                        const color = cursor.color;
+                        const displayNamePromise = fetchDisplayName(userIdKey).then((displayName) => {
+                            users.push({ userId: userIdKey, displayName, color });
+                        });
+                        promises.push(displayNamePromise);
                     }
-                  }
-                });
-              
-                // await Promise.all(promises);
-                // setUserList(users);
-                userList.current = users;
-              };
-              
-          
-            updateUserList();
-          }, [onlineUsers]);          
+                }
+            });
+
+            // await Promise.all(promises);
+            // setUserList(users);
+            userList.current = users;
+        };
+
+
+        updateUserList();
+    }, [onlineUsers]);
 
     return (
         <AppShell
             header={{ height: 180 }}
-            // navbar={{
-            //     width: 150,
-            //     breakpoint: "sm",
-            // }}
-            // aside={{
-            //     width: 300,
-            //     breakpoint: "sm",
-            // }}
             padding="md"
             styles={{
                 main: {
@@ -1510,12 +1521,11 @@ export default function CompositionTool() {
                     setKeySignature={setKeySignatureHandler}
                     handleDot={dotHandler}
                     hasWriteAccess={hasWriteAccess}
-                    selectedKey = {selectedKey.current}
-                    userList = {userList.current ? userList.current : []}
+                    selectedKey={selectedKey.current}
+                    userList={userList.current ? userList.current : []}
                 />
-                {/* <CommentAside /> */}
 
-                {/* get rid of the background later, use it for formatting */}
+
                 <Container
                     fluid
                     size="responsive"
@@ -1528,25 +1538,11 @@ export default function CompositionTool() {
                             "#FFFFFF",
                         boxShadow: '0 0px 5px rgba(0, 0, 0, 0.3)', // Shadow effect
                         borderRadius: '4px', // Rounded corners for a more "page" look
-                        margin: '20px', // Space around AppShell to enhance the effect
-                        border: '1px solid #e0e0e0', // Border around the AppShell
+                        margin: '20px', 
+                        border: '1px solid #e0e0e0', 
                     }}
                 >
                     <Space h="xl"></Space>
-                    {/* <input
-                        type="text"
-                        value={currentDocument?.score?.title}
-                        onChange={handleScoreNameChange}
-                        placeholder={currentDocument?.score?.title}
-                    />
-                    <input
-                        type="text"
-                        value={userTemp}
-                        onChange={handleUserIdChange}
-                        placeholder={userTemp}
-                    />
-                    <Button onClick={sendChanges}>Send Score change</Button>*/}
-                    {/* <Button onClick={sendAndFetch}>fetch Score change</Button>  */}
                     <div>
                         <div ref={notationRef}></div>
                     </div>
