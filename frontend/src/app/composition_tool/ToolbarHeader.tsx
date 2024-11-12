@@ -29,7 +29,7 @@ import { getUserID, getDisplayName, getEmail, clearUserCookies } from "../cookie
 import Link from 'next/link';
 import { callAPI } from "../../utils/callAPI";
 import { useSearchParams } from "next/navigation";
-import UserColorsModal from './UserColorsModal';
+import { OnlineUsersToolbarContainer } from "./onlineUsers/OnlineUsersToolbarContainer";
 import { STATUS, ACTIONS} from "react-joyride"
 import { useRouter } from "next/navigation";
 
@@ -328,10 +328,10 @@ useEffect(() => {
                     {/* Sharing UI */}
 
         {/* Select Dropdown should not be changable if not the owner */}
-        <Button onClick={() => setUsersModalOpened(true)}>Online Users</Button>
-        <UserColorsModal
-          opened={usersModalOpened}
-          onClose={() => setUsersModalOpened(false)}
+        <OnlineUsersToolbarContainer
+          modalOpened={usersModalOpened}
+          onModalOpen={() => setUsersModalOpened(true)}
+          onModalClose={() => setUsersModalOpened(false)}
           userList={userList}
         />
         {hasWriteAccess && <SharingModal
