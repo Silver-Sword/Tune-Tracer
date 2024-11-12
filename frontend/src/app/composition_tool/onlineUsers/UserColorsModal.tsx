@@ -34,7 +34,7 @@ const UserColorsModal: React.FC<UserColorsModalProps> = ({
                 <OnlineUserIcon
                   color={user.color}
                   size={24}
-                  display_name={user.displayName}
+                  displayText={user.displayName.toUpperCase().charAt(0)}
                 />
                 <Text>{user.displayName}</Text>
               </Group>

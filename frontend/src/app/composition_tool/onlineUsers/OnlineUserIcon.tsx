@@ -2,9 +2,10 @@ import React from "react";
 import { Avatar, MantineTheme, Tooltip } from "@mantine/core";
 
 interface OnlineUserIconProps {
-  display_name: string;
+  displayText: string;
   color: string;
   size?: number;
+  tooltipText?: string;
 }
 
 // Function to determine if a color is light or dark
@@ -18,26 +19,32 @@ function isLightColor(color: string): boolean {
 }
 
 export default function OnlineUserIcon({
-  display_name,
+  displayText,
   color,
   size = 40,
+  tooltipText=undefined,
 }: OnlineUserIconProps) {
-  // Get the first character of the display name
-  const initial = display_name.charAt(0).toUpperCase();
+  const avatarComponent = (
+    <Avatar
+      size={size}
+      radius="xl"
+      styles={(theme: MantineTheme) => ({
+        root: {
+          backgroundColor: color,
+          color: isLightColor(color) ? theme.colors.dark[9] : theme.white,
+          border: '3px solid #222222',
+        },
+      })}
+    >
+      {displayText}
+    </Avatar>
+  );
 
-  return (
-      <Avatar
-        size={size}
-        radius="xl"
-        styles={(theme: MantineTheme) => ({
-          root: {
-            backgroundColor: color,
-            color: isLightColor(color) ? theme.colors.dark[9] : theme.white,
-            border: '3px solid #222222',
-          },
-        })}
-      >
-        {initial}
-      </Avatar>
+  return tooltipText ? (
+    <Tooltip label={tooltipText} withArrow>
+      {avatarComponent}
+    </Tooltip>
+  ) : (
+    avatarComponent
   );
 }
