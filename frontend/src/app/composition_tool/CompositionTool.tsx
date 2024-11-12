@@ -6,13 +6,10 @@ import { createPlaceNoteBox, attachMouseMoveListener, attachMouseLeaveListener, 
 import {
     AppShell,
     Container,
-    Button,
     Space,
-    keys,
 } from "@mantine/core";
 
-import { getUserID, getDisplayName, getEmail, getDocumentID, getCursorColor } from "../cookie";
-import { areUserListsEqual } from './list';
+import { getUserID, getDisplayName, getEmail, getCursorColor } from "../cookie";
 import { increasePitch, lowerPitch, shiftNoteDown, shiftNoteUp } from './pitch'
 import { ToolbarHeader } from './ToolbarHeader'
 import { useSearchParams } from "next/navigation";
@@ -30,9 +27,6 @@ import * as d3 from 'd3';
 import { Selection } from 'd3';
 import * as Tone from 'tone';
 import { useRouter } from "next/navigation";
-import { access, write } from "fs";
-import { HookCallbacks } from "async_hooks";
-import { removeAllListeners } from "process";
 import { callAPI } from "../../utils/callAPI";
 
 const DEFAULT_RENDERER_WIDTH = 1000;
