@@ -213,8 +213,8 @@ useEffect(() => {
         radius="md"
         withBorder
         style={{
-          minWidth: 285,
-          height: 220, // Ensures consistent height with CreateCard
+          minWidth: 200,
+          minHeight: 200, // Ensures consistent height with CreateCard
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",

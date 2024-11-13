@@ -425,7 +425,6 @@ export default function Storage() {
               <SimpleGrid
                 cols={{ base: 1, sm: 2, md: 3, lg: 5 }}
                 spacing={{ base: "xl" }}
-                style={{ margin: '0 auto', padding: '1rem', maxWidth: '%' }}
               >
               {displayedDocuments.map((doc) => (
                 <DocCard 
