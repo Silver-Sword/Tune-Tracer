@@ -30,13 +30,34 @@ const ProfilePage: React.FC = () => {
   const [displayNameLoading, setDisplayNameLoading] = useState<boolean>(false);
   const [response, setResponse] = useState<string>('');
   const [error, setError] = useState<string>('');
-  useEffect(() => {
-    let displayCookie = getDisplayName();
+
+  const getUserName = async () => {
     let userIdCookie = getUserID();
     if (userIdCookie == '-1') router.push('/');
-    setDisplayName(displayCookie);
-    setNewDisplayName(displayCookie);
-    setUID(userIdCookie);
+    setUID(userIdCookie)
+    await callAPI("getUserFromId", {userId: userIdCookie})
+      .then((res) => {
+        if (res.status !== 200) {
+            console.log("Error getting user data");
+            return;
+        }
+        const user = (res.data as any);
+              if(user === undefined) {
+                  console.error(`Something went wrong. user is undefined`);
+              }
+              else {
+                setDisplayName(user.display_name);
+                setNewDisplayName(user.display_name);
+              }
+      }).catch((error) => {
+        console.error(`Error getting user data: ${error}`);
+        return;
+      });;
+  }
+
+
+  useEffect(() => {
+    getUserName();
   }, []);
 
   const initials = displayName
