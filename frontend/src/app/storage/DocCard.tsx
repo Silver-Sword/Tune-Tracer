@@ -14,6 +14,7 @@ import {
     Popover,
     ColorPicker,
     TextInput,
+    Divider,
   } from "@mantine/core";
 import { title } from "process";
 
@@ -212,8 +213,8 @@ useEffect(() => {
         radius="md"
         withBorder
         style={{
-          minWidth: 285,
-          height: 220, // Ensures consistent height with CreateCard
+          minWidth: 250,
+          minHeight: 200, // Ensures consistent height with CreateCard
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
@@ -322,16 +323,17 @@ useEffect(() => {
             <Text
                 size="lg"
                 lineClamp={1}
-                style={{ cursor: 'pointer', margin: 'auto' }}
+                style={{ cursor: 'pointer'}}
             >
                 {docTitle}
             </Text>
           </Tooltip>
           
           {/* Get the display name from the ownerID */}
-          <Text size="md" style = {{margin: 'auto'}}>Created by: {displayName}</Text>
-          <Text size="sm" c="dimmed" style = {{margin: 'auto'}}>Last Edited: {millisecondsToFormattedDateString(last_edit_time)}</Text>
-          <Text size="sm" c="dimmed" style = {{margin: 'auto'}}>Created On: {millisecondsToFormattedDateString(last_edit_time)}</Text>
+          <Text size="md" >Created by: {displayName}</Text>
+          <Divider size="sm"/>
+          <Text size="sm" c="dimmed" >Last Edited: {millisecondsToFormattedDateString(last_edit_time)}</Text>
+          <Text size="sm" c="dimmed" >Created On: {millisecondsToFormattedDateString(last_edit_time)}</Text>
         </Stack>
       </Card>}
     </>
