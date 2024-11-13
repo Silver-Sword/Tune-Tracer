@@ -1459,6 +1459,7 @@ export default function CompositionTool() {
                         borderRadius: '4px', // Rounded corners for a more "page" look
                         margin: '20px', 
                         border: '1px solid #e0e0e0', 
+                        textAlign: 'center'
                     }}
                 >
                     <Space h="xl"></Space>
