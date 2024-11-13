@@ -1081,14 +1081,6 @@ export default function CompositionTool() {
     }, [userTemp]);
 
     useEffect(() => {
-        processOnlineUsersUpdate(
-            userId.current, 
-            onlineUsers, 
-            userList
-        );
-    }, [score, currentDocument]);
-
-    useEffect(() => {
         const svg = d3.select(notationRef.current).select('svg');
 
         svg.on('click', function (event) {
@@ -1417,7 +1409,7 @@ export default function CompositionTool() {
             onlineUsers,
             userList,
         )
-    }, [onlineUsers]);
+    }, [onlineUsers, notationRef, notationRef.current, score, currentDocument, score.current]);
 
     return (
         <AppShell
@@ -1453,7 +1445,6 @@ export default function CompositionTool() {
                     selectedKey={selectedKey.current}
                     userList={userList.current}
                 />
-
 
                 <Container
                     fluid
