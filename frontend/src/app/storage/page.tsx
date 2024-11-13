@@ -292,20 +292,18 @@ export default function Storage() {
                 <ActionIcon
                   className="tutorial-button"
                   radius={"xl"}
-                  size={"xl"}
+                  size={"lg"}
                   onClick={() => setRun(true)}
                 >
                   <IconHelp size={"2rem"}/>
                 </ActionIcon>
-
-
               </Tooltip>
 
               {/* Profile Menu */}
               <Menu shadow="md">
                 <Menu.Target>
                 <Tooltip label={`Profile`} withArrow>
-                  <ActionIcon className="profile-menu" size={"xl"} radius={"xl"}>
+                  <ActionIcon className="profile-menu" size={"lg"} radius={"xl"}>
                     <IconUserCircle size={"2rem"}/>
                   </ActionIcon>
                 </Tooltip>
