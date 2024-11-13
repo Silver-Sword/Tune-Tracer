@@ -7,16 +7,15 @@ import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/
 
 type RenderContext = InstanceType<typeof Vex.Flow.RenderContext>;
 
-const DEFAULT_MEASURE_VERTICAL_SPACING = 100;
-const DEFAULT_NOTE_PADDING_FROM_TOP = 10;
-const DEFAULT_PADDING_IN_BETWEEN_MEASURES = 0;
+
 
 
 const DEFAULT_FIRST_MEASURES_X = 20;
 const DEFAULT_FIRST_MEASURES_Y = 0;
 
 const DEFAULT_MEASURE_WIDTH = 325;
-const DEFAULT_SPACING_BETWEEN_LINES_OF_MEASURES = 200;
+const DEFUALT_RIGHT_SIDE_PADDING = 1;
+const TIME_SIG_WIDTH = 10;
 
 
 
@@ -35,6 +34,7 @@ export class Score {
     private formatter = new Formatter();
     private top_measures: Measure[] = [];
     private bottom_measures: Measure[] = [];  // both are equal in length
+    private widths: number[] = [];
     private ties: Set<number> = new Set<number>();
     private context: RenderContext;
     private notationRef: HTMLDivElement;
@@ -117,8 +117,8 @@ export class Score {
     getTopMeasures = (): Measure[] => {
         return this.top_measures;
     }
-    
-    getMeasureFromNoteId = (noteId: number): Measure  | null=> {
+
+    getMeasureFromNoteId = (noteId: number): Measure | null => {
         let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
         let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
         if (measureIndex == undefined || topMeasure == undefined) { console.log('Something was null in Score.getMeasureFromNoteId()!'); return null; }
@@ -170,13 +170,13 @@ export class Score {
         scoreData.title = this.title;
 
         //console.log(printScoreData(scoreData));
-        if(render) this.renderMeasures();
+        if (render) this.renderMeasures();
         return scoreData;
     }
 
     loadScoreDataObj = (scoreData: ScoreData, render: boolean = true) => {
-        this.renderer_height = scoreData.rendererHeight;
-        this.renderer_height = scoreData.rendererWidth;
+        // this.renderer_height = scoreData.rendererHeight;
+        // this.renderer_width = scoreData.rendererWidth;
         this.total_width = scoreData.totalWidth;
         this.ties = new Set<number>(scoreData.ties);
         this.top_measures = [];
@@ -192,7 +192,7 @@ export class Score {
         // Always renderTimeSig for first measures
         this.top_measures[0].renderTimeSignature();
         this.bottom_measures[0].renderTimeSignature();
-        if(render) this.renderMeasures();
+        if (render) this.renderMeasures();
     }
 
     isTopMeasure = (
@@ -421,6 +421,7 @@ export class Score {
         this.top_measures.push(newTopMeasure);
         this.bottom_measures.push(newBottomMeasure);
         this.renderMeasures();
+        this.calculateWidths();
     }
 
     removeMeasure = (): void => {
@@ -445,8 +446,7 @@ export class Score {
         measure.ids = [];
         tickables.forEach(tickable => {
             let staveNote = tickable as StaveNote;
-            if(staveNote.getModifiers().length !== 0)
-            {
+            if (staveNote.getModifiers().length !== 0) {
                 staveNote.getModifiers().forEach((modifier) => {
                     //console.log("ATTRIBBUTE: " + modifier.getAttribute("mod"));
                 });
@@ -489,7 +489,7 @@ export class Score {
         }
     }
 
-    private calculateALineOfMeasures = (measures: Measure[], ceiling: number): { bottomY: number; topY: number } => {
+    private calculateALineOfMeasures = (measures: Measure[], ceiling: number, index: number): { bottomY: number; topY: number } => {
         // We want to know the largest bounding box in this line of measures
         // We'll use its coordinates to space all measures in the line
         let smallestY: number = Number.MAX_VALUE;
@@ -562,6 +562,7 @@ export class Score {
         for (let i = 0; i < measures.length; i++) {
             measures[i].getStave().setX(XCoordinate);
             measures[i].getStave().setY(YCoordinateForAllMeasuresInThisLine);
+            measures[i].getStave().setWidth(this.widths[i + index]);
             measures[i].getVoice1().setStave(measures[i].getStave());
             measures[i].getVoice1().setContext(this.context);
             this.formatter.formatToStave([measures[i].getVoice1()], measures[i].getStave());
@@ -581,9 +582,9 @@ export class Score {
         }
     }
 
-    private calculateMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], ceiling: number): number => {
-        const topResult = this.calculateALineOfMeasures(topMeasures, ceiling);
-        const bottomResult = this.calculateALineOfMeasures(bottomMeasures, topResult.bottomY);
+    private calculateMeasureLine = (topMeasures: Measure[], bottomMeasures: Measure[], ceiling: number, index: number): number => {
+        const topResult = this.calculateALineOfMeasures(topMeasures, ceiling, index);
+        const bottomResult = this.calculateALineOfMeasures(bottomMeasures, topResult.bottomY, index);
         // Render the stave connectors
         this.renderMeasureLine(topMeasures, bottomMeasures);
 
@@ -730,9 +731,57 @@ export class Score {
         return this.createTies(notePair.firstNote, notePair.secondNote);
     }
 
+    private calculateSystemWidth = (minSystemWidths: number[], totalWidth: number): number[] => {
+        let widthToFill = this.renderer_width - totalWidth;
+        // We want to see what percentage of the total width each measure takes up
+        let percentages: number[] = [];
+        console.log(`percentages -------`);
+        minSystemWidths.forEach((width) => {
+            percentages.push(width / totalWidth);
+            console.log("PERCENT: " + (width / totalWidth));
+        });
+        console.log(`Adding: Start`);
+        for (let i = 0; i < minSystemWidths.length; i++) {
+            // Each measure should proportionally consume the width to fill 
+            // This helps give more room to measures that need it, and less to measures that don't
+            minSystemWidths[i] += widthToFill * percentages[i];
+            console.log("Adding: " + (widthToFill * percentages[i]) +" + " + minSystemWidths[i]);
+        }
+        console.log(`Adding: Finish : Total width: ${totalWidth}`);
+        return minSystemWidths;
+    }
+
+    // Here we'll calculate the widths needed to horizontally fill the page
+    private fillWidthsToPage = (minWidths: number[]): number[] => {
+        let totalWidth = DEFAULT_FIRST_MEASURES_X;
+        let firstLineIndex = 0;
+        let optimalWidths: number[] = [];
+        for (let i = 0; i < this.top_measures.length; i++) {
+            let currentWidth = minWidths[i];
+            // Here, a system should be stretched to fit horizontally before another system
+            // is created below
+            if (totalWidth + currentWidth > this.renderer_width) {
+                // Take this system and stretch to fit page
+                this.calculateSystemWidth(minWidths.slice(firstLineIndex, i), totalWidth).forEach((width) => {
+                    optimalWidths.push(width);
+                });
+                // Define starting point for next system
+                firstLineIndex = i;
+                // Reset totalWidth number
+                totalWidth = DEFAULT_FIRST_MEASURES_X;
+            }
+            totalWidth += currentWidth;
+        }
+        // We won't adjust the width the for last system
+        for (let i = firstLineIndex; i < this.top_measures.length; i++) {
+            optimalWidths.push(minWidths[i]);
+        }
+        return optimalWidths;
+    }
+
     private calculateWidths = (): void => {
         this.formatter.preFormat();
-
+        let minWidths: number[] = [];
         for (let i = 0; i < this.top_measures.length; i++) {
             let topMeasure = this.top_measures[i];
             let topStave = topMeasure.getStave();
@@ -752,21 +801,38 @@ export class Score {
             // Calculate the minimum required width for the top notes
             const minTopStaveWidth = this.formatter.preCalculateMinTotalWidth([topMeasure.getVoice1()]);
             const topModifiers = topStave.getModifiers();
-            const topModifierWidths = topModifiers.reduce((total, modifier) => total + modifier.getWidth(), 0);
+            let topModifierWidths = topModifiers.reduce((total, modifier) => total + modifier.getWidth(), 0);
+            // We want to give breathing room to the time sig that will eventually be rendered
+            if(i==0) topModifierWidths += TIME_SIG_WIDTH;
+
             const topWidth = minTopStaveWidth + topModifierWidths;
 
             // Calculate the minimum required width for the bottom notes
             const minBottomStaveWidth = this.formatter.preCalculateMinTotalWidth([bottomMeasure.getVoice1()]);
             const bottomModifiers = bottomStave.getModifiers();
-            const bottomModifierWidths = bottomModifiers.reduce((total, modifier) => total + modifier.getWidth(), 0);
+            let bottomModifierWidths = bottomModifiers.reduce((total, modifier) => total + modifier.getWidth(), 0);
+            // We want to give breathing room to the time sig that will eventually be rendered
+            if(i==0) bottomModifierWidths += TIME_SIG_WIDTH;
             const bottomWidth = minBottomStaveWidth + bottomModifierWidths;
 
             // Get the largest width needed
             const finalWidth = Math.max(DEFAULT_MEASURE_WIDTH, Math.max(topWidth, bottomWidth));
 
-            // Set max width for both staves
-            topStave.setWidth(finalWidth);
-            bottomStave.setWidth(finalWidth);
+            minWidths.push(finalWidth);
+
+        }
+        let optimalWidths = this.fillWidthsToPage(minWidths);
+        this.widths = [];
+        for (let i = 0; i < this.top_measures.length; i++) {
+            // Use this to cap widths. It wont look pretty if a stave is maxxed out, but oh well
+            let finalWidth = Math.min(
+                this.renderer_width - DEFAULT_FIRST_MEASURES_X - DEFUALT_RIGHT_SIDE_PADDING, 
+                optimalWidths[i]);
+            if(i == 1)
+            {
+                console.log(`FINAL INDEX: ${i} adding FINAL WIDTH: ${finalWidth}`);
+            }
+            this.widths.push(finalWidth);
         }
 
     }
@@ -794,12 +860,12 @@ export class Score {
                 const newCeiling = this.calculateMeasureLine(
                     this.top_measures.slice(firstLineIndex, i),
                     this.bottom_measures.slice(firstLineIndex, i),
-                    ceiling
+                    ceiling,
+                    firstLineIndex
                 );
 
                 // Map measures to system index
-                for (let j = firstLineIndex; j < i; j++)
-                {
+                for (let j = firstLineIndex; j < i; j++) {
                     this.measureToIndexSystemIndex.set(j, systemIndex);
                 }
                 systemIndex++;
@@ -816,12 +882,12 @@ export class Score {
         const newCeiling = this.calculateMeasureLine(
             this.top_measures.slice(firstLineIndex, this.top_measures.length),
             this.bottom_measures.slice(firstLineIndex, this.bottom_measures.length),
-            ceiling
+            ceiling,
+            firstLineIndex
         );
 
         // Map remaining measures to system index
-        for (let j = firstLineIndex; j < this.top_measures.length; j++)
-        {
+        for (let j = firstLineIndex; j < this.top_measures.length; j++) {
             this.measureToIndexSystemIndex.set(j, systemIndex);
         }
         systemIndex++;

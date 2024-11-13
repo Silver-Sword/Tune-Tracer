@@ -35,7 +35,7 @@ import { HookCallbacks } from "async_hooks";
 import { removeAllListeners } from "process";
 import { callAPI } from "../../utils/callAPI";
 
-const DEFAULT_RENDERER_WIDTH = 1000;
+const DEFAULT_RENDERER_WIDTH = 1400;
 const DEFAULT_RENDERER_HEIGHT = 2000;
 
 // Define the type
@@ -1533,7 +1533,6 @@ export default function CompositionTool() {
                         justifyContent: "center",
                         display: "flex",
                         flexDirection: "column",
-                        textAlign: "center",
                         background:
                             "#FFFFFF",
                         boxShadow: '0 0px 5px rgba(0, 0, 0, 0.3)', // Shadow effect
