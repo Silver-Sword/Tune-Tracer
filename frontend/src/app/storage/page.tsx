@@ -213,7 +213,7 @@ export default function Storage() {
         default:
           return 0;
       }
-      return direction === "asc" ? comparison : -comparison;
+      return direction === "asc" ? -comparison : comparison;
     });
   }
 
