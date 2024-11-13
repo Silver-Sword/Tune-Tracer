@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Button, Modal, Text, Stack, Group, Kbd, Title } from "@mantine/core";
+import { Button, Modal, Text, Stack, Group, Kbd, Title, Tooltip, ActionIcon } from "@mantine/core";
+import { IconKeyboard } from "@tabler/icons-react";
 
 export const KeybindModal: React.FC = () => {
   const [isHelpModalOpen, setHelpModalOpen] = useState(false);
@@ -13,9 +14,16 @@ export const KeybindModal: React.FC = () => {
   return (
     <>
       {/* Help Button */}
-      <Button className="keybinds" onClick={openHelpModal} variant="filled">
-        Keyboard Shortcuts
-      </Button>
+      <Tooltip label={`Keyboard Shortcuts`} withArrow>
+        <ActionIcon
+          className="keybinds"
+          radius={"xl"}
+          size={"lg"}
+          onClick={openHelpModal}
+        >
+          <IconKeyboard />
+        </ActionIcon>
+      </Tooltip>
 
       {/* Modal */}
       <Modal
