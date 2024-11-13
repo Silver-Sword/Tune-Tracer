@@ -1,7 +1,5 @@
 import { Vex, Formatter, StaveNote, StaveTie, Beam, Tickable, BoundingBox } from 'vexflow';
 import { Measure } from './Measure';
-import * as d3 from 'd3';
-import { render } from '@testing-library/react';
 import { MeasureData } from '../../../../lib/src/MeasureData';
 import { getDefaultScoreData, printScoreData, ScoreData } from '../../../../lib/src/ScoreData';
 
@@ -16,6 +14,7 @@ const DEFAULT_FIRST_MEASURES_Y = 0;
 const DEFAULT_MEASURE_WIDTH = 325;
 const DEFUALT_RIGHT_SIDE_PADDING = 1;
 const TIME_SIG_WIDTH = 10;
+const NEW_HEIGHT_PADDING = 100;
 
 
 
@@ -885,6 +884,12 @@ export class Score {
             ceiling,
             firstLineIndex
         );
+
+        if(newCeiling > this.renderer_height)
+        {
+            this.renderer_height = this.renderer_height + (newCeiling - this.renderer_height + NEW_HEIGHT_PADDING);
+            this.context.resize(this.renderer_width, this.renderer_height);
+        }
 
         // Map remaining measures to system index
         for (let j = firstLineIndex; j < this.top_measures.length; j++) {

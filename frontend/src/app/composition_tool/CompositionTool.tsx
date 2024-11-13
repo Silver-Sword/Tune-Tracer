@@ -915,7 +915,7 @@ export default function CompositionTool() {
     useInterval(() => {
         // Your custom logic here
         fetchChanges();
-    }, 2000); // 5 seconds
+    }, 2000); // 3 seconds
 
     const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
         const value = event.currentTarget.value;
