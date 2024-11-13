@@ -149,11 +149,17 @@ exports.logInUser = functions.https.onRequest(
             throw new Error("Could not identify user");
           }
 
+          const userId = apiResult.uid;
+          const userEntity: typeof UserEntity = await getUserFromId(userId);
+          if(!userEntity) {
+            throw new Error("User entity not found");
+          }
+
           const user: typeof UserEntity = {
-            user_id: apiResult.uid,
-            user_email: apiResult.email,
-            display_name: apiResult.displayName,
-            account_creation_time: apiResult.createdAt,
+            user_id: userEntity.user_id,
+            user_email: userEntity.user_email,
+            display_name: userEntity.display_name,
+            account_creation_time: userEntity.account_creation_time,
           };
 
           // Send a successful response back
@@ -185,11 +191,11 @@ exports.updateUserDisplayName = functions.https.onRequest(async (req, res) => {
         });
       } else {
         // Call the signUpAPI and await the result
-        const apiResult = await updateUserDisplayName(userId, displayName)
-          .then(() => {
+        await updateUserDisplayName(userId, displayName)
+          .then((ret) => {
             res.status(StatusCode.OK).send({
               message: "User display name updated successfully",
-              data: apiResult,
+              data: ret,
             });
           })
           .catch((error) => {
