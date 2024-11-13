@@ -23,8 +23,8 @@ import {
 } from "@mantine/core";
 import StorageTutorial from "./storage-tutorial";
 import Joyride, { CallBackProps, STATUS, Step, ACTIONS, EVENTS} from "react-joyride";
-import { IconSearch, IconSortDescending, IconArrowUp, IconArrowDown} from "@tabler/icons-react";
-import { getUserID, getDisplayName, getEmail, clearUserCookies, saveDocID } from "../cookie";
+import { IconSearch, IconSortDescending, IconArrowUp, IconArrowDown, IconHelp, IconUserCircle} from "@tabler/icons-react";
+import { getUserID, getEmail, clearUserCookies, saveDocID } from "../cookie";
 import { useRouter } from "next/navigation";
 import { CreateCard } from "./CreateCard";
 import { DocCard, DocumentData } from "./DocCard";
@@ -193,6 +193,13 @@ export default function Storage() {
     setLoading(false);
   }
 
+  // const stupidTest = async () => {
+  //   const userId = getUserID();
+  //   setLoading(true);
+  //   const data = await getOwnPreviews(userId) + await getSharedPreviews(userId);
+  // }
+
+
   const sortDocuments = (docs: DocumentData[], sortType: string, direction: "asc" | "desc") => {
     return [...docs].sort((a, b) => {
       let comparison = 0;
@@ -206,7 +213,7 @@ export default function Storage() {
         default:
           return 0;
       }
-      return direction === "asc" ? comparison : -comparison;
+      return direction === "asc" ? -comparison : comparison;
     });
   }
 
@@ -221,15 +228,33 @@ export default function Storage() {
     setDocuments(sortDocuments(documents, sortBy, newDirection));
   }
 
+  const getUserName = async () => {
+    await callAPI("getUserFromId", {userId: getUserID()})
+      .then((res) => {
+        if (res.status !== 200) {
+            console.log("Error getting user data");
+            return;
+        }
+        const user = (res.data as any);
+              if(user === undefined) {
+                  console.error(`Something went wrong. user is undefined`);
+              }
+              else {
+                setDisplayName(user.display_name);
+              }
+      }).catch((error) => {
+        console.error(`Error getting user data: ${error}`);
+        return;
+      });;
+  }
 
   useEffect(() => {
-    let displayCookie = getDisplayName();
     let emailCookie = getEmail();
     let userIdCookie = getUserID();
     console.log(`userIdCookie: ${userIdCookie}`);
-    setDisplayName(displayCookie);
     setEmail(emailCookie);
     setUID(userIdCookie);
+    getUserName(); 
     setTimeout(async () => {
       setLoading(true);
       const data = await getOwnPreviews(userIdCookie);
@@ -248,7 +273,7 @@ export default function Storage() {
 
   return (
     <AppShell
-      header={{ height: 60 }}
+      header={{ height: 80 }}
       navbar={{
         width: 350,
         breakpoint: "sm",
@@ -281,27 +306,35 @@ export default function Storage() {
               onSearch={handleSearch}
             />
             <Group>
-
-              <Button 
-                className="tutorial-button"
-                onClick={() => setRun(true)}
-              >
-                  Help
-              </Button>
+              <Tooltip label={`Help`} withArrow>
+                <ActionIcon
+                  className="tutorial-button"
+                  radius={"xl"}
+                  size={"lg"}
+                  onClick={() => setRun(true)}
+                >
+                  <IconHelp size={"2rem"}/>
+                </ActionIcon>
+              </Tooltip>
 
               {/* Profile Menu */}
               <Menu shadow="md">
                 <Menu.Target>
-                  <Button className="profile-menu" size="sm">{displayName}</Button>
+                <Tooltip label={`Profile`} withArrow>
+                  <ActionIcon className="profile-menu" size={"lg"} radius={"xl"}>
+                    <IconUserCircle size={"2rem"}/>
+                  </ActionIcon>
+                </Tooltip>
                 </Menu.Target>
 
                 <Menu.Dropdown style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <Menu.Label style={{ fontSize: rem(13), fontWeight: 'bold' }}>{displayName}</Menu.Label>
                   <Menu.Label style={{ fontSize: rem(13), fontWeight: 'bold' }}>{email}</Menu.Label>
                   <Menu.Divider />
                   <Menu.Item
                     onClick={routeToProfilePage}
                   >
-                    Profile
+                    Profile Settings
                   </Menu.Item>
                   <Menu.Item
                     color="red"
@@ -408,7 +441,7 @@ export default function Storage() {
             ) :
             (
               <SimpleGrid
-                cols={{ base: 1, sm: 3, md: 3, lg: 5 }}
+                cols={{ base: 1, sm: 2, md: 3, lg: 4 }}
                 spacing={{ base: "xl" }}
               >
               {displayedDocuments.map((doc) => (

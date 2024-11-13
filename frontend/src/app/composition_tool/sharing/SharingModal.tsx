@@ -17,8 +17,9 @@ import {
   Grid,
   Title,
   LoadingOverlay,
+  Tooltip,
 } from "@mantine/core";
-import { IconCopy, IconCheck } from "@tabler/icons-react";
+import { IconCopy, IconCheck, IconUserPlus } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 import { CollaboratorCard } from "./CollaboratorCard";
 import { Collaborator } from "./sharing_types";
@@ -450,8 +451,14 @@ export const SharingModal: React.FC<SharingModalProps> = ({
             </Grid>
           </>
         )}
-      </Modal>
-      <Button className="share-button" onClick={open}>Share</Button>
+      </Modal>      
+      <Button
+        className="share-button" 
+        onClick={open} 
+        leftSection={<IconUserPlus size={20}/>}
+      >
+          Share
+      </Button>
     </Group>
   );
 };

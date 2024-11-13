@@ -14,6 +14,7 @@ import {
     Popover,
     ColorPicker,
     TextInput,
+    Divider,
   } from "@mantine/core";
 import { title } from "process";
 
@@ -34,7 +35,7 @@ import { getUserID, saveDocID } from "../cookie";
   const colorPresets = [
     "#f44336", "#e91e63", "#9c27b0", "#673ab7", 
     "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4", 
-    "#009688", "#4caf50", "#8bc34a", "#cddc39",
+    "#009688", "#8bc34a", "#cddc39",
     "#ffeb3b", "#ffc107", "#ff9800", "#ff5722"
   ];
 
@@ -212,7 +213,7 @@ useEffect(() => {
         radius="md"
         withBorder
         style={{
-          minWidth: 200,
+          minWidth: 250,
           minHeight: 200, // Ensures consistent height with CreateCard
           display: "flex",
           flexDirection: "column",
@@ -322,16 +323,17 @@ useEffect(() => {
             <Text
                 size="lg"
                 lineClamp={1}
-                style={{ cursor: 'pointer', margin: 'auto' }}
+                style={{ cursor: 'pointer'}}
             >
                 {docTitle}
             </Text>
           </Tooltip>
           
           {/* Get the display name from the ownerID */}
-          <Text size="md" style = {{margin: 'auto'}}>Created by: {displayName}</Text>
-          <Text size="sm" c="dimmed" style = {{margin: 'auto'}}>Last Edited: {millisecondsToFormattedDateString(last_edit_time)}</Text>
-          <Text size="sm" c="dimmed" style = {{margin: 'auto'}}>Created On: {millisecondsToFormattedDateString(last_edit_time)}</Text>
+          <Text size="md" >Created by: {displayName}</Text>
+          <Divider size="sm"/>
+          <Text size="sm" c="dimmed" >Last Edited: {millisecondsToFormattedDateString(last_edit_time)}</Text>
+          <Text size="sm" c="dimmed" >Created On: {millisecondsToFormattedDateString(last_edit_time)}</Text>
         </Stack>
       </Card>}
     </>
