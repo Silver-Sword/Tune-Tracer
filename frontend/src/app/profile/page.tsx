@@ -104,15 +104,15 @@ const ProfilePage: React.FC = () => {
         breakpoint: 'sm',
 
       }}
+      header={{ height: 80 }}
       padding="md"
     >
       <AppShell.Header
+      
         style={{
           justifyContent: 'center',
           display: 'flex',
           flexDirection: 'column',
-          padding: '0 20px',
-          backgroundColor: '#228be6', // Blue header
         }}
       >
         <Group justify="space-between" px="lg">
@@ -138,7 +138,7 @@ const ProfilePage: React.FC = () => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          paddingTop: '4rem',
+          paddingTop: '100px',
         }}
       >
         <Avatar radius="xl" size="lg" color="white" style={{ backgroundColor: '#228be6' }}>

@@ -24,6 +24,8 @@ import {
     IconPlayerPlay,
     IconPlayerStop,
     IconVolume,
+    IconUserCircle,
+    IconHelp,
 } from "@tabler/icons-react";
 import { getUserID, getDisplayName, getEmail, clearUserCookies } from "../cookie";
 import Link from 'next/link';
@@ -342,7 +344,14 @@ useEffect(() => {
         {/* Profile Menu */}
         <Menu shadow="md">
           <Menu.Target>
-            <Button className="profile-menu" size="sm">{displayName}</Button>
+            {/* <Button className="profile-menu" size="sm">{displayName}</Button> */}
+            <Tooltip label={`Profile`} withArrow>
+              <ActionIcon className="profile-menu" size={"lg"} radius={"xl"}>
+                <IconUserCircle size={"2rem"}/>
+              </ActionIcon>
+            </Tooltip>
+
+
           </Menu.Target>
 
           <Menu.Dropdown style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -631,10 +640,17 @@ useEffect(() => {
           
                   
                 {hasWriteAccess && (
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "45px", width: " 30%", marginLeft: "auto", flexWrap: "nowrap"}}>
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "40px", width: " 30%", marginLeft: "auto", flexWrap: "nowrap"}}>
                     <KeybindModal />
                     <Tooltip label="Help" position="top" withArrow>
-                      <Button className="tutorial-button" onClick={() => setRun(true)}>Help</Button>
+                      <ActionIcon
+                        className="tutorial-button"
+                        radius={"xl"}
+                        size={"lg"}
+                        onClick={() => setRun(true)}
+                      >
+                        <IconHelp />
+                      </ActionIcon> 
                     </Tooltip>
                   </div>
                 )}
