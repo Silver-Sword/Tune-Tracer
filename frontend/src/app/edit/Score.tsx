@@ -890,6 +890,11 @@ export class Score {
             this.renderer_height = this.renderer_height + (newCeiling - this.renderer_height + NEW_HEIGHT_PADDING);
             this.context.resize(this.renderer_width, this.renderer_height);
         }
+        else if(this.renderer_height - newCeiling > 500)
+            {
+                this.renderer_height = this.renderer_height - (this.renderer_height - newCeiling  - NEW_HEIGHT_PADDING);
+                this.context.resize(this.renderer_width, this.renderer_height);
+            }
 
         // Map remaining measures to system index
         for (let j = firstLineIndex; j < this.top_measures.length; j++) {
