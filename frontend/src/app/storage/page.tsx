@@ -248,7 +248,7 @@ export default function Storage() {
 
   return (
     <AppShell
-      header={{ height: 60 }}
+      header={{ height: 80 }}
       navbar={{
         width: 350,
         breakpoint: "sm",
@@ -408,8 +408,9 @@ export default function Storage() {
             ) :
             (
               <SimpleGrid
-                cols={{ base: 1, sm: 3, md: 3, lg: 5 }}
+                cols={{ base: 1, sm: 2, md: 3, lg: 5 }}
                 spacing={{ base: "xl" }}
+                style={{ margin: '0 auto', padding: '1rem', maxWidth: '%' }}
               >
               {displayedDocuments.map((doc) => (
                 <DocCard 
