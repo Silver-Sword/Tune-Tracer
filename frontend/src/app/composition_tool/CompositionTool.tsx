@@ -789,17 +789,21 @@ export default function CompositionTool() {
 
         changesTimeout = setTimeout(async () => {
             while (isSending.current || isFetching.current) {
-                console.log("Waiting until send finished");
-                console.log("isSending: " + isSending.current);
-                console.log("isFetching: " + isFetching.current);
+                if(DebugController.CHECK_CHANGES) {
+                    console.log("Waiting until send finished");
+                    console.log("isSending: " + isSending.current);
+                    console.log("isFetching: " + isFetching.current);
+                }
                 await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
             }
-            console.log(JSON.stringify(changesTemp));
+            if(DebugController.CHECK_CHANGES) {
+                console.log(JSON.stringify(changesTemp));
+            }
             isFetching.current = true;
             await callAPI("checkDocumentChanges", changesTemp)
                 .then((res) => {
                     if (res.status !== 200) {
-                        console.log("Error fetching changes");
+                        console.warn("Error fetching changes");
                         isFetching.current = false;
                         return;
                     }
@@ -839,7 +843,9 @@ export default function CompositionTool() {
                     // Update online users
                     const receivedUsers = (res.data as any)['onlineUsers'];
                     if (receivedUsers !== undefined) {
-                        console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
+                        if(DebugController.ONLINE_USERS) {
+                            console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
+                        }
                         setOnlineUsers(new Map(Object.entries(receivedUsers)) as Map<string, OnlineEntity>);
                     } else {
                         console.error(`Something went wrong. Received online users is undefined`);
