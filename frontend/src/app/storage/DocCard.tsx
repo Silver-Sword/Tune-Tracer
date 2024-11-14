@@ -16,7 +16,6 @@ import {
     TextInput,
     Divider,
   } from "@mantine/core";
-import { title } from "process";
 
 import { callAPI } from "../../utils/callAPI";
 import { getUserID, saveDocID } from "../cookie";
@@ -40,8 +39,15 @@ import { getUserID, saveDocID } from "../cookie";
   ];
 
 // DocCard Component
-export const DocCard: React.FC<DocumentData> = ({document_id, document_title, owner_id, last_edit_time, time_created, is_favorited, preview_color}) => {
-  
+export const DocCard: React.FC<DocumentData> = ({
+  document_id, 
+  document_title, 
+  owner_id, 
+  last_edit_time, 
+  time_created, 
+  is_favorited, 
+  preview_color
+}) => {
   const [deleteModalOpened, setDeleteModalOpened] = useState(false); // State for the delete confirmation modal
   const [loading, setLoading] = useState(false);
   const [deleted, setDeleted] = useState(false);
@@ -50,7 +56,6 @@ export const DocCard: React.FC<DocumentData> = ({document_id, document_title, ow
   const router = useRouter();
   
   const [popoverOpened, setPopoverOpened] = useState(false);
-  const [backgroundColor, setBackgroundColor] = useState("#0b9be3");
 
   const updateDocumentColor = async () => {
     if (preview_color !== color)
@@ -176,9 +181,6 @@ useEffect(() => {
     setDocTitle(document_title);
   }
 }, []);
-
-
-  // const documentTitle = "[DOCUMENT NAME] OVERFLOW TEST TEXT: This is a document card. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis tincidunt arcu a ex laoreet, nec aliquam leo fermentum."
 
   return (
     <>
