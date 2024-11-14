@@ -356,7 +356,7 @@ useEffect(() => {
           <Text size="md" >Created by: {displayName}</Text>
           <Divider size="sm"/>
           <Text size="sm" c="dimmed" >Last Edited: {millisecondsToFormattedDateString(last_edit_time)}</Text>
-          <Text size="sm" c="dimmed" >Created On: {millisecondsToFormattedDateString(last_edit_time)}</Text>
+          <Text size="sm" c="dimmed" >Created On: {millisecondsToFormattedDateString(time_created)}</Text>
         </Stack>
       </Card>}
     </>
