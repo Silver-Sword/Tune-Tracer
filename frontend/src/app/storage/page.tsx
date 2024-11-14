@@ -21,22 +21,30 @@ import {
   Center,
   Loader,
 } from "@mantine/core";
-import StorageTutorial from "./storage-tutorial";
-import Joyride, { CallBackProps, STATUS, Step, ACTIONS, EVENTS} from "react-joyride";
-import { IconSearch, IconSortDescending, IconArrowUp, IconArrowDown, IconHelp, IconUserCircle} from "@tabler/icons-react";
-import { getUserID, getEmail, clearUserCookies, saveDocID } from "../cookie";
+import { 
+  IconArrowDown, 
+  IconArrowUp, 
+  IconHeart, 
+  IconHeartFilled,
+  IconHelp, 
+  IconSearch, 
+  IconSortDescending, 
+  IconUserCircle, 
+} from "@tabler/icons-react";
+import {STATUS, ACTIONS} from "react-joyride";
 import { useRouter } from "next/navigation";
+
+import { getUserID, getEmail, clearUserCookies } from "../cookie";
+import StorageTutorial from "./storage-tutorial";
 import { CreateCard } from "./CreateCard";
 import { DocCard, DocumentData } from "./DocCard";
 import { getSharedPreviews, getOwnPreviews } from "./documentPreviewsData";
-import { set } from "date-fns";
 import { callAPI } from "../../utils/callAPI";
 
 // Define filter labels for the navbar
 const filterLabels = [
   { link: "", label: "My Compositions" },
-  { link: "", label: "Shared with me" },
-  { link: "", label: "Favorites" },
+  { link: "", label: "Shared with me" }
 ];
 
 // FiltersNavbar component
@@ -50,11 +58,6 @@ const FiltersNavbar: React.FC<{ getOwnPreviews: () => void, getSharedPreviews: (
     }
     else if (label == "Shared with me") {
       getSharedPreviews();
-    }
-    else if (label == "Favorites") {
-      // getFavoritePreviews();
-      // ADD API CALL FOR FAVORITES
-      console.log("Favorites filter clicked");
     }
     console.log(`Filter selected: ${label}`);
   };
@@ -110,28 +113,30 @@ export default function Storage() {
   const [email, setEmail] = useState<string>('');
   const [userId, setUID] = useState<string>('');
   const [documents, setDocuments] = useState<DocumentData[]>([]);
-  const [sortBy, setSortBy] = useState<string>("lastEdited");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [loading, setLoading] = useState<boolean>(true);
   const [passwordModalOpened, setPasswordModalOpened] = useState(false);
   const router = useRouter();
   
   const [run, setRun] = useState(false);
-  // const [stepIndex, setStepIndex] = useState(0);
-  const [actions, setActions] = useState(ACTIONS);
   const [isClient, setIsClient] = useState(false);
-
-  const [displayedDocuments, setDisplayedDocuments] = useState<DocumentData[]>([]);
+  
+  const [sortBy, setSortBy] = useState<string>("title");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [onlyShowFavorites, setOnlyShowFavorites] = useState<boolean>(false);
+  const [displayedDocuments, setDisplayedDocuments] = useState<DocumentData[]>([]);
 
   useEffect(() => {
     setIsClient(true);
   }, []); 
   
   useEffect(() => {
-    const visibleDocuments = documents.filter((doc) => doc.document_title.toLowerCase().includes(searchTerm.toLowerCase()));
+    const visibleDocuments = documents.filter((doc) => {
+      return (!onlyShowFavorites || doc.is_favorited) &&
+             doc.document_title.toLowerCase().includes(searchTerm.toLowerCase());
+    });
     setDisplayedDocuments(visibleDocuments);
-  }, [documents, searchTerm]);
+  }, [documents, searchTerm, onlyShowFavorites]);
 
   // Handle tutorial callback to manage step progression and tutorial completion
   const handleJoyrideCallback = (data: any) => {
@@ -192,13 +197,6 @@ export default function Storage() {
     setDocuments(sortDocuments(data, sortBy, sortDirection));
     setLoading(false);
   }
-
-  // const stupidTest = async () => {
-  //   const userId = getUserID();
-  //   setLoading(true);
-  //   const data = await getOwnPreviews(userId) + await getSharedPreviews(userId);
-  // }
-
 
   const sortDocuments = (docs: DocumentData[], sortType: string, direction: "asc" | "desc") => {
     return [...docs].sort((a, b) => {
@@ -263,12 +261,8 @@ export default function Storage() {
     }, 0);
   }, []);
 
-  const getSortLabel = () => {
-    return sortBy === "lastEdited" ? "Last Edited" : "Title";
-  }
-
   const handleSearch = (term: string) => {
-    setSearchTerm(term)
+    setSearchTerm(term);
   }
 
   return (
@@ -392,6 +386,15 @@ export default function Storage() {
               Scores
             </Text>
             <Group>
+              <Tooltip label={onlyShowFavorites ? `Don't display only favorited` : `Display only favorited`} withArrow>
+              <ActionIcon
+                variant="subtle"
+                size="lg"
+                onClick={() => setOnlyShowFavorites(!onlyShowFavorites)}
+              >
+                  {onlyShowFavorites ? <IconHeartFilled size={20} /> : <IconHeart size={20} />}
+                </ActionIcon>
+              </Tooltip>
               <Tooltip label={`Reverse sort direction`} withArrow>
                 <ActionIcon 
                   variant="subtle" 
