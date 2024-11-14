@@ -29,6 +29,7 @@ import { Selection } from 'd3';
 import * as Tone from 'tone';
 import { useRouter } from "next/navigation";
 import { callAPI } from "../../utils/callAPI";
+import { DebugController } from "../DebugController";
 
 const DEFAULT_RENDERER_WIDTH = 1000;
 const DEFAULT_RENDERER_HEIGHT = 2000;
@@ -752,8 +753,10 @@ export default function CompositionTool() {
                 documentId: documentID.current,
                 writerId: userId.current,
             }
-            console.log("Exporting Score data ------------------------------- ");
-            console.log("exported Object: " + printScoreData(exportedScoreDataObj));
+            if(DebugController.SCORE_DATA) {
+                console.log("Exporting Score data ------------------------------- ");
+                console.log("exported Object: " + printScoreData(exportedScoreDataObj));
+            }
 
             // var recordTemp: Record<string, unknown> = changes;
             // if (!('score' in recordTemp)) {
@@ -821,8 +824,10 @@ export default function CompositionTool() {
                     if (notationRef.current) {
                         score.current?.loadScoreDataObj(compData);
                         score.current?.addNoteInMeasure([], 0);
-                        console.log("LOADED SCORE DATA");
-                        console.log("loaded Object: " + printScoreData(compData));
+                        
+                        if(DebugController.SCORE_DATA) {
+                            console.log("LOADED SCORE DATA\nloaded Object: " + printScoreData(compData));
+                        }
                         // Now add it to the currently selected note
                         if (selectedNoteId.current !== -1) {
                             d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
@@ -979,7 +984,8 @@ export default function CompositionTool() {
                 documentId: documentID.current,
                 userId: userId.current,
                 user_email: email.current,
-                displayName: displayName.current
+                displayName: displayName.current,
+                userCursorColor: getCursorColor(),
             };
             console.log("document ID: " + documentID.current);
             console.log("User Info: " + JSON.stringify(userInfo));
@@ -1158,10 +1164,6 @@ export default function CompositionTool() {
             selectedKey.current = ''
         }
     };
-
-    useEffect(() => {
-        console.log(`selectedKey is: ${selectedKey}`);
-    }, [selectedKey])
 
     useEffect(() => {
         // Clear existing highlighting
