@@ -24,6 +24,8 @@ export default function OnlineUserIcon({
   size = 40,
   tooltipText=undefined,
 }: OnlineUserIconProps) {
+  const textColor = isLightColor(color) ? "black" : "white";
+  
   const avatarComponent = (
     <Avatar
       size={size}
@@ -34,7 +36,7 @@ export default function OnlineUserIcon({
           border: '3px solid #222222',
         },
       })}
-      color="white"
+      color={textColor}
       name={displayText}
       autoContrast={true}
     >
