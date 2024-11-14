@@ -19,9 +19,10 @@ import {
 
 import { callAPI } from "../../utils/callAPI";
 import { getUserID, saveDocID } from "../cookie";
+import { DocumentPreview } from '../lib/src/documentProperties';
 
- export interface DocumentData {
-    preview_color: string;
+ export interface DocCardProps {
+    preview_color: string | undefined;
     is_favorited: boolean;
     last_edit_time: number;
     time_created: number;
@@ -29,6 +30,8 @@ import { getUserID, saveDocID } from "../cookie";
     last_edit_user: string;
     document_id: string;
     document_title: string;
+    onDelete: () => void;
+    original_preview_object: DocumentPreview;
   }
 
   const colorPresets = [
@@ -39,14 +42,16 @@ import { getUserID, saveDocID } from "../cookie";
   ];
 
 // DocCard Component
-export const DocCard: React.FC<DocumentData> = ({
+export const DocCard: React.FC<DocCardProps> = ({
   document_id, 
   document_title, 
   owner_id, 
   last_edit_time, 
   time_created, 
   is_favorited, 
-  preview_color
+  preview_color,
+  onDelete,
+  original_preview_object,
 }) => {
   const [deleteModalOpened, setDeleteModalOpened] = useState(false); // State for the delete confirmation modal
   const [loading, setLoading] = useState(false);
@@ -66,7 +71,11 @@ export const DocCard: React.FC<DocumentData> = ({
           newColor: color,
           writerId: getUserID()
         }
-        await callAPI("updateDocumentColor", colorUpdate);
+        await callAPI("updateDocumentColor", colorUpdate).then((res) => {
+          if (res.status === 200) {
+            original_preview_object.preview_color = color;
+          }
+        });
         preview_color = color;
       }
   }
@@ -80,7 +89,11 @@ export const DocCard: React.FC<DocumentData> = ({
           documentChanges: {document_title: docTitle},
           writerId: getUserID()
         }
-        await callAPI("updatePartialDocument", titleUpdate);
+        await callAPI("updatePartialDocument", titleUpdate).then((res) => {
+          if (res.status === 200) {
+            original_preview_object.document_title = docTitle;
+          }
+        });
         document_title = docTitle;
       }
   }
@@ -108,7 +121,11 @@ export const DocCard: React.FC<DocumentData> = ({
       isFavorited: !isFavorited,
       writerId: getUserID()
     }
-    await callAPI("updateDocumentFavoritedStatus", API_info);
+    await callAPI("updateDocumentFavoritedStatus", API_info).then((res) => {
+      if (res.status === 200) {
+        original_preview_object.is_favorited = !isFavorited;
+      }
+    });
     setIsFavorited((prev) => !prev);
   };
 
@@ -134,7 +151,11 @@ export const DocCard: React.FC<DocumentData> = ({
     }
     console.log(`Delete Document Input: ${JSON.stringify(input)}`);
     setLoading(true);
-    await callAPI("deleteDocument", input);
+    await callAPI("deleteDocument", input).then((res) => {
+      if (res.status === 200) {
+        onDelete();
+      }
+    });
     setLoading(false);
     setDeleted(true);
     setDeleteModalOpened(false); // Close modal after deletion
@@ -171,7 +192,7 @@ const getUserName = async () => {
     }).catch((error) => {
       console.error(`Error getting user data: ${error}`);
       return;
-    });;
+    });
 }
 
 useEffect(() => {
