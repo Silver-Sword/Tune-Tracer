@@ -191,7 +191,10 @@ export class Score {
         // Always renderTimeSig for first measures
         this.top_measures[0].renderTimeSignature();
         this.bottom_measures[0].renderTimeSignature();
-        if (render) this.renderMeasures();
+        if (render) {
+            this.calculateWidths();
+            this.renderMeasures();
+        }
     }
 
     isTopMeasure = (
