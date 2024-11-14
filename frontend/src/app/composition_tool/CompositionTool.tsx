@@ -30,7 +30,7 @@ import * as Tone from 'tone';
 import { useRouter } from "next/navigation";
 import { callAPI } from "../../utils/callAPI";
 
-const DEFAULT_RENDERER_WIDTH = 1000;
+const DEFAULT_RENDERER_WIDTH = 1400;
 const DEFAULT_RENDERER_HEIGHT = 2000;
 
 // Define the type
@@ -1453,13 +1453,13 @@ export default function CompositionTool() {
                         justifyContent: "center",
                         display: "flex",
                         flexDirection: "column",
-                        textAlign: "center",
                         background:
                             "#FFFFFF",
                         boxShadow: '0 0px 5px rgba(0, 0, 0, 0.3)', // Shadow effect
                         borderRadius: '4px', // Rounded corners for a more "page" look
                         margin: '20px', 
                         border: '1px solid #e0e0e0', 
+                        textAlign: 'center'
                     }}
                 >
                     <Space h="xl"></Space>
