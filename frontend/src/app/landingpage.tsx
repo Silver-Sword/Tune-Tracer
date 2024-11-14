@@ -257,11 +257,20 @@ export default function LandingPage() {
                     fontSize: '16px',
                   }}
                 >
-                  Expand all
+                  {allExpanded ? 'Collapse all' : 'Expand all'}
                   <Box style={{ display: 'flex', flexDirection: 'column', gap: '-4px' }}>
-                    <IconChevronUp size={14} />
-                    <IconChevronDown size={14} style={{ marginTop: '-4px' }} />
-                  </Box>
+                    { allExpanded ? (
+                      <>
+                        <IconChevronDown size={14} style={{ marginBottom: '-4px' }} />
+                        <IconChevronUp size={14} />
+                      </>
+                     ) : (
+                      <>
+                        <IconChevronUp size={14} />
+                        <IconChevronDown size={14} style={{ marginTop: '-4px' }} />
+                      </>
+                    )}
+                      </Box>
                 </UnstyledButton>
               </Group>
               <Accordion
@@ -270,6 +279,7 @@ export default function LandingPage() {
                 multiple
                 value={allExpanded ? faqs.map((_, index) => `faq-${index}`) : undefined}
                 onChange={() => setAllExpanded(false)}
+                
                 styles={{
                   item: {
                     borderBottom: '1px solid #eee',
