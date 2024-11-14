@@ -31,12 +31,13 @@ export default function OnlineUserIcon({
       styles={(theme: MantineTheme) => ({
         root: {
           backgroundColor: color,
-          color: isLightColor(color) ? theme.colors.dark[9] : theme.white,
           border: '3px solid #222222',
         },
       })}
+      color="white"
+      name={displayText}
+      autoContrast={true}
     >
-      {displayText}
     </Avatar>
   );
 
