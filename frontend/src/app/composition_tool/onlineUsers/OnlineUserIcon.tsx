@@ -24,6 +24,8 @@ export default function OnlineUserIcon({
   size = 40,
   tooltipText=undefined,
 }: OnlineUserIconProps) {
+  const textColor = isLightColor(color) ? "black" : "white";
+  
   const avatarComponent = (
     <Avatar
       size={size}
@@ -31,12 +33,13 @@ export default function OnlineUserIcon({
       styles={(theme: MantineTheme) => ({
         root: {
           backgroundColor: color,
-          color: isLightColor(color) ? theme.colors.dark[9] : theme.white,
           border: '3px solid #222222',
         },
       })}
+      color={textColor}
+      name={displayText}
+      autoContrast={true}
     >
-      {displayText}
     </Avatar>
   );
 

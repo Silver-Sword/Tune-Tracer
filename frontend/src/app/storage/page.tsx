@@ -37,15 +37,18 @@ import { useRouter } from "next/navigation";
 import { getUserID, getEmail, clearUserCookies } from "../cookie";
 import StorageTutorial from "./storage-tutorial";
 import { CreateCard } from "./CreateCard";
-import { DocCard, DocumentData } from "./DocCard";
+import { DocCard } from "./DocCard";
 import { getSharedPreviews, getOwnPreviews } from "./documentPreviewsData";
 import { callAPI } from "../../utils/callAPI";
+import { DocumentPreview } from "../lib/src/documentProperties";
 
 // Define filter labels for the navbar
 const filterLabels = [
   { link: "", label: "My Compositions" },
   { link: "", label: "Shared with me" }
 ];
+
+type SortType = "title" | "timeCreated" | "lastEdited";
 
 // FiltersNavbar component
 const FiltersNavbar: React.FC<{ getOwnPreviews: () => void, getSharedPreviews: () => void }> = ({ getOwnPreviews, getSharedPreviews }) => {
@@ -112,7 +115,6 @@ export default function Storage() {
   const [displayName, setDisplayName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [userId, setUID] = useState<string>('');
-  const [documents, setDocuments] = useState<DocumentData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [passwordModalOpened, setPasswordModalOpened] = useState(false);
   const router = useRouter();
@@ -120,11 +122,13 @@ export default function Storage() {
   const [run, setRun] = useState(false);
   const [isClient, setIsClient] = useState(false);
   
-  const [sortBy, setSortBy] = useState<string>("title");
+  const [sortBy, setSortBy] = useState<SortType>("title");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [onlyShowFavorites, setOnlyShowFavorites] = useState<boolean>(false);
-  const [displayedDocuments, setDisplayedDocuments] = useState<DocumentData[]>([]);
+  
+  const [documents, setDocuments] = useState<DocumentPreview[]>([]);
+  const [displayedDocuments, setDisplayedDocuments] = useState<DocumentPreview[]>([]);
 
   useEffect(() => {
     setIsClient(true);
@@ -181,6 +185,10 @@ export default function Storage() {
     setPasswordModalOpened(false);
   }
 
+  const handleDocumentDelete = (documentId: string) => {
+    setDocuments(documents.filter((doc) => doc.document_id !== documentId));
+  } 
+
   const useOwnedPreviews = async () => {
     const userId = getUserID();
     setLoading(true);
@@ -198,10 +206,13 @@ export default function Storage() {
     setLoading(false);
   }
 
-  const sortDocuments = (docs: DocumentData[], sortType: string, direction: "asc" | "desc") => {
+  const sortDocuments = (docs: DocumentPreview[], sortType: string, direction: "asc" | "desc") => {
     return [...docs].sort((a, b) => {
       let comparison = 0;
       switch (sortType) {
+        case "timeCreated":
+          comparison = b.time_created - a.time_created;
+          break;
         case "lastEdited":
           comparison = b.last_edit_time - a.last_edit_time;
           break;
@@ -215,7 +226,7 @@ export default function Storage() {
     });
   }
 
-  const handleSort = (type: string) => {
+  const handleSort = (type: SortType) => {
     setSortBy(type);
     setDocuments(sortDocuments(documents, type, sortDirection));
   }
@@ -419,6 +430,9 @@ export default function Storage() {
                   <Menu.Item onClick={() => handleSort("lastEdited")}>
                     Sort by Last Edited {sortBy === "lastEdited" && "✓"}
                   </Menu.Item>
+                  <Menu.Item onClick={() => handleSort("timeCreated")}>
+                    Sort by Creation Time {sortBy === "timeCreated" && "✓"}
+                  </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
             </Group>
@@ -439,7 +453,7 @@ export default function Storage() {
             (
               displayedDocuments.length === 0 ? (
                 <Text size="lg" color="black" fw={700}>
-                  No scores match your search.
+                  No scores match your filter criteria.
                 </Text>
             ) :
             (
@@ -458,6 +472,8 @@ export default function Storage() {
                   time_created={doc.time_created}
                   is_favorited={doc.is_favorited}
                   preview_color={doc.preview_color}
+                  original_preview_object={doc}
+                  onDelete={() => handleDocumentDelete(doc.document_id)}
                 />
               ))}
               </SimpleGrid>

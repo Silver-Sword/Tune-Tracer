@@ -48,7 +48,7 @@ export const OnlineUsersToolbarContainer: React.FC<
                 },
               })}
             >
-              {`+${userList.length}`}
+              {`+${userList.length - MAX_USERS_DISPLAYED}`}
             </Avatar>
           </Tooltip>
         )}
