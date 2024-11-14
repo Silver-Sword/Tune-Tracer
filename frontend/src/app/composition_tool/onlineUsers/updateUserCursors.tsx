@@ -55,6 +55,8 @@ export function processOnlineUsersUpdate(
     const filteredUserList = userList.current.filter(
       (user) => user.userId === user_id
     );
+
+    // add the user to the user list if they are not already there
     let previousUser =
       filteredUserList.length > 0 ? filteredUserList[0] : undefined;
     if (previousUser === undefined) {
@@ -66,6 +68,6 @@ export function processOnlineUsersUpdate(
       previousUser = userList.current.at(-1) as Cursor;
     }
 
-    updateSelectedNote(user_id, cursorColor, cursor.noteID);
+    updateSelectedNote(user_id, cursorColor, cursor?.noteID);
   });
 }
