@@ -48,6 +48,8 @@ const filterLabels = [
   { link: "", label: "Shared with me" }
 ];
 
+type SortType = "title" | "timeCreated" | "lastEdited";
+
 // FiltersNavbar component
 const FiltersNavbar: React.FC<{ getOwnPreviews: () => void, getSharedPreviews: () => void }> = ({ getOwnPreviews, getSharedPreviews }) => {
   const [activeFilter, setActiveFilter] = useState<string>("My Compositions");
@@ -120,7 +122,7 @@ export default function Storage() {
   const [run, setRun] = useState(false);
   const [isClient, setIsClient] = useState(false);
   
-  const [sortBy, setSortBy] = useState<string>("title");
+  const [sortBy, setSortBy] = useState<SortType>("title");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [onlyShowFavorites, setOnlyShowFavorites] = useState<boolean>(false);
@@ -208,6 +210,9 @@ export default function Storage() {
     return [...docs].sort((a, b) => {
       let comparison = 0;
       switch (sortType) {
+        case "timeCreated":
+          comparison = b.time_created - a.time_created;
+          break;
         case "lastEdited":
           comparison = b.last_edit_time - a.last_edit_time;
           break;
@@ -221,7 +226,7 @@ export default function Storage() {
     });
   }
 
-  const handleSort = (type: string) => {
+  const handleSort = (type: SortType) => {
     setSortBy(type);
     setDocuments(sortDocuments(documents, type, sortDirection));
   }
@@ -424,6 +429,9 @@ export default function Storage() {
                   </Menu.Item>
                   <Menu.Item onClick={() => handleSort("lastEdited")}>
                     Sort by Last Edited {sortBy === "lastEdited" && "✓"}
+                  </Menu.Item>
+                  <Menu.Item onClick={() => handleSort("timeCreated")}>
+                    Sort by Creation Time {sortBy === "timeCreated" && "✓"}
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
