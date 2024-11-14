@@ -439,7 +439,7 @@ export default function Storage() {
             (
               displayedDocuments.length === 0 ? (
                 <Text size="lg" color="black" fw={700}>
-                  No scores match your search.
+                  No scores match your filter criteria.
                 </Text>
             ) :
             (
