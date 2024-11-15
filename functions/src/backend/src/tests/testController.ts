@@ -115,7 +115,8 @@ export async function testDocumentChanges()
     const user = {
         user_email: PRIMARY_TEST_EMAIL,
         user_id: PRIMARY_TEST_ID,
-        display_name: "ADMIN_CHECK"
+        display_name: "ADMIN_CHECK",
+        cursor_color: "#11ede6",
     };
 
     // subscribe to updates
@@ -186,7 +187,8 @@ export async function testUserRegistrationToDocument(firebase: FirebaseWrapper) 
     const userEntity = {
         user_email: PRIMARY_TEST_EMAIL,
         user_id: userId,
-        display_name: "ADMIN_TEST"
+        display_name: "ADMIN_TEST",
+        cursor_color: "#11ede6",
     };
     
     await subscribeUserToUserDocumentPool(documentId, userEntity, (updateType: UpdateType, onlineEntity: OnlineEntity) =>

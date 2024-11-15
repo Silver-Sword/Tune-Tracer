@@ -4,6 +4,8 @@ import React from "react";
 import { OnlineEntity } from "../../lib/src/realtimeUserTypes";
 import { SelectedNote } from "../../lib/src/SelectedNote";
 
+const MAX_INACTIVE_TIME = 1000 * 60 * 15; // 15 minutes
+
 type Cursor = {
   userId: string;
   color: string;
@@ -43,27 +45,36 @@ export function processOnlineUsersUpdate(
   // Iterate over onlineUsers
   onlineUsers.forEach((onlineEntity, user_id) => {
     // Exclude the current user
-    if (user_id === selfUserId) {
+    if (
+      user_id === selfUserId ||
+      onlineEntity.cursor_color === undefined // old data format, do not process
+    ) {
       return;
+    } else if(Date.now() - onlineEntity.last_active_time > MAX_INACTIVE_TIME) { // remove inactive users
+        userList.current = userList.current.filter(
+          (user) => user.userId !== user_id
+        );
+        return;
     }
 
     const cursor = onlineEntity.cursor as SelectedNote;
-    if (cursor?.color) {
-      const filteredUserList = userList.current.filter(
-        (user) => user.userId === user_id
-      );
-      let previousUser =
-        filteredUserList.length > 0 ? filteredUserList[0] : undefined;
-      if (previousUser === undefined) {
-        userList.current.push({
-          userId: user_id,
-          displayName: onlineEntity.display_name,
-          color: cursor.color,
-        });
-        previousUser = userList.current.at(-1) as Cursor;
-      }
+    const cursorColor = onlineEntity.cursor_color;
+    const filteredUserList = userList.current.filter(
+      (user) => user.userId === user_id
+    );
 
-      updateSelectedNote(user_id, cursor.color, cursor.noteID);
+    // add the user to the user list if they are not already there
+    let previousUser =
+      filteredUserList.length > 0 ? filteredUserList[0] : undefined;
+    if (previousUser === undefined) {
+      userList.current.push({
+        userId: user_id,
+        displayName: onlineEntity.display_name,
+        color: cursorColor,
+      });
+      previousUser = userList.current.at(-1) as Cursor;
     }
+
+    updateSelectedNote(user_id, cursorColor, cursor?.noteID);
   });
 }

@@ -8,4 +8,5 @@ export type OnlineEntity =
     display_name: string,               // same as UserEntity
     last_active_time: number,           // the last time the user updated the document or moved their cursor
     cursor?: unknown,                   // what the user is editing, highlighting, or has clicked
+    cursor_color: string,                // the color of the cursor
 };

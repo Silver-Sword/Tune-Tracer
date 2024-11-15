@@ -1,4 +1,5 @@
 import { getCookie, setCookie, deleteCookie } from "cookies-next";
+import { getRandomColor } from "./login/color";
 
 export function saveUserID( userID: string ) {
     // Sets userID as a cookie for 7 days before it expires
@@ -50,9 +51,13 @@ export function getDocumentID() {
 
 export function getCursorColor()
 {
-    const color = getCookie('cursorColor');
-    if (color) { return color.valueOf(); }
-    return '#FFFF00';
+    let color = getCookie('cursorColor');
+    if(!color) {
+        color = getRandomColor();
+        saveCursorColor(color);
+    }
+
+    return color.valueOf();
 }
 
 export function clearUserID() {

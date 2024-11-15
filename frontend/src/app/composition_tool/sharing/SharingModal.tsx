@@ -28,6 +28,7 @@ import { ShareStyle } from "../../lib/src/documentProperties";
 import { DocumentMetadata } from "../../lib/src/documentProperties";
 import { useSearchParams } from "next/navigation";
 import { getUserID } from "../../cookie";
+import { DebugController } from "../../DebugController";
 
 interface SharingModalProps {
   documentTitle: string;
@@ -129,7 +130,9 @@ export const SharingModal: React.FC<SharingModalProps> = ({
       console.warn(`Skipping update while a role change is in progress`);
       return; // Skip updates if a role change is in progress
     }
-    console.debug(`Current collaborators: ${collaborators.map(collab => collab.email).join(", ")}`);
+    if(DebugController.ONLINE_USERS) {
+      console.debug(`Current collaborators: ${collaborators.map(collab => collab.email).join(", ")}`);
+    }
 
     if(authorEmail === null) {
       updateAuthorEmail(metadata.owner_id);

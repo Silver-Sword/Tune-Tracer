@@ -329,7 +329,8 @@ export default class FirebaseWrapper
         user: {
             user_email: string, 
             user_id: string, 
-            display_name: string
+            display_name: string,
+            cursor_color: string
         },
         shouldAutoDisconnect: boolean = true
     ) {
@@ -338,6 +339,7 @@ export default class FirebaseWrapper
             user_id: user.user_id,
             user_email: user.user_email,
             display_name: user.display_name,
+            cursor_color: user.cursor_color,
             last_active_time: firebase.database.ServerValue.TIMESTAMP
         });
         if(shouldAutoDisconnect) {

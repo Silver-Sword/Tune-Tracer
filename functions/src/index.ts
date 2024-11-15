@@ -92,7 +92,9 @@ const {
   ensureMapData,
 } = require("./manageServerData");
 
-const { updateUserPassword } = require("./backend/src/endpoints/updateUserPassword");
+const {
+  updateUserPassword,
+} = require("./backend/src/endpoints/updateUserPassword");
 
 const cors = require("cors");
 const corsHandler = cors({ origin: true });
@@ -151,7 +153,7 @@ exports.logInUser = functions.https.onRequest(
 
           const userId = apiResult.uid;
           const userEntity: typeof UserEntity = await getUserFromId(userId);
-          if(!userEntity) {
+          if (!userEntity) {
             throw new Error("User entity not found");
           }
 
@@ -694,17 +696,26 @@ exports.subscribeToDocument = functions.https.onRequest(
         const userId = request.body.userId;
         const user_email = request.body.user_email;
         const displayName = request.body.displayName;
+        const userCursorColor = request.body.userCursorColor;
 
-        if (!documentId || !userId || !user_email || !displayName) {
+        if (
+          !documentId ||
+          !userId ||
+          !user_email ||
+          !displayName ||
+          !userCursorColor
+        ) {
           response.status(StatusCode.MISSING_ARGUMENTS).send({
-            message: `Missing required fields: ${
+            message: `Missing required field: ${
               !documentId
                 ? "documentId"
                 : !userId
                 ? "userId"
                 : !user_email
                 ? "user_email"
-                : "displayName"
+                : !displayName
+                ? "displayName"
+                : "userCursorColor"
             }`,
           });
         } else {
@@ -712,6 +723,7 @@ exports.subscribeToDocument = functions.https.onRequest(
             user_email: user_email as string,
             user_id: userId as string,
             display_name: displayName as string,
+            cursor_color: userCursorColor as string,
           };
 
           await ensureMapData(documentId, true);
@@ -735,7 +747,9 @@ exports.subscribeToDocument = functions.https.onRequest(
               );
             },
             false
-          );
+          ).catch((error: Error) => {
+            throw error;
+          });
 
           response.status(StatusCode.OK).send({
             message: "Successfully subscribed to document",
@@ -1196,13 +1210,11 @@ exports.resetUserPassword = functions.https.onRequest(
         const email = request.body.email;
         if (!email) {
           response.status(StatusCode.MISSING_ARGUMENTS).send({
-            message: `Missing required field: ${
-              "email"
-            }`,
+            message: `Missing required field: ${"email"}`,
           });
         } else {
-           await updateUserPassword(email);
-           response.status(StatusCode.OK).send({
+          await updateUserPassword(email);
+          response.status(StatusCode.OK).send({
             message: "The user has been sent a password reset email",
             data: true,
           });
