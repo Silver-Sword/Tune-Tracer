@@ -4,6 +4,8 @@ import React from "react";
 import { OnlineEntity } from "../../lib/src/realtimeUserTypes";
 import { SelectedNote } from "../../lib/src/SelectedNote";
 
+const MAX_INACTIVE_TIME = 1000 * 60 * 15; // 15 minutes
+
 type Cursor = {
   userId: string;
   color: string;
@@ -48,6 +50,11 @@ export function processOnlineUsersUpdate(
       onlineEntity.cursor_color === undefined // old data format, do not process
     ) {
       return;
+    } else if(Date.now() - onlineEntity.last_active_time > MAX_INACTIVE_TIME) { // remove inactive users
+        userList.current = userList.current.filter(
+          (user) => user.userId !== user_id
+        );
+        return;
     }
 
     const cursor = onlineEntity.cursor as SelectedNote;
