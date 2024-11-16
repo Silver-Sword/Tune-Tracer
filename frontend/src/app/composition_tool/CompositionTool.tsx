@@ -1205,7 +1205,7 @@ export default function CompositionTool() {
                             {
                                 playNote(key, piano);
                             }
-                        })
+                        });
                         sendChanges();
                         // Update selectedKey to the new pitch
 
@@ -1355,6 +1355,17 @@ export default function CompositionTool() {
                 if (targetElement && targetElement.classList.contains('vf-stavenote')) {
                     const selectId = d3.select(targetElement).attr('id');
                     selectedNoteId.current = parseInt(selectId);
+                    let note = score.current?.findNote(selectedNoteId.current);
+                    if(note)
+                    {
+                        note.getKeys().forEach((key) => {
+                            if (piano)
+                            {
+                                playNote(key, piano);
+                            }
+                        });
+                    }
+                   
                 }
             });
 
