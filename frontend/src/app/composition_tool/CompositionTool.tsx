@@ -50,6 +50,7 @@ export default function CompositionTool() {
     let selectedKey = useRef<string>('');
     let isSending = useRef<boolean>(false);
     let isFetching = useRef<boolean>(false);
+    let first = useRef<boolean>(true);
     const notePlacementRectangleSVG = useRef<SVGElement | null>(null);
     const notePlacementRectangleRef = useRef<Selection<SVGElement, unknown, null, undefined> | null>(null);
     const [notationUpdated, setNotationUpdated] = useState<number>(0);
@@ -749,6 +750,12 @@ export default function CompositionTool() {
                     if (notationRef.current) {
                         score.current?.loadScoreDataObj(compData);
                         score.current?.addNoteInMeasure([], 0);
+                        // Hot fix for fixing widths on load
+                        if(first.current)
+                        {
+                            first.current = false;
+                            score.current?.loadScoreDataObj(compData);
+                        }
 
                         if (DebugController.SCORE_DATA) {
                             console.log("LOADED SCORE DATA\nloaded Object: " + printScoreData(compData));
