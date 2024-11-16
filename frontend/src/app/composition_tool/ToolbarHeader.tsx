@@ -16,6 +16,7 @@ import {
   Text,
   Image,
   Menu,
+  NumberInput,
 } from "@mantine/core";
 import React, { useEffect, useRef, useState } from "react";
 import { SharingModal } from "./sharing/SharingModal";
@@ -91,6 +92,8 @@ export const ToolbarHeader: React.FC<{
     removeAccidentals: (keys: string[], noteID: number) => void;
     handleDot: (dotType: number, noteId: number) => void;
     setKeySignature: (keySignature: string) => void;
+    bpm: number | string
+    setBPM: (value: number | string) => void;
     hasWriteAccess: boolean;
     selectedKey: string;
     userList: { userId: string; displayName: string; color: string }[];
@@ -113,6 +116,8 @@ export const ToolbarHeader: React.FC<{
     removeAccidentals,
     handleDot,
     setKeySignature,
+    bpm,
+    setBPM,
     hasWriteAccess,
     selectedKey,
     userList
@@ -624,6 +629,16 @@ useEffect(() => {
                 placeholder="Choose Key Signature"
                 onChange={(value) => value && setKeySignature(value)}
                 data={keySignatures}
+              />
+            </Tooltip>
+
+            {/* BPM */}
+            <Text>Set BPM: </Text>
+            <Tooltip label="Set BPM" position="top" withArrow>
+              <NumberInput
+                placeholder="BPM"
+                value={bpm}
+                onChange={setBPM}
               />
             </Tooltip>
           </Group>

@@ -55,6 +55,7 @@ export default function CompositionTool() {
     const [isPlayingBack, setIsPlayingBack] = useState<boolean>(false);
 
     const [volume, setVolume] = useState<number>(50);
+    const [bpm, setBPM] = useState<number | string>('');
     let topPart: Tone.Part;
     let bottomPart: Tone.Part;
     const [piano, setPiano] = useState<Tone.Sampler>();
@@ -542,7 +543,21 @@ export default function CompositionTool() {
         d3.select(`[id="${noteId}"]`).classed('highlighted', false);
     }
 
-
+    useEffect(() => {
+        if (typeof bpm === "number")
+        {
+            Tone.getTransport().bpm.value = bpm;
+        }
+        else if (typeof bpm === "string")
+        {
+            const bpmVal = parseInt(bpm);
+            try {
+                Tone.getTransport().bpm.value = bpmVal;
+            } catch (error) {
+                console.log(`Could not set Tone BPM: ${error}`);
+            }
+        }
+    }, [bpm])
 
     useEffect(() => {
         const loadSamples = async () => {
@@ -1374,6 +1389,8 @@ export default function CompositionTool() {
                     addFlat={addFlatHandler}
                     removeAccidentals={removeAccidentalsHandler}
                     setKeySignature={setKeySignatureHandler}
+                    bpm={bpm}
+                    setBPM={setBPM}
                     handleDot={dotHandler}
                     hasWriteAccess={hasWriteAccess}
                     selectedKey={selectedKey.current}
