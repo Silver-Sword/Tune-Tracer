@@ -38,6 +38,7 @@ const DEFAULT_RENDERER_HEIGHT = 2000;
 // Define the type
 export type SendChangesType = () => Promise<void>;
 export type CreateNewNoteBoxType = () => void;
+export type UpdateNotationType = () => void;
 
 export default function CompositionTool() {
     const router = useRouter();
@@ -633,6 +634,10 @@ export default function CompositionTool() {
         }
     }, [volume]);
 
+    const updateNotation: UpdateNotationType = () =>{
+        setNotationUpdated(prev => prev + 1);
+    }
+
     const [currentDocument, setDocument] = useState<Document>({
         document_title: '',
         comments: [],
@@ -1104,8 +1109,19 @@ export default function CompositionTool() {
         if (selectedNoteId !== null && selectedKey !== null && score.current) {
             const staveNote = score.current.findNote(selectedNoteId.current);
             createNewNoteBox();
+            
             if (staveNote) {
                 const keys = staveNote.getKeys();
+                if(!staveNote.isRest())
+                {
+                    keys.forEach((key) => {
+                        if (piano)
+                        {
+                            playNote(key, piano);
+                        }
+                    });
+                }
+               
                 const noteHeads = staveNote.noteHeads;
 
                 // Find the index of the selectedKey
@@ -1128,7 +1144,6 @@ export default function CompositionTool() {
         }
 
     }, [selectedNoteId, selectedKey.current, notationUpdated]);
-
 
     useEffect(() => {
         // // First remove the selectd note class from previously selected note
@@ -1208,7 +1223,6 @@ export default function CompositionTool() {
                         });
                         sendChanges();
                         // Update selectedKey to the new pitch
-
                         setNotationUpdated(prev => prev + 1);
                     }
                 }
@@ -1329,7 +1343,7 @@ export default function CompositionTool() {
         attachMouseLeaveListener(notePlacementRectangleRef.current, note, measure, selectedKey.current);
         if (piano)
         {
-            attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId.current, svgBoxY, createNewNoteBox, piano)
+            attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId.current, svgBoxY, createNewNoteBox, piano, updateNotation);
         }
     }
 
@@ -1354,9 +1368,9 @@ export default function CompositionTool() {
                 // Check to see if we've found an element in the DOM with the class we're looking for
                 if (targetElement && targetElement.classList.contains('vf-stavenote')) {
                     const selectId = d3.select(targetElement).attr('id');
-                    selectedNoteId.current = parseInt(selectId);
+                    selectedNoteId.current = parseInt(selectId);     
                     let note = score.current?.findNote(selectedNoteId.current);
-                    if(note)
+                    if(note && !note.isRest())
                     {
                         note.getKeys().forEach((key) => {
                             if (piano)
@@ -1364,8 +1378,7 @@ export default function CompositionTool() {
                                 playNote(key, piano);
                             }
                         });
-                    }
-                   
+                    }              
                 }
             });
 
