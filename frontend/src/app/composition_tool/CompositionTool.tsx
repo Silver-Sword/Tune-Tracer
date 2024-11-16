@@ -1252,7 +1252,7 @@ export default function CompositionTool() {
                 {
                     removeNoteHandler(score, selectedNoteId, [''], selectedNoteId.current);
                 }
-                
+                sendChanges();
             }
         };
 
