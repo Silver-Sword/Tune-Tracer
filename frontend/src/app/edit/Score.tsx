@@ -100,6 +100,10 @@ export class Score {
         this.renderMeasures();
     }
 
+    getKeySignature = () => {
+        return this.key_signature;
+    }
+
     findNote = (noteId: number): StaveNote | null => {
         let measureIndex = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
         let noteIdStr = this.ID_to_MeasureIndexID.get(noteId)?.noteId;
@@ -180,6 +184,7 @@ export class Score {
         this.ties = new Set<number>(scoreData.ties);
         this.top_measures = [];
         this.bottom_measures = [];
+        this.key_signature = scoreData.topMeasures[0].keySignature;
         scoreData.topMeasures.forEach((topMeasure) => {
             this.top_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, undefined, topMeasure));
         });

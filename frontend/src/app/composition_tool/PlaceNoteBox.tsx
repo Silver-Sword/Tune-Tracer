@@ -224,8 +224,9 @@ export function attachMouseClickListener(
         let addKey = snapToKeyMap.get(snapIndex);
         if (addKey === undefined) return;
         score.addNoteInMeasure([addKey], selectedNoteId);
-        playNote(addKey, piano);
+        playNote(addKey, piano, score.getKeySignature());
         sendChanges();
-        updateNotation();
+        createNewNoteBox();
+        //updateNotation();
     });
 }

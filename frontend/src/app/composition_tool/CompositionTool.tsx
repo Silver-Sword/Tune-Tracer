@@ -192,8 +192,7 @@ export default function CompositionTool() {
     }
 
     const playbackAwaiter = async () => {
-        if (isPlayingBack)
-        {
+        if (isPlayingBack) {
             return;
         }
         await Tone.start();
@@ -545,12 +544,10 @@ export default function CompositionTool() {
     }
 
     useEffect(() => {
-        if (typeof bpm === "number")
-        {
+        if (typeof bpm === "number") {
             Tone.getTransport().bpm.value = bpm;
         }
-        else if (typeof bpm === "string")
-        {
+        else if (typeof bpm === "string") {
             const bpmVal = parseInt(bpm);
             try {
                 Tone.getTransport().bpm.value = bpmVal;
@@ -634,7 +631,7 @@ export default function CompositionTool() {
         }
     }, [volume]);
 
-    const updateNotation: UpdateNotationType = () =>{
+    const updateNotation: UpdateNotationType = () => {
         setNotationUpdated(prev => prev + 1);
     }
 
@@ -1109,19 +1106,17 @@ export default function CompositionTool() {
         if (selectedNoteId !== null && selectedKey !== null && score.current) {
             const staveNote = score.current.findNote(selectedNoteId.current);
             createNewNoteBox();
-            
+
             if (staveNote) {
                 const keys = staveNote.getKeys();
-                if(!staveNote.isRest())
-                {
+                if (!staveNote.isRest()) {
                     keys.forEach((key) => {
-                        if (piano)
-                        {
-                            playNote(key, piano);
+                        if (piano && score.current) {
+                            playNote(key, piano, score.current?.getKeySignature());
                         }
                     });
                 }
-               
+
                 const noteHeads = staveNote.noteHeads;
 
                 // Find the index of the selectedKey
@@ -1190,9 +1185,8 @@ export default function CompositionTool() {
             // If a valid note was pressed and we have a note selected
             if (note && selectedNoteId.current !== -1) {
                 addNoteHandler(score, selectedNoteId, [note], selectedNoteId.current);
-                if (piano)
-                {
-                    playNote(note, piano);
+                if (piano && score.current) {
+                    playNote(note, piano, score.current.getKeySignature());
                 }
                 sendChanges();
                 selectedKey.current = note;
@@ -1215,12 +1209,6 @@ export default function CompositionTool() {
                         // removeNoteHandler(staveNote.keys, selectedNoteId.current);
                         removeNoteHandler(score, selectedNoteId, staveNote.keys, selectedNoteId.current);
                         addNoteHandler(score, selectedNoteId, newKeys, selectedNoteId.current);
-                        newKeys.forEach((key) => {
-                            if (piano)
-                            {
-                                playNote(key, piano);
-                            }
-                        });
                         sendChanges();
                         // Update selectedKey to the new pitch
                         setNotationUpdated(prev => prev + 1);
@@ -1245,12 +1233,6 @@ export default function CompositionTool() {
                         // removeNoteHandler(staveNote.keys, selectedNoteId.current);
                         removeNoteHandler(score, selectedNoteId, staveNote.keys, selectedNoteId.current);
                         addNoteHandler(score, selectedNoteId, newKeys, selectedNoteId.current);
-                        newKeys.forEach((key) => {
-                            if (piano)
-                            {
-                                playNote(key, piano);
-                            }
-                        })
                         sendChanges();
                         // Update selectedKey to the new pitch
 
@@ -1259,12 +1241,12 @@ export default function CompositionTool() {
                 }
             }
 
-             // If we press the right arrow key, move right
-             if (key ==='arrowright') {
+            // If we press the right arrow key, move right
+            if (key === 'arrowright') {
                 if (selectedNoteId !== null && selectedKey !== null) {
                     // Get the next note
                     let adjacentID = score.current?.getForwardAdjacentNote(selectedNoteId.current);
-                    if(!adjacentID) return;
+                    if (!adjacentID) return;
                     selectedNoteId.current = adjacentID;
                     const staveNote = score.current?.findNote(selectedNoteId.current);
                     if (staveNote) {
@@ -1276,12 +1258,12 @@ export default function CompositionTool() {
                 }
             }
 
-             // If we press the left arrow key, move right
-             if (key ==='arrowleft') {
+            // If we press the left arrow key, move right
+            if (key === 'arrowleft') {
                 if (selectedNoteId !== null && selectedKey !== null) {
                     // Get the next note
                     let adjacentID = score.current?.getBackwardAdjacentNote(selectedNoteId.current);
-                    if(adjacentID === undefined) return;
+                    if (adjacentID === undefined) return;
                     selectedNoteId.current = adjacentID;
                     const staveNote = score.current?.findNote(selectedNoteId.current);
                     if (staveNote) {
@@ -1296,12 +1278,10 @@ export default function CompositionTool() {
             // Remove a note if backspace if pressed
             if (key === 'backspace') {
                 // removeNoteHandler([''], selectedNoteId.current);
-                if (selectedKey.current)
-                {
+                if (selectedKey.current) {
                     removeNoteHandler(score, selectedNoteId, [selectedKey.current], selectedNoteId.current);
                 }
-                else
-                {
+                else {
                     removeNoteHandler(score, selectedNoteId, [''], selectedNoteId.current);
                 }
                 sendChanges();
@@ -1341,8 +1321,7 @@ export default function CompositionTool() {
         let svgBoxY = notePlacementRectangleSVG.current.getBoundingClientRect().top + 10;
         attachMouseMoveListener(notePlacementRectangleRef.current, note, measure, svgBoxY, selectedKey.current);
         attachMouseLeaveListener(notePlacementRectangleRef.current, note, measure, selectedKey.current);
-        if (piano)
-        {
+        if (piano) {
             attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId.current, svgBoxY, createNewNoteBox, piano, updateNotation);
         }
     }
@@ -1368,17 +1347,15 @@ export default function CompositionTool() {
                 // Check to see if we've found an element in the DOM with the class we're looking for
                 if (targetElement && targetElement.classList.contains('vf-stavenote')) {
                     const selectId = d3.select(targetElement).attr('id');
-                    selectedNoteId.current = parseInt(selectId);     
+                    selectedNoteId.current = parseInt(selectId);
                     let note = score.current?.findNote(selectedNoteId.current);
-                    if(note && !note.isRest())
-                    {
-                        note.getKeys().forEach((key) => {
-                            if (piano)
-                            {
-                                playNote(key, piano);
-                            }
-                        });
-                    }              
+                    // if (note && !note.isRest()) {
+                    //     note.getKeys().forEach((key) => {
+                    //         if (piano) {
+                    //             playNote(key, piano);
+                    //         }
+                    //     });
+                    // }
                 }
             });
 
