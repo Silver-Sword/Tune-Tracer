@@ -639,6 +639,8 @@ useEffect(() => {
                 placeholder="BPM"
                 value={bpm}
                 onChange={setBPM}
+                min={10}
+                max={200}
               />
             </Tooltip>
           </Group>
