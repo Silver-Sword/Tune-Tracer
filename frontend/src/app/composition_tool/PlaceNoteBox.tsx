@@ -16,11 +16,11 @@ export function createPlaceNoteBox(note: StaveNote): SVGElement {
         "http://www.w3.org/2000/svg",
         "rect"
     );
-    noteBox.setAttribute("x", note.getBoundingBox().getX() + ""); // Position x-coordinate
+    noteBox.setAttribute("x", (note.getBoundingBox().getX() - 5) + ""); // Position x-coordinate
     let stave = note.getStave();
     if (!stave) return noteBox;
     noteBox.setAttribute("y", (stave.getBoundingBox().getY() - 60) + ""); // Position y-coordinate
-    noteBox.setAttribute("width", (note.getBoundingBox().getW() + 10) + ""); // Width of the rectangle
+    noteBox.setAttribute("width", (note.getBoundingBox().getW() + 20) + ""); // Width of the rectangle
     noteBox.setAttribute("height", "250"); // Height of the rectangle
     noteBox.setAttribute("fill", "rgba(0, 0, 255, 0.0)"); // No fill color
     noteBox.setAttribute("stroke", "rgba(0, 0, 255, 0.0)"); // Outline color
@@ -205,7 +205,7 @@ export function attachMouseClickListener(
     sendChanges: SendChangesType,
     selectedNoteId: number,
     svgBoxY: number,
-    createNewNoteBox: CreateNewNoteBoxType): number {
+    createNewNoteBox: CreateNewNoteBoxType) {
 
     let snapToKeyMap: Map<number, string>;
     if (measure.getClef() == "treble") {
@@ -223,9 +223,5 @@ export function attachMouseClickListener(
         score.addNoteInMeasure([addKey], selectedNoteId);
         sendChanges();
         createNewNoteBox();
-        let newNoteId = score.getAdjacentNote(selectedNoteId);
-        return newNoteId;
     });
-    return selectedNoteId;
-
 }

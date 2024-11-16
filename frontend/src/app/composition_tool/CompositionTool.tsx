@@ -1293,7 +1293,7 @@ export default function CompositionTool() {
             }
 
 
-            // If we press the down arrow, lower the pitch
+            // If we press the s key, lower the pitch
             if (key === 's') {
                 if (selectedNoteId.current !== null && selectedKey !== null) {
                     const staveNote = score.current?.findNote(selectedNoteId.current);
@@ -1311,6 +1311,40 @@ export default function CompositionTool() {
                         addNoteHandler(newKeys, selectedNoteId.current);
                         // Update selectedKey to the new pitch
 
+                        setNotationUpdated(prev => prev + 1);
+                    }
+                }
+            }
+
+             // If we press the right arrow key, move right
+             if (key ==='arrowright') {
+                if (selectedNoteId !== null && selectedKey !== null) {
+                    // Get the next note
+                    let adjacentID = score.current?.getForwardAdjacentNote(selectedNoteId.current);
+                    if(!adjacentID) return;
+                    selectedNoteId.current = adjacentID;
+                    const staveNote = score.current?.findNote(selectedNoteId.current);
+                    if (staveNote) {
+                        let newSelectedKey = staveNote.getKeys()[0];
+                        selectedKey.current = newSelectedKey;
+                        // Update selectedKey to the new pitch
+                        setNotationUpdated(prev => prev + 1);
+                    }
+                }
+            }
+
+             // If we press the left arrow key, move right
+             if (key ==='arrowleft') {
+                if (selectedNoteId !== null && selectedKey !== null) {
+                    // Get the next note
+                    let adjacentID = score.current?.getBackwardAdjacentNote(selectedNoteId.current);
+                    if(adjacentID === undefined) return;
+                    selectedNoteId.current = adjacentID;
+                    const staveNote = score.current?.findNote(selectedNoteId.current);
+                    if (staveNote) {
+                        let newSelectedKey = staveNote.getKeys()[0];
+                        selectedKey.current = newSelectedKey;
+                        // Update selectedKey to the new pitch
                         setNotationUpdated(prev => prev + 1);
                     }
                 }
@@ -1355,7 +1389,7 @@ export default function CompositionTool() {
         let svgBoxY = notePlacementRectangleSVG.current.getBoundingClientRect().top + 10;
         attachMouseMoveListener(notePlacementRectangleRef.current, note, measure, svgBoxY, selectedKey.current);
         attachMouseLeaveListener(notePlacementRectangleRef.current, note, measure, selectedKey.current);
-        selectedNoteId.current = (attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId.current, svgBoxY, createNewNoteBox));
+        attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId.current, svgBoxY, createNewNoteBox)
     }
 
     // Create PlaceNoteBox
