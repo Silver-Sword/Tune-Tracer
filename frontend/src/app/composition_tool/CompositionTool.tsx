@@ -10,7 +10,7 @@ import {
 } from "@mantine/core";
 
 import { getUserID, getDisplayName, getEmail, getCursorColor } from "../cookie";
-import { addNoteHandler, removeNoteHandler, playNote } from "./Notes";
+import { addNoteHandler, removeNoteHandler, playNote, playNoteOnPlayback } from "./Notes";
 import { increasePitch, lowerPitch, shiftNoteDown, shiftNoteUp } from './pitch'
 import { ToolbarHeader } from './ToolbarHeader'
 import { useSearchParams } from "next/navigation";
@@ -485,8 +485,8 @@ export default function CompositionTool() {
 
             // Configure the playback callbacks
             topPart.callback = (time, event) => {
-                if (piano && !event.isRest) {
-                    piano.triggerAttackRelease(event.note, event.duration, time);
+                if (piano && !event.isRest && score.current) {
+                    playNoteOnPlayback(event.note, event.duration, time, piano, score.current.getKeySignature());
                 }
 
                 const durationInSeconds = Tone.Time(event.duration).toSeconds();
@@ -503,8 +503,8 @@ export default function CompositionTool() {
             };
 
             bottomPart.callback = (time, event) => {
-                if (piano && !event.isRest) {
-                    piano.triggerAttackRelease(event.note, event.duration, time);
+                if (piano && !event.isRest && score.current) {
+                    playNoteOnPlayback(event.note, event.duration, time, piano, score.current.getKeySignature());
                 }
 
                 const durationInSeconds = Tone.Time(event.duration).toSeconds();

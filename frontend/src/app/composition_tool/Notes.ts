@@ -54,9 +54,9 @@ export const removeNoteHandler = async (score: React.MutableRefObject<Score | nu
 }
 
 export const playNote = (note: string, piano: Tone.Sampler, keySig: string) => {
-    const key = note.charAt(0);
+    const key = note.charAt(0).toLowerCase();
     let noteToPlay;
-    // Will replace with actual key sig later
+
     if (keySignatureMap.has(keySig) && keySignatureMap.get(keySig)?.keys.has(key)) {
         let modifier;
         if (keySignatureMap.get(keySig)?.allSharp) modifier = "#"
@@ -67,4 +67,20 @@ export const playNote = (note: string, piano: Tone.Sampler, keySig: string) => {
         noteToPlay = note.replace('/', '');
     }
     piano.triggerAttackRelease(noteToPlay, "4n");
+}
+
+function insertCharacter(original: string, char: string, position: number): string {
+    return original.slice(0, position) + char + original.slice(position);
+  }
+
+export const playNoteOnPlayback = (note: string, duration: string, time: number, piano: Tone.Sampler, keySig: string) => {
+    const key = note.charAt(0).toLowerCase();
+
+    if (!note.includes("#") && !note.includes("b") && keySignatureMap.has(keySig) && keySignatureMap.get(keySig)?.keys.has(key)) {
+        let modifier;
+        if (keySignatureMap.get(keySig)?.allSharp) modifier = "#"
+        else modifier = "b"
+        note = insertCharacter(note,modifier,1);
+    }
+    piano.triggerAttackRelease(note, duration, time);
 }
