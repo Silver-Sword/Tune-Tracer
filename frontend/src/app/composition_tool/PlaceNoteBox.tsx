@@ -8,6 +8,8 @@ import { SendChangesType, CreateNewNoteBoxType } from "./CompositionTool";
 
 const SNAP_INTERVAL = 5;
 
+let addKey: string | undefined;
+
 export function createPlaceNoteBox(note: StaveNote): SVGElement {
     // Add a custom SVG rectangle outline as an overlay
     let noteBox = document.createElementNS(
@@ -18,7 +20,7 @@ export function createPlaceNoteBox(note: StaveNote): SVGElement {
     let stave = note.getStave();
     if (!stave) return noteBox;
     noteBox.setAttribute("y", (stave.getBoundingBox().getY() - 60) + ""); // Position y-coordinate
-    noteBox.setAttribute("width", (note.getBoundingBox().getW() + 10) +""); // Width of the rectangle
+    noteBox.setAttribute("width", (note.getBoundingBox().getW() + 10) + ""); // Width of the rectangle
     noteBox.setAttribute("height", "250"); // Height of the rectangle
     noteBox.setAttribute("fill", "rgba(0, 0, 255, 0.0)"); // No fill color
     noteBox.setAttribute("stroke", "rgba(0, 0, 255, 0.0)"); // Outline color
@@ -69,26 +71,74 @@ function reAssignIds(voice: Voice, measure: Measure) {
     }
 }
 
-function reAddSelectedClasses(newNote: StaveNote, selectedKey: string, addKey: string)
-{
+function reAddSelectedClasses(newNote: StaveNote, selectedKey: string, addKey: string) {
     let newNoteHeads = newNote.noteHeads;
-        let newNotekeys = newNote.getKeys();
-        for (let i = 0; i < newNoteHeads.length; i++) {
-            if (newNotekeys[i] === selectedKey || newNotekeys[i] === addKey) {
-                const noteHeadId = newNoteHeads[i].getAttribute('id');
-                if (noteHeadId) {
-                    // Apply the 'selected-note' class to the notehead element
-                    d3.select(`[id="vf-${noteHeadId}"]`).classed('selected-note', true);
-                }
+    let newNotekeys = newNote.getKeys();
+    for (let i = 0; i < newNoteHeads.length; i++) {
+        if (newNotekeys[i] === selectedKey || newNotekeys[i] === addKey) {
+            const noteHeadId = newNoteHeads[i].getAttribute('id');
+            if (noteHeadId) {
+                // Apply the 'selected-note' class to the notehead element
+                d3.select(`[id="vf-${noteHeadId}"]`).classed('selected-note', true);
             }
         }
+    }
+}
+
+export function displayPlaceNote(measure: Measure, note: StaveNote | null, selectedKey: string) {
+    if (addKey === undefined) return;
+    if (note === null) return;
+    let stave = note.getStave();
+    if (!stave) return;
+
+    let keys = note.getKeys();
+    let voice = measure.getVoice1();
+
+    let newKeys;
+    let includesKey = keys.includes(addKey);
+    if (includesKey) {
+        newKeys = note.getKeys();
+    }
+    else {
+        if (note.isRest()) newKeys = [addKey];
+        else newKeys = note.getKeys().concat(addKey);
+    }
+    //console.log("Add key: " + addKey);
+
+    let newNote = new StaveNote({ clef: measure.getClef(), keys: newKeys, duration: measure.createDurationFromDots(note) });
+
+    voice.setStave(stave);
+
+    let context = note.getContext();
+
+    let tickables = voice.getTickables();
+    let newNotes: StaveNote[] = [];
+
+    for (let i = 0; i < tickables.length; i++) {
+        let currentNote = tickables[i] as StaveNote;
+        if (currentNote.getAttribute('id') === note.getAttribute('id')) {
+            newNotes.push(newNote);
+        }
+        else newNotes.push(currentNote);
+        document.getElementById(measure.ids[i] + "")?.remove();
+    }
+
+    let newVoice = new Voice({ num_beats: measure.getCurrentBeats(), beat_value: measure.getCurrentBeatValue() }).addTickables(newNotes);
+
+    new Formatter().formatToStave([newVoice], stave);
+    // Render the voice
+    newVoice.draw(context, stave);
+
+    reAddSelectedClasses(newNote, selectedKey, addKey);
+
+    reAssignIds(newVoice, measure);
 }
 
 export function attachMouseMoveListener(
-    selection: Selection<SVGElement, unknown, null, undefined>, 
-    note: StaveNote | null, 
-    measure: Measure, 
-    svgBoxY: number, 
+    selection: Selection<SVGElement, unknown, null, undefined>,
+    note: StaveNote | null,
+    measure: Measure,
+    svgBoxY: number,
     selectedKey: string) {
     let snapToKeyMap: Map<number, string>;
     if (measure.getClef() == "treble") {
@@ -99,65 +149,19 @@ export function attachMouseMoveListener(
     }
     // Event listener for mouse move within the box
     selection.on("mousemove", async function (event) {
-        if (note === null) return;
-
         const mouseY = event.clientY - svgBoxY;
-        let stave = note.getStave();
-        if (!stave) return;
         const snapIndex = Math.floor(mouseY / SNAP_INTERVAL);
+        addKey = snapToKeyMap.get(snapIndex);
 
-        let keys = note.getKeys();
-        let addKey = snapToKeyMap.get(snapIndex);
-        if (addKey === undefined) return;
-
-        let voice = measure.getVoice1();
-
-        let newKeys;
-        let includesKey = keys.includes(addKey);
-        if (includesKey) {
-            newKeys = note.getKeys();
-        }
-        else {
-            if (note.isRest()) newKeys = [addKey];
-            else newKeys = note.getKeys().concat(addKey);
-        }
-        //console.log("Add key: " + addKey);
-
-        let newNote = new StaveNote({ clef: measure.getClef(), keys: newKeys, duration: measure.createDurationFromDots(note) });
-
-        voice.setStave(stave);
-
-        let context = note.getContext();
-
-        let tickables = voice.getTickables();
-        let newNotes: StaveNote[] = [];
-
-        for (let i = 0; i < tickables.length; i++) {
-            let currentNote = tickables[i] as StaveNote;
-            if (currentNote.getAttribute('id') === note.getAttribute('id')) {
-                newNotes.push(newNote);
-            }
-            else newNotes.push(currentNote);
-            document.getElementById(measure.ids[i] + "")?.remove();
-        }
-
-        let newVoice = new Voice({ num_beats: measure.getCurrentBeats(), beat_value: measure.getCurrentBeatValue() }).addTickables(newNotes);
-
-        new Formatter().formatToStave([newVoice], stave);
-        // Render the voice
-        newVoice.draw(context, stave);
-
-        reAddSelectedClasses(newNote, selectedKey, addKey);
-
-        reAssignIds(newVoice, measure);
+        displayPlaceNote(measure, note, selectedKey);
 
     });
 }
 
 export function attachMouseLeaveListener(
-    selection: Selection<SVGElement, unknown, null, undefined>, 
-    note: StaveNote | null, 
-    measure: Measure, 
+    selection: Selection<SVGElement, unknown, null, undefined>,
+    note: StaveNote | null,
+    measure: Measure,
     selectedKey: string) {
     // Event listener for mouse move within the box
     selection.on("mouseleave", async function (event) {

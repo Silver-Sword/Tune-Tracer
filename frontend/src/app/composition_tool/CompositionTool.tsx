@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Score } from "../edit/Score";
-import { createPlaceNoteBox, attachMouseMoveListener, attachMouseLeaveListener, attachMouseClickListener } from "./PlaceNoteBox";
+import { createPlaceNoteBox, attachMouseMoveListener, attachMouseLeaveListener, attachMouseClickListener, displayPlaceNote } from "./PlaceNoteBox";
 import {
     AppShell,
     Container,
@@ -100,7 +100,7 @@ export default function CompositionTool() {
                 score.current.modifyDurationInMeasure(duration + "d", noteId);
             }
             else if (dotType == 2) {
-                score.current.modifyDurationInMeasure(duration + "dd", noteId); 
+                score.current.modifyDurationInMeasure(duration + "dd", noteId);
             }
             else if (dotType == -1) {
                 score.current.modifyDurationInMeasure(duration, noteId);
@@ -745,7 +745,7 @@ export default function CompositionTool() {
             if (score.current === null) return;
 
             let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
-            
+
 
             const changesTemp =
             {
@@ -753,7 +753,7 @@ export default function CompositionTool() {
                 documentId: documentID.current,
                 writerId: userId.current,
             }
-            if(DebugController.SCORE_DATA) {
+            if (DebugController.SCORE_DATA) {
                 console.log("Exporting Score data ------------------------------- ");
                 console.log("exported Object: " + printScoreData(exportedScoreDataObj));
             }
@@ -789,14 +789,14 @@ export default function CompositionTool() {
 
         changesTimeout = setTimeout(async () => {
             while (isSending.current || isFetching.current) {
-                if(DebugController.CHECK_CHANGES) {
+                if (DebugController.CHECK_CHANGES) {
                     console.log("Waiting until send finished");
                     console.log("isSending: " + isSending.current);
                     console.log("isFetching: " + isFetching.current);
                 }
                 await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
             }
-            if(DebugController.CHECK_CHANGES) {
+            if (DebugController.CHECK_CHANGES) {
                 console.log(JSON.stringify(changesTemp));
             }
             isFetching.current = true;
@@ -828,8 +828,8 @@ export default function CompositionTool() {
                     if (notationRef.current) {
                         score.current?.loadScoreDataObj(compData);
                         score.current?.addNoteInMeasure([], 0);
-                        
-                        if(DebugController.SCORE_DATA) {
+
+                        if (DebugController.SCORE_DATA) {
                             console.log("LOADED SCORE DATA\nloaded Object: " + printScoreData(compData));
                         }
                         // Now add it to the currently selected note
@@ -838,12 +838,16 @@ export default function CompositionTool() {
                         }
                         setNotationUpdated(prev => prev + 1);
                         createNewNoteBox();
+                        let note = score.current?.findNote(selectedNoteId.current);
+                        let measure = score.current?.getMeasureFromNoteId(selectedNoteId.current);
+                        if (!note || !measure) return;
+                        displayPlaceNote(measure, note, selectedKey.current);
                     }
 
                     // Update online users
                     const receivedUsers = (res.data as any)['onlineUsers'];
                     if (receivedUsers !== undefined) {
-                        if(DebugController.ONLINE_USERS) {
+                        if (DebugController.ONLINE_USERS) {
                             console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
                         }
                         setOnlineUsers(new Map(Object.entries(receivedUsers)) as Map<string, OnlineEntity>);
@@ -1465,8 +1469,8 @@ export default function CompositionTool() {
                             "#FFFFFF",
                         boxShadow: '0 0px 5px rgba(0, 0, 0, 0.3)', // Shadow effect
                         borderRadius: '4px', // Rounded corners for a more "page" look
-                        margin: '20px', 
-                        border: '1px solid #e0e0e0', 
+                        margin: '20px',
+                        border: '1px solid #e0e0e0',
                         textAlign: 'center'
                     }}
                 >
