@@ -21,23 +21,34 @@ import {
   Center,
   Loader,
 } from "@mantine/core";
-import StorageTutorial from "./storage-tutorial";
-import Joyride, { CallBackProps, STATUS, Step, ACTIONS, EVENTS} from "react-joyride";
-import { IconSearch, IconSortDescending, IconArrowUp, IconArrowDown} from "@tabler/icons-react";
-import { getUserID, getDisplayName, getEmail, clearUserCookies, saveDocID } from "../cookie";
+import { 
+  IconArrowDown, 
+  IconArrowUp, 
+  IconHeart, 
+  IconHeartFilled,
+  IconHelp, 
+  IconSearch, 
+  IconSortDescending, 
+  IconUserCircle, 
+} from "@tabler/icons-react";
+import {STATUS, ACTIONS} from "react-joyride";
 import { useRouter } from "next/navigation";
+
+import { getUserID, getEmail, clearUserCookies } from "../cookie";
+import StorageTutorial from "./storage-tutorial";
 import { CreateCard } from "./CreateCard";
-import { DocCard, DocumentData } from "./DocCard";
+import { DocCard } from "./DocCard";
 import { getSharedPreviews, getOwnPreviews } from "./documentPreviewsData";
-import { set } from "date-fns";
 import { callAPI } from "../../utils/callAPI";
+import { DocumentPreview } from "../lib/src/documentProperties";
 
 // Define filter labels for the navbar
 const filterLabels = [
   { link: "", label: "My Compositions" },
-  { link: "", label: "Shared with you" },
-  // { link: "", label: "Favorites" },
+  { link: "", label: "Shared with me" }
 ];
+
+type SortType = "title" | "timeCreated" | "lastEdited";
 
 // FiltersNavbar component
 const FiltersNavbar: React.FC<{ getOwnPreviews: () => void, getSharedPreviews: () => void }> = ({ getOwnPreviews, getSharedPreviews }) => {
@@ -48,11 +59,10 @@ const FiltersNavbar: React.FC<{ getOwnPreviews: () => void, getSharedPreviews: (
     if (label == "My Compositions") {
       getOwnPreviews();
     }
-    else if (label == "Shared with you") {
+    else if (label == "Shared with me") {
       getSharedPreviews();
     }
     console.log(`Filter selected: ${label}`);
-    // Add more filtering logic here
   };
 
   return (
@@ -105,46 +115,35 @@ export default function Storage() {
   const [displayName, setDisplayName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [userId, setUID] = useState<string>('');
-  const [documents, setDocuments] = useState<DocumentData[]>([]);
-  const [sortBy, setSortBy] = useState<string>("lastEdited");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [loading, setLoading] = useState<boolean>(true);
   const [passwordModalOpened, setPasswordModalOpened] = useState(false);
   const router = useRouter();
   
   const [run, setRun] = useState(false);
-  // const [stepIndex, setStepIndex] = useState(0);
-  const [actions, setActions] = useState(ACTIONS);
   const [isClient, setIsClient] = useState(false);
-
-  const [displayedDocuments, setDisplayedDocuments] = useState<DocumentData[]>([]);
+  
+  const [sortBy, setSortBy] = useState<SortType>("title");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [onlyShowFavorites, setOnlyShowFavorites] = useState<boolean>(false);
+  
+  const [documents, setDocuments] = useState<DocumentPreview[]>([]);
+  const [displayedDocuments, setDisplayedDocuments] = useState<DocumentPreview[]>([]);
 
   useEffect(() => {
     setIsClient(true);
   }, []); 
   
   useEffect(() => {
-    const visibleDocuments = documents.filter((doc) => doc.document_title.toLowerCase().includes(searchTerm.toLowerCase()));
+    const visibleDocuments = documents.filter((doc) => {
+      return (!onlyShowFavorites || doc.is_favorited) &&
+             doc.document_title.toLowerCase().includes(searchTerm.toLowerCase());
+    });
     setDisplayedDocuments(visibleDocuments);
-  }, [documents, searchTerm]);
-  // Something is wrong with the callback, not allowing to move forward in states
+  }, [documents, searchTerm, onlyShowFavorites]);
+
   // Handle tutorial callback to manage step progression and tutorial completion
   const handleJoyrideCallback = (data: any) => {
-    // const { status, index, action, type } = data;
-    // console.log('data', data);
-
-    // console.log(`Joyride callback: ${status}, ${index}`);
-    // if (([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND] as string[]).includes(type)) {
-    //   console.log('inside if');
-    //   setStepIndex(index + (action === ACTIONS.PREV ? -1 : 1)); // Update to the next step
-    // }
-    // else if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
-    //   console.log('inside else if');
-    //   setRun(false); // Stop tutorial
-    // } else {
-    //   console.log('inside else');
-    // }
 
     const { status, type } = data;
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
@@ -186,10 +185,15 @@ export default function Storage() {
     setPasswordModalOpened(false);
   }
 
+  const handleDocumentDelete = (documentId: string) => {
+    setDocuments(documents.filter((doc) => doc.document_id !== documentId));
+  } 
+
   const useOwnedPreviews = async () => {
     const userId = getUserID();
     setLoading(true);
     const data = await getOwnPreviews(userId);
+    console.log(`Data:` + JSON.stringify(data));
     setDocuments(sortDocuments(data, sortBy, sortDirection));
     setLoading(false);
   }
@@ -202,10 +206,13 @@ export default function Storage() {
     setLoading(false);
   }
 
-  const sortDocuments = (docs: DocumentData[], sortType: string, direction: "asc" | "desc") => {
+  const sortDocuments = (docs: DocumentPreview[], sortType: string, direction: "asc" | "desc") => {
     return [...docs].sort((a, b) => {
       let comparison = 0;
       switch (sortType) {
+        case "timeCreated":
+          comparison = b.time_created - a.time_created;
+          break;
         case "lastEdited":
           comparison = b.last_edit_time - a.last_edit_time;
           break;
@@ -215,11 +222,11 @@ export default function Storage() {
         default:
           return 0;
       }
-      return direction === "asc" ? comparison : -comparison;
+      return direction === "asc" ? -comparison : comparison;
     });
   }
 
-  const handleSort = (type: string) => {
+  const handleSort = (type: SortType) => {
     setSortBy(type);
     setDocuments(sortDocuments(documents, type, sortDirection));
   }
@@ -230,15 +237,33 @@ export default function Storage() {
     setDocuments(sortDocuments(documents, sortBy, newDirection));
   }
 
+  const getUserName = async () => {
+    await callAPI("getUserFromId", {userId: getUserID()})
+      .then((res) => {
+        if (res.status !== 200) {
+            console.log("Error getting user data");
+            return;
+        }
+        const user = (res.data as any);
+              if(user === undefined) {
+                  console.error(`Something went wrong. user is undefined`);
+              }
+              else {
+                setDisplayName(user.display_name);
+              }
+      }).catch((error) => {
+        console.error(`Error getting user data: ${error}`);
+        return;
+      });;
+  }
 
   useEffect(() => {
-    let displayCookie = getDisplayName();
     let emailCookie = getEmail();
     let userIdCookie = getUserID();
     console.log(`userIdCookie: ${userIdCookie}`);
-    setDisplayName(displayCookie);
     setEmail(emailCookie);
     setUID(userIdCookie);
+    getUserName(); 
     setTimeout(async () => {
       setLoading(true);
       const data = await getOwnPreviews(userIdCookie);
@@ -247,17 +272,13 @@ export default function Storage() {
     }, 0);
   }, []);
 
-  const getSortLabel = () => {
-    return sortBy === "lastEdited" ? "Last Edited" : "Title";
-  }
-
   const handleSearch = (term: string) => {
-    setSearchTerm(term)
+    setSearchTerm(term);
   }
 
   return (
     <AppShell
-      header={{ height: 60 }}
+      header={{ height: 80 }}
       navbar={{
         width: 350,
         breakpoint: "sm",
@@ -282,35 +303,43 @@ export default function Storage() {
             <Image
               src="/TuneTracerLogo.png"
               alt="TuneTracer Logo"
+              h={50}
+              w="auto"
               fit="contain"
-              width={50}
-              height={50}
             />
             <SearchBar 
               onSearch={handleSearch}
             />
             <Group>
-
-              <Button 
-                className="tutorial-button"
-                onClick={() => setRun(true)}
-              >
-                  Help
-              </Button>
+              <Tooltip label={`Help`} withArrow>
+                <ActionIcon
+                  className="tutorial-button"
+                  radius={"xl"}
+                  size={"lg"}
+                  onClick={() => setRun(true)}
+                >
+                  <IconHelp size={"2rem"}/>
+                </ActionIcon>
+              </Tooltip>
 
               {/* Profile Menu */}
-              <Menu shadow="md" width={200}>
+              <Menu shadow="md">
                 <Menu.Target>
-                  <Button className="profile-menu" size="sm">{displayName}</Button>
+                <Tooltip label={`Profile`} withArrow>
+                  <ActionIcon className="profile-menu" size={"lg"} radius={"xl"}>
+                    <IconUserCircle size={"2rem"}/>
+                  </ActionIcon>
+                </Tooltip>
                 </Menu.Target>
 
-                <Menu.Dropdown>
+                <Menu.Dropdown style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <Menu.Label style={{ fontSize: rem(13), fontWeight: 'bold' }}>{displayName}</Menu.Label>
                   <Menu.Label style={{ fontSize: rem(13), fontWeight: 'bold' }}>{email}</Menu.Label>
                   <Menu.Divider />
                   <Menu.Item
                     onClick={routeToProfilePage}
                   >
-                    Profile
+                    Profile Settings
                   </Menu.Item>
                   <Menu.Item
                     color="red"
@@ -368,6 +397,15 @@ export default function Storage() {
               Scores
             </Text>
             <Group>
+              <Tooltip label={onlyShowFavorites ? `Don't display only favorited` : `Display only favorited`} withArrow>
+              <ActionIcon
+                variant="subtle"
+                size="lg"
+                onClick={() => setOnlyShowFavorites(!onlyShowFavorites)}
+              >
+                  {onlyShowFavorites ? <IconHeartFilled size={20} /> : <IconHeart size={20} />}
+                </ActionIcon>
+              </Tooltip>
               <Tooltip label={`Reverse sort direction`} withArrow>
                 <ActionIcon 
                   variant="subtle" 
@@ -392,6 +430,9 @@ export default function Storage() {
                   <Menu.Item onClick={() => handleSort("lastEdited")}>
                     Sort by Last Edited {sortBy === "lastEdited" && "✓"}
                   </Menu.Item>
+                  <Menu.Item onClick={() => handleSort("timeCreated")}>
+                    Sort by Creation Time {sortBy === "timeCreated" && "✓"}
+                  </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
             </Group>
@@ -412,12 +453,12 @@ export default function Storage() {
             (
               displayedDocuments.length === 0 ? (
                 <Text size="lg" color="black" fw={700}>
-                  No scores match your search.
+                  No scores match your filter criteria.
                 </Text>
             ) :
             (
               <SimpleGrid
-                cols={{ base: 1, sm: 3, md: 3, lg: 5 }}
+                cols={{ base: 1, sm: 2, md: 3, lg: 4 }}
                 spacing={{ base: "xl" }}
               >
               {displayedDocuments.map((doc) => (
@@ -429,6 +470,10 @@ export default function Storage() {
                   owner_id={doc.owner_id} 
                   last_edit_time={doc.last_edit_time} 
                   time_created={doc.time_created}
+                  is_favorited={doc.is_favorited}
+                  preview_color={doc.preview_color}
+                  original_preview_object={doc}
+                  onDelete={() => handleDocumentDelete(doc.document_id)}
                 />
               ))}
               </SimpleGrid>

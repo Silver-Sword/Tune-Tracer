@@ -17,8 +17,9 @@ import {
   Grid,
   Title,
   LoadingOverlay,
+  Tooltip,
 } from "@mantine/core";
-import { IconCopy, IconCheck } from "@tabler/icons-react";
+import { IconCopy, IconCheck, IconUserPlus } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 import { CollaboratorCard } from "./CollaboratorCard";
 import { Collaborator } from "./sharing_types";
@@ -27,6 +28,7 @@ import { ShareStyle } from "../../lib/src/documentProperties";
 import { DocumentMetadata } from "../../lib/src/documentProperties";
 import { useSearchParams } from "next/navigation";
 import { getUserID } from "../../cookie";
+import { DebugController } from "../../DebugController";
 
 interface SharingModalProps {
   documentTitle: string;
@@ -128,7 +130,9 @@ export const SharingModal: React.FC<SharingModalProps> = ({
       console.warn(`Skipping update while a role change is in progress`);
       return; // Skip updates if a role change is in progress
     }
-    console.debug(`Current collaborators: ${collaborators.map(collab => collab.email).join(", ")}`);
+    if(DebugController.ONLINE_USERS) {
+      console.debug(`Current collaborators: ${collaborators.map(collab => collab.email).join(", ")}`);
+    }
 
     if(authorEmail === null) {
       updateAuthorEmail(metadata.owner_id);
@@ -450,8 +454,14 @@ export const SharingModal: React.FC<SharingModalProps> = ({
             </Grid>
           </>
         )}
-      </Modal>
-      <Button className="share-button" onClick={open}>Share</Button>
+      </Modal>      
+      <Button
+        className="share-button" 
+        onClick={open} 
+        leftSection={<IconUserPlus size={20}/>}
+      >
+          Share
+      </Button>
     </Group>
   );
 };

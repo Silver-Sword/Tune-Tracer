@@ -1,8 +1,6 @@
 import { OnlineEntity } from "../lib/src/realtimeUserTypes";
 import { UpdateType } from "../lib/src/UpdateType";
-
 import { UserEntity } from "../lib/src/UserEntity";
-
 import { getFirebase } from "../firebase-utils/FirebaseWrapper";
 
 type PartialWithRequired<T, K extends keyof T> = Partial<T> & Required<Pick<T, K>>;
@@ -16,7 +14,7 @@ type PartialWithRequiredAndWithout<T, K extends keyof T, U extends keyof T> = Pa
  */
 export async function subscribeUserToUserDocumentPool(
     documentId: string,
-    user: PartialWithRequired<UserEntity, 'user_email' | 'user_id' | 'display_name'>,
+    user: PartialWithRequired<UserEntity, 'user_email' | 'user_id' | 'display_name'> & {cursor_color: string},
     updateOnlineUserPoolFn: (updateType: UpdateType, onlineEntity: OnlineEntity) => void,
     shouldAutoDisconnectUser: boolean = true,
 ) {
@@ -75,7 +73,7 @@ export async function updateUserCursor(
  */
 async function registerUserToDocument(
     documentId: string, 
-    user: PartialWithRequired<UserEntity, 'user_email' | 'user_id' | 'display_name'>,
+    user: PartialWithRequired<UserEntity, 'user_email' | 'user_id' | 'display_name'> & {cursor_color: string},
     shouldAutoDisconnectUser: boolean = true
 ){
     const firebase = getFirebase();
@@ -92,7 +90,8 @@ async function registerUserToDocument(
         {
             user_email: user.user_email, 
             user_id: user.user_id, 
-            display_name: user.display_name
+            display_name: user.display_name,
+            cursor_color: user.cursor_color
         }, 
         shouldAutoDisconnectUser
     );

@@ -6,14 +6,11 @@ import { createPlaceNoteBox, attachMouseMoveListener, attachMouseLeaveListener, 
 import {
     AppShell,
     Container,
-    Button,
     Space,
-    keys,
 } from "@mantine/core";
 
-import { getUserID, getDisplayName, getEmail, getDocumentID, getCursorColor } from "../cookie";
+import { getUserID, getDisplayName, getEmail, getCursorColor } from "../cookie";
 import { addNoteHandler, removeNoteHandler, playNote } from "./Notes";
-import { areUserListsEqual } from './list';
 import { increasePitch, lowerPitch, shiftNoteDown, shiftNoteUp } from './pitch'
 import { ToolbarHeader } from './ToolbarHeader'
 import { useSearchParams } from "next/navigation";
@@ -26,17 +23,16 @@ import { DocumentMetadata, ShareStyle } from "../lib/src/documentProperties";
 import { Comment } from "../lib/src/Comment";
 import { OnlineEntity } from "../lib/src/realtimeUserTypes";
 import { SelectedNote } from "../lib/src/SelectedNote";
+import { processOnlineUsersUpdate } from './onlineUsers/updateUserCursors';
 
 import * as d3 from 'd3';
 import { Selection } from 'd3';
 import * as Tone from 'tone';
 import { useRouter } from "next/navigation";
-import { access, write } from "fs";
-import { HookCallbacks } from "async_hooks";
-import { removeAllListeners } from "process";
 import { callAPI } from "../../utils/callAPI";
+import { DebugController } from "../DebugController";
 
-const DEFAULT_RENDERER_WIDTH = 1000;
+const DEFAULT_RENDERER_WIDTH = 1400;
 const DEFAULT_RENDERER_HEIGHT = 2000;
 
 // Define the type
@@ -73,9 +69,7 @@ export default function CompositionTool() {
 
     // map of user ids to their online information
     const [onlineUsers, setOnlineUsers] = useState<Map<string, OnlineEntity>>(new Map<string, OnlineEntity>());
-    // const [userList, setUserList] = useState<{ userId: string; displayName: string; color: string}[]>([]);
-    const userList = useRef<{ userId: string; displayName: string; color: string }[]>();
-    const displayNameCache = useRef<{ [userId: string]: string }>({});
+    const userList = useRef<{ userId: string; displayName: string; color: string }[]>([]);
 
     // Wrapper function to call modifyDurationInMeasure with the score object
     const modifyDurationHandler = async (duration: string, noteId: number) => {
@@ -663,8 +657,10 @@ export default function CompositionTool() {
                 documentId: documentID.current,
                 writerId: userId.current,
             }
-            console.log("Exporting Score data ------------------------------- ");
-            console.log("exported Object: " + printScoreData(exportedScoreDataObj));
+            if(DebugController.SCORE_DATA) {
+                console.log("Exporting Score data ------------------------------- ");
+                console.log("exported Object: " + printScoreData(exportedScoreDataObj));
+            }
 
             // var recordTemp: Record<string, unknown> = changes;
             // if (!('score' in recordTemp)) {
@@ -697,17 +693,21 @@ export default function CompositionTool() {
 
         changesTimeout = setTimeout(async () => {
             while (isSending.current || isFetching.current) {
-                console.log("Waiting until send finished");
-                console.log("isSending: " + isSending.current);
-                console.log("isFetching: " + isFetching.current);
+                if(DebugController.CHECK_CHANGES) {
+                    console.log("Waiting until send finished");
+                    console.log("isSending: " + isSending.current);
+                    console.log("isFetching: " + isFetching.current);
+                }
                 await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
             }
-            console.log(JSON.stringify(changesTemp));
+            if(DebugController.CHECK_CHANGES) {
+                console.log(JSON.stringify(changesTemp));
+            }
             isFetching.current = true;
             await callAPI("checkDocumentChanges", changesTemp)
                 .then((res) => {
                     if (res.status !== 200) {
-                        console.log("Error fetching changes");
+                        console.warn("Error fetching changes");
                         isFetching.current = false;
                         return;
                     }
@@ -732,8 +732,10 @@ export default function CompositionTool() {
                     if (notationRef.current) {
                         score.current?.loadScoreDataObj(compData);
                         score.current?.addNoteInMeasure([], 0);
-                        console.log("LOADED SCORE DATA");
-                        console.log("loaded Object: " + printScoreData(compData));
+                        
+                        if(DebugController.SCORE_DATA) {
+                            console.log("LOADED SCORE DATA\nloaded Object: " + printScoreData(compData));
+                        }
                         // Now add it to the currently selected note
                         if (selectedNoteId.current !== -1) {
                             d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
@@ -745,7 +747,9 @@ export default function CompositionTool() {
                     // Update online users
                     const receivedUsers = (res.data as any)['onlineUsers'];
                     if (receivedUsers !== undefined) {
-                        console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
+                        if(DebugController.ONLINE_USERS) {
+                            console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
+                        }
                         setOnlineUsers(new Map(Object.entries(receivedUsers)) as Map<string, OnlineEntity>);
                     } else {
                         console.error(`Something went wrong. Received online users is undefined`);
@@ -815,11 +819,9 @@ export default function CompositionTool() {
     }
 
     // THIS FETCHES CHANGES PERIODICALLY
-    // UNCOMMENT below to actually do it.
     useInterval(() => {
-        // Your custom logic here
         fetchChanges();
-    }, 2000); // 5 seconds
+    }, 2000); // 2 seconds
 
     const handleScoreNameChange = async (event: { currentTarget: { value: string; }; }) => {
         const value = event.currentTarget.value;
@@ -892,7 +894,8 @@ export default function CompositionTool() {
                 documentId: documentID.current,
                 userId: userId.current,
                 user_email: email.current,
-                displayName: displayName.current
+                displayName: displayName.current,
+                userCursorColor: getCursorColor(),
             };
             console.log("document ID: " + documentID.current);
             console.log("User Info: " + JSON.stringify(userInfo));
@@ -992,6 +995,7 @@ export default function CompositionTool() {
             clearInterval(intervalID);
         }
     }, [userTemp]);
+
     useEffect(() => {
         const svg = d3.select(notationRef.current).select('svg');
 
@@ -1072,13 +1076,11 @@ export default function CompositionTool() {
     };
 
     useEffect(() => {
-        console.log(`selectedKey is: ${selectedKey}`);
-    }, [selectedKey])
-
-    useEffect(() => {
         // Clear existing highlighting
         d3.selectAll('.vf-notehead').classed('selected-note', false);
         d3.selectAll('.vf-stavenote').classed('selected-note', false);
+
+        if (!hasWriteAccess) return;
 
         if (selectedNoteId !== null && selectedKey !== null && score.current) {
             const staveNote = score.current.findNote(selectedNoteId.current);
@@ -1123,6 +1125,7 @@ export default function CompositionTool() {
 
         // Keyboard shortcuts for adding notes
         const handleKeyDown = (event: KeyboardEvent) => {
+            if (!hasWriteAccess) return;
             // Mapping of keyboard letters to note string
             const trebleKeyToNoteMap: { [key: string]: string } = {
                 'a': 'a/4',
@@ -1333,97 +1336,18 @@ export default function CompositionTool() {
         }
     };
 
-    const fetchDisplayName = async (userIdToFetch: string): Promise<string> => {
-        if (displayNameCache.current[userIdToFetch]) {
-            return displayNameCache.current[userIdToFetch];
-        }
-        try {
-            const response = await callAPI('getUserFromId', { userId: userIdToFetch });
-            if (response.status === 200 && response.data) {
-                console.log(response.data);
-
-                const displayName = (response.data as any)['display_name'];
-                displayNameCache.current[userIdToFetch] = displayName;
-                return displayName;
-            } else {
-                console.error(`Failed to fetch display name for userId ${userIdToFetch}`);
-                return '';
-            }
-        } catch (error) {
-            console.error(`Error fetching display name for userId ${userIdToFetch}:`, error);
-            return '';
-        }
-    };
-
+    // update online user cursors
     useEffect(() => {
-        // First, clear previous highlighting for other users
-        d3.selectAll('.other-user-highlight').each(function () {
-            d3.select(this).style('fill', null);
-            d3.select(this).classed('other-user-highlight', false);
-        });
-
-        // Iterate over onlineUsers
-        onlineUsers.forEach((onlineEntity, user_id) => {
-            // Exclude the current user
-            if (user_id !== userId.current) {
-                const cursor = onlineEntity.cursor as SelectedNote;
-                if (cursor && cursor.noteID && cursor.color) {
-                    const noteHeadId = cursor.noteID;
-                    const color = cursor.color;
-
-                    // Select the notehead element by its CSS ID
-                    const noteHeadElement = d3.select(`[id="${noteHeadId}"]`);
-                    if (!noteHeadElement.empty()) {
-                        noteHeadElement
-                            .style('fill', color)
-                            .classed('other-user-highlight', true);
-                    } else {
-                        console.warn(`Notehead with ID ${noteHeadId} not found`);
-                    }
-                }
-            }
-        });
-
-        const updateUserList = async () => {
-            console.log('Running updateUserList!');
-            const users: { userId: string; displayName: string; color: string }[] = [];
-
-            const promises = [];
-
-            onlineUsers.forEach((onlineEntity, userIdKey) => {
-                console.log(`Is ${userIdKey} !== ${userId.current}?`);
-                if (userIdKey !== userId.current) {
-                    const cursor = onlineEntity.cursor as SelectedNote;
-                    if (cursor && cursor.color) {
-                        const color = cursor.color;
-                        const displayNamePromise = fetchDisplayName(userIdKey).then((displayName) => {
-                            users.push({ userId: userIdKey, displayName, color });
-                        });
-                        promises.push(displayNamePromise);
-                    }
-                }
-            });
-
-            // await Promise.all(promises);
-            // setUserList(users);
-            userList.current = users;
-        };
-
-
-        updateUserList();
-    }, [onlineUsers]);
+        processOnlineUsersUpdate(
+            userId.current,
+            onlineUsers,
+            userList,
+        )
+    }, [onlineUsers, notationRef, notationRef.current, score, currentDocument, score.current]);
 
     return (
         <AppShell
             header={{ height: 180 }}
-            // navbar={{
-            //     width: 150,
-            //     breakpoint: "sm",
-            // }}
-            // aside={{
-            //     width: 300,
-            //     breakpoint: "sm",
-            // }}
             padding="md"
             styles={{
                 main: {
@@ -1453,11 +1377,9 @@ export default function CompositionTool() {
                     handleDot={dotHandler}
                     hasWriteAccess={hasWriteAccess}
                     selectedKey={selectedKey.current}
-                    userList={userList.current ? userList.current : []}
+                    userList={userList.current}
                 />
-                {/* <CommentAside /> */}
 
-                {/* get rid of the background later, use it for formatting */}
                 <Container
                     fluid
                     size="responsive"
@@ -1465,30 +1387,16 @@ export default function CompositionTool() {
                         justifyContent: "center",
                         display: "flex",
                         flexDirection: "column",
-                        textAlign: "center",
                         background:
                             "#FFFFFF",
                         boxShadow: '0 0px 5px rgba(0, 0, 0, 0.3)', // Shadow effect
                         borderRadius: '4px', // Rounded corners for a more "page" look
-                        margin: '20px', // Space around AppShell to enhance the effect
-                        border: '1px solid #e0e0e0', // Border around the AppShell
+                        margin: '20px', 
+                        border: '1px solid #e0e0e0', 
+                        textAlign: 'center'
                     }}
                 >
                     <Space h="xl"></Space>
-                    {/* <input
-                        type="text"
-                        value={currentDocument?.score?.title}
-                        onChange={handleScoreNameChange}
-                        placeholder={currentDocument?.score?.title}
-                    />
-                    <input
-                        type="text"
-                        value={userTemp}
-                        onChange={handleUserIdChange}
-                        placeholder={userTemp}
-                    />
-                    <Button onClick={sendChanges}>Send Score change</Button>*/}
-                    {/* <Button onClick={sendAndFetch}>fetch Score change</Button>  */}
                     <div>
                         <div ref={notationRef}></div>
                     </div>

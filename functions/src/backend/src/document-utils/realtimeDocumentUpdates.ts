@@ -21,7 +21,7 @@ import { userHasReadAccess } from "../security-utils/permissionVerification";
  */
 export async function subscribeToDocument(
   documentId: string,
-  user: Record<string, unknown> & Required<Pick<UserEntity, 'user_id' | 'user_email' | 'display_name'>>,
+  user: Record<string, unknown> & Required<Pick<UserEntity, 'user_id' | 'user_email' | 'display_name'>> & {cursor_color: string},
   onDocumentUpdateFn: (updatedDocument: Document) => void,
   onUserPoolUpdateFn: (updateType: UpdateType, updatedUser: OnlineEntity) => void,
   shouldAutoDisconnectUser: boolean = true,
@@ -42,7 +42,7 @@ export async function subscribeToDocument(
           throw Error(`User with id ${user.user_id} does not have read access to document with id ${document.metadata.document_id}`)
       } else if(firstAccess) {
         firstAccess = false;
-        processFirstAccess(user, document, firebase);
+        processFirstAccess(user.user_id, document, firebase);
       }
       
       onDocumentUpdateFn(document as Document);
@@ -80,15 +80,15 @@ export async function admin_subscribeToDocument(
 
 // NOTE: ACCESS LIST INSERTION IS NOT AWAITED ON
 function processFirstAccess(
-  user: Record<string, unknown> & Required<Pick<UserEntity, 'user_id' | 'user_email' | 'display_name'>>,
+  userId: string,
   document: Document,
   firebase: FirebaseWrapper
 ) {
   // update access list if necessary
   if(
-    user.user_id !== document.metadata.owner_id && 
-    !Object.keys(document.metadata.share_list).includes(user.user_id)
+    userId !== document.metadata.owner_id && 
+    !Object.keys(document.metadata.share_list).includes(userId)
   ) {
-    firebase.insertUserDocument(user.user_id, document.metadata.document_id, "accessed");
+    firebase.insertUserDocument(userId, document.metadata.document_id, "accessed");
   }
 }
