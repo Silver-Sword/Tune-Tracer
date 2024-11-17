@@ -207,7 +207,7 @@ export default function LandingPage() {
               <ContentSectionRightText
                 title="Store"
                 description={<Text size="lg" c="dimmed">Securely store your musical compositions in the cloud, accessible anywhere, anytime. Never worry about losing your creative work again.</Text>}
-                imageSrc="/previews/storagePage.png"
+                imageSrc="/previews/newStoragePreview.jpg"
                 imageAlt="Cloud Storage"
                 textWidth={7}
               />
@@ -226,7 +226,7 @@ export default function LandingPage() {
               <ContentSectionRightText
                 title="Playback"
                 description={<Text size="lg" c="dimmed">Hear the music you create together with our playback software! Get instant feedback on your compositions with highly versatile playback. </Text>}
-                imageSrc="/previews/playbackEx.png"
+                imageSrc="/previews/playbackPreview.gif"
                 imageAlt="Playback Feature"
               />
             </Box>
