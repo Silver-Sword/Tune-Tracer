@@ -324,6 +324,7 @@ useEffect(() => {
                 <ColorPicker
                   size='sm'
                   format='hex'
+                  withPicker={false}
                   swatchesPerRow={5}
                   swatches={colorPresets}
                   value={color}
