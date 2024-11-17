@@ -197,7 +197,7 @@ export default function LandingPage() {
               <ContentSectionLeftText
                 title="Compose"
                 description={<Text size="lg" c="dimmed">Whether you're a seasoned composer or a budding musician, our intuitive tools empower you to create, edit, and share your compositions with ease.</Text>}
-                imageSrc="/previews/compositionPage.png"
+                imageSrc="/previews/composingPreview.gif"
                 imageAlt="Composition Interface"  
                 textWidth={7}
               />
