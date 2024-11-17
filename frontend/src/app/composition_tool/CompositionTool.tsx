@@ -32,7 +32,7 @@ import { useRouter } from "next/navigation";
 import { callAPI } from "../../utils/callAPI";
 import { DebugController } from "../DebugController";
 
-const DEFAULT_RENDERER_WIDTH = 1400;
+const DEFAULT_RENDERER_WIDTH = 1300;
 const DEFAULT_RENDERER_HEIGHT = 2000;
 
 // Define the type
