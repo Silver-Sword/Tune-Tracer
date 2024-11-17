@@ -97,7 +97,6 @@ export class Score {
         this.top_measures[0].renderTimeSignature();
         this.bottom_measures[0].renderTimeSignature();
 
-        this.renderMeasures();
     }
 
     getKeySignature = () => {
