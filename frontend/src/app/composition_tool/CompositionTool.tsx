@@ -55,11 +55,12 @@ export default function CompositionTool() {
     const notePlacementRectangleRef = useRef<Selection<SVGElement, unknown, null, undefined> | null>(null);
     const [notationUpdated, setNotationUpdated] = useState<number>(0);
     const [isPlayingBack, setIsPlayingBack] = useState<boolean>(false);
+    let playbackTimeoutId: NodeJS.Timeout | null = null;
 
     const [volume, setVolume] = useState<number>(50);
     const [bpm, setBPM] = useState<number | string>('');
-    let topPart: Tone.Part;
-    let bottomPart: Tone.Part;
+    let topPart: Tone.Part | null;
+    let bottomPart: Tone.Part | null;
     const [piano, setPiano] = useState<Tone.Sampler>();
     const volumeNode = useRef<Tone.Volume>();
     const searchParams = useSearchParams();
@@ -202,25 +203,37 @@ export default function CompositionTool() {
     }
 
     const stopPlayback = () => {
+        // Clear the scheduled timeout of stopPlayback
+        if (playbackTimeoutId)
+        {
+            clearTimeout(playbackTimeoutId);
+            playbackTimeoutId = null;
+        }
+
         // Dispose of parts
         if (topPart) {
             topPart.stop();
             topPart.clear();
             topPart.dispose();
+            topPart = null;
         }
         if (bottomPart) {
             bottomPart.stop();
             bottomPart.clear();
             bottomPart.dispose();
+            bottomPart = null;
         }
+
+        // Remove any highlighted notes if playback stopped prematurely
+        d3.selectAll('.vf-stavenote').classed('highlighted', false);
 
         // Kill any audio that is currently playing
         Tone.getTransport().stop();
         // Reset the position to the start
         Tone.getTransport().position = 0;
-        Tone.getTransport().cancel();
+        Tone.getTransport().cancel(0);
         // Cancel scheduled draw events
-        Tone.getDraw().cancel();
+        Tone.getDraw().cancel(0);
 
         // Hide the cursor
         const svg = d3.select(notationRef.current).select('svg');
@@ -529,7 +542,7 @@ export default function CompositionTool() {
 
             // Schedule stoppage of playback with a small buffer
             const totalDuration = Math.max(currentTimeBottom, currentTimeTop);
-            setTimeout(() => {
+            playbackTimeoutId = setTimeout(() => {
                 stopPlayback();
             }, totalDuration * 1000 + 100);
         }
