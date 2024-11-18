@@ -86,6 +86,10 @@ export const SharingModal: React.FC<SharingModalProps> = ({
   }
 
   const fetchUserDetails = async (userId: string, role: string) => {
+    if(userId === undefined) {
+      console.warn("User ID is undefined; exiting fetchUserDetails early");
+      return;
+    }
     try {
       const userDetails = await getUserDetails(userId);
       if(!userDetails) {
@@ -111,6 +115,10 @@ export const SharingModal: React.FC<SharingModalProps> = ({
   };
 
   const updateAuthorEmail = async (userId: string) => {
+    if(userId === undefined) {
+      console.warn("Author ID is undefined; exiting updateAuthorEmail early");
+      return;
+    }
     try {
       const userDetails = await getUserDetails(userId);
       if(!userDetails) {
