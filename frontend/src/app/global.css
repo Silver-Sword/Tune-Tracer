@@ -4,8 +4,51 @@ html, body {
     box-sizing: border-box;
     width: 100vw;
     height: 100vh;
-    overflow-x: hidden;
 }
+
+.selected-note {
+    fill: blue;
+    stroke: blue;
+}
+
+.highlighted {
+    fill: red;
+    stroke: red;
+}
+
+.vf-notehead * {
+  pointer-events: auto;
+  stroke: black;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+    20%, 40%, 60%, 80% { transform: translateX(10px); }
+  }
+  
+  .shake-input {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+  }
+  
+  .forgot-link, .signup-link, .login-link {
+    color: #228be6;
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+  
+  .forgot-link:hover, .signup-link:hover, .login-link:hover {
+    color: #1c7ed6;
+  }
+  
+  .login-button, .signup-button, .landingpage-blue-button {
+    background-color: #228be6;
+    transition: background-color 0.5s ease;
+  }
+  
+  .login-button:hover, .signup-button:hover, .landingpage-blue-button:hover {
+    background-color: #1a62a1;
+  }
 
 .selected-note {
     fill: blue;
