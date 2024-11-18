@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Modal, Text, Stack, Group, Kbd, Title, Tooltip, ActionIcon } from "@mantine/core";
+import { Divider, Modal, Text, Stack, Group, Kbd, Title, Tooltip, ActionIcon } from "@mantine/core";
 import { IconKeyboard } from "@tabler/icons-react";
 
 export const KeybindModal: React.FC = () => {
@@ -34,9 +34,11 @@ export const KeybindModal: React.FC = () => {
       >
         <Stack gap="md">
           <Text>
-            Use the following keyboard shortcuts to interact with the music composition tool:
+            Use the following keyboard shortcuts to interact with the music composition tool when a notehead is selected:
           </Text>
           
+          <Divider />
+
           <Group gap="xs">
             <Text>
               <b>Note Keys:</b>
