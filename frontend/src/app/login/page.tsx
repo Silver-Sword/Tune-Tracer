@@ -1,13 +1,14 @@
 'use client'
 
 import React, { useEffect, useState } from "react";
-import { Title, Center, Container, Button, Stack, rem, Text, Box } from '@mantine/core';
+import { Title, Center, Container, Button, Stack, rem, Text, TextInput, Box, Modal } from '@mantine/core';
 import { useRouter } from "next/navigation";
 import { saveUserID, saveDisplayName, saveEmail, getUserID, saveCursorColor } from "../cookie";
 import { AuthInput } from "../../components/AuthInput";
 import { authStyles } from '../../styles/auth-styles';
 import { callAPI } from "../../utils/callAPI";
 import { getRandomColor } from './color';
+import { set } from "date-fns";
 
 export default function Login() {
     const [email, setEmail] = useState<string>('');
@@ -16,6 +17,8 @@ export default function Login() {
     const [isShaking, setIsShaking] = useState(false);
     const router = useRouter();
     const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [notifModal, setNotifModal] = useState(false);
+    const [resetError, setResetError] = useState<string>('');
 
     const triggerError = async (errorMessage: string) => {
         setError(errorMessage);
@@ -65,6 +68,49 @@ export default function Login() {
         }
     }
 
+    const handleForgotPassword = async () => {
+        console.log(`Resetting password for: ${resetEmail}`);
+        try
+        {
+            await callAPI("resetUserPassword", {email: resetEmail})
+                .then((res) => {
+                    if (res.status == 400) {
+                        setResetError("Please enter a valid email address.");
+                        throw new Error("Enter an email address");
+                    }
+                    else if (res.status == 500) {
+                        setResetError("Error resetting password. Please try again.");
+                        throw new Error("Error resetting password");
+                    }
+                    
+                    setNotifModal(false);
+                    setPasswordModal(true);
+                    console.log(JSON.stringify(res.data));
+                }).catch((error) => {
+                    console.log(`Error resetting password for: ${resetEmail}`);
+                    setResetError("Error resetting password. Please try again.");
+                    return;
+                });
+            }
+        catch (error)
+        {
+            console.log(`Error resetting password for: ${resetEmail}`);
+            return;
+        }
+    }
+
+    const [passwordModal, setPasswordModal] = useState(false);
+    const closeNotifModal = () => { 
+        setNotifModal(false); 
+        setResetError('');
+        setResetEmail('');
+    }
+    const openNotifModal = () => { setNotifModal(true); }
+    const closePassSentModal = () => { setPasswordModal(false); }
+
+    const [resetEmail, setResetEmail] = useState<string>('');
+
+
     return (
         <Container fluid style={authStyles.container}>
             <Box
@@ -111,17 +157,17 @@ export default function Login() {
                             onChange={(event) => setPassword(event.currentTarget.value)}
                             isShaking={isShaking}
                         />
-                        {/* <Text size="sm" style={{ textAlign: 'right' }}>
+                        <Text size="sm" style={{ textAlign: 'right', cursor: "pointer"}}>
                             Forgot {' '}
                             <Text
                                 component="a"
-                                href="/signup"
                                 className="forgot-link"
+                                onClick={openNotifModal}
                             >
-                                Username / Password
+                                Password
                             </Text>
                             ?
-                        </Text> */}
+                        </Text>
                         <Button
                             loading = {isLoggingIn}
                             onClick={handleLogin}
@@ -156,6 +202,61 @@ export default function Login() {
                     </Stack>
                 </Container>
             </Box>
+            <Modal
+                opened={notifModal}
+                onClose={closeNotifModal}
+                centered
+            >
+                <Box style={{ padding: '20px', textAlign: 'center' }}>
+                    <Text size="lg" style={{ marginBottom: '20px' }}>
+                        Reset Password
+                    </Text>
+                    <Text style={{ marginBottom: '20px' }}>
+                        Enter your email to reset your password
+                    </Text>
+                    <TextInput
+                        label="Email"
+                        placeholder="Enter your email"
+                        value={resetEmail}
+                        onChange={(event) => setResetEmail(event.currentTarget.value)}
+                        error={resetError !== ''} // Conditionally apply error state
+                        style={{
+                            borderColor: resetError !== '' ? 'red' : undefined, // Apply red border if there's an error
+                        }}
+                    />
+                    {resetError && (
+                        <Text color="red" size="sm" style={{ marginTop: '10px' }}>
+                            {resetError}
+                        </Text>
+                    )}
+                    <Button onClick={handleForgotPassword} color="blue" style={{ marginTop: '20px' }}>
+                        Send
+                    </Button>
+                </Box>
+            </Modal>
+
+            <Modal
+                opened={passwordModal}
+                onClose={closePassSentModal}
+                centered
+            >
+                <Box style={{ padding: '20px', textAlign: 'center' }}>
+                    <Text size="lg" style={{ marginBottom: '20px' }}>
+                        Success!
+                    </Text>
+                    <Text style={{ marginBottom: '20px' }}>
+                        Please check your email for further instructions.
+                    </Text>
+                    <Button
+                        onClick={closePassSentModal}
+                        color="blue"
+                        style={{ marginTop: '20px' }}
+                    >
+                        Close
+                    </Button>
+                </Box>
+            </Modal> 
+    
         </Container>
     );
 }

@@ -44,7 +44,7 @@ export async function signUpAPI (email: string, password: string, displayName: s
     return true;
 }
 
-async function checkPassword(password: string): Promise<boolean> 
+export async function checkPassword(password: string): Promise<boolean> 
 {
     // minimum of 8 letters, one uppercase, one lowercase, one number, and one special character
     let requirements = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})");

@@ -116,7 +116,6 @@ export default function Storage() {
   const [email, setEmail] = useState<string>('');
   const [userId, setUID] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
-  const [passwordModalOpened, setPasswordModalOpened] = useState(false);
   const router = useRouter();
   
   const [run, setRun] = useState(false);
@@ -161,28 +160,6 @@ export default function Storage() {
   
   const routeToProfilePage = () => {
     router.push(`/profile`);
-  }
-
-  const handleResetOpen = () => {
-    setPasswordModalOpened(true);
-  }
-
-  const handleReset = async () => {
-    const email = getEmail();
-    console.log(`Resetting password for: ${email}`);
-    try
-    {
-      await callAPI("resetUserPassword", {email: email});
-    }
-    catch (error)
-    {
-      console.log(`Error resetting password for: ${email}`);
-    }
-    setPasswordModalOpened(false);
-  }
-
-  const closePasswordModal = () => {
-    setPasswordModalOpened(false);
   }
 
   const handleDocumentDelete = (documentId: string) => {
@@ -343,12 +320,6 @@ export default function Storage() {
                   </Menu.Item>
                   <Menu.Item
                     color="red"
-                    onClick={handleResetOpen}
-                  >
-                    Reset Password
-                  </Menu.Item>
-                  <Menu.Item
-                    color="red"
                     onClick={handleLogout}
                   >
                     Logout
@@ -358,28 +329,6 @@ export default function Storage() {
             </Group>
           </Group>
         </AppShell.Header>
-        <Modal
-          opened={passwordModalOpened}
-          onClose={closePasswordModal}
-          title="Confirm Password Reset"
-          centered
-        >
-          <Text>Are you sure you want a password reset email?</Text>
-          <Group 
-            justify="flex-end" 
-            mt="md"
-            >
-            <Button onClick={closePasswordModal} variant="default">
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleReset} 
-              color="blue"
-              loading = {loading}>
-              Confirm
-            </Button>
-          </Group>
-        </Modal>
         <FiltersNavbar getOwnPreviews={useOwnedPreviews} getSharedPreviews={useSharedPreviews} />
 
         <Container
