@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Score } from "../edit/Score";
-import { createPlaceNoteBox, attachMouseMoveListener, attachMouseLeaveListener, attachMouseClickListener } from "./PlaceNoteBox";
+import { createPlaceNoteBox, attachMouseMoveListener, attachMouseLeaveListener, attachMouseClickListener, displayPlaceNote } from "./PlaceNoteBox";
 import {
     AppShell,
     Container,
@@ -10,6 +10,7 @@ import {
 } from "@mantine/core";
 
 import { getUserID, getDisplayName, getEmail, getCursorColor } from "../cookie";
+import { addNoteHandler, removeNoteHandler, playNote, playNoteOnPlayback } from "./Notes";
 import { increasePitch, lowerPitch, shiftNoteDown, shiftNoteUp } from './pitch'
 import { ToolbarHeader } from './ToolbarHeader'
 import { useSearchParams } from "next/navigation";
@@ -31,12 +32,13 @@ import { useRouter } from "next/navigation";
 import { callAPI } from "../../utils/callAPI";
 import { DebugController } from "../DebugController";
 
-const DEFAULT_RENDERER_WIDTH = 1400;
+const DEFAULT_RENDERER_WIDTH = 1300;
 const DEFAULT_RENDERER_HEIGHT = 2000;
 
 // Define the type
 export type SendChangesType = () => Promise<void>;
 export type CreateNewNoteBoxType = () => void;
+export type UpdateNotationType = () => void;
 
 export default function CompositionTool() {
     const router = useRouter();
@@ -48,12 +50,14 @@ export default function CompositionTool() {
     let selectedKey = useRef<string>('');
     let isSending = useRef<boolean>(false);
     let isFetching = useRef<boolean>(false);
+    let first = useRef<boolean>(true);
     const notePlacementRectangleSVG = useRef<SVGElement | null>(null);
     const notePlacementRectangleRef = useRef<Selection<SVGElement, unknown, null, undefined> | null>(null);
     const [notationUpdated, setNotationUpdated] = useState<number>(0);
     const [isPlayingBack, setIsPlayingBack] = useState<boolean>(false);
 
     const [volume, setVolume] = useState<number>(50);
+    const [bpm, setBPM] = useState<number | string>('');
     let topPart: Tone.Part;
     let bottomPart: Tone.Part;
     const [piano, setPiano] = useState<Tone.Sampler>();
@@ -78,14 +82,6 @@ export default function CompositionTool() {
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -100,7 +96,7 @@ export default function CompositionTool() {
                 score.current.modifyDurationInMeasure(duration + "d", noteId);
             }
             else if (dotType == 2) {
-                score.current.modifyDurationInMeasure(duration + "dd", noteId); 
+                score.current.modifyDurationInMeasure(duration + "dd", noteId);
             }
             else if (dotType == -1) {
                 score.current.modifyDurationInMeasure(duration, noteId);
@@ -110,14 +106,6 @@ export default function CompositionTool() {
             setNotationUpdated(prev => prev + 1);
 
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -144,14 +132,6 @@ export default function CompositionTool() {
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -162,14 +142,6 @@ export default function CompositionTool() {
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -180,14 +152,6 @@ export default function CompositionTool() {
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -198,14 +162,6 @@ export default function CompositionTool() {
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -216,14 +172,6 @@ export default function CompositionTool() {
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -233,14 +181,6 @@ export default function CompositionTool() {
             selectedNoteId.current = noteId;
             setNotationUpdated(prev => prev + 1);
             sendChanges();
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
         }
     }
 
@@ -253,6 +193,9 @@ export default function CompositionTool() {
     }
 
     const playbackAwaiter = async () => {
+        if (isPlayingBack) {
+            return;
+        }
         await Tone.start();
         console.log('Context started');
         playbackComposition();
@@ -317,9 +260,6 @@ export default function CompositionTool() {
 
         // Set cursor opacity to 100 to make it visible
         cursor.attr('opacity', 100);
-
-        // cursor.attr('x1', xPosition)
-        //     .attr('x2', xPosition);
 
         cursor.transition()
             .duration(duration * 1000)
@@ -546,8 +486,8 @@ export default function CompositionTool() {
 
             // Configure the playback callbacks
             topPart.callback = (time, event) => {
-                if (piano && !event.isRest) {
-                    piano.triggerAttackRelease(event.note, event.duration, time);
+                if (piano && !event.isRest && score.current) {
+                    playNoteOnPlayback(event.note, event.duration, time, piano, score.current.getKeySignature());
                 }
 
                 const durationInSeconds = Tone.Time(event.duration).toSeconds();
@@ -564,8 +504,8 @@ export default function CompositionTool() {
             };
 
             bottomPart.callback = (time, event) => {
-                if (piano && !event.isRest) {
-                    piano.triggerAttackRelease(event.note, event.duration, time);
+                if (piano && !event.isRest && score.current) {
+                    playNoteOnPlayback(event.note, event.duration, time, piano, score.current.getKeySignature());
                 }
 
                 const durationInSeconds = Tone.Time(event.duration).toSeconds();
@@ -604,41 +544,19 @@ export default function CompositionTool() {
         d3.select(`[id="${noteId}"]`).classed('highlighted', false);
     }
 
-    // Wrapper function to call addNoteInMeasure
-    const addNoteHandler = async (notes: string[], noteId: number, sendNetworkChanges: boolean = true) => {
-        if (score && score.current) {
-            score.current.addNoteInMeasure(notes, noteId);
-            selectedNoteId.current = noteId;
-            setNotationUpdated(prev => prev + 1);
-            sendChanges();
-
-            // Manually reapply the 'selected-note' class
-            // const noteElement = document.getElementById(noteId.toString());
-            // if (noteElement) {
-            //     noteElement.classList.add('selected-note');
-            // }
+    useEffect(() => {
+        if (typeof bpm === "number") {
+            Tone.getTransport().bpm.value = bpm;
         }
-    }
-
-    // Wrapper function to call removeNote
-    const removeNoteHandler = async (keys: string[], noteId: number) => {
-        if (score && score.current) {
-
-            score.current.removeNote(keys, noteId);
-            selectedNoteId.current = noteId;
-            setNotationUpdated(prev => prev + 1);
-            sendChanges();
-
-            // setTimeout(() => {
-            //     d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-            //     const noteElement = document.getElementById(noteId.toString());
-            //     if (noteElement) {
-            //         noteElement.classList.add('selected-note');
-            //     }
-            // }, 0);
+        else if (typeof bpm === "string") {
+            const bpmVal = parseInt(bpm);
+            try {
+                Tone.getTransport().bpm.value = bpmVal;
+            } catch (error) {
+                console.log(`Could not set Tone BPM: ${error}`);
+            }
         }
-    }
+    }, [bpm])
 
     useEffect(() => {
         const loadSamples = async () => {
@@ -714,6 +632,10 @@ export default function CompositionTool() {
         }
     }, [volume]);
 
+    const updateNotation: UpdateNotationType = () => {
+        setNotationUpdated(prev => prev + 1);
+    }
+
     const [currentDocument, setDocument] = useState<Document>({
         document_title: '',
         comments: [],
@@ -745,7 +667,7 @@ export default function CompositionTool() {
             if (score.current === null) return;
 
             let exportedScoreDataObj: ScoreData = score.current.exportScoreDataObj();
-            
+
 
             const changesTemp =
             {
@@ -753,7 +675,7 @@ export default function CompositionTool() {
                 documentId: documentID.current,
                 writerId: userId.current,
             }
-            if(DebugController.SCORE_DATA) {
+            if (DebugController.SCORE_DATA) {
                 console.log("Exporting Score data ------------------------------- ");
                 console.log("exported Object: " + printScoreData(exportedScoreDataObj));
             }
@@ -789,14 +711,14 @@ export default function CompositionTool() {
 
         changesTimeout = setTimeout(async () => {
             while (isSending.current || isFetching.current) {
-                if(DebugController.CHECK_CHANGES) {
+                if (DebugController.CHECK_CHANGES) {
                     console.log("Waiting until send finished");
                     console.log("isSending: " + isSending.current);
                     console.log("isFetching: " + isFetching.current);
                 }
                 await new Promise(resolve => setTimeout(resolve, 100)); // Adjust the delay if needed
             }
-            if(DebugController.CHECK_CHANGES) {
+            if (DebugController.CHECK_CHANGES) {
                 console.log(JSON.stringify(changesTemp));
             }
             isFetching.current = true;
@@ -828,8 +750,14 @@ export default function CompositionTool() {
                     if (notationRef.current) {
                         score.current?.loadScoreDataObj(compData);
                         score.current?.addNoteInMeasure([], 0);
-                        
-                        if(DebugController.SCORE_DATA) {
+                        // Hot fix for fixing widths on load
+                        if(first.current)
+                        {
+                            first.current = false;
+                            score.current?.loadScoreDataObj(compData);
+                        }
+
+                        if (DebugController.SCORE_DATA) {
                             console.log("LOADED SCORE DATA\nloaded Object: " + printScoreData(compData));
                         }
                         // Now add it to the currently selected note
@@ -838,12 +766,16 @@ export default function CompositionTool() {
                         }
                         setNotationUpdated(prev => prev + 1);
                         createNewNoteBox();
+                        let note = score.current?.findNote(selectedNoteId.current);
+                        let measure = score.current?.getMeasureFromNoteId(selectedNoteId.current);
+                        if (!note || !measure) return;
+                        displayPlaceNote(measure, note, selectedKey.current);
                     }
 
                     // Update online users
                     const receivedUsers = (res.data as any)['onlineUsers'];
                     if (receivedUsers !== undefined) {
-                        if(DebugController.ONLINE_USERS) {
+                        if (DebugController.ONLINE_USERS) {
                             console.debug(`Received user data: ${JSON.stringify(receivedUsers)}`);
                         }
                         setOnlineUsers(new Map(Object.entries(receivedUsers)) as Map<string, OnlineEntity>);
@@ -1181,8 +1113,17 @@ export default function CompositionTool() {
         if (selectedNoteId !== null && selectedKey !== null && score.current) {
             const staveNote = score.current.findNote(selectedNoteId.current);
             createNewNoteBox();
+
             if (staveNote) {
                 const keys = staveNote.getKeys();
+                if (!staveNote.isRest()) {
+                    keys.forEach((key) => {
+                        if (piano && score.current) {
+                            playNote(key, piano, score.current?.getKeySignature());
+                        }
+                    });
+                }
+
                 const noteHeads = staveNote.noteHeads;
 
                 // Find the index of the selectedKey
@@ -1205,7 +1146,6 @@ export default function CompositionTool() {
         }
 
     }, [selectedNoteId, selectedKey.current, notationUpdated]);
-
 
     useEffect(() => {
         // // First remove the selectd note class from previously selected note
@@ -1251,20 +1191,14 @@ export default function CompositionTool() {
 
             // If a valid note was pressed and we have a note selected
             if (note && selectedNoteId.current !== -1) {
-                addNoteHandler([note], selectedNoteId.current);
+                addNoteHandler(score, selectedNoteId, [note], selectedNoteId.current);
+                if (piano && score.current) {
+                    playNote(note, piano, score.current.getKeySignature());
+                }
+                sendChanges();
                 selectedKey.current = note;
             }
 
-            // // If we press the up arrow, raise the pitch
-            // if (key === 'w') {
-            //     const newNotes = increasePitch(score, selectedNoteId);
-            //     const staveNote = score.current?.findNote(selectedNoteId);
-            //     if (staveNote) {
-            //         removeNoteHandler(staveNote.keys, selectedNoteId);
-            //         addNoteHandler(newNotes, selectedNoteId);
-            //         setNotationUpdated(prev => prev + 1);
-            //     }
-            // }
             // If we press the w key, raise the pitch
             if (key === 'w') {
                 if (selectedNoteId !== null && selectedKey !== null) {
@@ -1279,17 +1213,17 @@ export default function CompositionTool() {
                         }
                         const newKeys = increasePitch(score, selectedNoteId.current, secondToLastKey);
                         selectedKey.current = newSelectedKey;
-                        removeNoteHandler(staveNote.keys, selectedNoteId.current);
-                        addNoteHandler(newKeys, selectedNoteId.current);
+                        // removeNoteHandler(staveNote.keys, selectedNoteId.current);
+                        removeNoteHandler(score, selectedNoteId, staveNote.keys, selectedNoteId.current);
+                        addNoteHandler(score, selectedNoteId, newKeys, selectedNoteId.current);
+                        sendChanges();
                         // Update selectedKey to the new pitch
-
                         setNotationUpdated(prev => prev + 1);
                     }
                 }
             }
 
-
-            // If we press the down arrow, lower the pitch
+            // If we press the s key, lower the pitch
             if (key === 's') {
                 if (selectedNoteId.current !== null && selectedKey !== null) {
                     const staveNote = score.current?.findNote(selectedNoteId.current);
@@ -1303,8 +1237,10 @@ export default function CompositionTool() {
                         }
                         const newKeys = lowerPitch(score, selectedNoteId.current, secondToLastKey);
                         selectedKey.current = newSelectedKey;
-                        removeNoteHandler(staveNote.keys, selectedNoteId.current);
-                        addNoteHandler(newKeys, selectedNoteId.current);
+                        // removeNoteHandler(staveNote.keys, selectedNoteId.current);
+                        removeNoteHandler(score, selectedNoteId, staveNote.keys, selectedNoteId.current);
+                        addNoteHandler(score, selectedNoteId, newKeys, selectedNoteId.current);
+                        sendChanges();
                         // Update selectedKey to the new pitch
 
                         setNotationUpdated(prev => prev + 1);
@@ -1312,9 +1248,50 @@ export default function CompositionTool() {
                 }
             }
 
+            // If we press the right arrow key, move right
+            if (key === 'arrowright') {
+                if (selectedNoteId !== null && selectedKey !== null) {
+                    // Get the next note
+                    let adjacentID = score.current?.getForwardAdjacentNote(selectedNoteId.current);
+                    if (!adjacentID) return;
+                    selectedNoteId.current = adjacentID;
+                    const staveNote = score.current?.findNote(selectedNoteId.current);
+                    if (staveNote) {
+                        let newSelectedKey = staveNote.getKeys()[0];
+                        selectedKey.current = newSelectedKey;
+                        // Update selectedKey to the new pitch
+                        setNotationUpdated(prev => prev + 1);
+                    }
+                }
+            }
+
+            // If we press the left arrow key, move right
+            if (key === 'arrowleft') {
+                if (selectedNoteId !== null && selectedKey !== null) {
+                    // Get the next note
+                    let adjacentID = score.current?.getBackwardAdjacentNote(selectedNoteId.current);
+                    if (adjacentID === undefined) return;
+                    selectedNoteId.current = adjacentID;
+                    const staveNote = score.current?.findNote(selectedNoteId.current);
+                    if (staveNote) {
+                        let newSelectedKey = staveNote.getKeys()[0];
+                        selectedKey.current = newSelectedKey;
+                        // Update selectedKey to the new pitch
+                        setNotationUpdated(prev => prev + 1);
+                    }
+                }
+            }
+
             // Remove a note if backspace if pressed
             if (key === 'backspace') {
-                removeNoteHandler([''], selectedNoteId.current);
+                // removeNoteHandler([''], selectedNoteId.current);
+                if (selectedKey.current) {
+                    removeNoteHandler(score, selectedNoteId, [selectedKey.current], selectedNoteId.current);
+                }
+                else {
+                    removeNoteHandler(score, selectedNoteId, [''], selectedNoteId.current);
+                }
+                sendChanges();
             }
         };
 
@@ -1351,7 +1328,9 @@ export default function CompositionTool() {
         let svgBoxY = notePlacementRectangleSVG.current.getBoundingClientRect().top + 10;
         attachMouseMoveListener(notePlacementRectangleRef.current, note, measure, svgBoxY, selectedKey.current);
         attachMouseLeaveListener(notePlacementRectangleRef.current, note, measure, selectedKey.current);
-        selectedNoteId.current = (attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId.current, svgBoxY, createNewNoteBox));
+        if (piano) {
+            attachMouseClickListener(notePlacementRectangleRef.current, measure, score.current, sendChanges, selectedNoteId.current, svgBoxY, createNewNoteBox, piano, updateNotation);
+        }
     }
 
     // Create PlaceNoteBox
@@ -1376,6 +1355,14 @@ export default function CompositionTool() {
                 if (targetElement && targetElement.classList.contains('vf-stavenote')) {
                     const selectId = d3.select(targetElement).attr('id');
                     selectedNoteId.current = parseInt(selectId);
+                    let note = score.current?.findNote(selectedNoteId.current);
+                    // if (note && !note.isRest()) {
+                    //     note.getKeys().forEach((key) => {
+                    //         if (piano) {
+                    //             playNote(key, piano);
+                    //         }
+                    //     });
+                    // }
                 }
             });
 
@@ -1448,6 +1435,8 @@ export default function CompositionTool() {
                     addFlat={addFlatHandler}
                     removeAccidentals={removeAccidentalsHandler}
                     setKeySignature={setKeySignatureHandler}
+                    bpm={bpm}
+                    setBPM={setBPM}
                     handleDot={dotHandler}
                     hasWriteAccess={hasWriteAccess}
                     selectedKey={selectedKey.current}
@@ -1465,8 +1454,8 @@ export default function CompositionTool() {
                             "#FFFFFF",
                         boxShadow: '0 0px 5px rgba(0, 0, 0, 0.3)', // Shadow effect
                         borderRadius: '4px', // Rounded corners for a more "page" look
-                        margin: '20px', 
-                        border: '1px solid #e0e0e0', 
+                        margin: '20px',
+                        border: '1px solid #e0e0e0',
                         textAlign: 'center'
                     }}
                 >

@@ -94,6 +94,7 @@ const {
 
 const {
   updateUserPassword,
+  updateUserPasswordFromProfile,
 } = require("./backend/src/endpoints/updateUserPassword");
 
 const cors = require("cors");
@@ -1216,6 +1217,39 @@ exports.resetUserPassword = functions.https.onRequest(
           await updateUserPassword(email);
           response.status(StatusCode.OK).send({
             message: "The user has been sent a password reset email",
+            data: true,
+          });
+        }
+        // Send a successful response back
+      } catch (error) {
+        // Send an error response if something goes wrong
+        response.status(StatusCode.GENERAL_ERROR).send({
+          message: "Could not send reset password email." + error,
+          data: error as Error,
+        });
+      }
+    });
+  }
+);
+
+exports.resetProfilePassword = functions.https.onRequest(
+  async (request: any, response: any) => {
+    corsHandler(request, response, async () => {
+      try {
+        const email = request.body.email;
+        const password = request.body.password;
+        const newPassword = request.body.newPassword;
+        if (!email || !password || !newPassword) {
+          response.status(StatusCode.MISSING_ARGUMENTS).send({
+            message: `Missing required field: ${
+              !email ? "email" : !password ? "password": "newPassword"
+            }`,
+          });
+        } else {
+
+          await updateUserPasswordFromProfile(email, password, newPassword);
+          response.status(StatusCode.OK).send({
+            message: "The user has had their password reset",
             data: true,
           });
         }

@@ -97,7 +97,10 @@ export class Score {
         this.top_measures[0].renderTimeSignature();
         this.bottom_measures[0].renderTimeSignature();
 
-        this.renderMeasures();
+    }
+
+    getKeySignature = () => {
+        return this.key_signature;
     }
 
     findNote = (noteId: number): StaveNote | null => {
@@ -180,6 +183,7 @@ export class Score {
         this.ties = new Set<number>(scoreData.ties);
         this.top_measures = [];
         this.bottom_measures = [];
+        this.key_signature = scoreData.topMeasures[0].keySignature;
         scoreData.topMeasures.forEach((topMeasure) => {
             this.top_measures.push(new Measure(undefined, undefined, undefined, undefined, undefined, undefined, undefined, topMeasure));
         });
@@ -283,29 +287,54 @@ export class Score {
         this.renderMeasures();
     }
 
-    getAdjacentNote = (noteId: number): number => {
+    getForwardAdjacentNote = (noteId: number): number => {
         let measureIndex1 = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
-        let topMeasure = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        let topMeasure1 = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
         if (measureIndex1 == null) return noteId;
-        let measureIndex2 = this.ID_to_MeasureIndexID.get(noteId + 1)?.measureIndex;
+        const newNoteID = noteId + 1;
+        let topMeasure2 = this.ID_to_MeasureIndexID.get(newNoteID)?.topMeasure;
+        let measureIndex2 = this.ID_to_MeasureIndexID.get(newNoteID)?.measureIndex;
         if (measureIndex2 == null) return noteId;
 
-        // if (measureIndex1 !== measureIndex2) {
-        //     if (topMeasure) {
-        //         return noteId + this.bottom_measures[measureIndex1].getVoice1().getTickables().length;
-        //     }
-        //     else {
-        //         // We know measureIndex1 + 1 
-        //         return noteId + this.top_measures[measureIndex1 + 1].getVoice1().getTickables().length;
-        //     }
-        // }
-        // return noteId + 1;
-        const nextNoteID = noteId + 1;
-        if (this.ID_to_MeasureIndexID.has(nextNoteID)) {
-            return nextNoteID;
-        } else {
-            return noteId;
+        if (topMeasure1 !== topMeasure2) {
+            // Skip over all the notes of the next measure 
+            if (topMeasure1) {
+                let returnID = newNoteID + this.bottom_measures[measureIndex1].getVoice1().getTickables().length;
+                if(!this.ID_to_MeasureIndexID.has(returnID)) return noteId;
+                return returnID;
+            }
+            else {
+                let returnID = newNoteID + this.top_measures[measureIndex2].getVoice1().getTickables().length;
+                if(!this.ID_to_MeasureIndexID.has(returnID)) return noteId;
+                return returnID;
+            }
         }
+        return newNoteID;
+    }
+
+    getBackwardAdjacentNote = (noteId: number): number => {
+        let measureIndex1 = this.ID_to_MeasureIndexID.get(noteId)?.measureIndex;
+        let topMeasure1 = this.ID_to_MeasureIndexID.get(noteId)?.topMeasure;
+        if (measureIndex1 == null) return noteId;
+        const newNoteID = noteId - 1;
+        let topMeasure2 = this.ID_to_MeasureIndexID.get(newNoteID)?.topMeasure;
+        let measureIndex2 = this.ID_to_MeasureIndexID.get(newNoteID)?.measureIndex;
+        if (measureIndex2 == null) return noteId;
+
+        if (topMeasure1 !== topMeasure2) {
+            // Skip over all the notes of the next measure 
+            if (topMeasure1) {
+                let returnID = newNoteID - this.bottom_measures[measureIndex1].getVoice1().getTickables().length;
+                if(returnID < 0) return noteId
+                return returnID;
+            }
+            else {
+                let returnID = newNoteID - this.top_measures[measureIndex2].getVoice1().getTickables().length;
+                if(returnID < 0) return noteId
+                return returnID;
+            }
+        }
+        return newNoteID;
     }
 
     getSystemIndexForMeasure = (measureIndex: number): number => {
@@ -737,19 +766,14 @@ export class Score {
         let widthToFill = this.renderer_width - totalWidth;
         // We want to see what percentage of the total width each measure takes up
         let percentages: number[] = [];
-        console.log(`percentages -------`);
         minSystemWidths.forEach((width) => {
             percentages.push(width / totalWidth);
-            console.log("PERCENT: " + (width / totalWidth));
         });
-        console.log(`Adding: Start`);
         for (let i = 0; i < minSystemWidths.length; i++) {
             // Each measure should proportionally consume the width to fill 
             // This helps give more room to measures that need it, and less to measures that don't
             minSystemWidths[i] += widthToFill * percentages[i];
-            console.log("Adding: " + (widthToFill * percentages[i]) +" + " + minSystemWidths[i]);
         }
-        console.log(`Adding: Finish : Total width: ${totalWidth}`);
         return minSystemWidths;
     }
 
@@ -830,10 +854,6 @@ export class Score {
             let finalWidth = Math.min(
                 this.renderer_width - DEFAULT_FIRST_MEASURES_X - DEFUALT_RIGHT_SIDE_PADDING, 
                 optimalWidths[i]);
-            if(i == 1)
-            {
-                console.log(`FINAL INDEX: ${i} adding FINAL WIDTH: ${finalWidth}`);
-            }
             this.widths.push(finalWidth);
         }
 

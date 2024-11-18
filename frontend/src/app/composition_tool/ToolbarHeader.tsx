@@ -16,6 +16,7 @@ import {
   Text,
   Image,
   Menu,
+  NumberInput,
 } from "@mantine/core";
 import React, { useEffect, useRef, useState } from "react";
 import { SharingModal } from "./sharing/SharingModal";
@@ -91,6 +92,8 @@ export const ToolbarHeader: React.FC<{
     removeAccidentals: (keys: string[], noteID: number) => void;
     handleDot: (dotType: number, noteId: number) => void;
     setKeySignature: (keySignature: string) => void;
+    bpm: number | string
+    setBPM: (value: number | string) => void;
     hasWriteAccess: boolean;
     selectedKey: string;
     userList: { userId: string; displayName: string; color: string }[];
@@ -113,6 +116,8 @@ export const ToolbarHeader: React.FC<{
     removeAccidentals,
     handleDot,
     setKeySignature,
+    bpm,
+    setBPM,
     hasWriteAccess,
     selectedKey,
     userList
@@ -137,7 +142,6 @@ export const ToolbarHeader: React.FC<{
           callAPI("updatePartialDocument", new_title);
           setIsChangingName(false); // Exit edit mode and save
       };
-      const [passwordModalOpened, setPasswordModalOpened] = useState(false);
       const router = useRouter();
       const [displayName, setDisplayName] = useState<string>('');
       const [email, setEmail] = useState<string>('');
@@ -204,28 +208,6 @@ useEffect(() => {
     router.push(`/profile`);
   }
 
-  const handleResetOpen = () => {
-    setPasswordModalOpened(true);
-  }
-
-  const handleReset = async () => {
-    const email = getEmail();
-    console.log(`Resetting password for: ${email}`);
-    try
-    {
-      await callAPI("resetUserPassword", {email: email});
-    }
-    catch (error)
-    {
-      console.log(`Error resetting password for: ${email}`);
-    }
-    setPasswordModalOpened(false);
-  }
-
-  const closePasswordModal = () => {
-    setPasswordModalOpened(false);
-  }
-
   // Something is wrong with the callback, not allowing to move forward in states
   // Handle tutorial callback to manage step progression and tutorial completion
   const handleJoyrideCallback = (data: any) => {
@@ -265,7 +247,7 @@ useEffect(() => {
                     </Tooltip>
 
                     {/* Editable Document Title */}
-                    {isChangingName ? (
+                    {isChangingName && hasWriteAccess ? (
                         <TextInput
                             size="md"
                             value={inputValue}
@@ -288,9 +270,11 @@ useEffect(() => {
                                 padding: "3px",
                             }}
                             onMouseEnter={(e) => {
+                              if (hasWriteAccess) {
                                 e.currentTarget.style.outline =
                                     "2px solid rgba(128, 128, 128, 0.6)"; // Slightly dimmed gray outline
                                 e.currentTarget.style.outlineOffset = "3px"; // Space between outline and text
+                              }
                             }}
                             onMouseLeave={(e) => {
                                 e.currentTarget.style.outline = "none"; // Remove outline on mouse leave
@@ -361,12 +345,6 @@ useEffect(() => {
                 onClick={routeToProfilePage}
               >
                 Profile
-              </Menu.Item>
-              <Menu.Item
-                color="red"
-                onClick={handleResetOpen}
-              >
-                Reset Password
               </Menu.Item>
               <Menu.Item
                 color="red"
@@ -624,6 +602,18 @@ useEffect(() => {
                 placeholder="Choose Key Signature"
                 onChange={(value) => value && setKeySignature(value)}
                 data={keySignatures}
+              />
+            </Tooltip>
+
+            {/* BPM */}
+            <Text>Set BPM: </Text>
+            <Tooltip label="Set BPM" position="top" withArrow>
+              <NumberInput
+                placeholder="BPM"
+                value={bpm}
+                onChange={setBPM}
+                min={10}
+                max={200}
               />
             </Tooltip>
           </Group>

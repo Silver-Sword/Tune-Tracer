@@ -2,8 +2,9 @@
 
 // pages/profile.tsx
 import React, { useState, useEffect } from 'react';
-import { getUserID, getDisplayName, saveDisplayName } from "../cookie";
+import { getUserID, getDisplayName, getEmail, saveDisplayName } from "../cookie";
 import { useRouter } from "next/navigation";
+import { Modal, Box } from '@mantine/core';
 import { callAPI } from "../../utils/callAPI";
 import Link from 'next/link';
 import {
@@ -18,6 +19,7 @@ import {
   PasswordInput,
   Tooltip
 } from '@mantine/core';
+import { set } from 'date-fns';
 
 const ProfilePage: React.FC = () => {
   const [displayName, setDisplayName] = useState('John Doe');
@@ -30,6 +32,9 @@ const ProfilePage: React.FC = () => {
   const [displayNameLoading, setDisplayNameLoading] = useState<boolean>(false);
   const [response, setResponse] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [passwordModal, setPasswordModal] = useState<boolean>(false);
+  const [resetError, setResetError] = useState<string>('');
+  const [success, setSuccess] = useState<boolean>(false);
 
   const getUserName = async () => {
     let userIdCookie = getUserID();
@@ -96,6 +101,51 @@ const ProfilePage: React.FC = () => {
   }, 5000);
 
   };
+
+  const changePassword = async () => {
+    setSuccess(false);
+    try 
+    {
+      setEmail(getEmail());
+      const passwordObj = {
+        email: getEmail(),
+        password: currentPassword,
+        newPassword: newPassword
+      };
+      console.log(passwordObj);
+      await callAPI('resetProfilePassword', passwordObj)
+      .then((res) => {
+        if (res.status == 400) {
+          setResetError("Please enter current and new password.");
+          throw new Error("Enter an email address");
+        }
+        else if (res.status == 500) {
+          setResetError("Error resetting password. Please try again.");
+          throw new Error("Error resetting password");
+        }
+        setResetError("");
+        setSuccess(true);
+      });
+    }
+    catch (error)
+    {
+      console.error(`Error changing password: ${error}`);
+      return;
+    }
+  };
+
+  const sendPasswordResetEmail = async () => {
+    setEmail(getEmail());
+    const sentObj = {
+      email: email
+    };
+    callAPI("resetUserPassword", sentObj);
+    setPasswordModal(true);
+  };
+
+  const closePasswordModal = () => {
+    setPasswordModal(false);
+  }
 
   return (
     <AppShell
@@ -191,6 +241,7 @@ const ProfilePage: React.FC = () => {
             mt="md"
             value={currentPassword}
             onChange={(event) => setCurrentPassword(event.currentTarget.value)}
+            error={resetError}
           />
 
           <PasswordInput
@@ -199,21 +250,48 @@ const ProfilePage: React.FC = () => {
             mt="md"
             value={newPassword}
             onChange={(event) => setNewPassword(event.currentTarget.value)}
+            error={resetError}
           />
+          {success && (
+            <Text color="black" size="sm" style={{ marginTop: '10px' }}>
+                Success! Password has been changed.
+            </Text>
+          )}
 
           <Group
             mt="md"
             style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}
           >
-            <Button type="submit" color="blue">
+            <Button type="submit" color="blue" onClick={changePassword}>
               Change Password
             </Button>
-            <Button variant="subtle" color="gray" onClick={() => alert('Forgot Password?')}>
+            <Button variant="subtle" color="gray" onClick={sendPasswordResetEmail}>
               Forgot Password
             </Button>
           </Group>
         </form>
       </Container>
+      <Modal
+                opened={passwordModal}
+                onClose={closePasswordModal}
+                centered
+      >
+        <Box style={{ padding: '20px', textAlign: 'center' }}>
+            <Text size="lg" style={{ marginBottom: '20px' }}>
+                Success!
+            </Text>
+            <Text style={{ marginBottom: '20px' }}>
+                Please check your email for further instructions.
+            </Text>
+            <Button
+                onClick={closePasswordModal}
+                color="blue"
+                style={{ marginTop: '20px' }}
+            >
+                Close
+            </Button>
+        </Box>
+      </Modal>
     </AppShell>
   );
 };
