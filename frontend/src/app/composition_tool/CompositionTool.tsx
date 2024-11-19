@@ -204,8 +204,7 @@ export default function CompositionTool() {
 
     const stopPlayback = () => {
         // Clear the scheduled timeout of stopPlayback
-        if (playbackTimeoutId)
-        {
+        if (playbackTimeoutId) {
             clearTimeout(playbackTimeoutId);
             playbackTimeoutId = null;
         }
@@ -764,8 +763,7 @@ export default function CompositionTool() {
                         score.current?.loadScoreDataObj(compData);
                         score.current?.addNoteInMeasure([], 0);
                         // Hot fix for fixing widths on load
-                        if(first.current)
-                        {
+                        if (first.current) {
                             first.current = false;
                             score.current?.loadScoreDataObj(compData);
                         }
@@ -777,12 +775,11 @@ export default function CompositionTool() {
                         if (selectedNoteId.current !== -1) {
                             d3.select(`[id="${selectedNoteId}"]`).classed('selected-note', true);
                         }
-                        setNotationUpdated(prev => prev + 1);
+                        updateNotationFunction(false);
                         createNewNoteBox();
                         let note = score.current?.findNote(selectedNoteId.current);
                         let measure = score.current?.getMeasureFromNoteId(selectedNoteId.current);
-                        if (note && measure)
-                        {
+                        if (note && measure) {
                             displayPlaceNote(measure, note, selectedKey.current);
                         }
                         // displayPlaceNote(measure, note, selectedKey.current);
@@ -1118,49 +1115,50 @@ export default function CompositionTool() {
             selectedKey.current = ''
         }
     };
-
+    const updateNotationFunction = (playSelectedNote:boolean = true) => {
+         // Clear existing highlighting
+         d3.selectAll('.vf-notehead').classed('selected-note', false);
+         d3.selectAll('.vf-stavenote').classed('selected-note', false);
+ 
+         if (!hasWriteAccess) return;
+ 
+         if (selectedNoteId !== null && selectedKey !== null && score.current) {
+             const staveNote = score.current.findNote(selectedNoteId.current);
+             createNewNoteBox();
+ 
+             if (staveNote) {
+                 const keys = staveNote.getKeys();
+                 if (playSelectedNote && !staveNote.isRest()) {
+                     keys.forEach((key) => {
+                         if (piano && score.current) {
+                             playNote(key, piano, score.current?.getKeySignature());
+                         }
+                     });
+                 }
+ 
+                 const noteHeads = staveNote.noteHeads;
+ 
+                 // Find the index of the selectedKey
+                 const index = keys.indexOf(selectedKey.current);
+ 
+                 if (index !== -1 && index < noteHeads.length) {
+                     const noteHead = noteHeads[index];
+                     const noteHeadId = noteHead.getAttribute('id');
+ 
+                     if (noteHeadId) {
+                         // Apply the 'selected-note' class to the notehead element
+                         d3.select(`[id="vf-${noteHeadId}"]`).classed('selected-note', true);
+                     }
+                 } else {
+                     console.warn('Selected key not found in keys');
+                 }
+             } else {
+                 //console.warn('StaveNote not found for selectedNoteId');
+             }
+         }
+    }
     useEffect(() => {
-        // Clear existing highlighting
-        d3.selectAll('.vf-notehead').classed('selected-note', false);
-        d3.selectAll('.vf-stavenote').classed('selected-note', false);
-
-        if (!hasWriteAccess) return;
-
-        if (selectedNoteId !== null && selectedKey !== null && score.current) {
-            const staveNote = score.current.findNote(selectedNoteId.current);
-            createNewNoteBox();
-
-            if (staveNote) {
-                const keys = staveNote.getKeys();
-                if (!staveNote.isRest()) {
-                    keys.forEach((key) => {
-                        if (piano && score.current) {
-                            playNote(key, piano, score.current?.getKeySignature());
-                        }
-                    });
-                }
-
-                const noteHeads = staveNote.noteHeads;
-
-                // Find the index of the selectedKey
-                const index = keys.indexOf(selectedKey.current);
-
-                if (index !== -1 && index < noteHeads.length) {
-                    const noteHead = noteHeads[index];
-                    const noteHeadId = noteHead.getAttribute('id');
-
-                    if (noteHeadId) {
-                        // Apply the 'selected-note' class to the notehead element
-                        d3.select(`[id="vf-${noteHeadId}"]`).classed('selected-note', true);
-                    }
-                } else {
-                    console.warn('Selected key not found in keys');
-                }
-            } else {
-                //console.warn('StaveNote not found for selectedNoteId');
-            }
-        }
-
+        updateNotationFunction();
     }, [selectedNoteId, selectedKey.current, notationUpdated]);
 
     useEffect(() => {
