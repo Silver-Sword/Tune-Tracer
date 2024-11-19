@@ -781,8 +781,11 @@ export default function CompositionTool() {
                         createNewNoteBox();
                         let note = score.current?.findNote(selectedNoteId.current);
                         let measure = score.current?.getMeasureFromNoteId(selectedNoteId.current);
-                        if (!note || !measure) return;
-                        displayPlaceNote(measure, note, selectedKey.current);
+                        if (note && measure)
+                        {
+                            displayPlaceNote(measure, note, selectedKey.current);
+                        }
+                        // displayPlaceNote(measure, note, selectedKey.current);
                     }
 
                     // Update online users
